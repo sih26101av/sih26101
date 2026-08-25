@@ -1,0 +1,271 @@
+classDiagram
+%% =====================================================================
+%% CORE DOMAIN MODELS — Identity, Role, Competency
+%% =====================================================================
+class BaseUser {
+  <<abstract>>
+  +UUID uuid
+  +String email
+  +String passwordHash
+  +UserRole role
+}
+class Official {
+  +String govId
+  +String department
+  +Int experienceYears
+}
+class Admin
+class Trainer
+
+BaseUser <|-- Official
+BaseUser <|-- Admin
+BaseUser <|-- Trainer
+
+class JobRole {
+  +String roleId
+  +String title
+  +String department
+}
+class RoleRequirement {
+  +String requirementId
+  +Int requiredLevel
+  +Bool isMandatory
+  +Int validityMonths
+}
+class Competency {
+  +String compId
+  +String domain
+  +String skillName
+}
+class CompetencyProfile {
+  +String profileId
+  +DateTime lastEvaluatedDate
+}
+class UserCompetency {
+  +Int currentLevel
+  +String verificationSource
+  +DateTime evaluatedAt
+}
+
+Official "1" --> "1" JobRole : holds
+Official "1" --> "1" CompetencyProfile : owns
+JobRole "1" --> "*" RoleRequirement : defines
+RoleRequirement "*" --> "1" Competency : targets
+CompetencyProfile "1" --> "*" UserCompetency : contains
+UserCompetency "*" --> "1" Competency : verifies
+
+%% =====================================================================
+%% CONTENT & ASSESSMENT MODELS
+%% =====================================================================
+class Course {
+  +String courseId
+  +String source
+  +Vector syllabusVectorEmbedding
+  +String embeddingModelVersion
+}
+class CourseSkillMapping {
+  +Int proficiencyLevelTaught
+}
+Course "1" --> "*" CourseSkillMapping
+CourseSkillMapping "*" --> "1" Competency
+
+class Assessment {
+  +String assessmentId
+  +Float passingScore
+  +String sourceDocumentId
+}
+class AssessmentSkillMapping {
+  +Float weightage
+}
+class Question {
+  +String text
+  +List~String~ options
+  +String correctOptionId
+  +String aiExplanation
+}
+Assessment "1" --> "*" AssessmentSkillMapping
+AssessmentSkillMapping "*" --> "1" Competency
+Assessment "1" --> "*" Question
+Question "*" --> "0..1" Competency : tagged to
+
+%% =====================================================================
+%% ADAPTER PATTERN — external platform integration (ISP applied:
+%% split into ICatalogSync / IScorePublisher so a read-only consumer
+%% never has to implement write methods it doesn't need)
+%% =====================================================================
+class ICatalogSync {
+  <<interface>>
+  +fetchCourses() List~Course~
+  +fetchUserHistory(userId) List~Course~
+}
+class IScorePublisher {
+  <<interface>>
+  +pushScore(userId, competencyId, score)
+  +enrollUser(userId, courseId)
+}
+class IgotPlatformAdapter {
+  -bearerToken
+}
+class NsstaPlatformAdapter {
+  -bearerToken
+}
+class InMemoryLearningPlatformAdapter {
+  note: used in tests / offline demo mode
+}
+
+ICatalogSync <|.. IgotPlatformAdapter
+IScorePublisher <|.. IgotPlatformAdapter
+ICatalogSync <|.. NsstaPlatformAdapter
+ICatalogSync <|.. InMemoryLearningPlatformAdapter
+IScorePublisher <|.. InMemoryLearningPlatformAdapter
+
+%% =====================================================================
+%% STRATEGY PATTERN — pluggable recommendation algorithms
+%% =====================================================================
+class IRecommendationStrategy {
+  <<interface>>
+  +recommend(profile, gapReport) List~Course~
+}
+class VectorSearchStrategy {
+  -IVectorStore vectorStore
+}
+class SkillGapRuleStrategy
+class HybridRecommendationStrategy {
+  -VectorSearchStrategy semantic
+  -SkillGapRuleStrategy ruleBased
+}
+IRecommendationStrategy <|.. VectorSearchStrategy
+IRecommendationStrategy <|.. SkillGapRuleStrategy
+IRecommendationStrategy <|.. HybridRecommendationStrategy
+HybridRecommendationStrategy --> VectorSearchStrategy
+HybridRecommendationStrategy --> SkillGapRuleStrategy
+
+class IVectorStore {
+  <<interface>>
+  +query(embedding, topK) List~Course~
+}
+VectorSearchStrategy --> IVectorStore
+
+class RecommendationEngine {
+  -IRecommendationStrategy strategy
+  +setStrategy(strategy)
+  +getRecommendations(official) List~Course~
+}
+RecommendationEngine --> IRecommendationStrategy
+
+%% =====================================================================
+%% FACTORY PATTERN — document parsing for RAG quiz generation
+%% =====================================================================
+class IDocumentParser {
+  <<interface>>
+  +extractText(file) String
+}
+class PdfParser
+class PptParser
+class TextParser
+IDocumentParser <|.. PdfParser
+IDocumentParser <|.. PptParser
+IDocumentParser <|.. TextParser
+
+class DocumentParserFactory {
+  +getParser(fileType) IDocumentParser
+}
+DocumentParserFactory ..> IDocumentParser : creates
+
+%% =====================================================================
+%% BUILDER PATTERN — safely assembling LLM-generated quiz JSON
+%% =====================================================================
+class AssessmentBuilder {
+  -Assessment draft
+  +setMetadata(courseId, passingScore)
+  +addQuestionFromRawJson(json)
+  +validate() Bool
+  +build() Assessment
+}
+AssessmentBuilder ..> Assessment : produces
+AssessmentBuilder ..> Question : produces
+
+%% =====================================================================
+%% SKILL-GAP ENGINE
+%% =====================================================================
+class SkillGapEngine {
+  +computeGap(profile, requirements) SkillGapReport
+}
+class SkillGapReport {
+  +Map~Competency,Int~ gaps
+}
+SkillGapEngine --> SkillGapReport
+SkillGapEngine --> UserCompetency
+SkillGapEngine --> RoleRequirement
+RecommendationEngine ..> SkillGapReport : consumes
+
+%% =====================================================================
+%% REPOSITORY LAYER — Dependency Inversion for persistence
+%% =====================================================================
+class IUserCompetencyRepository {
+  <<interface>>
+  +findByProfile(profileId) List~UserCompetency~
+  +save(entity)
+}
+class IAssessmentRepository {
+  <<interface>>
+  +findById(id) Assessment
+  +save(entity)
+}
+class ICourseRepository {
+  <<interface>>
+  +findAll() List~Course~
+  +save(entity)
+}
+SkillGapEngine ..> IUserCompetencyRepository
+RecommendationEngine ..> ICourseRepository
+AssessmentBuilder ..> IAssessmentRepository
+
+%% =====================================================================
+%% OBSERVER PATTERN + TRANSACTIONAL OUTBOX
+%% In-process listeners stay synchronous (same DB transaction).
+%% The external iGOT push is decoupled via an outbox table + async
+%% worker, so a slow/down external API never blocks assessment grading.
+%% =====================================================================
+class EventBus {
+  +publish(event)
+  +subscribe(eventType, listener)
+}
+class IEventListener {
+  <<interface>>
+  +handle(event)
+}
+class AssessmentAttemptedEvent {
+  +userId
+  +assessmentId
+  +score
+  +passed
+}
+class AssessmentPassedEvent {
+  +userId
+  +competencyId
+  +newLevel
+}
+class LocalProfileUpdater
+class AdminAuditLogger
+class IGotSyncOutboxPublisher
+
+IEventListener <|.. LocalProfileUpdater
+IEventListener <|.. AdminAuditLogger
+IEventListener <|.. IGotSyncOutboxPublisher
+EventBus --> IEventListener : notifies
+LocalProfileUpdater ..> UserCompetency : updates
+AdminAuditLogger ..> AssessmentAttemptedEvent : logs
+
+class OutboxEntry {
+  +String eventId
+  +String payload
+  +String status
+  +Int retryCount
+}
+class OutboxWorker {
+  +processPending()
+}
+IGotSyncOutboxPublisher ..> OutboxEntry : writes (sync, same txn)
+OutboxWorker --> OutboxEntry : reads/updates
+OutboxWorker --> IScorePublisher : calls with retry/backoff
