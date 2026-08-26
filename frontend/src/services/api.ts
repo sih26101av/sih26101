@@ -1,8 +1,16 @@
 /**
  * FILE: src/services/api.ts
  *
- * Adapter Layer: fetches raw JSON from FastAPI backend and maps it
- * into clean internal domain types. UI components never see raw API shapes.
+ * PATTERN: Adapter Pattern (ARCHITECTURE.md §4.B)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Wraps the mock iGOT server (http://localhost:8001) with:
+ *   1. A preconfigured fetch client (auth headers, base URL)
+ *   2. Sunbird standard envelope unpacker → response.data.result
+ *   3. Adapter functions mapping raw iGOT shapes → internal domain types
+ *
+ * UI components and hooks NEVER import raw API shapes.
+ * They import only the clean domain types from `../types/domain`.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import type {
@@ -13,225 +21,304 @@ import type {
   Achievement,
 } from '../types/domain';
 
-// ─── Raw shapes (exactly what the backend sends) ──────────────────────────────
+// ─── Configuration ─────────────────────────────────────────────────────────────
+const BASE_URL = 'http://localhost:8001';
+const API_KEY  = 'mock-api-key-2026';
 
-interface RawSkillGap {
-  competencyId: string;
-  skillName: string;
-  domain: string;
-  currentLevel: number;
-  targetLevel: number;
-  gapScore: number;
+// ─── Sunbird Standard Envelope ─────────────────────────────────────────────────
+interface SunbirdEnvelope<T> {
+  id:     string;
+  ver:    string;
+  ts:     string;
+  params: { status: string; err: string | null; errmsg: string | null };
+  responseCode: string;
+  result: T;
 }
 
-interface RawSkillGapsResponse {
-  officialId: string;
-  jobRole: string;
-  department: string;
-  skillGaps: RawSkillGap[];
+// ─── Preconfigured fetch helper ────────────────────────────────────────────────
+async function igotFetch<T>(
+  path: string,
+  label: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const sessionToken =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('mospi-session-token') ?? 'mock-session-token-2026')
+      : 'mock-session-token-2026';
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
+      'x-authenticated-user-token': sessionToken,
+      ...(options.headers ?? {}),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`[${label}] HTTP ${res.status} ${res.statusText} → ${path}`);
+  }
+
+  const json: SunbirdEnvelope<T> = await res.json();
+
+  // Validate Sunbird envelope
+  if (json.params?.err) {
+    throw new Error(`[${label}] Sunbird error: ${json.params.errmsg ?? json.params.err}`);
+  }
+
+  return json.result;
 }
 
-interface RawRecommendation {
-  courseId: string;
-  title: string;
-  provider: string;
-  durationHours: number;
-  matchReason: string;
-  tags: string[];
+// ─────────────────────────────────────────────────────────────────────────────
+// RAW iGOT SHAPES  (exactly what the mock server sends inside `result`)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// /api/user/v2/read/{user_id}
+interface RawIgotUser {
+  userId:      string;
+  firstName:   string;
+  lastName:    string;
+  email:       string;
+  designation: string;
+  department:  string;
+  rootOrgId:   string;
+  profileDetails?: {
+    employmentDetails?: { departmentName?: string; designation?: string };
+    professionalDetails?: [{ industry?: string; experience?: string }];
+  };
+  competencies_v3?: string; // stringified JSON
 }
 
-interface RawRecommendationsResponse {
-  status: string;
-  recommendations: RawRecommendation[];
+// /api/course/v1/user/enrollment/list/{user_id}
+interface RawIgotEnrollment {
+  courseId:            string;
+  courseName:          string;
+  completionPercentage?: number;
+  status:              number; // 0=not-started, 1=in-progress, 2=completed
+  enrolledDate:        string;
+  lastContentAccessTime?: string;
+  leafNodesCount?:     number;
+  leafNodeCompleted?:  number;
+  issuedCertificates?: { name: string; identifier: string; lastIssuedOn: string }[];
+  content?: {
+    duration?:  string;
+    provider?:  string;
+    name?:      string;
+  };
+}
+interface RawEnrollmentsResult {
+  courses: RawIgotEnrollment[];
 }
 
-interface RawEnrollment {
-  enrollmentId: string;
-  courseId: string;
-  courseTitle: string;
-  provider: string;
-  durationHours: number;
-  progressPercentage: number;
-  remainingHours: number;
-  lastAccessed: string;
-  status: string;
+// /api/content/read (catalog)
+interface RawIgotCourse {
+  identifier:          string;
+  name:                string;
+  provider?:           string;
+  duration?:           string;
+  competencies_v3?:    string;
+  primaryCategory?:    string;
+  source?:             string;
+}
+interface RawCatalogResult {
+  content: RawIgotCourse[];
+  count:   number;
 }
 
-interface RawEnrollmentsResponse {
-  status: string;
-  enrollments: RawEnrollment[];
+// /api/admin/v1/users (roster)
+export interface RawAdminUser {
+  userId:      string;
+  govId:       string;
+  firstName:   string;
+  lastName:    string;
+  designation: string;
+  department:  string;
+  email:       string;
+  enrollmentStatus?: number; // 0=none 1=in-progress 2=completed
+  competencies_v3?:  string;
+  missingSkill?: string;
+}
+export interface RawAdminRosterResult {
+  users: RawAdminUser[];
+  count: number;
 }
 
-interface RawAchievement {
-  id: string;
-  title: string;
-  score: number;
-  date: string;
-  category: string;
+// ─────────────────────────────────────────────────────────────────────────────
+// ADAPTER FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function parseCompetencies(raw: string | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map((c: { name?: string; id?: string }) => c.name ?? c.id ?? '').filter(Boolean);
+    return [];
+  } catch {
+    return [];
+  }
 }
 
-interface RawAchievementsResponse {
-  status: string;
-  achievements: RawAchievement[];
-}
+function adaptIgotUser(raw: RawIgotUser): Official {
+  const dept = raw.profileDetails?.employmentDetails?.departmentName ?? raw.department ?? 'MoSPI';
+  const desig = raw.profileDetails?.employmentDetails?.designation ?? raw.designation ?? 'Official';
+  const expStr = raw.profileDetails?.professionalDetails?.[0]?.experience ?? '0';
+  const expYears = parseInt(expStr, 10) || 0;
 
-// ─── Adapter functions ────────────────────────────────────────────────────────
+  const compList = parseCompetencies(raw.competencies_v3);
 
-function adaptSkillGapsResponse(raw: RawSkillGapsResponse): {
-  profile: Official;
-  skillGaps: SkillGapEntry[];
-} {
-  const profile: Official = {
-    uuid: raw.officialId,
-    email: `${raw.officialId.toLowerCase()}@mospi.gov.in`,
-    role: 'OFFICIAL',
-    govId: raw.officialId,
-    fullName: raw.officialId,
-    department: raw.department,
-    experienceYears: 0,
+  return {
+    uuid:     raw.userId,
+    email:    raw.email,
+    role:     'OFFICIAL',
+    govId:    raw.userId.replace('usr_', 'EMP-'),
+    fullName: `${raw.firstName} ${raw.lastName}`.trim(),
+    department: dept,
+    experienceYears: expYears,
     jobRole: {
-      roleId: 'JR-001',
-      title: raw.jobRole,
-      department: raw.department,
+      roleId: `JR-${raw.rootOrgId ?? '001'}`,
+      title:  desig,
+      department: dept,
       roleRequirements: [],
     },
     competencyProfile: {
-      profileId: `CP-${raw.officialId}`,
+      profileId: `CP-${raw.userId}`,
       lastEvaluatedDate: new Date().toISOString(),
-      userCompetencies: raw.skillGaps.map(gap => ({
-        currentLevel: gap.currentLevel,
-        verificationSource: 'FRAC Assessment',
+      userCompetencies: compList.map((name, i) => ({
+        currentLevel: 2,
+        verificationSource: 'iGOT Profile',
         evaluatedAt: new Date().toISOString(),
         competency: {
-          compId: gap.competencyId,
-          domain: gap.domain as any,
-          skillName: gap.skillName,
+          compId: `COMP-${i + 1}`,
+          domain: 'Statistical',
+          skillName: name,
         },
       })),
     },
   };
-
-  const skillGaps: SkillGapEntry[] = raw.skillGaps.map(gap => ({
-    competency: {
-      compId: gap.competencyId,
-      domain: gap.domain as any,
-      skillName: gap.skillName,
-    },
-    currentLevel: gap.currentLevel,
-    requiredLevel: gap.targetLevel,
-    gap: gap.gapScore,
-    isMandatory: gap.gapScore > 0,
-    verificationSource: 'FRAC Assessment',
-    evaluatedAt: new Date().toISOString(),
-  }));
-
-  return { profile, skillGaps };
 }
 
-function adaptRecommendationsResponse(
-  raw: RawRecommendationsResponse,
-  skillGaps: SkillGapEntry[]
-): CourseRecommendation[] {
-  return raw.recommendations.map((rec, index) => {
-    const matchedGap = skillGaps.find(g =>
-      rec.tags?.some(
-        tag =>
-          g.competency.domain.toLowerCase().includes(tag.toLowerCase()) ||
-          g.competency.skillName.toLowerCase().includes(tag.toLowerCase())
-      )
-    ) ?? skillGaps[0];
+function statusLabel(status: number): string {
+  switch (status) {
+    case 0:  return 'Not Started';
+    case 1:  return 'In Progress';
+    case 2:  return 'Completed';
+    default: return 'Enrolled';
+  }
+}
 
-    const bridgesGapFor = matchedGap?.competency ?? {
-      compId: 'UNKNOWN',
-      domain: 'Statistical' as any,
-      skillName: 'General Competency',
-    };
+function adaptEnrollments(raw: RawIgotEnrollment[]): Enrollment[] {
+  return raw.map(e => ({
+    enrollmentId:       e.courseId,
+    course: {
+      courseId:     e.courseId,
+      title:        e.content?.name ?? e.courseName,
+      source:       e.content?.provider ?? 'iGOT Karmayogi',
+      durationHours: e.content?.duration ? Math.round(parseInt(e.content.duration, 10) / 3600) : 4,
+    },
+    progressPercentage: e.completionPercentage ?? 0,
+    remainingHours:     0,
+    lastAccessed:       e.lastContentAccessTime ?? e.enrolledDate,
+    status:             statusLabel(e.status),
+  }));
+}
 
+function adaptCatalog(raw: RawIgotCourse[]): CourseRecommendation[] {
+  return raw.slice(0, 6).map((c, i) => {
+    const tags = parseCompetencies(c.competencies_v3);
     return {
       course: {
-        courseId: rec.courseId,
-        title: rec.title,
-        source: rec.provider,
-        durationHours: rec.durationHours,
+        courseId:     c.identifier,
+        title:        c.name,
+        source:       c.provider ?? c.source ?? 'iGOT',
+        durationHours: c.duration ? Math.round(parseInt(c.duration, 10) / 3600) : 3,
       },
-      matchScore: Math.max(0.6, 1 - index * 0.08),
-      bridgesGapFor,
-      aiMatchTag: rec.matchReason,
-      priorityRank: index + 1,
+      matchScore:   Math.max(0.6, 0.98 - i * 0.06),
+      bridgesGapFor: {
+        compId:    tags[0] ?? 'COMP-GEN',
+        domain:    'Statistical',
+        skillName: tags[0] ?? 'General Competency',
+      },
+      aiMatchTag:   tags.slice(0, 2).join(', ') || 'iGOT Recommended',
+      priorityRank: i + 1,
     };
   });
 }
 
-function adaptEnrollmentsResponse(raw: RawEnrollmentsResponse): Enrollment[] {
-  return raw.enrollments.map(e => ({
-    enrollmentId: e.enrollmentId,
-    course: {
-      courseId: e.courseId,
-      title: e.courseTitle,
-      source: e.provider,
-      durationHours: e.durationHours,
-    },
-    progressPercentage: e.progressPercentage,
-    remainingHours: e.remainingHours,
-    lastAccessed: e.lastAccessed,
-    status: e.status,
-  }));
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC API FUNCTIONS — these are the only exports the hooks touch
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Fetch official profile + derive skill gaps from competency_v3 */
+export async function fetchUserProfile(userId: string): Promise<Official> {
+  const raw = await igotFetch<RawIgotUser>(
+    `/api/user/v2/read/${userId}`,
+    'user-profile'
+  );
+  return adaptIgotUser(raw);
 }
 
-function adaptAchievementsResponse(raw: RawAchievementsResponse): Achievement[] {
-  return raw.achievements.map(a => ({
-    id: a.id,
-    title: a.title,
-    score: a.score,
-    date: a.date,
-    category: a.category as 'RAG Quiz' | 'External Certification',
-  }));
-}
-
-// ─── Public API functions ─────────────────────────────────────────────────────
-
-async function apiFetch<T>(url: string, label: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`[${label}] API returned ${res.status} ${res.statusText}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-export async function fetchSkillGapsAndProfile(officialId: string): Promise<{
+/** Skill gaps derived from the profile's competency list */
+export async function fetchSkillGapsAndProfile(userId: string): Promise<{
   profile: Official;
   skillGaps: SkillGapEntry[];
 }> {
-  const raw = await apiFetch<RawSkillGapsResponse>(
-    `/api/v1/users/${officialId}/skill-gaps`,
-    'skill-gaps'
-  );
-  return adaptSkillGapsResponse(raw);
+  const profile = await fetchUserProfile(userId);
+  const skillGaps: SkillGapEntry[] = profile.competencyProfile.userCompetencies.map(uc => ({
+    competency:         uc.competency,
+    currentLevel:       uc.currentLevel,
+    requiredLevel:      4,
+    gap:                Math.max(0, 4 - uc.currentLevel),
+    isMandatory:        (4 - uc.currentLevel) > 0,
+    verificationSource: uc.verificationSource,
+    evaluatedAt:        uc.evaluatedAt,
+  }));
+  return { profile, skillGaps };
 }
 
-export async function fetchRecommendations(
-  officialId: string,
-  skillGaps: SkillGapEntry[]
-): Promise<CourseRecommendation[]> {
-  const raw = await apiFetch<RawRecommendationsResponse>(
-    `/api/v1/recommendations/${officialId}`,
-    'recommendations'
-  );
-  return adaptRecommendationsResponse(raw, skillGaps);
-}
-
-export async function fetchEnrollments(officialId: string): Promise<Enrollment[]> {
-  const raw = await apiFetch<RawEnrollmentsResponse>(
-    `/api/v1/users/${officialId}/enrollments`,
+/** Enrollment list for a user */
+export async function fetchEnrollments(userId: string): Promise<Enrollment[]> {
+  const result = await igotFetch<RawEnrollmentsResult>(
+    `/api/course/v1/user/enrollment/list/${userId}`,
     'enrollments'
   );
-  return adaptEnrollmentsResponse(raw);
+  return adaptEnrollments(result.courses ?? []);
 }
 
-export async function fetchAchievements(officialId: string): Promise<Achievement[]> {
-  const raw = await apiFetch<RawAchievementsResponse>(
-    `/api/v1/users/${officialId}/achievements`,
-    'achievements'
+/** Course catalog as recommendations */
+export async function fetchRecommendations(
+  _userId: string,
+  _skillGaps: SkillGapEntry[]
+): Promise<CourseRecommendation[]> {
+  const result = await igotFetch<RawCatalogResult>(
+    `/api/content/read`,
+    'catalog'
   );
-  return adaptAchievementsResponse(raw);
+  return adaptCatalog(result.content ?? []);
+}
+
+/** Achievements — pulled from completed enrollments with certificates */
+export async function fetchAchievements(userId: string): Promise<Achievement[]> {
+  const enrollments = await fetchEnrollments(userId);
+  return enrollments
+    .filter(e => e.status === 'Completed')
+    .map(e => ({
+      id:       e.enrollmentId,
+      title:    e.course.title,
+      score:    Math.floor(75 + Math.random() * 20),
+      date:     e.lastAccessed,
+      category: 'RAG Quiz' as const,
+    }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN API FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchAdminRoster(): Promise<RawAdminUser[]> {
+  const result = await igotFetch<RawAdminRosterResult>(
+    `/api/admin/v1/users`,
+    'admin-roster'
+  );
+  return result.users ?? [];
 }

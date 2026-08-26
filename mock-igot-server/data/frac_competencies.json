@@ -1,0 +1,1842 @@
+[
+  {
+    "id": "comp_nat_accounts_001",
+    "type": "Competency",
+    "name": "National Accounts Framework (SNA 2008)",
+    "description": "Qui doloribus consequuntur.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_nat_accounts_001_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of National Accounts Framework (SNA 2008) concepts and terminology."
+      },
+      {
+        "id": "comp_nat_accounts_001_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies National Accounts Framework (SNA 2008) principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_nat_accounts_001_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes National Accounts Framework (SNA 2008) workflows and interprets outputs."
+      },
+      {
+        "id": "comp_nat_accounts_001_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads National Accounts Framework (SNA 2008) projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_nat_accounts_001_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in National Accounts Framework (SNA 2008); shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_survey_design_002",
+    "type": "Competency",
+    "name": "Survey Design & Sampling Methodology",
+    "description": "Assumenda in adipisci dolor magnam ad dicta.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_survey_design_002_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Survey Design & Sampling Methodology concepts and terminology."
+      },
+      {
+        "id": "comp_survey_design_002_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Survey Design & Sampling Methodology principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_survey_design_002_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Survey Design & Sampling Methodology workflows and interprets outputs."
+      },
+      {
+        "id": "comp_survey_design_002_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Survey Design & Sampling Methodology projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_survey_design_002_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Survey Design & Sampling Methodology; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_price_stats_003",
+    "type": "Competency",
+    "name": "Price Statistics & CPI Construction",
+    "description": "Dolore nihil repellat ab rem praesentium. Eius dolor quis aut fugit facere.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_price_stats_003_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Price Statistics & CPI Construction concepts and terminology."
+      },
+      {
+        "id": "comp_price_stats_003_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Price Statistics & CPI Construction principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_price_stats_003_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Price Statistics & CPI Construction workflows and interprets outputs."
+      },
+      {
+        "id": "comp_price_stats_003_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Price Statistics & CPI Construction projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_price_stats_003_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Price Statistics & CPI Construction; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_index_numbers_004",
+    "type": "Competency",
+    "name": "Index Number Theory & Practice",
+    "description": "Eaque aliquam itaque commodi ullam aspernatur eos occaecati. Neque provident aliquid dolorem enim aspernatur.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_index_numbers_004_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Index Number Theory & Practice concepts and terminology."
+      },
+      {
+        "id": "comp_index_numbers_004_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Index Number Theory & Practice principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_index_numbers_004_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Index Number Theory & Practice workflows and interprets outputs."
+      },
+      {
+        "id": "comp_index_numbers_004_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Index Number Theory & Practice projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_index_numbers_004_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Index Number Theory & Practice; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_ml_stats_005",
+    "type": "Competency",
+    "name": "Machine Learning for Official Statistics",
+    "description": "Fugit iste rerum cum.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_ml_stats_005_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Machine Learning for Official Statistics concepts and terminology."
+      },
+      {
+        "id": "comp_ml_stats_005_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Machine Learning for Official Statistics principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_ml_stats_005_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Machine Learning for Official Statistics workflows and interprets outputs."
+      },
+      {
+        "id": "comp_ml_stats_005_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Machine Learning for Official Statistics projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_ml_stats_005_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Machine Learning for Official Statistics; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_big_data_006",
+    "type": "Competency",
+    "name": "Big Data Integration in NSS Surveys",
+    "description": "Pariatur praesentium placeat architecto odio. Quas cum fugit voluptatibus odit nam placeat.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_big_data_006_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Big Data Integration in NSS Surveys concepts and terminology."
+      },
+      {
+        "id": "comp_big_data_006_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Big Data Integration in NSS Surveys principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_big_data_006_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Big Data Integration in NSS Surveys workflows and interprets outputs."
+      },
+      {
+        "id": "comp_big_data_006_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Big Data Integration in NSS Surveys projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_big_data_006_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Big Data Integration in NSS Surveys; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_econ_census_007",
+    "type": "Competency",
+    "name": "Economic Census Planning & Execution",
+    "description": "Reprehenderit rem illo architecto totam.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_econ_census_007_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Economic Census Planning & Execution concepts and terminology."
+      },
+      {
+        "id": "comp_econ_census_007_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Economic Census Planning & Execution principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_econ_census_007_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Economic Census Planning & Execution workflows and interprets outputs."
+      },
+      {
+        "id": "comp_econ_census_007_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Economic Census Planning & Execution projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_econ_census_007_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Economic Census Planning & Execution; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_dem_analysis_008",
+    "type": "Competency",
+    "name": "Demographic Analysis & Population Estimation",
+    "description": "Distinctio libero suscipit odit corporis consequuntur. Molestiae quia incidunt nesciunt facere voluptatum consequuntur.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_dem_analysis_008_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Demographic Analysis & Population Estimation concepts and terminology."
+      },
+      {
+        "id": "comp_dem_analysis_008_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Demographic Analysis & Population Estimation principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_dem_analysis_008_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Demographic Analysis & Population Estimation workflows and interprets outputs."
+      },
+      {
+        "id": "comp_dem_analysis_008_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Demographic Analysis & Population Estimation projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_dem_analysis_008_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Demographic Analysis & Population Estimation; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_agri_stats_009",
+    "type": "Competency",
+    "name": "Agricultural Statistics & Crop Forecasting",
+    "description": "Quidem similique corrupti cum. Nisi harum nisi iusto dolorum mollitia.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_agri_stats_009_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Agricultural Statistics & Crop Forecasting concepts and terminology."
+      },
+      {
+        "id": "comp_agri_stats_009_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Agricultural Statistics & Crop Forecasting principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_agri_stats_009_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Agricultural Statistics & Crop Forecasting workflows and interprets outputs."
+      },
+      {
+        "id": "comp_agri_stats_009_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Agricultural Statistics & Crop Forecasting projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_agri_stats_009_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Agricultural Statistics & Crop Forecasting; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_industry_stats_010",
+    "type": "Competency",
+    "name": "Industrial Statistics & ASI Methodology",
+    "description": "Placeat modi eaque odit.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_industry_stats_010_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Industrial Statistics & ASI Methodology concepts and terminology."
+      },
+      {
+        "id": "comp_industry_stats_010_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Industrial Statistics & ASI Methodology principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_industry_stats_010_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Industrial Statistics & ASI Methodology workflows and interprets outputs."
+      },
+      {
+        "id": "comp_industry_stats_010_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Industrial Statistics & ASI Methodology projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_industry_stats_010_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Industrial Statistics & ASI Methodology; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_gdp_nowcast_011",
+    "type": "Competency",
+    "name": "GDP Nowcasting Techniques",
+    "description": "Ipsa iste veritatis soluta ea.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_gdp_nowcast_011_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of GDP Nowcasting Techniques concepts and terminology."
+      },
+      {
+        "id": "comp_gdp_nowcast_011_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies GDP Nowcasting Techniques principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_gdp_nowcast_011_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes GDP Nowcasting Techniques workflows and interprets outputs."
+      },
+      {
+        "id": "comp_gdp_nowcast_011_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads GDP Nowcasting Techniques projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_gdp_nowcast_011_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in GDP Nowcasting Techniques; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_spatial_stat_012",
+    "type": "Competency",
+    "name": "Spatial Statistics & GIS for Surveys",
+    "description": "Magni autem numquam sapiente. Non corrupti quis molestiae quod minus a.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_spatial_stat_012_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Spatial Statistics & GIS for Surveys concepts and terminology."
+      },
+      {
+        "id": "comp_spatial_stat_012_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Spatial Statistics & GIS for Surveys principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_spatial_stat_012_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Spatial Statistics & GIS for Surveys workflows and interprets outputs."
+      },
+      {
+        "id": "comp_spatial_stat_012_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Spatial Statistics & GIS for Surveys projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_spatial_stat_012_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Spatial Statistics & GIS for Surveys; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_time_series_013",
+    "type": "Competency",
+    "name": "Time Series Analysis & Seasonal Adjustment",
+    "description": "Accusantium ut soluta rerum esse animi soluta. Assumenda laborum architecto quis.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_time_series_013_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Time Series Analysis & Seasonal Adjustment concepts and terminology."
+      },
+      {
+        "id": "comp_time_series_013_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Time Series Analysis & Seasonal Adjustment principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_time_series_013_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Time Series Analysis & Seasonal Adjustment workflows and interprets outputs."
+      },
+      {
+        "id": "comp_time_series_013_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Time Series Analysis & Seasonal Adjustment projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_time_series_013_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Time Series Analysis & Seasonal Adjustment; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_poverty_014",
+    "type": "Competency",
+    "name": "Poverty Measurement & Welfare Indicators",
+    "description": "Optio veniam cumque minus.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_poverty_014_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of Poverty Measurement & Welfare Indicators concepts and terminology."
+      },
+      {
+        "id": "comp_poverty_014_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Poverty Measurement & Welfare Indicators principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_poverty_014_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes Poverty Measurement & Welfare Indicators workflows and interprets outputs."
+      },
+      {
+        "id": "comp_poverty_014_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads Poverty Measurement & Welfare Indicators projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_poverty_014_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in Poverty Measurement & Welfare Indicators; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_sdg_monitor_015",
+    "type": "Competency",
+    "name": "SDG Monitoring & Voluntary National Review",
+    "description": "Vitae ut quidem porro quae id. Ipsa maxime commodi dolore excepturi nihil.",
+    "competencyType": "Domain",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_sdg_monitor_015_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates foundational awareness of SDG Monitoring & Voluntary National Review concepts and terminology."
+      },
+      {
+        "id": "comp_sdg_monitor_015_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies SDG Monitoring & Voluntary National Review principles under supervision in routine statistical tasks."
+      },
+      {
+        "id": "comp_sdg_monitor_015_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Independently executes SDG Monitoring & Voluntary National Review workflows and interprets outputs."
+      },
+      {
+        "id": "comp_sdg_monitor_015_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Leads SDG Monitoring & Voluntary National Review projects; mentors junior officers and reviews methodology."
+      },
+      {
+        "id": "comp_sdg_monitor_015_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Recognized expert in SDG Monitoring & Voluntary National Review; shapes national policy and research agenda."
+      }
+    ]
+  },
+  {
+    "id": "comp_data_gov_016",
+    "type": "Competency",
+    "name": "Data Governance & Quality Assurance",
+    "description": "Dolore architecto occaecati dolorem temporibus similique architecto dolores.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_data_gov_016_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Data Governance & Quality Assurance tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_data_gov_016_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Data Governance & Quality Assurance tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_data_gov_016_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Data Governance & Quality Assurance; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_data_gov_016_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Data Governance & Quality Assurance processes."
+      },
+      {
+        "id": "comp_data_gov_016_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Data Governance & Quality Assurance."
+      }
+    ]
+  },
+  {
+    "id": "comp_python_stats_017",
+    "type": "Competency",
+    "name": "Python for Statistical Computing",
+    "description": "Molestiae quam sunt nemo doloribus. Rem deleniti atque inventore incidunt iure quas.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_python_stats_017_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Python for Statistical Computing tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_python_stats_017_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Python for Statistical Computing tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_python_stats_017_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Python for Statistical Computing; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_python_stats_017_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Python for Statistical Computing processes."
+      },
+      {
+        "id": "comp_python_stats_017_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Python for Statistical Computing."
+      }
+    ]
+  },
+  {
+    "id": "comp_r_analytics_018",
+    "type": "Competency",
+    "name": "R for Advanced Analytics",
+    "description": "Illo excepturi similique dolorum.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_r_analytics_018_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of R for Advanced Analytics tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_r_analytics_018_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates R for Advanced Analytics tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_r_analytics_018_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in R for Advanced Analytics; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_r_analytics_018_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves R for Advanced Analytics processes."
+      },
+      {
+        "id": "comp_r_analytics_018_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for R for Advanced Analytics."
+      }
+    ]
+  },
+  {
+    "id": "comp_data_viz_019",
+    "type": "Competency",
+    "name": "Data Visualization & Dashboard Design",
+    "description": "Ipsum in eius dolorum unde ipsam similique.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_data_viz_019_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Data Visualization & Dashboard Design tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_data_viz_019_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Data Visualization & Dashboard Design tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_data_viz_019_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Data Visualization & Dashboard Design; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_data_viz_019_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Data Visualization & Dashboard Design processes."
+      },
+      {
+        "id": "comp_data_viz_019_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Data Visualization & Dashboard Design."
+      }
+    ]
+  },
+  {
+    "id": "comp_report_writing_020",
+    "type": "Competency",
+    "name": "Report Writing for Statistical Publications",
+    "description": "Amet voluptatum saepe voluptas. Cumque laborum distinctio id animi.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_report_writing_020_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Report Writing for Statistical Publications tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_report_writing_020_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Report Writing for Statistical Publications tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_report_writing_020_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Report Writing for Statistical Publications; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_report_writing_020_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Report Writing for Statistical Publications processes."
+      },
+      {
+        "id": "comp_report_writing_020_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Report Writing for Statistical Publications."
+      }
+    ]
+  },
+  {
+    "id": "comp_procurement_021",
+    "type": "Competency",
+    "name": "Government Procurement & GFR Compliance",
+    "description": "Voluptates eaque quos. Eligendi possimus quas quos optio laborum deleniti.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_procurement_021_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Government Procurement & GFR Compliance tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_procurement_021_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Government Procurement & GFR Compliance tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_procurement_021_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Government Procurement & GFR Compliance; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_procurement_021_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Government Procurement & GFR Compliance processes."
+      },
+      {
+        "id": "comp_procurement_021_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Government Procurement & GFR Compliance."
+      }
+    ]
+  },
+  {
+    "id": "comp_rtt_022",
+    "type": "Competency",
+    "name": "Right to Information & Transparency",
+    "description": "Neque molestiae quibusdam animi.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_rtt_022_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Right to Information & Transparency tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_rtt_022_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Right to Information & Transparency tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_rtt_022_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Right to Information & Transparency; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_rtt_022_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Right to Information & Transparency processes."
+      },
+      {
+        "id": "comp_rtt_022_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Right to Information & Transparency."
+      }
+    ]
+  },
+  {
+    "id": "comp_e_gov_023",
+    "type": "Competency",
+    "name": "e-Governance Platforms & Digital Services",
+    "description": "Magnam sequi culpa vero aspernatur delectus nisi. Illo velit necessitatibus neque aliquam.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_e_gov_023_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of e-Governance Platforms & Digital Services tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_e_gov_023_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates e-Governance Platforms & Digital Services tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_e_gov_023_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in e-Governance Platforms & Digital Services; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_e_gov_023_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves e-Governance Platforms & Digital Services processes."
+      },
+      {
+        "id": "comp_e_gov_023_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for e-Governance Platforms & Digital Services."
+      }
+    ]
+  },
+  {
+    "id": "comp_project_mgmt_024",
+    "type": "Competency",
+    "name": "Project Management in Government Context",
+    "description": "Omnis natus et ea pariatur et.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_project_mgmt_024_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Project Management in Government Context tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_project_mgmt_024_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Project Management in Government Context tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_project_mgmt_024_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Project Management in Government Context; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_project_mgmt_024_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Project Management in Government Context processes."
+      },
+      {
+        "id": "comp_project_mgmt_024_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Project Management in Government Context."
+      }
+    ]
+  },
+  {
+    "id": "comp_public_fin_025",
+    "type": "Competency",
+    "name": "Public Financial Management & Budget Analysis",
+    "description": "Consectetur officia itaque ut vel ab.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_public_fin_025_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Public Financial Management & Budget Analysis tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_public_fin_025_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Public Financial Management & Budget Analysis tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_public_fin_025_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Public Financial Management & Budget Analysis; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_public_fin_025_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Public Financial Management & Budget Analysis processes."
+      },
+      {
+        "id": "comp_public_fin_025_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Public Financial Management & Budget Analysis."
+      }
+    ]
+  },
+  {
+    "id": "comp_data_privacy_026",
+    "type": "Competency",
+    "name": "Data Privacy, Security & IT Act Compliance",
+    "description": "Voluptatum asperiores distinctio eaque ut sunt sunt. Eligendi ipsa molestiae esse voluptates rem.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_data_privacy_026_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Data Privacy, Security & IT Act Compliance tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_data_privacy_026_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Data Privacy, Security & IT Act Compliance tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_data_privacy_026_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Data Privacy, Security & IT Act Compliance; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_data_privacy_026_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Data Privacy, Security & IT Act Compliance processes."
+      },
+      {
+        "id": "comp_data_privacy_026_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Data Privacy, Security & IT Act Compliance."
+      }
+    ]
+  },
+  {
+    "id": "comp_cloud_infra_027",
+    "type": "Competency",
+    "name": "Cloud Infrastructure for Statistical Systems",
+    "description": "Pariatur mollitia ut. Vel consequatur blanditiis autem.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_cloud_infra_027_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Cloud Infrastructure for Statistical Systems tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_cloud_infra_027_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Cloud Infrastructure for Statistical Systems tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_cloud_infra_027_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Cloud Infrastructure for Statistical Systems; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_cloud_infra_027_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Cloud Infrastructure for Statistical Systems processes."
+      },
+      {
+        "id": "comp_cloud_infra_027_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Cloud Infrastructure for Statistical Systems."
+      }
+    ]
+  },
+  {
+    "id": "comp_api_int_028",
+    "type": "Competency",
+    "name": "API Integration & Interoperability Standards",
+    "description": "Earum non quaerat dignissimos. Magnam dolorum tenetur amet odio.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_api_int_028_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of API Integration & Interoperability Standards tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_api_int_028_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates API Integration & Interoperability Standards tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_api_int_028_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in API Integration & Interoperability Standards; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_api_int_028_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves API Integration & Interoperability Standards processes."
+      },
+      {
+        "id": "comp_api_int_028_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for API Integration & Interoperability Standards."
+      }
+    ]
+  },
+  {
+    "id": "comp_db_design_029",
+    "type": "Competency",
+    "name": "Database Design & SQL for Statistical Databases",
+    "description": "A quo odio.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_db_design_029_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Database Design & SQL for Statistical Databases tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_db_design_029_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Database Design & SQL for Statistical Databases tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_db_design_029_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Database Design & SQL for Statistical Databases; handles complex scenarios independently."
+      },
+      {
+        "id": "comp_db_design_029_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Database Design & SQL for Statistical Databases processes."
+      },
+      {
+        "id": "comp_db_design_029_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Database Design & SQL for Statistical Databases."
+      }
+    ]
+  },
+  {
+    "id": "comp_statistical_sw_030",
+    "type": "Competency",
+    "name": "Statistical Software Proficiency (SPSS / SAS)",
+    "description": "Qui mollitia incidunt ab.",
+    "competencyType": "Functional",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_statistical_sw_030_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Aware of Statistical Software Proficiency (SPSS / SAS) tools and processes; requires significant guidance."
+      },
+      {
+        "id": "comp_statistical_sw_030_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Operates Statistical Software Proficiency (SPSS / SAS) tools for standard tasks with occasional support."
+      },
+      {
+        "id": "comp_statistical_sw_030_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Proficient in Statistical Software Proficiency (SPSS / SAS); handles complex scenarios independently."
+      },
+      {
+        "id": "comp_statistical_sw_030_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Advanced practitioner; trains peers and improves Statistical Software Proficiency (SPSS / SAS) processes."
+      },
+      {
+        "id": "comp_statistical_sw_030_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Subject matter expert; defines organizational standards for Statistical Software Proficiency (SPSS / SAS)."
+      }
+    ]
+  },
+  {
+    "id": "comp_strategic_031",
+    "type": "Competency",
+    "name": "Strategic Thinking",
+    "description": "Molestias rerum nesciunt corporis.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_strategic_031_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Strategic Thinking in day-to-day interactions."
+      },
+      {
+        "id": "comp_strategic_031_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Strategic Thinking skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_strategic_031_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Strategic Thinking across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_strategic_031_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Strategic Thinking; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_strategic_031_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Strategic Thinking; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_leadership_032",
+    "type": "Competency",
+    "name": "Leadership & Team Management",
+    "description": "Est tempore recusandae.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_leadership_032_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Leadership & Team Management in day-to-day interactions."
+      },
+      {
+        "id": "comp_leadership_032_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Leadership & Team Management skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_leadership_032_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Leadership & Team Management across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_leadership_032_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Leadership & Team Management; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_leadership_032_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Leadership & Team Management; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_comm_032",
+    "type": "Competency",
+    "name": "Effective Communication & Stakeholder Engagement",
+    "description": "Distinctio dolorum aut quod sunt illo.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_comm_032_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Effective Communication & Stakeholder Engagement in day-to-day interactions."
+      },
+      {
+        "id": "comp_comm_032_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Effective Communication & Stakeholder Engagement skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_comm_032_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Effective Communication & Stakeholder Engagement across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_comm_032_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Effective Communication & Stakeholder Engagement; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_comm_032_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Effective Communication & Stakeholder Engagement; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_prob_solve_033",
+    "type": "Competency",
+    "name": "Problem Solving & Critical Analysis",
+    "description": "Unde dolores cum reiciendis. Sunt ad qui ex.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_prob_solve_033_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Problem Solving & Critical Analysis in day-to-day interactions."
+      },
+      {
+        "id": "comp_prob_solve_033_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Problem Solving & Critical Analysis skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_prob_solve_033_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Problem Solving & Critical Analysis across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_prob_solve_033_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Problem Solving & Critical Analysis; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_prob_solve_033_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Problem Solving & Critical Analysis; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_integrity_034",
+    "type": "Competency",
+    "name": "Integrity, Ethics & Public Service Values",
+    "description": "Eaque ratione autem sit similique. Dicta ullam expedita reprehenderit sit.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_integrity_034_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Integrity, Ethics & Public Service Values in day-to-day interactions."
+      },
+      {
+        "id": "comp_integrity_034_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Integrity, Ethics & Public Service Values skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_integrity_034_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Integrity, Ethics & Public Service Values across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_integrity_034_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Integrity, Ethics & Public Service Values; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_integrity_034_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Integrity, Ethics & Public Service Values; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_change_mgmt_035",
+    "type": "Competency",
+    "name": "Change Management & Adaptability",
+    "description": "Optio id eius.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_change_mgmt_035_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Change Management & Adaptability in day-to-day interactions."
+      },
+      {
+        "id": "comp_change_mgmt_035_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Change Management & Adaptability skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_change_mgmt_035_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Change Management & Adaptability across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_change_mgmt_035_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Change Management & Adaptability; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_change_mgmt_035_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Change Management & Adaptability; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_collab_036",
+    "type": "Competency",
+    "name": "Collaboration & Interpersonal Effectiveness",
+    "description": "Expedita magni perspiciatis sapiente ex.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_collab_036_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Collaboration & Interpersonal Effectiveness in day-to-day interactions."
+      },
+      {
+        "id": "comp_collab_036_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Collaboration & Interpersonal Effectiveness skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_collab_036_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Collaboration & Interpersonal Effectiveness across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_collab_036_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Collaboration & Interpersonal Effectiveness; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_collab_036_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Collaboration & Interpersonal Effectiveness; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_decision_037",
+    "type": "Competency",
+    "name": "Decision Making Under Uncertainty",
+    "description": "Soluta ea neque voluptates.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_decision_037_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Decision Making Under Uncertainty in day-to-day interactions."
+      },
+      {
+        "id": "comp_decision_037_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Decision Making Under Uncertainty skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_decision_037_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Decision Making Under Uncertainty across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_decision_037_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Decision Making Under Uncertainty; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_decision_037_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Decision Making Under Uncertainty; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_innov_038",
+    "type": "Competency",
+    "name": "Innovation & Creative Problem Solving",
+    "description": "Nisi exercitationem ratione ipsa.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_innov_038_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Innovation & Creative Problem Solving in day-to-day interactions."
+      },
+      {
+        "id": "comp_innov_038_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Innovation & Creative Problem Solving skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_innov_038_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Innovation & Creative Problem Solving across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_innov_038_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Innovation & Creative Problem Solving; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_innov_038_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Innovation & Creative Problem Solving; influences culture and organizational strategy."
+      }
+    ]
+  },
+  {
+    "id": "comp_citizen_039",
+    "type": "Competency",
+    "name": "Citizen-Centric Service Delivery",
+    "description": "Harum nemo ducimus provident. Maxime rem porro.",
+    "competencyType": "Behavioural",
+    "source": "FRAC_Dictionary_v1",
+    "status": "Live",
+    "children": [
+      {
+        "id": "comp_citizen_039_lvl_1",
+        "type": "CompetencyLevel",
+        "name": "Level 1",
+        "level": 1,
+        "description": "Demonstrates basic awareness of Citizen-Centric Service Delivery in day-to-day interactions."
+      },
+      {
+        "id": "comp_citizen_039_lvl_2",
+        "type": "CompetencyLevel",
+        "name": "Level 2",
+        "level": 2,
+        "description": "Applies Citizen-Centric Service Delivery skills in familiar, structured situations."
+      },
+      {
+        "id": "comp_citizen_039_lvl_3",
+        "type": "CompetencyLevel",
+        "name": "Level 3",
+        "level": 3,
+        "description": "Consistently demonstrates Citizen-Centric Service Delivery across varied and ambiguous situations."
+      },
+      {
+        "id": "comp_citizen_039_lvl_4",
+        "type": "CompetencyLevel",
+        "name": "Level 4",
+        "level": 4,
+        "description": "Role-models Citizen-Centric Service Delivery; actively coaches others to develop this capability."
+      },
+      {
+        "id": "comp_citizen_039_lvl_5",
+        "type": "CompetencyLevel",
+        "name": "Level 5",
+        "level": 5,
+        "description": "Institutionalizes Citizen-Centric Service Delivery; influences culture and organizational strategy."
+      }
+    ]
+  }
+]
