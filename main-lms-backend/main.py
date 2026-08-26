@@ -5,6 +5,7 @@ from models.domain import (
     SkillGapResponse, RecommendationResponse,
     EnrollmentsResponse, AchievementsResponse
 )
+from routers.chatbot import router as chatbot_router
 import uvicorn
 
 app = FastAPI(title="MoSPI LMS Backend API", description="Main Orchestrator Server")
@@ -16,6 +17,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Register routers ──────────────────────────────────────────────────────────
+app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
 
 adapter = MockIgotAdapter()
 

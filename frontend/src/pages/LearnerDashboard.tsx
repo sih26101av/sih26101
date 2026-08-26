@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FILE: src/pages/LearnerDashboard.tsx
  */
 
@@ -17,8 +17,9 @@ import CourseCard from "../components/dashboard/CourseCard";
 import AssessmentUploadZone from "../components/dashboard/AssessmentUploadZone";
 import MyCoursesView from "../components/dashboard/MyCoursesView";
 import ProgressView from "../components/dashboard/ProgressView";
+import ChatWidget from "../components/dashboard/ChatWidget";
 
-// ─── Loading Skeleton ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Loading Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LoadingSkeleton: React.FC = () => (
   <div className="animate-pulse space-y-5 p-6">
     <div className="h-28 bg-white/60 rounded-2xl shadow-sm" />
@@ -32,7 +33,7 @@ const LoadingSkeleton: React.FC = () => (
   </div>
 );
 
-// ─── Error State ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Error State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ErrorState: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6">
     <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shadow-sm">
@@ -49,7 +50,7 @@ const ErrorState: React.FC<{ message: string; onRetry: () => void }> = ({ messag
   </div>
 );
 
-// ─── Learning Snapshot ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Learning Snapshot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const StatsSummary: React.FC<{
   totalCompetencies: number;
   activeGaps: number;
@@ -112,7 +113,7 @@ const StatsSummary: React.FC<{
   );
 };
 
-// ─── Topbar ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type TabType = "dashboard" | "my-courses" | "progress";
 
 const Topbar: React.FC<{
@@ -192,11 +193,11 @@ const Topbar: React.FC<{
   );
 };
 
-// ─── Main Dashboard ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
   const { user: authUser } = useAuth();
 
-  // Priority: AuthContext user (set by LoginPage) → prop → first user in users.json
+  // Priority: AuthContext user (set by LoginPage) â†’ prop â†’ first user in users.json
   const userId = authUser?.userId ?? officialId ?? 'usr_720465595';
 
   const { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error } =
@@ -287,7 +288,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                     ))}
                     {sortedRecs.length === 0 && (
                       <p className="col-span-4 text-center text-slate-400 dark:text-slate-500 text-sm py-8">
-                        No recommendations available — all competencies are met!
+                        No recommendations available â€” all competencies are met!
                       </p>
                     )}
                   </div>
