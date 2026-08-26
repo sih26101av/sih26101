@@ -4,3 +4,7 @@ httpx
 pydantic
 google-generativeai
 python-dotenv
+sqlalchemy
+python-jose[cryptography]
+bcrypt
+python-multipart

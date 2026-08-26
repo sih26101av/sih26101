@@ -6,9 +6,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, ChevronDown, CheckCircle, Flame, TrendingUp, Search, Filter, SlidersHorizontal, 
-  User, AlertTriangle, Sun, Moon, RefreshCcw, Home
+  User, AlertTriangle, Sun, Moon, RefreshCcw, Home, LogOut, KeyRound
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../context/AuthContext';
 import { useAdminData } from '../hooks/useAdminData';
 import type { AdminRosterRow } from '../hooks/useAdminData';
 
@@ -106,8 +107,14 @@ const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
 const AdminDashboard: React.FC = () => {
   const { theme, toggleTheme }                = useTheme();
   const navigate                              = useNavigate();
+  const { logout }                            = useAuth();
   const { roster, kpis, heatmap, isLoading, error, refetch } = useAdminData();
   const [searchTerm, setSearchTerm]           = useState('');
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
 
   const filteredRoster = useMemo(
     () =>
@@ -173,14 +180,20 @@ const AdminDashboard: React.FC = () => {
           <button className="p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
             <Bell className="w-5 h-5" />
           </button>
-          <div className="flex items-center space-x-2 cursor-pointer pl-3 ml-1 border-l border-slate-200 dark:border-slate-700">
-            <img 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-              alt="Admin avatar" 
-              className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700"
-            />
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          </div>
+          <button
+            onClick={() => navigate("/change-password")}
+            className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Change Password"
+          >
+            <KeyRound className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
+
         </div>
       </nav>
 

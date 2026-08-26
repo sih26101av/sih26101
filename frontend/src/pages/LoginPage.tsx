@@ -1,98 +1,78 @@
 /**
  * FILE: src/pages/LoginPage.tsx
  *
- * Gateway page — uses DashboardFactory to resolve the route.
- * Sets AuthContext so every downstream dashboard knows which user is active.
+ * Gateway page — calls My App Backend /auth/login (real JWT auth).
+ * Uses DashboardFactory to resolve the post-login route.
  *
- * MOCK CREDENTIALS map email → real userId from users.json
- * (usr_720465595 = Gabriel Manda; add more users here as needed)
+ * Credentials: username = usr_XXXXXXXXX (iGOT userId) or "admin"
+ * Default passwords: lowercase(firstName) + last 2 digits of userId
+ * e.g. Gabriel / usr_720465595 → gabriel95
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DashboardFactory } from '../patterns/DashboardFactory';
-import type { UserRole } from '../patterns/DashboardFactory';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Hash, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
-// ─── Mock credential store ────────────────────────────────────────────────────
-// Maps login email → real userId from mock server's users.json
-interface Creds {
-  password:  string;
-  role:      UserRole;
-  userId:    string;   // must match userId in users.json
-  govId:     string;
-  fullName:  string;
-}
-
-const MOCK_CREDENTIALS: Record<string, Creds> = {
-  'official@mospi.gov.in': {
-    password: 'official123',
-    role:     'official',
-    userId:   'usr_720465595',   // Gabriel Manda — Under Secretary
-    govId:    'EMP-6282',
-    fullName: 'Gabriel Manda',
-  },
-  'admin@mospi.gov.in': {
-    password: 'admin123',
-    role:     'admin',
-    userId:   'usr_admin_001',
-    govId:    'ADMIN-001',
-    fullName: 'MoSPI Admin',
-  },
-  'megha@mospi.gov.in': {
-    password: 'official123',
-    role:     'official',
-    userId:   'usr_200142973',   // Megha Balasubramanian — Deputy Director
-    govId:    'EMP-4633',
-    fullName: 'Megha Balasubramanian',
-  },
-};
-
 const LoginPage: React.FC = () => {
-  const navigate          = useNavigate();
-  const { setUser }       = useAuth();
-  const [email, setEmail]       = useState('');
+  const navigate         = useNavigate();
+  const location         = useLocation();
+  const { login }        = useAuth();
+
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Where to go after login if redirected from a protected route
+  const from = (location.state as any)?.from?.pathname ?? null;
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      const creds = MOCK_CREDENTIALS[email.toLowerCase()];
-      if (!creds || creds.password !== password) {
-        setError('Invalid email or password. Please try again.');
-        setLoading(false);
-        return;
+    try {
+      // login() calls /auth/login on port 8000 and updates AuthContext
+      await login(username.trim(), password);
+
+      // AuthContext now holds the user + mustChangePassword flag.
+      // ChangePasswordPage or ProtectedRoute will handle the force-redirect;
+      // we just need to navigate to the intended destination or dashboard.
+      // Re-read the updated context is tricky synchronously, so we rely on
+      // ProtectedRoute to redirect to /change-password if needed.
+      // For normal flow, use the 'from' state or DashboardFactory.
+      //
+      // We call getMe in AuthContext.login, so 'role' is available after await.
+      // Access the user from context via a small re-read trick:
+      //   We navigate speculatively; ProtectedRoute will intercept if needed.
+      if (from && from !== '/login' && from !== '/change-password') {
+        navigate(from, { replace: true });
+      } else {
+        // Let ProtectedRoute figure out where to send based on role.
+        // Navigate to a neutral protected route; it will redirect correctly.
+        navigate('/dashboard-redirect', { replace: true });
       }
-
-      // ── 1. Write to AuthContext so dashboards know who is logged in ────────
-      setUser({
-        userId:   creds.userId,
-        govId:    creds.govId,
-        fullName: creds.fullName,
-        role:     creds.role,
-      });
-
-      // ── 2. Factory resolves the correct dashboard route ────────────────────
-      const destinationPath = DashboardFactory.getNavigationPath(creds.role, creds.userId);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Login failed. Please check your credentials.'
+      );
+    } finally {
       setLoading(false);
-      navigate(destinationPath, { replace: true });
-    }, 800);
+    }
   };
 
-  const fillCredentials = (preset: 'official' | 'admin' | 'megha') => {
+  // Quick-fill helpers for the demo (SIH presentation convenience)
+  const fillCredentials = (preset: 'gabriel' | 'admin' | 'priya') => {
     const map = {
-      official: { email: 'official@mospi.gov.in', pass: 'official123' },
-      admin:    { email: 'admin@mospi.gov.in',    pass: 'admin123' },
-      megha:    { email: 'megha@mospi.gov.in',    pass: 'official123' },
+      gabriel: { username: 'usr_720465595', pass: 'gabriel95' },
+      admin:   { username: 'admin',         pass: 'admin123'  },
+      priya:   { username: 'usr_EMP8472',   pass: 'priya72'   },
     };
-    setEmail(map[preset].email);
+    setUsername(map[preset].username);
     setPassword(map[preset].pass);
     setError('');
   };
@@ -132,37 +112,47 @@ const LoginPage: React.FC = () => {
 
           {/* Quick-fill buttons */}
           <div className="flex gap-2 mb-6">
-            <button onClick={() => fillCredentials('official')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
+            <button
+              onClick={() => fillCredentials('gabriel')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
+            >
               Gabriel (Official)
             </button>
-            <button onClick={() => fillCredentials('megha')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
-              Megha (Official)
+            <button
+              onClick={() => fillCredentials('priya')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
+            >
+              Priya (Official)
             </button>
-            <button onClick={() => fillCredentials('admin')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
+            <button
+              onClick={() => fillCredentials('admin')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
+            >
               Admin
             </button>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email */}
+            {/* Username */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Email</label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                Username
+              </label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 required
-                placeholder="official@mospi.gov.in"
+                placeholder="usr_720465595 or admin"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Password</label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -172,8 +162,12 @@ const LoginPage: React.FC = () => {
                   placeholder="••••••••"
                   className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all pr-10"
                 />
-                <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" tabIndex={-1}>
+                <button
+                  type="button"
+                  onClick={() => setShowPass(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  tabIndex={-1}
+                >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -206,7 +200,7 @@ const LoginPage: React.FC = () => {
 
           <div className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-400">
             <Hash className="w-3 h-3" />
-            Role-based routing powered by DashboardFactory pattern
+            JWT auth via MoSPI LMS Backend · Role-based routing via DashboardFactory
           </div>
         </div>
 

@@ -1,26 +1,41 @@
 /**
  * FILE: src/App.tsx
  *
- * Root router. AuthProvider wraps everything so any component can read
- * the logged-in user via useAuth(). Dashboard routes pull userId from
- * AuthContext — no hardcoded IDs anywhere.
+ * Root router.
  *
- * DEFAULT USER for Learner Dashboard (until real login is wired):
- *   usr_720465595 — Gabriel Manda, Under Secretary, Survey Coordination Division
+ * Auth flow:
+ *  - AuthProvider manages JWT access token (in state) + refresh cookie (httpOnly).
+ *  - On mount it silently attempts /auth/refresh to restore session.
+ *  - ProtectedRoute guards all private routes — redirects to /login if not
+ *    authenticated, /change-password if must_change_password=true.
+ *
+ * Route                Role guard      Notes
+ * ─────────────────── ─────────────── ──────────────────────────────────
+ * /                   none            Landing page (public)
+ * /login              none            Login page (public)
+ * /change-password    authenticated   Forced first-login + accessible anytime
+ * /dashboard/:id      authenticated   Learner / Official role
+ * /admin              authenticated   admin role only
+ * /trainer            authenticated   Learner-equivalent for now
+ * /dashboard-redirect authenticated   Role-aware post-login redirect helper
  */
 
-import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { setApiToken, registerLogoutCallback } from './services/api';
+import { DashboardFactory } from './patterns/DashboardFactory';
 import LandingPage from './pages/LandingPage';
 import LoginPage   from './pages/LoginPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// ─── Lazy-loaded dashboards ───────────────────────────────────────────────────
+// ─── Lazy-loaded dashboards ────────────────────────────────────────────────────
 const LearnerDashboard = React.lazy(() => import('./pages/LearnerDashboard'));
 const AdminDashboard   = React.lazy(() => import('./pages/AdminDashboard'));
 
-// ─── Loading fallback ─────────────────────────────────────────────────────────
+// ─── Loading fallback ──────────────────────────────────────────────────────────
 const PageLoader: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-slate-900">
     <div className="flex flex-col items-center gap-4">
@@ -30,36 +45,106 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
-// ─── Default user (first real user from mock server) ─────────────────────────
-// Switch this to the logged-in user's ID once LoginPage sets AuthContext.
-const DEFAULT_LEARNER_ID = 'usr_720465595';
+// ─── Token bridge: syncs AuthContext → api.ts module-level store ──────────────
+// This component sits inside AuthProvider so it can read the context.
+const TokenBridge: React.FC = () => {
+  const { accessToken, logout } = useAuth();
 
+  useEffect(() => {
+    // Push token into the api module whenever it changes
+    setApiToken(accessToken);
+  }, [accessToken]);
+
+  useEffect(() => {
+    // Register logout so the 401-interceptor in api.ts can call it
+    registerLogoutCallback(() => {
+      logout();
+    });
+  }, [logout]);
+
+  return null;
+};
+
+// ─── Post-login role-aware redirect ───────────────────────────────────────────
+// /dashboard-redirect is a tiny protected route that reads the user's role
+// from AuthContext and delegates to DashboardFactory.
+const DashboardRedirect: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      const dest = DashboardFactory.getNavigationPath(user.role, user.username);
+      navigate(dest, { replace: true });
+    }
+  }, [user, navigate]);
+
+  return <PageLoader />;
+};
+
+// ─── App ───────────────────────────────────────────────────────────────────────
 const App: React.FC = () => (
   <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
+        <TokenBridge />
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Public */}
+            {/* ── Public ──────────────────────────────────────────────────── */}
             <Route path="/"      element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
 
-            {/* Learner Dashboard — uses AuthContext user, falls back to default */}
+            {/* ── Post-login role redirect ────────────────────────────────── */}
+            <Route
+              path="/dashboard-redirect"
+              element={
+                <ProtectedRoute>
+                  <DashboardRedirect />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ── Change password (authenticated, any role) ───────────────── */}
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePasswordPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ── Learner Dashboard ────────────────────────────────────────── */}
             <Route
               path="/dashboard/:officialId"
-              element={<LearnerDashboard officialId={DEFAULT_LEARNER_ID} />}
+              element={
+                <ProtectedRoute requiredRole="official">
+                  <LearnerDashboard />
+                </ProtectedRoute>
+              }
             />
 
-            {/* Admin Dashboard — no userId needed, fetches all users */}
-            <Route path="/admin" element={<AdminDashboard />} />
+            {/* ── Admin Dashboard ──────────────────────────────────────────── */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Trainer — maps to Learner for now */}
+            {/* ── Trainer (maps to Learner for now) ───────────────────────── */}
             <Route
               path="/trainer"
-              element={<LearnerDashboard officialId={DEFAULT_LEARNER_ID} />}
+              element={
+                <ProtectedRoute>
+                  <LearnerDashboard />
+                </ProtectedRoute>
+              }
             />
 
-            {/* Catch-all */}
+            {/* ── Catch-all ────────────────────────────────────────────────── */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

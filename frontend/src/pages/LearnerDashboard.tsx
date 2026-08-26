@@ -185,20 +185,44 @@ const Topbar: React.FC<{
         >
           {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
-        <button className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-          <LogOut size={13} /> Sign Out
+        <button
+          onClick={() => navigate("/change-password")}
+          className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          title="Change Password"
+        >
+          <Lock size={15} />
         </button>
+        <TopbarSignOut />
       </div>
     </nav>
   );
 };
 
-// â”€â”€â”€ Main Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Sign Out button reads its own auth context instance
+const TopbarSignOut: React.FC = () => {
+  const { logout } = useAuth();
+  const navigate   = useNavigate();
+  const handleSignOut = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+  return (
+    <button
+      onClick={handleSignOut}
+      className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+    >
+      <LogOut size={13} /> Sign Out
+    </button>
+  );
+};
+
+// ——— Main Dashboard ————————————————————————————————————————————————————————————————————————
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
   const { user: authUser } = useAuth();
 
-  // Priority: AuthContext user (set by LoginPage) â†’ prop â†’ first user in users.json
-  const userId = authUser?.userId ?? officialId ?? 'usr_720465595';
+  // Priority: AuthContext user → prop → first real user from mock server
+  const userId = authUser?.username ?? officialId ?? 'usr_720465595';
+
 
   const { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error } =
     useLearnerDashboard(userId);

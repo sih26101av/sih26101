@@ -3,9 +3,22 @@
  *
  * PATTERN: Adapter Pattern
  * ─────────────────────────────────────────────────────────────────────────────
- * Talks to mock iGOT server at http://localhost:8001.
- * Unpacks Sunbird standard envelope (result node).
- * Adapts raw iGOT shapes → clean internal domain types.
+ * Two distinct fetch helpers:
+ *
+ * 1. igotFetch — talks directly to the mock iGOT server (port 8001) using
+ *    Sunbird-style headers. Used for learner profile/enrollment data that the
+ *    frontend still fetches directly. Untouched from the original.
+ *
+ * 2. lmsFetch — talks to My App Backend (port 8000). Injects the JWT access
+ *    token from AuthContext. On 401, silently calls /auth/refresh and retries
+ *    the request ONCE. If refresh also fails, calls logout() and redirects
+ *    to /login.
+ *
+ * Token access strategy
+ * ─────────────────────
+ * AuthContext lives in React; api.ts is a plain module. We bridge them via
+ * a module-level token store that AuthContext writes to via setApiToken().
+ * This avoids prop-drilling or context-in-service anti-patterns.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -16,12 +29,34 @@ import type {
   Enrollment,
   Achievement,
 } from '../types/domain';
+import { refresh } from './authApi';
 
-// ─── Config ────────────────────────────────────────────────────────────────────
-const BASE_URL = 'http://localhost:8001';
-const AUTH_TOKEN = 'mock-session-token-2026';
+// ── Config ─────────────────────────────────────────────────────────────────────
+const IGOT_BASE_URL = 'http://localhost:8001';
+const LMS_BASE_URL  = 'http://localhost:8000';
+const AUTH_TOKEN    = 'mock-session-token-2026';
 
-// ─── Sunbird Envelope ──────────────────────────────────────────────────────────
+// ── Module-level token store (written by AuthContext on login/refresh) ──────────
+let _accessToken: string | null = null;
+let _onLogout: (() => void) | null = null;
+
+/**
+ * Called by AuthContext immediately after login or a successful token refresh.
+ * This keeps the access token in memory without exposing it to the DOM.
+ */
+export function setApiToken(token: string | null): void {
+  _accessToken = token;
+}
+
+/**
+ * Called by AuthContext on mount to register the logout callback.
+ * The interceptor calls this when a refresh fails so we cleanly log out.
+ */
+export function registerLogoutCallback(cb: () => void): void {
+  _onLogout = cb;
+}
+
+// ── Sunbird Envelope ───────────────────────────────────────────────────────────
 interface SunbirdEnvelope<T> {
   id:           string;
   ver:          string;
@@ -31,9 +66,9 @@ interface SunbirdEnvelope<T> {
   result:       T;
 }
 
-// ─── Base fetch helper ─────────────────────────────────────────────────────────
+// ── igotFetch — direct to mock iGOT server (port 8001) ───────────────────────
 async function igotFetch<T>(path: string, label: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${IGOT_BASE_URL}${path}`, {
     headers: {
       'Content-Type':                'application/json',
       'Authorization':               `Bearer mock-api-key-2026`,
@@ -50,6 +85,69 @@ async function igotFetch<T>(path: string, label: string): Promise<T> {
   return json.result;
 }
 
+// ── lmsFetch — to My App Backend (port 8000), with 401 interceptor ────────────
+/**
+ * Fetches from the LMS backend with automatic JWT injection and 401 retry.
+ *
+ * On 401:
+ *  1. Calls /auth/refresh (uses the httpOnly cookie automatically).
+ *  2. Updates the in-memory token via setApiToken().
+ *  3. Retries the original request once with the new token.
+ *  4. If the retry still fails, calls _onLogout() and throws.
+ */
+async function lmsFetch<T>(
+  path: string,
+  label: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const makeHeaders = (token: string | null) => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers as Record<string, string> ?? {}),
+  });
+
+  const doRequest = (token: string | null) =>
+    fetch(`${LMS_BASE_URL}${path}`, {
+      ...options,
+      headers: makeHeaders(token),
+      credentials: 'include',
+    });
+
+  let res = await doRequest(_accessToken);
+
+  // ── 401 interceptor ─────────────────────────────────────────────────────────
+  if (res.status === 401) {
+    try {
+      const { access_token } = await refresh();
+      setApiToken(access_token);
+      res = await doRequest(access_token);
+    } catch {
+      // Refresh failed — session is dead
+      _onLogout?.();
+      // Redirect to login (can't use React Router here — plain navigate)
+      window.location.href = '/login';
+      throw new Error(`[${label}] Session expired. Please log in again.`);
+    }
+  }
+
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body?.detail ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(`[${label}] ${detail}`);
+  }
+
+  // Handle 204 No Content
+  const contentType = res.headers.get('content-type') ?? '';
+  if (res.status === 204 || !contentType.includes('application/json')) {
+    return undefined as unknown as T;
+  }
+
+  return res.json() as Promise<T>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // RAW SHAPES (exactly matching mock server JSON)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,18 +156,18 @@ interface RawCompetency {
   id:               string;
   name:             string;
   type:             string;
-  status:           string;  // "ACQUIRED" | "IN_PROGRESS" | "PLANNED"
-  competencyLevel:  string;  // "Level 1" ... "Level 5"
+  status:           string;
+  competencyLevel:  string;
 }
 
 interface RawUserProfile {
-  userId:         string;
-  firstName:      string;
-  lastName:       string;
-  email:          string;
-  govId:          string;
+  userId:          string;
+  firstName:       string;
+  lastName:        string;
+  email:           string;
+  govId:           string;
   experienceYears: number;
-  rootOrgId:      string;
+  rootOrgId:       string;
   profileDetails: {
     professionalDetails: [{
       designation: string;
@@ -86,7 +184,7 @@ interface RawEnrollment {
   courseName:           string;
   userId:               string;
   enrolledDate:         string;
-  status:               number;   // 0=not-started, 1=in-progress, 2=completed
+  status:               number;
   completionPercentage: number;
   progress:             number;
   leafNodesCount:       number;
@@ -95,14 +193,14 @@ interface RawEnrollment {
 }
 
 interface RawCourse {
-  identifier:        string;
-  name:              string;
-  provider?:         string;
-  duration?:         string;
-  leafNodesCount?:   number;
-  primaryCategory?:  string;
-  description?:      string;
-  competencies_v3?:  string;
+  identifier:       string;
+  name:             string;
+  provider?:        string;
+  duration?:        string;
+  leafNodesCount?:  number;
+  primaryCategory?: string;
+  description?:     string;
+  competencies_v3?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,7 +215,6 @@ function levelToNumber(levelStr: string): number {
 function adaptUserProfile(raw: RawUserProfile): Official {
   const prof = raw.profileDetails?.professionalDetails?.[0];
   const comps = raw.profileDetails?.competencies ?? [];
-
   return {
     uuid:            raw.userId,
     email:           raw.email,
@@ -196,19 +293,16 @@ function adaptCatalog(raw: RawCourse[]): CourseRecommendation[] {
 // PUBLIC API — consumed by hooks only
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fetch a user's profile and derive skill gaps from competency list */
 export async function fetchSkillGapsAndProfile(userId: string): Promise<{
   profile: Official;
   skillGaps: SkillGapEntry[];
 }> {
-  // Server wraps user inside result.response
   const result = await igotFetch<{ response: RawUserProfile }>(
     `/api/user/v2/read/${userId}`,
     'user-profile'
   );
   const profile = adaptUserProfile(result.response);
 
-  // Derive skill gaps from the user's competency list
   const skillGaps: SkillGapEntry[] = profile.competencyProfile.userCompetencies.map(uc => {
     const gap = Math.max(0, 4 - uc.currentLevel);
     return {
@@ -225,7 +319,6 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
   return { profile, skillGaps };
 }
 
-/** Enrollment list for a user */
 export async function fetchEnrollments(userId: string): Promise<Enrollment[]> {
   const result = await igotFetch<{ courses: RawEnrollment[] }>(
     `/api/course/v1/user/enrollment/list/${userId}`,
@@ -234,7 +327,6 @@ export async function fetchEnrollments(userId: string): Promise<Enrollment[]> {
   return adaptEnrollments(result.courses ?? []);
 }
 
-/** Course catalog used as recommendations */
 export async function fetchRecommendations(
   _userId: string,
   _skillGaps: SkillGapEntry[]
@@ -246,7 +338,6 @@ export async function fetchRecommendations(
   return adaptCatalog(result.content ?? []);
 }
 
-/** Achievements — derived from completed enrollments that have certificates */
 export async function fetchAchievements(userId: string): Promise<Achievement[]> {
   const result = await igotFetch<{ courses: RawEnrollment[] }>(
     `/api/course/v1/user/enrollment/list/${userId}`,
@@ -264,29 +355,18 @@ export async function fetchAchievements(userId: string): Promise<Achievement[]> 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN API
+// ADMIN API — routed through My App Backend (authenticated + role=admin)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Re-exported for AdminDashboard / useAdminData
 export type { RawUserProfile };
 
-/** Fetch all users from the mock server (uses internal list endpoint) */
+/**
+ * Fetch all users via the LMS backend's admin proxy endpoint.
+ * The backend enforces role=admin before proxying to the mock server.
+ */
 export async function fetchAllUsers(): Promise<RawUserProfile[]> {
-  // The mock server exposes /api/external/igot/catalog for courses and
-  // individual user reads. We use the legacy catalog approach:
-  // the server has all users in memory; we read them via the health endpoint
-  // to get the count then batch-fetch. But the simplest working approach:
-  // use the legacy history endpoint indirectly. 
-  // 
-  // BEST approach: The mock server exposes DB_USERS in /health but not directly.
-  // We'll use the trick: fetch the first N users by building IDs from users.json
-  // which we loaded. Since the server has no "list users" endpoint, we'll
-  // use the admin-specific endpoint we need to add.
-  //
-  // For now call /api/user/v2/read for each known user. We'll solve this by
-  // reading user IDs from the server's own /api/admin/v1/users endpoint.
-  const result = await igotFetch<{ users: RawUserProfile[]; count: number }>(
-    `/api/admin/v1/users`,
+  const result = await lmsFetch<{ users: RawUserProfile[]; count: number }>(
+    '/api/v1/admin/users',
     'admin-roster'
   );
   return result.users ?? [];
