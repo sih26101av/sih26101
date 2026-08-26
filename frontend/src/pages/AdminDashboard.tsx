@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAdminData } from '../hooks/useAdminData';
-import type { RawAdminUser } from '../services/api';
+import type { AdminRosterRow } from '../hooks/useAdminData';
 
 // ─── Static constants ─────────────────────────────────────────────────────────
 const SPARKLINE_DATA = [
@@ -68,7 +68,7 @@ const ErrorBanner: React.FC<{ message: string; onRetry: () => void }> = ({ messa
 );
 
 // ─── Roster Row ───────────────────────────────────────────────────────────────
-const RosterRow: React.FC<{ employee: RawAdminUser }> = ({ employee }) => {
+const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
   const label  = enrollmentLabel(employee.enrollmentStatus);
   const isGood = label === 'Compliant';
   const isWarn = label === 'In Progress';
@@ -245,10 +245,10 @@ const AdminDashboard: React.FC = () => {
                     <AlertTriangle className="text-orange-400 dark:text-orange-300 w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Avg Skill Gap Score</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Avg Missing Skills / User</p>
                     <h3 className="text-3xl font-black text-slate-800 dark:text-white mt-1">
-                      {kpis.avgSkillGapScore > 0 ? kpis.avgSkillGapScore : 2.1}
-                      <span className="text-sm font-medium text-slate-400 normal-case tracking-normal ml-1">levels</span>
+                      {kpis.avgMissingSkills > 0 ? kpis.avgMissingSkills : 2.1}
+                      <span className="text-sm font-medium text-slate-400 normal-case tracking-normal ml-1">skills</span>
                     </h3>
                   </div>
                 </div>

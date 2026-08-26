@@ -1,24 +1,57 @@
 /**
  * FILE: src/pages/LoginPage.tsx
  *
- * This page acts as the gateway between the Landing Page and the dashboards.
- * It uses the DashboardFactory to resolve the correct route — the page itself
- * has zero knowledge of LearnerDashboard or AdminDashboard internals.
+ * Gateway page — uses DashboardFactory to resolve the route.
+ * Sets AuthContext so every downstream dashboard knows which user is active.
+ *
+ * MOCK CREDENTIALS map email → real userId from users.json
+ * (usr_720465595 = Gabriel Manda; add more users here as needed)
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DashboardFactory, UserRole } from '../patterns/DashboardFactory';
+import { DashboardFactory } from '../patterns/DashboardFactory';
+import type { UserRole } from '../patterns/DashboardFactory';
+import { useAuth } from '../context/AuthContext';
 import { Hash, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
-const MOCK_CREDENTIALS: Record<string, { password: string; role: UserRole; officialId?: string }> = {
-  'official@mospi.gov.in': { password: 'official123', role: 'official', officialId: 'EMP-8472' },
-  'admin@mospi.gov.in':    { password: 'admin123',    role: 'admin' },
-  'trainer@mospi.gov.in':  { password: 'trainer123',  role: 'trainer' },
+// ─── Mock credential store ────────────────────────────────────────────────────
+// Maps login email → real userId from mock server's users.json
+interface Creds {
+  password:  string;
+  role:      UserRole;
+  userId:    string;   // must match userId in users.json
+  govId:     string;
+  fullName:  string;
+}
+
+const MOCK_CREDENTIALS: Record<string, Creds> = {
+  'official@mospi.gov.in': {
+    password: 'official123',
+    role:     'official',
+    userId:   'usr_720465595',   // Gabriel Manda — Under Secretary
+    govId:    'EMP-6282',
+    fullName: 'Gabriel Manda',
+  },
+  'admin@mospi.gov.in': {
+    password: 'admin123',
+    role:     'admin',
+    userId:   'usr_admin_001',
+    govId:    'ADMIN-001',
+    fullName: 'MoSPI Admin',
+  },
+  'megha@mospi.gov.in': {
+    password: 'official123',
+    role:     'official',
+    userId:   'usr_200142973',   // Megha Balasubramanian — Deputy Director
+    govId:    'EMP-4633',
+    fullName: 'Megha Balasubramanian',
+  },
 };
 
 const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
+  const navigate          = useNavigate();
+  const { setUser }       = useAuth();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -30,7 +63,6 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
 
-    // Simulate async credential check
     setTimeout(() => {
       const creds = MOCK_CREDENTIALS[email.toLowerCase()];
       if (!creds || creds.password !== password) {
@@ -39,33 +71,37 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // ── Factory Pattern in action ──────────────────────────────────────────
-      // LoginPage never imports LearnerDashboard or AdminDashboard.
-      // It simply asks the factory for the correct path based on the role.
-      const destinationPath = DashboardFactory.getNavigationPath(creds.role, creds.officialId);
+      // ── 1. Write to AuthContext so dashboards know who is logged in ────────
+      setUser({
+        userId:   creds.userId,
+        govId:    creds.govId,
+        fullName: creds.fullName,
+        role:     creds.role,
+      });
+
+      // ── 2. Factory resolves the correct dashboard route ────────────────────
+      const destinationPath = DashboardFactory.getNavigationPath(creds.role, creds.userId);
       setLoading(false);
       navigate(destinationPath, { replace: true });
     }, 800);
   };
 
-  const fillCredentials = (role: 'official' | 'admin') => {
-    if (role === 'official') {
-      setEmail('official@mospi.gov.in');
-      setPassword('official123');
-    } else {
-      setEmail('admin@mospi.gov.in');
-      setPassword('admin123');
-    }
+  const fillCredentials = (preset: 'official' | 'admin' | 'megha') => {
+    const map = {
+      official: { email: 'official@mospi.gov.in', pass: 'official123' },
+      admin:    { email: 'admin@mospi.gov.in',    pass: 'admin123' },
+      megha:    { email: 'megha@mospi.gov.in',    pass: 'official123' },
+    };
+    setEmail(map[preset].email);
+    setPassword(map[preset].pass);
     setError('');
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] font-sans"
-    >
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300">
       {/* Background */}
       <div
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.25]"
+        className="absolute inset-0 z-0 pointer-events-none opacity-[0.20] dark:opacity-10 dark:invert"
         style={{
           backgroundImage: `url('/bg-new-topo.png')`,
           backgroundSize: 'cover',
@@ -79,10 +115,10 @@ const LoginPage: React.FC = () => {
         <div className="flex flex-col items-center mb-8 cursor-default">
           <div className="flex items-center gap-1.5">
             <div className="flex flex-col gap-[3px] justify-center mt-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#0f172a]"></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#0f172a] dark:bg-white" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
             </div>
-            <span className="font-bold text-[22px] text-[#0f172a] tracking-tight leading-none">MoSPI</span>
+            <span className="font-bold text-[22px] text-[#0f172a] dark:text-white tracking-tight leading-none">MoSPI</span>
           </div>
           <span className="text-[8px] text-slate-400 font-semibold tracking-wide uppercase mt-1">
             Skill Intelligence Platform
@@ -90,47 +126,43 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-200/80 p-8">
-          <h2 className="text-[20px] font-bold text-[#0f172a] mb-1">Welcome back</h2>
-          <p className="text-[13px] text-slate-500 mb-6">Sign in to access your MoSPI dashboard.</p>
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-200/80 dark:border-slate-700/60 p-8 transition-colors duration-300">
+          <h2 className="text-[20px] font-bold text-[#0f172a] dark:text-white mb-1">Welcome back</h2>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">Sign in to access your MoSPI dashboard.</p>
 
-          {/* Quick-fill demo buttons */}
-          <div className="flex gap-3 mb-6">
-            <button
-              onClick={() => fillCredentials('official')}
-              className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-md border border-slate-200 transition-all"
-            >
-              Fill as Official
+          {/* Quick-fill buttons */}
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => fillCredentials('official')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
+              Gabriel (Official)
             </button>
-            <button
-              onClick={() => fillCredentials('admin')}
-              className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-md border border-slate-200 transition-all"
-            >
-              Fill as Admin
+            <button onClick={() => fillCredentials('megha')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
+              Megha (Official)
+            </button>
+            <button onClick={() => fillCredentials('admin')}
+              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all">
+              Admin
             </button>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1.5">
-                Email
-              </label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="official@mospi.gov.in"
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all"
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wide mb-1.5">
-                Password
-              </label>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Password</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -138,14 +170,10 @@ const LoginPage: React.FC = () => {
                   onChange={e => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all pr-10"
+                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                  tabIndex={-1}
-                >
+                <button type="button" onClick={() => setShowPass(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" tabIndex={-1}>
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -153,7 +181,7 @@ const LoginPage: React.FC = () => {
 
             {/* Error */}
             {error && (
-              <p className="text-[12px] text-red-500 font-medium bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              <p className="text-[12px] text-red-500 font-medium bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-lg px-3 py-2">
                 {error}
               </p>
             )}
@@ -178,7 +206,7 @@ const LoginPage: React.FC = () => {
 
           <div className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-400">
             <Hash className="w-3 h-3" />
-            Role-based access powered by DashboardFactory pattern
+            Role-based routing powered by DashboardFactory pattern
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
 import { useTheme } from "../hooks/useTheme";
+import { useAuth } from "../context/AuthContext";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
 import SkillGapCard from "../components/dashboard/SkillGapCard";
 import CourseCard from "../components/dashboard/CourseCard";
@@ -183,9 +184,14 @@ const Topbar: React.FC<{
 };
 
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
-const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId = "EMP-8472" }) => {
+const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
+  const { user: authUser } = useAuth();
+
+  // Priority: AuthContext user (set by LoginPage) → prop → first user in users.json
+  const userId = authUser?.userId ?? officialId ?? 'usr_720465595';
+
   const { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error } =
-    useLearnerDashboard(officialId);
+    useLearnerDashboard(userId);
   const [retryKey, setRetryKey] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
 

@@ -501,6 +501,58 @@ async def legacy_enroll_user(user_id: str, payload: EnrolPayload):
 # Health / introspection endpoints
 # ─────────────────────────────────────────────────────────────
 
+
+# ─────────────────────────────────────────────────────────────
+# ⑥ GET /api/admin/v1/users   — Admin Roster (all users)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/admin/v1/users")
+async def get_admin_roster(
+    x_authenticated_user_token: str | None = Header(default=None),
+):
+    API_ID, VER = "api.admin.users.list", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+
+    enriched = []
+    for user in DB_USERS:
+        user_id = user["userId"]
+        enrolments = _user_enrolments(user_id)
+
+        # Derive enrollment status: 2=completed, 1=in-progress, 0=none
+        if any(e["status"] == 2 for e in enrolments):
+            enroll_status = 2
+        elif any(e["status"] == 1 for e in enrolments):
+            enroll_status = 1
+        else:
+            enroll_status = 0
+
+        # Find the most recent PLANNED or IN_PROGRESS competency as the "missing skill"
+        comps = user.get("profileDetails", {}).get("competencies", [])
+        missing = next(
+            (c["name"] for c in comps if c.get("status") in ("PLANNED", "IN_PROGRESS")),
+            None,
+        )
+
+        prof = user.get("profileDetails", {}).get("professionalDetails", [{}])[0]
+        enriched.append({
+            "userId":           user_id,
+            "govId":            user.get("govId", user_id),
+            "firstName":        user.get("firstName", ""),
+            "lastName":         user.get("lastName", ""),
+            "email":            user.get("email", ""),
+            "designation":      prof.get("designation", "Official"),
+            "department":       prof.get("department", "MoSPI"),
+            "enrollmentStatus": enroll_status,
+            "missingSkill":     missing,
+            "competencies":     comps,
+        })
+
+    return sunbird_ok(API_ID, VER, {
+        "count": len(enriched),
+        "users": enriched,
+    })
+
+
 @app.get("/health")
 async def health():
     return {

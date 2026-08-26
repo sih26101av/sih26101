@@ -64,14 +64,13 @@ abstract class DashboardCreator {
 // ─── Concrete Creators ────────────────────────────────────────────────────────
 
 class OfficialDashboardCreator extends DashboardCreator {
-  private officialId: string;
-  constructor(officialId: string = 'EMP-8472') {
+  private userId: string;
+  constructor(userId: string = 'usr_720465595') {  // Gabriel Manda — first user in users.json
     super();
-    this.officialId = officialId;
+    this.userId = userId;
   }
 
   createDashboard(): IDashboard {
-    // Lazy import keeps the component chunk separate
     const component = React.lazy(() => import('../pages/LearnerDashboard'));
     return {
       component: component as unknown as React.ComponentType<DashboardProps>,
@@ -81,7 +80,7 @@ class OfficialDashboardCreator extends DashboardCreator {
   }
 
   navigate(): string {
-    return `/dashboard/${this.officialId}`;
+    return `/dashboard/${this.userId}`;
   }
 }
 
@@ -102,14 +101,23 @@ class AdminDashboardCreator extends DashboardCreator {
 
 // ─── Placeholder for future Trainer role ─────────────────────────────────────
 class TrainerDashboardCreator extends DashboardCreator {
+  private userId: string;
+  constructor(userId: string = 'usr_720465595') {
+    super();
+    this.userId = userId;
+  }
+
   createDashboard(): IDashboard {
-    // Trainer dashboard not yet built — returns a safe fallback until it exists.
     const component = React.lazy(() => import('../pages/LearnerDashboard'));
     return {
       component: component as unknown as React.ComponentType<DashboardProps>,
       routePath: `/trainer`,
       label: 'Trainer Dashboard',
     };
+  }
+
+  navigate(): string {
+    return `/trainer/${this.userId}`;
   }
 }
 
@@ -126,25 +134,25 @@ class TrainerDashboardCreator extends DashboardCreator {
  *   navigate(path); // React Router navigate
  */
 export class DashboardFactory {
-  private static registry: Map<UserRole, () => DashboardCreator> = new Map([
-    ['official', () => new OfficialDashboardCreator()],
-    ['admin', () => new AdminDashboardCreator()],
-    ['trainer', () => new TrainerDashboardCreator()],
+  private static registry: Map<UserRole, (userId?: string) => DashboardCreator> = new Map<UserRole, (userId?: string) => DashboardCreator>([
+    ['official', (userId?: string) => new OfficialDashboardCreator(userId)],
+    ['admin',    (_userId?: string) => new AdminDashboardCreator()],
+    ['trainer',  (userId?: string) => new TrainerDashboardCreator(userId)],
   ]);
 
   /**
-   * Returns the React Router route *path string* for a given role.
-   * @param role       - The user's role ('official' | 'admin' | 'trainer')
-   * @param officialId - Optional ID appended for official-level routes.
+   * Returns the React Router path for a given role.
+   * @param role   - The user's role
+   * @param userId - Real userId from the mock server (e.g. 'usr_720465595')
    */
-  static getNavigationPath(role: UserRole, officialId?: string): string {
+  static getNavigationPath(role: UserRole, userId?: string): string {
     const creatorFactory = this.registry.get(role);
     if (!creatorFactory) {
       console.error(`[DashboardFactory] Unknown role: "${role}". Falling back to landing.`);
       return '/';
     }
-    const creator = creatorFactory();
-    return creator.navigate(officialId);
+    const creator = creatorFactory(userId);
+    return creator.navigate(userId);
   }
 
   /**
