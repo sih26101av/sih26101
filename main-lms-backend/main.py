@@ -45,7 +45,13 @@ async def get_skill_gaps(gov_id: str):
     history = await adapter.fetch_user_history(gov_id)
     catalog = await adapter.fetch_catalog()
 
-    current_levels = {comp_id: 1 for comp_id in ROLE_REQUIREMENTS}
+    current_levels = {
+        "C-001": 1,
+        "C-002": 3,  # Simulating partial prior knowledge (3/5)
+        "C-003": 2,  # Simulating partial prior knowledge (2/5)
+        "C-004": 2,
+        "C-005": 1,
+    }
 
     for enrollment in history:
         if enrollment.get("status") == "COMPLETED":

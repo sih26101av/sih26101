@@ -1,107 +1,79 @@
-﻿/**
+/**
  * FILE: src/components/dashboard/AssessmentUploadZone.tsx
  */
 
-import React, { useCallback, useRef, useState } from 'react';
-import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, Cpu } from 'lucide-react';
+import React, { useRef, useState } from "react";
+import { Bot, Globe, Paperclip } from "lucide-react";
 
-interface AssessmentUploadZoneProps { onFileSelect?: (file: File) => void; }
-type UploadState = 'idle' | 'dragging' | 'uploading' | 'success' | 'error';
-const ACCEPTED_TYPES = ['.pdf', '.pptx', '.txt'];
-const ACCEPTED_MIME = ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'];
+interface AssessmentUploadZoneProps {
+  onFileSelect?: (file: File) => void;
+}
 
 const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onFileSelect }) => {
-  const [uploadState, setUploadState] = useState<UploadState>('idle');
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [attached, setAttached] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback((file: File) => {
-    if (!ACCEPTED_MIME.includes(file.type)) {
-      setErrorMsg('Unsupported format. Please upload PDF, PPTX, or TXT.');
-      setUploadState('error'); return;
-    }
-    setErrorMsg(null); setFileName(file.name); setUploadState('uploading');
-    setTimeout(() => { setUploadState('success'); onFileSelect?.(file); }, 2000);
-  }, [onFileSelect]);
-
-  const onDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); setUploadState('idle'); const f = e.dataTransfer.files[0]; if(f) handleFile(f); }, [handleFile]);
-  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setUploadState('dragging'); };
-  const onDragLeave = () => setUploadState('idle');
-  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if(f) handleFile(f); };
-
-  const zoneContent = () => {
-    if (uploadState === 'uploading') return (
-      <div className="flex flex-col items-center gap-2 py-2">
-        <Loader2 size={32} className="text-blue-600 dark:text-blue-500 animate-spin" />
-        <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">AI Processing Document…</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Running <span className="font-mono text-slate-600 dark:text-slate-300">DocumentParserFactory</span> → LLM prompt → <span className="font-mono text-slate-600 dark:text-slate-300">AssessmentBuilder</span></p>
-        {fileName && <span className="text-xs text-slate-400 italic truncate max-w-full px-2">{fileName}</span>}
-      </div>
-    );
-    if (uploadState === 'success') return (
-      <div className="flex flex-col items-center gap-2 py-2">
-        <CheckCircle2 size={32} className="text-green-600 dark:text-green-500" />
-        <p className="text-sm font-bold text-green-700 dark:text-green-400">Assessment Generated!</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Quiz has been saved and is now live for learners.</p>
-        <button onClick={() => { setUploadState('idle'); setFileName(null); }} className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1">Upload another document</button>
-      </div>
-    );
-    if (uploadState === 'error') return (
-      <div className="flex flex-col items-center gap-2 py-2">
-        <AlertCircle size={32} className="text-red-500 dark:text-red-400" />
-        <p className="text-sm font-semibold text-red-600 dark:text-red-400">{errorMsg}</p>
-        <button onClick={() => { setUploadState('idle'); setErrorMsg(null); }} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Try again</button>
-      </div>
-    );
-    return (
-      <div className="flex flex-col items-center gap-3 py-2">
-        <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/30 border-2 border-dashed border-blue-300 dark:border-blue-700 flex items-center justify-center">
-          <Upload size={24} className="text-blue-500 dark:text-blue-400" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Drop a training document here</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">or <button onClick={() => inputRef.current?.click()} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">click to browse</button></p>
-        </div>
-        <div className="flex gap-2 flex-wrap justify-center">
-          {ACCEPTED_TYPES.map(ext => (
-            <span key={ext} className="flex items-center gap-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full font-mono"><FileText size={10} />{ext}</span>
-          ))}
-        </div>
-      </div>
-    );
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setAttached(file.name); onFileSelect?.(file); }
   };
 
-  const dropzoneClass = `rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer flex flex-col items-center justify-center transition-all duration-200
-    ${uploadState === 'dragging' ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 scale-[1.01]' : ''}
-    ${uploadState === 'success'  ? 'border-green-400 dark:border-green-500 bg-green-50 dark:bg-green-900/20' : ''}
-    ${uploadState === 'error'    ? 'border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/20' : ''}
-    ${uploadState === 'uploading'? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}
-    ${uploadState === 'idle'     ? 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-blue-900/30' : ''}`;
+  const handleGenerate = () => {
+    if (!query.trim() && !attached) { alert("Please enter a query or attach a document."); return; }
+    console.info("[AI Generator] Query:", query, "| File:", attached);
+    alert(`Assessment queued!\nQuery: "${query}"\nDoc: ${attached ?? "None"}`);
+  };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-900">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-900 dark:bg-blue-800 flex items-center justify-center">
-            <Cpu size={15} className="text-white" />
-          </div>
-          <div>
-            <h3 className="text-slate-900 dark:text-white font-bold text-sm">AI Assessment Generator</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">RAG Document-to-Quiz Pipeline</p>
-          </div>
+    <div className="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 flex flex-col gap-5 transition-colors duration-300">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="w-[44px] h-[44px] rounded-[14px] bg-[#1e2a4a] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+          <Bot size={22} className="text-white dark:text-blue-400 transition-colors duration-300" />
+        </div>
+        <div>
+          <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Generator</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">RAG Document-to-Quiz Pipeline</p>
         </div>
       </div>
-      <div className="p-4">
-        <div className={dropzoneClass} onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave} onClick={() => uploadState === 'idle' && inputRef.current?.click()}>
-          {zoneContent()}
+
+      {/* Query Textarea */}
+      <div>
+        <textarea
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Start assessment query..."
+          className="w-full border border-slate-200 dark:border-slate-700/50 rounded-[16px] px-5 py-4 text-[13px] text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/30 dark:focus:ring-blue-500/30 focus:border-blue-300 dark:focus:border-blue-500/50 resize-none min-h-[95px] leading-relaxed transition-all shadow-sm dark:shadow-none mb-3"
+          rows={3}
+        />
+        
+        {/* Attach file */}
+        <div className="px-1">
+          <input ref={inputRef} type="file" className="hidden" accept=".pdf,.txt,.docx,.pptx" onChange={handleFileChange} />
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+          >
+            <Paperclip size={14} />
+            {attached
+              ? <span className="text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[200px]">{attached}</span>
+              : "Attach document (.pdf, .pptx, .txt)"}
+          </button>
         </div>
-        <input ref={inputRef} type="file" accept={ACCEPTED_TYPES.join(',')} className="hidden" onChange={onInputChange} />
-        <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-3 leading-relaxed">
-          Uploaded documents are processed by the MoSPI AI engine (LangChain + LLM).
-        </p>
       </div>
+
+      {/* Generate Button — glossy shiny effect adapted for dark mode */}
+      <button
+        onClick={handleGenerate}
+        className="relative w-full bg-gradient-to-r from-[#93c5fd] via-[#ffffff] to-[#93c5fd] dark:from-[#1e3a8a] dark:via-[#3b82f6] dark:to-[#1e3a8a] text-[#1e40af] dark:text-white border border-[#bfdbfe] dark:border-blue-700 shadow-[0_4px_16px_-2px_rgba(59,130,246,0.3)] dark:shadow-[0_4px_16px_-2px_rgba(37,99,235,0.4)] font-bold text-[14px] py-3.5 rounded-[16px] flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98]"
+      >
+        <div className="absolute inset-0 rounded-[16px] pointer-events-none shadow-[inset_0_1px_3px_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)]" />
+        <Globe size={16} className="text-[#2563eb] dark:text-blue-200 relative z-10 transition-colors duration-300" />
+        <span className="relative z-10">Generate Assessment</span>
+      </button>
     </div>
   );
 };
+
 export default AssessmentUploadZone;

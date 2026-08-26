@@ -1,120 +1,86 @@
 /**
  * FILE: src/components/dashboard/ProfileHeader.tsx
- * Handles partial profile data from backend gracefully.
  */
 
-import React from 'react';
-import { BadgeCheck, Briefcase, Clock, Building2, ShieldCheck } from 'lucide-react';
-import type { Official } from '../../types/domain';
+import React from "react";
+import { BadgeCheck, Building2, Clock, User } from "lucide-react";
+import type { Official } from "../../types/domain";
 
 interface ProfileHeaderProps {
   profile: Official;
   totalAssessed: number;
 }
 
-const getInitials = (name: string): string =>
-  name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 3);
-
 const formatDate = (iso: string): string => {
   try {
-    return new Date(iso).toLocaleDateString('en-IN', {
-      day: '2-digit', month: 'short', year: 'numeric',
-    });
-  } catch {
-    return 'N/A';
-  }
+    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  } catch { return "N/A"; }
 };
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, totalAssessed }) => {
-  // Gracefully handle partial data from the backend
-  const displayName  = profile.fullName && profile.fullName !== 'MoSPI Official'
-    ? profile.fullName
-    : profile.govId;
+  const displayName = profile.fullName && profile.fullName !== "MoSPI Official" ? profile.fullName : profile.govId;
+  const initials = displayName.substring(0, 1).toUpperCase();
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-slate-800 transition-colors duration-200">
-      {/* Tricolour accent */}
-      <div className="flex h-1.5">
-        <div className="flex-1 bg-orange-500" />
-        <div className="flex-1 bg-white dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700" />
-        <div className="flex-1 bg-green-600" />
-      </div>
+    <div className="relative bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-colors duration-300">
+      
+      {/* Blue top line */}
+      <div className="absolute top-0 left-0 right-0 h-[6px] bg-[#3b82f6]" />
 
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-6 py-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-5">
-          {/* Avatar */}
-          <div className="flex-shrink-0">
-            <div className="w-20 h-20 rounded-full bg-blue-700 border-4 border-blue-500/40 flex items-center justify-center shadow-inner">
-              <span className="text-white font-bold text-2xl tracking-wide">
-                {getInitials(displayName)}
+      {/* Dotted circuit background — right 60% */}
+      <div
+        className="absolute top-0 right-0 w-[60%] h-full pointer-events-none opacity-[0.2] dark:opacity-[0.05] transition-opacity duration-300"
+        style={{
+          backgroundImage: `radial-gradient(circle, #94a3b8 1px, transparent 1px)`,
+          backgroundSize: "22px 22px",
+        }}
+      />
+
+      <div className="relative z-10 px-8 py-7 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        
+        {/* Left: Avatar + Info */}
+        <div className="flex items-center gap-6">
+          {/* Avatar circle */}
+          <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm dark:shadow-none transition-colors duration-300">
+            <span className="text-slate-700 dark:text-slate-300 font-medium text-3xl transition-colors duration-300">{initials}</span>
+          </div>
+
+          {/* Text Info */}
+          <div>
+            <div className="flex items-center gap-3 mb-1.5">
+              <h1 className="text-slate-900 dark:text-white font-extrabold text-[24px] tracking-tight leading-none transition-colors duration-300">{displayName}</h1>
+              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-[#eff6ff] dark:bg-blue-900/30 text-[#3b82f6] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-900/50 px-2 py-0.5 rounded-full transition-colors duration-300">
+                <BadgeCheck size={11} className="text-[#3b82f6] dark:text-blue-400" />
+                Verified Official
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-[14px] font-medium mb-3 transition-colors duration-300">{profile.jobRole.title}</p>
+            <div className="flex flex-wrap items-center gap-5 text-[12px] text-slate-500 font-medium">
+              <span className="flex items-center gap-1.5">
+                <User size={14} className="text-slate-400 dark:text-slate-500" /> <span className="dark:text-slate-300">{profile.govId}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Building2 size={14} className="text-slate-400 dark:text-slate-500" /> <span className="dark:text-slate-300">{profile.department}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock size={14} className="text-slate-400 dark:text-slate-500" /> <span className="dark:text-slate-300">Last assessed: {formatDate(profile.competencyProfile.lastEvaluatedDate)}</span>
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-white text-2xl font-bold tracking-tight truncate">
-                {displayName}
-              </h1>
-              <span className="flex items-center gap-1 text-xs bg-blue-700/60 text-blue-200 px-2 py-0.5 rounded-full border border-blue-600/40">
-                <ShieldCheck size={11} /> Verified Official
-              </span>
-            </div>
-            <p className="text-blue-300 text-sm font-medium mb-3">
-              {profile.jobRole.title}
-            </p>
-
-            <div className="flex flex-wrap gap-3 text-xs text-slate-400 dark:text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <BadgeCheck size={13} className="text-blue-400" />
-                <span className="font-mono text-blue-300">{profile.govId}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Building2 size={13} /> {profile.department}
-              </span>
-              {profile.experienceYears > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <Briefcase size={13} /> {profile.experienceYears} yrs experience
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} /> Last assessed:{' '}
-                {formatDate(profile.competencyProfile.lastEvaluatedDate)}
-              </span>
-            </div>
+        {/* Right: Stat Boxes */}
+        <div className="flex flex-row md:flex-col gap-3 md:min-w-[180px]">
+          <div className="bg-[#fafafa] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 rounded-[16px] px-4 py-3 flex flex-col items-center justify-center shadow-sm dark:shadow-none flex-1 md:flex-initial transition-colors duration-300">
+            <span className="text-slate-900 dark:text-white text-[20px] font-black leading-none transition-colors duration-300">{totalAssessed}</span>
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium mt-1 text-center transition-colors duration-300">Competencies Assessed</span>
           </div>
-
-          {/* Stat Pills */}
-          <div className="flex flex-row md:flex-col gap-3 md:gap-2 flex-shrink-0">
-            <StatPill label="Competencies Assessed" value={totalAssessed} color="blue" />
-            <StatPill
-              label="Profile ID"
-              value={profile.competencyProfile.profileId}
-              color="slate"
-              mono
-            />
+          <div className="bg-[#fafafa] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 rounded-[16px] px-4 py-3 flex flex-col items-center justify-center shadow-sm dark:shadow-none flex-1 md:flex-initial transition-colors duration-300">
+            <span className="text-slate-800 dark:text-slate-200 text-[13px] font-bold font-mono tracking-wider leading-none transition-colors duration-300">{profile.competencyProfile.profileId}</span>
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium mt-1 text-center transition-colors duration-300">Profile ID</span>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const StatPill: React.FC<{
-  label: string;
-  value: string | number;
-  color: 'blue' | 'slate';
-  mono?: boolean;
-}> = ({ label, value, color, mono }) => {
-  const palette =
-    color === 'blue'
-      ? 'bg-blue-800/50 dark:bg-blue-900/40 border-blue-700/40 text-blue-100'
-      : 'bg-slate-800/60 dark:bg-slate-800/40 border-slate-700/40 text-slate-300';
-  return (
-    <div className={`rounded-xl border px-4 py-2 text-center transition-colors ${palette}`}>
-      <div className={`text-base font-bold ${mono ? 'font-mono text-sm' : ''}`}>{value}</div>
-      <div className="text-xs opacity-70 mt-0.5 whitespace-nowrap">{label}</div>
     </div>
   );
 };
