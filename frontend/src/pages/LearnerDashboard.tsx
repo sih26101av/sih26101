@@ -5,8 +5,9 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard, BookOpen, TrendingUp, LogOut, AlertTriangle,
-  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase
+  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../context/AuthContext";
@@ -120,6 +121,7 @@ const Topbar: React.FC<{
   onTabChange: (tab: TabType) => void;
 }> = ({ userName, activeTab, onTabChange }) => {
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   return (
     <nav className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-700/50 px-5 md:px-6 py-2 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_8px_-2px_rgba(0,0,0,0.06)]">
       {/* Logo */}
@@ -168,6 +170,13 @@ const Topbar: React.FC<{
             {userName}
           </span>
         )}
+        <button
+          onClick={() => navigate("/")}
+          className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center"
+          title="Go to Home"
+        >
+          <Home size={15} />
+        </button>
         <button
           onClick={toggleTheme}
           className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

@@ -3,9 +3,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, LineChart, Line 
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, ChevronDown, CheckCircle, Flame, TrendingUp, Search, Filter, SlidersHorizontal, 
-  ArrowRight, User, AlertTriangle, Sun, Moon, RefreshCcw
+  User, AlertTriangle, Sun, Moon, RefreshCcw, Home
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAdminData } from '../hooks/useAdminData';
@@ -104,6 +105,7 @@ const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 const AdminDashboard: React.FC = () => {
   const { theme, toggleTheme }                = useTheme();
+  const navigate                              = useNavigate();
   const { roster, kpis, heatmap, isLoading, error, refetch } = useAdminData();
   const [searchTerm, setSearchTerm]           = useState('');
 
@@ -152,18 +154,15 @@ const AdminDashboard: React.FC = () => {
             Admin Dashboard
           </div>
         </div>
-        
-        <div className="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          <a href="/" className="hover:text-slate-900 dark:hover:text-white transition-colors">HOME</a>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">ABOUT</a>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">FEATURES</a>
-          <button className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors">
-            <span>DASHBOARD</span>
-            <ArrowRight className="w-4 h-4" />
+        {/* Right Actions */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => navigate("/")}
+            className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Go to Home"
+          >
+            <Home className="w-5 h-5" />
           </button>
-        </div>
-
-        <div className="flex items-center space-x-4">
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -171,10 +170,10 @@ const AdminDashboard: React.FC = () => {
           >
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+          <button className="p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
             <Bell className="w-5 h-5" />
           </button>
-          <div className="flex items-center space-x-2 cursor-pointer pl-2 border-l border-slate-200 dark:border-slate-700">
+          <div className="flex items-center space-x-2 cursor-pointer pl-3 ml-1 border-l border-slate-200 dark:border-slate-700">
             <img 
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
               alt="Admin avatar" 
