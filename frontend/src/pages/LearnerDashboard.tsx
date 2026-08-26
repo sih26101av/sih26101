@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FILE: src/pages/LearnerDashboard.tsx
  */
 
@@ -305,6 +305,17 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
               </p>
             </footer>
           </main>
+        )}
+
+        {/* ── Gyan AI Chat Widget ──────────────────────────────────────────── */}
+        {profile && (
+          <ChatWidget
+            officialId={userId}
+            jobRole={profile.jobRole.title}
+            department={profile.department}
+            skillGaps={skillGaps}
+            recommendations={recommendations}
+          />
         )}
       </div>
     </div>
