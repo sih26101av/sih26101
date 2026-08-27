@@ -16,7 +16,7 @@ On startup: creates users_auth table in auth.db (idempotent).
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from adapters.igot_adapter import MockIgotAdapter
+from adapters.igot_adapter import FileBasedIgotAdapter
 from auth.database import AuthBase, engine
 from auth.dependencies import get_current_user, require_role
 from auth.models import UserAuth
@@ -69,71 +69,28 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
 
 
-# ── iGOT Adapter singleton ─────────────────────────────────────────────────────
-adapter = MockIgotAdapter()
+# ── iGOT Adapter singleton (FileBasedIgotAdapter reads data/*.json directly) ────
+# This means the backend works regardless of which mock server is running.
+adapter = FileBasedIgotAdapter()
 
-# ── iGOT mock server config (for admin proxy) ──────────────────────────────────
+# ── iGOT mock server config (kept for admin proxy endpoint) ────────────────────
 _IGOT_BASE = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
 _IGOT_TOKEN = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
 
-# ── Role-level requirements for Deputy Director, National Accounts Division ────
-ROLE_REQUIREMENTS = {
-    "C-001": {"skillName": "National Accounts Framework (SNA 2008)", "domain": "Statistical", "targetLevel": 4},
-    "C-002": {"skillName": "Survey Methodology",                      "domain": "Statistical", "targetLevel": 4},
-    "C-003": {"skillName": "Data Privacy & Security",                  "domain": "Governance",  "targetLevel": 3},
-    "C-004": {"skillName": "Data Visualization",                       "domain": "Technical",   "targetLevel": 3},
-    "C-005": {"skillName": "Machine Learning for Statistics",          "domain": "Technical",   "targetLevel": 3},
-}
-
-# ── Static achievement log ─────────────────────────────────────────────────────
-ACHIEVEMENTS_BY_USER = {
-    "EMP-8472": [
-        {"id": "ACH-001", "title": "National Accounts Framework (SNA 2008)", "score": 88, "date": "2025-10-13T10:00:00Z", "category": "External Certification"},
-        {"id": "ACH-002", "title": "Sampling Methods in Surveys",             "score": 81, "date": "2026-08-16T14:00:00Z", "category": "RAG Quiz"},
-    ]
-}
+# ── Static achievement log (keyed by govId) ────────────────────────────────────
+ACHIEVEMENTS_BY_USER: dict[str, list] = {}
 
 
-# ── In-memory user roster (loaded once from mock server's data file) ────────────
-# Reading the file directly means we don't depend on any HTTP server being up,
-# and since seed_data.py uses a fixed random.seed(42), IDs never change across
-# restarts as long as data/users.json is committed to the repo.
-
-_user_roster_cache: list[dict] = []
-
-# Path to the mock server's generated users file (relative to this file)
-_USERS_DATA_FILE = os.path.join(
-    os.path.dirname(__file__), "..", "mock-igot-server", "data", "users.json"
-)
-
-def _load_user_roster() -> list[dict]:
-    """
-    Load the full user roster from the mock server's data/users.json file.
-    Falls back to an empty list if the file doesn't exist (mock not seeded yet).
-    """
-    path = os.path.abspath(_USERS_DATA_FILE)
-    if not os.path.exists(path):
-        return []
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
-
-
-async def _get_user_roster() -> list[dict]:
-    """Return a cached copy of the user roster, loading from file on first call."""
-    global _user_roster_cache
-    if not _user_roster_cache:
-        _user_roster_cache = _load_user_roster()
-    return _user_roster_cache
-
-
-def _find_user_by_id(roster: list[dict], user_id: str) -> dict | None:
-    """Find a user entry by their iGOT userId (usr_...) from the roster."""
-    return next((u for u in roster if u.get("userId") == user_id), None)
+# ── Helper: parse competency level string → int ────────────────────────────────
+def _level_to_int(level_str: str) -> int:
+    """'Level 3' → 3, 'Level 2' → 2, fallback → 2"""
+    digits = "".join(filter(str.isdigit, level_str or ""))
+    return int(digits) if digits else 2
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LEARNER ENDPOINTS — by userId (usr_...)
-# Frontend passes the iGOT userId; backend resolves govId from roster.
+# All data access goes through adapter methods (Adapter pattern / OCP).
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/v1/profile/{user_id}")
@@ -142,23 +99,28 @@ async def get_profile_by_user_id(
     _current_user: UserAuth = Depends(get_current_user),
 ):
     """
-    Returns a structured user profile for the given iGOT userId (usr_...).
-    Looks up the user in the mock iGOT roster and returns their profile data.
+    Full user profile for the given iGOT userId (usr_...).
+    Reads from profileDetails.professionalDetails and profileDetails.competencies.
     """
-    roster = await _get_user_roster()
-    user = _find_user_by_id(roster, user_id)
+    from fastapi import HTTPException
+    user = await adapter.fetch_user_by_id(user_id)
     if not user:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found in iGOT roster.")
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    prof = (user.get("profileDetails") or {}).get("professionalDetails") or [{}]
+    prof = prof[0] if prof else {}
+    competencies = (user.get("profileDetails") or {}).get("competencies") or []
+
     return {
         "userId":       user.get("userId"),
         "govId":        user.get("govId"),
         "firstName":    user.get("firstName"),
         "lastName":     user.get("lastName"),
         "email":        user.get("email"),
-        "designation":  user.get("designation", "Official"),
-        "department":   user.get("department", "MoSPI"),
-        "competencies": user.get("competencies", []),
+        "designation":  prof.get("designation", "Official"),
+        "department":   prof.get("department", "MoSPI"),
+        "experienceYears": user.get("experienceYears", 0),
+        "competencies": competencies,
     }
 
 
@@ -167,29 +129,20 @@ async def get_skill_gaps_by_user_id(
     user_id: str,
     _current_user: UserAuth = Depends(get_current_user),
 ):
-    """
-    Skill gaps for a learner by iGOT userId. Resolves govId from roster first.
-    """
-    roster = await _get_user_roster()
-    user = _find_user_by_id(roster, user_id)
+    """Skill-gap analysis for a learner by their iGOT userId."""
+    from fastapi import HTTPException
+    user = await adapter.fetch_user_by_id(user_id)
     if not user:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
 
-    gov_id = user.get("govId", user_id)
-    history = await adapter.fetch_user_history(gov_id)
-    catalog = await adapter.fetch_catalog()
+    prof = (user.get("profileDetails") or {}).get("professionalDetails") or [{}]
+    prof = prof[0] if prof else {}
+    competencies = (user.get("profileDetails") or {}).get("competencies") or []
 
-    # Derive current competency levels from FRAC profile on roster
-    competencies = user.get("competencies", [])
     skill_gaps = []
     for comp in competencies:
-        level_str = comp.get("competencyLevel", "Level 2")
-        try:
-            current_level = int("".join(filter(str.isdigit, level_str))) or 2
-        except Exception:
-            current_level = 2
-        target_level = 4
+        current_level = _level_to_int(comp.get("competencyLevel", "Level 2"))
+        target_level  = 4
         gap = max(0, target_level - current_level)
         skill_gaps.append({
             "competencyId": comp.get("id", ""),
@@ -202,9 +155,9 @@ async def get_skill_gaps_by_user_id(
 
     return {
         "userId":     user_id,
-        "govId":      gov_id,
-        "jobRole":    user.get("designation", "Official"),
-        "department": user.get("department", "MoSPI"),
+        "govId":      user.get("govId", user_id),
+        "jobRole":    prof.get("designation", "Official"),
+        "department": prof.get("department", "MoSPI"),
         "skillGaps":  skill_gaps,
     }
 
@@ -214,31 +167,31 @@ async def get_enrollments_by_user_id(
     user_id: str,
     _current_user: UserAuth = Depends(get_current_user),
 ):
-    """Enrollments for a learner by iGOT userId."""
-    roster = await _get_user_roster()
-    user = _find_user_by_id(roster, user_id)
-    gov_id = user.get("govId", user_id) if user else user_id
-
-    history = await adapter.fetch_user_history(gov_id)
-    catalog = await adapter.fetch_catalog()
+    """Active/in-progress enrollments for a learner by iGOT userId."""
+    raw_enrollments = await adapter.fetch_user_enrollments(user_id)
 
     enrollments = []
-    for i, enrollment in enumerate(history):
-        if enrollment.get("status") == "IN_PROGRESS":
-            course = next((c for c in catalog if c["igot_course_id"] == enrollment["igot_course_id"]), None)
-            total_hours = (course["duration_minutes"] / 60.0) if course else 0
-            remaining = round(enrollment.get("remaining_minutes", 0) / 60.0, 1)
-            enrollments.append({
-                "enrollmentId":       f"ENR-{gov_id}-{i:03d}",
-                "courseId":           enrollment["igot_course_id"],
-                "courseTitle":        enrollment["course_title"],
-                "provider":           course["provider_name"] if course else "iGOT Karmayogi",
-                "durationHours":      round(total_hours, 1),
-                "progressPercentage": enrollment.get("progress_percentage", 0),
-                "remainingHours":     remaining,
-                "lastAccessed":       enrollment.get("last_accessed_at", ""),
-                "status":             enrollment.get("status", "IN_PROGRESS"),
-            })
+    for i, e in enumerate(raw_enrollments):
+        status_int = e.get("status", 0)
+        # Show both IN_PROGRESS (1) and COMPLETED (2) courses
+        status_label = "Completed" if status_int == 2 else "In Progress" if status_int == 1 else "Not Started"
+        leaf = e.get("leafNodesCount", 0) or 1
+        progress_pct = e.get("completionPercentage", 0)
+        done_nodes   = int(leaf * progress_pct / 100) if progress_pct else e.get("progress", 0)
+        remaining_hrs = round(max(0, leaf - done_nodes) * 0.5, 1)
+        total_hrs     = round(leaf * 0.5, 1)
+
+        enrollments.append({
+            "enrollmentId":       f"ENR-{user_id}-{i:03d}",
+            "courseId":           e.get("courseId", ""),
+            "courseTitle":        e.get("courseName", ""),
+            "provider":           e.get("channel", "iGOT Karmayogi"),
+            "durationHours":      total_hrs,
+            "progressPercentage": progress_pct,
+            "remainingHours":     remaining_hrs,
+            "lastAccessed":       e.get("enrolledDate", ""),
+            "status":             status_label,
+        })
 
     return {"status": "success", "enrollments": enrollments}
 
@@ -248,41 +201,79 @@ async def get_recommendations_by_user_id(
     user_id: str,
     _current_user: UserAuth = Depends(get_current_user),
 ):
-    """Course recommendations for a learner by iGOT userId."""
-    roster = await _get_user_roster()
-    user = _find_user_by_id(roster, user_id)
-    gov_id = user.get("govId", user_id) if user else user_id
-
+    """AI-ranked course recommendations personalised by skill gap."""
+    user    = await adapter.fetch_user_by_id(user_id)
     catalog = await adapter.fetch_catalog()
 
-    # Get skill gaps to personalise recommendations
-    competencies = (user or {}).get("competencies", [])
-    gaps = {}
+    # Build gap map from profile competencies
+    competencies = (user.get("profileDetails") or {}).get("competencies") or [] if user else []
+    enrolled_ids = {e.get("courseId") for e in await adapter.fetch_user_enrollments(user_id)}
+
+    gaps: dict[str, dict] = {}
     for comp in competencies:
-        level_str = comp.get("competencyLevel", "Level 2")
-        try:
-            current = int("".join(filter(str.isdigit, level_str))) or 2
-        except Exception:
-            current = 2
-        gaps[comp.get("name", "")] = {"current": current, "target": 4, "gap": max(0, 4 - current)}
+        current = _level_to_int(comp.get("competencyLevel", "Level 2"))
+        gaps[comp.get("name", "")] = {"current": current, "gap": max(0, 4 - current)}
 
     recommendations = []
     for course in catalog:
-        for skill in course.get("skills_covered", []):
-            skill_name = skill.get("skill_name", "")
-            gap_info = gaps.get(skill_name)
-            if gap_info and gap_info["gap"] > 0 and skill["proficiency_taught"] > gap_info["current"]:
-                recommendations.append({
-                    "courseId":    course["igot_course_id"],
-                    "title":       course["course_title"],
-                    "provider":    course["provider_name"],
-                    "durationHours": round(course["duration_minutes"] / 60.0, 1),
-                    "matchReason": f"Bridges your gap in {skill_name}.",
-                    "tags":        [skill_name],
-                })
-                break
+        if course.get("identifier") in enrolled_ids:
+            continue  # skip already enrolled courses
+        for skill in (course.get("competencies_v3") and [] or []):  # safe fallback
+            pass
+        # Match against user gap map via course name / description keywords
+        # Primary: use course competency tag fields if available
+        comp_tags = []
+        raw_v3 = course.get("competencies_v3", "")
+        if raw_v3:
+            try:
+                comp_tags = json.loads(raw_v3) if isinstance(raw_v3, str) else raw_v3
+            except Exception:
+                pass
 
-    return {"status": "success", "recommendations": recommendations}
+        best_gap = 0
+        match_skill = ""
+        match_reason = ""
+        for tag in comp_tags:
+            name = tag.get("name", "") if isinstance(tag, dict) else ""
+            gap_info = gaps.get(name)
+            if gap_info and gap_info["gap"] > best_gap:
+                best_gap = gap_info["gap"]
+                match_skill = name
+                match_reason = f"Bridges your gap in {name}."
+
+        if not match_skill:
+            # Fallback: recommend courses whose primaryCategory matches any gap skill
+            cat = course.get("primaryCategory", "")
+            for skill_name, gap_info in gaps.items():
+                if gap_info["gap"] > 0 and (skill_name.lower() in cat.lower() or cat.lower() in skill_name.lower()):
+                    match_skill = skill_name
+                    match_reason = f"Recommended for your role."
+                    best_gap = gap_info["gap"]
+                    break
+
+        if not match_skill and gaps:
+            # Last resort: include top courses anyway with a generic reason
+            match_reason = "Recommended for MoSPI officials."
+
+        duration_sec = course.get("duration", "0")
+        try:
+            duration_hrs = round(int(duration_sec) / 3600, 1) if duration_sec else 0
+        except (ValueError, TypeError):
+            duration_hrs = round((course.get("leafNodesCount") or 10) * 0.5, 1)
+
+        recommendations.append({
+            "courseId":     course.get("identifier", ""),
+            "title":        course.get("name", ""),
+            "provider":     course.get("source", course.get("channel", "iGOT Karmayogi")),
+            "durationHours": duration_hrs,
+            "matchReason":  match_reason,
+            "tags":         [match_skill] if match_skill else [],
+            "gapScore":     best_gap,
+        })
+
+    # Sort by gap score descending, limit to top 8
+    recommendations.sort(key=lambda r: r["gapScore"], reverse=True)
+    return {"status": "success", "recommendations": recommendations[:8]}
 
 
 @app.get("/api/v1/learner/{user_id}/achievements")
@@ -290,12 +281,19 @@ async def get_achievements_by_user_id(
     user_id: str,
     _current_user: UserAuth = Depends(get_current_user),
 ):
-    """Achievements for a learner by iGOT userId."""
-    roster = await _get_user_roster()
-    user = _find_user_by_id(roster, user_id)
-    gov_id = user.get("govId", user_id) if user else user_id
-
-    achievements = ACHIEVEMENTS_BY_USER.get(gov_id, [])
+    """Completed courses (status=2) treated as achievements."""
+    raw_enrollments = await adapter.fetch_user_enrollments(user_id)
+    achievements = []
+    for i, e in enumerate(raw_enrollments):
+        if e.get("status") == 2:
+            certs = e.get("issuedCertificates") or []
+            achievements.append({
+                "id":       certs[0].get("identifier", f"ACH-{i:03d}") if certs else f"ACH-{i:03d}",
+                "title":    e.get("courseName", ""),
+                "score":    int(e.get("completionPercentage", 100)),
+                "date":     e.get("enrolledDate", ""),
+                "category": "iGOT Course" if not certs else "Certificate",
+            })
     return {"status": "success", "achievements": achievements}
 
 
