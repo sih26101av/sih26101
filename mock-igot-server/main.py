@@ -141,6 +141,16 @@ def push_score(userId: str, payload: ScoreRequest):
     return {"status": "success", "message": "Score synced successfully to iGOT"}
 
 
+@app.post("/competencies/update", status_code=200)
+def update_competency(payload: dict):
+    MOCK_SCORES_DB.append(payload)
+    return {
+        "status": "success",
+        "message": "Competency profile updated successfully on iGOT",
+        "syncedData": payload,
+    }
+
+
 @app.post("/api/external/igot/users/{userId}/enroll", status_code=201)
 def enroll_user(userId: str, payload: EnrollRequest):
     MOCK_ENROLLMENTS_DB.append({"userId": userId, "enrollment_data": payload.model_dump()})

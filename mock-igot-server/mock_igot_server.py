@@ -470,6 +470,20 @@ async def legacy_push_score(user_id: str, payload: ScorePayload):
     return {"status": "success", "message": "Score synced to iGOT."}
 
 
+@app.post("/competencies/update", status_code=200)
+async def update_competency_from_rag(
+    payload: dict,
+    x_authenticated_user_token: str | None = Header(default=None),
+):
+    """Updates learner competency level after passing a RAG assessment quiz."""
+    SCORE_PUSH_LOG.append(payload)
+    return {
+        "status": "success",
+        "message": "Competency record successfully updated on iGOT Karmayogi.",
+        "syncedData": payload,
+    }
+
+
 @app.post("/api/external/igot/users/{user_id}/enroll", status_code=201)
 async def legacy_enroll_user(user_id: str, payload: EnrolPayload):
     course = _course_by_id(payload.igot_course_id)

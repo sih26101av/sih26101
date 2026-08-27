@@ -8,3 +8,6 @@ sqlalchemy
 python-jose[cryptography]
 bcrypt
 python-multipart
+pypdf
+pdfplumber
+python-pptx

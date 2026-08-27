@@ -28,6 +28,7 @@ from models.domain import (
     SkillGapResponse,
 )
 from routers.chatbot import router as chatbot_router
+from routers.rag import router as rag_router
 import httpx
 import json
 import os
@@ -67,6 +68,7 @@ async def _startup():
 # ── Register routers ───────────────────────────────────────────────────────────
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
+app.include_router(rag_router, prefix="/api/v1/rag", tags=["rag"])
 
 
 # ── iGOT Adapter singleton (HTTP → mock_igot_server.py on port 8001) ────────────
@@ -78,8 +80,22 @@ adapter = MockIgotAdapter()
 _IGOT_BASE = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
 _IGOT_TOKEN = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
 
+# ── Role-level requirements for Deputy Director, National Accounts Division ────
+ROLE_REQUIREMENTS = {
+    "C-001": {"skillName": "National Accounts Framework (SNA 2008)", "domain": "Statistical", "targetLevel": 4},
+    "C-002": {"skillName": "Survey Methodology",                      "domain": "Statistical", "targetLevel": 4},
+    "C-003": {"skillName": "Price Statistics & CPI Construction",     "domain": "Statistical", "targetLevel": 3},
+    "C-004": {"skillName": "Data Analysis with Python & R",           "domain": "Technical",   "targetLevel": 4},
+    "C-005": {"skillName": "Machine Learning for Statistics",          "domain": "Technical",   "targetLevel": 3},
+}
+
 # ── Static achievement log (keyed by govId) ────────────────────────────────────
-ACHIEVEMENTS_BY_USER: dict[str, list] = {}
+ACHIEVEMENTS_BY_USER: dict[str, list] = {
+    "EMP-8472": [
+        {"id": "ACH-001", "title": "National Accounts Framework (SNA 2008)", "score": 88, "date": "2025-10-13T10:00:00Z", "category": "External Certification"},
+        {"id": "ACH-002", "title": "Survey Methodology & Sampling Techniques", "score": 94, "date": "2025-11-20T14:30:00Z", "category": "RAG Quiz"},
+    ]
+}
 
 
 # ── Helper: parse competency level string → int ────────────────────────────────
