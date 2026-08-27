@@ -16,7 +16,7 @@ On startup: creates users_auth table in auth.db (idempotent).
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from adapters.igot_adapter import FileBasedIgotAdapter
+from adapters.igot_adapter import MockIgotAdapter
 from auth.database import AuthBase, engine
 from auth.dependencies import get_current_user, require_role
 from auth.models import UserAuth
@@ -69,9 +69,10 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
 
 
-# ── iGOT Adapter singleton (FileBasedIgotAdapter reads data/*.json directly) ────
-# This means the backend works regardless of which mock server is running.
-adapter = FileBasedIgotAdapter()
+# ── iGOT Adapter singleton (HTTP → mock_igot_server.py on port 8001) ────────────
+# Data only flows when the Sunbird-compliant mock server is running.
+# Run: cd mock-igot-server && uvicorn mock_igot_server:app --reload --port 8001
+adapter = MockIgotAdapter()
 
 # ── iGOT mock server config (kept for admin proxy endpoint) ────────────────────
 _IGOT_BASE = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
