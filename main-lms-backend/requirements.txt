@@ -11,3 +11,4 @@ python-multipart
 pypdf
 pdfplumber
 python-pptx
+langchain-text-splitters
