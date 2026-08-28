@@ -4,20 +4,26 @@ FILE: routers/chatbot.py
 Multilingual AI Learning Assistant — Gyan (ज्ञान)
 Archit Shukla | MoSPI Skill Intelligence Platform | SIH 2026
 
-Smart context-aware chatbot. Reads the user's live skill gap & recommendation
-data and generates intelligent, personalized responses via keyword-intent
-matching + MoSPI-grounded response templates.
+Two-tier response engine:
+  1. PRIMARY  → Ollama local LLM (llama3.2:3b) via RAG pipeline.
+               Retrieves relevant chunks from ChromaDB, builds a personalized
+               system prompt with user role/gaps/recommendations, and generates
+               a reasoned, context-grounded answer.
+  2. FALLBACK → Template engine (keyword-intent matching + Devanagari bilingual
+               responses). Activates silently if Ollama is unreachable.
 
-Architecture is LLM-ready: swap _generate_response() with a Gemini/OpenAI
-call and nothing else needs to change.
+The response schema includes an `engine` field so the frontend can optionally
+display 'AI Powered' vs 'Standard Mode'.
 """
 
+import logging
 import re
 import random
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List, Optional
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -55,6 +61,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     detected_language: str  # "hi" | "en"
+    engine: str = "template"   # "rag_ollama" | "template"
 
 
 # =============================================================================
@@ -310,18 +317,100 @@ def _generate_response(req: ChatRequest, lang: str, intent: str) -> str:
 
 
 # =============================================================================
-# ENDPOINT
+# ENDPOINTS
 # =============================================================================
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     """
-    Multilingual AI Learning Assistant endpoint.
-    Detects language, infers intent, and returns a context-aware response
-    grounded in the user's live skill gap and recommendation data.
+    Multilingual AI Learning Assistant — Gyan (ज्ञान).
+
+    Tier 1: Tries the offline Ollama RAG pipeline.
+      - Retrieves relevant chunks from ChromaDB (nomic-embed-text).
+      - Injects user role, skill gaps, and recommendations as system context.
+      - Generates a reasoned, document-grounded answer via local LLM.
+
+    Tier 2 (silent fallback): If Ollama is unreachable, falls back to the
+      in-process intent-matching + template engine. The demo always works.
     """
     lang   = detect_language(req.message)
     intent = detect_intent(req.message)
-    reply  = _generate_response(req, lang, intent)
 
-    return ChatResponse(reply=reply, detected_language=lang)
+    # ── Tier 1: Ollama RAG ────────────────────────────────────────────────────
+    try:
+        from ai.rag_engine import generate_chat_response, is_ollama_available
+
+        if is_ollama_available():
+            # Convert Pydantic models to plain dicts for the RAG engine
+            gaps_dicts = [
+                {
+                    "skillName":    g.skillName,
+                    "domain":       g.domain,
+                    "currentLevel": g.currentLevel,
+                    "targetLevel":  g.targetLevel,
+                    "gapScore":     g.gapScore,
+                }
+                for g in req.skill_gaps
+            ]
+            recs_dicts = [
+                {
+                    "title":         r.title,
+                    "provider":      r.provider,
+                    "durationHours": r.durationHours,
+                    "matchReason":   r.matchReason,
+                }
+                for r in req.recommendations
+            ]
+            history_dicts = [
+                {"role": h.role, "content": h.content}
+                for h in req.history
+            ]
+
+            ai_reply = await generate_chat_response(
+                query=req.message,
+                history=history_dicts,
+                job_role=req.job_role or "Statistical Official",
+                department=req.department or "MoSPI",
+                skill_gaps=gaps_dicts,
+                recommendations=recs_dicts,
+                language_hint=lang,
+            )
+            logger.info("[Gyan] Responded via Ollama RAG (model=%s)", 
+                        __import__('os').getenv('OLLAMA_MODEL', 'llama3.2:3b'))
+            return ChatResponse(
+                reply=ai_reply,
+                detected_language=lang,
+                engine="rag_ollama",
+            )
+        else:
+            logger.info("[Gyan] Ollama offline → using template engine")
+
+    except Exception as exc:
+        logger.warning("[Gyan] RAG engine error, falling back to templates: %s", exc)
+
+    # ── Tier 2: Template engine fallback ─────────────────────────────────────
+    reply = _generate_response(req, lang, intent)
+    return ChatResponse(reply=reply, detected_language=lang, engine="template")
+
+
+@router.get("/chat/mode")
+async def chat_mode():
+    """
+    Returns which response engine is currently active.
+    Useful for the frontend to display 'AI Powered' or 'Standard Mode' badge.
+    """
+    try:
+        from ai.rag_engine import is_ollama_available, _OLLAMA_MODEL
+        ollama_ok = is_ollama_available()
+        return {
+            "engine":        "rag_ollama" if ollama_ok else "template",
+            "ollama_status": "connected" if ollama_ok else "offline",
+            "ollama_model":  _OLLAMA_MODEL,
+            "description":   (
+                "Gyan is running in AI-Powered mode (Ollama local LLM + ChromaDB RAG)"
+                if ollama_ok else
+                "Gyan is running in Standard mode (intent-matching templates)"
+            ),
+        }
+    except Exception:
+        return {"engine": "template", "ollama_status": "offline"}

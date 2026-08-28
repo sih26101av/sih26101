@@ -1,10 +1,15 @@
-# Node
+# ─────────────────────────────────────────────────────────────────────────────
+# .gitignore — MoSPI Skill Intelligence Platform (SIH 2026)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
 node_modules/
 dist/
 dist-ssr/
 *.local
+.vite/
 
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,7 +17,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -26,14 +30,47 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# ── Environment & secrets (NEVER commit these) ────────────────────────────────
 .env
+.env.*
+!.env.example
+
+# ── Virtual environments ──────────────────────────────────────────────────────
 .venv
-env/
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
 
-# OS
+# ── AI / RAG pipeline data (models are NOT stored in git) ─────────────────────
+# ChromaDB vector store — each dev runs `python -m ai.seed_knowledge` locally
+chroma_db/
+
+# Temporary file uploads during ingestion
+temp_uploads/
+
+# ── SQLite databases ──────────────────────────────────────────────────────────
+# auth.db is auto-created on startup — don't commit it
+*.db
+*.sqlite
+*.sqlite3
+
+# ── OS generated ──────────────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

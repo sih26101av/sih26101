@@ -29,6 +29,7 @@ from models.domain import (
 )
 from routers.chatbot import router as chatbot_router
 from routers.rag import router as rag_router
+from routers.ai_tools import router as ai_tools_router
 import httpx
 import json
 import os
@@ -69,6 +70,7 @@ async def _startup():
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
 app.include_router(rag_router, prefix="/api/v1/rag", tags=["rag"])
+app.include_router(ai_tools_router, prefix="/api/v1/ai", tags=["ai-tools"])
 
 
 # ── iGOT Adapter singleton (HTTP → mock_igot_server.py on port 8001) ────────────
