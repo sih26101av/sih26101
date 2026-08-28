@@ -60,6 +60,12 @@ try:
 except ImportError:
     Presentation = None
 
+# DOCX Extraction library
+try:
+    import docx
+except ImportError:
+    docx = None
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -67,7 +73,7 @@ router = APIRouter()
 
 # ── Configuration Constants ───────────────────────────────────────────────────
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB max limit
-SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt"}
+SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt", ".docx", ".doc"}
 
 
 # =============================================================================
@@ -87,7 +93,7 @@ class QuizPayload(BaseModel):
 
 class DocumentMetadata(BaseModel):
     filename: str = Field(..., description="Original name of the uploaded file")
-    file_type: str = Field(..., description="Detected file extension (.pdf, .ppt, .pptx, .txt)")
+    file_type: str = Field(..., description="Detected file extension (.pdf, .ppt, .pptx, .txt, .docx, .doc)")
     file_size_bytes: int = Field(..., description="Size of the uploaded file in bytes")
     character_count: int = Field(..., description="Total extracted character count")
     word_count: int = Field(..., description="Total extracted word count")
@@ -95,6 +101,7 @@ class DocumentMetadata(BaseModel):
     page_count: Optional[int] = Field(None, description="Total number of pages (for PDF)")
     slide_count: Optional[int] = Field(None, description="Total number of slides (for PPT/PPTX)")
     line_count: Optional[int] = Field(None, description="Total number of lines (for TXT)")
+    paragraph_count: Optional[int] = Field(None, description="Total number of paragraphs (for DOCX/DOC)")
 
 
 class DocumentUploadResponse(BaseModel):
@@ -345,6 +352,93 @@ def _extract_txt(file_bytes: bytes) -> Tuple[str, int]:
     cleaned = _clean_text(decoded_text)
     line_count = len(decoded_text.splitlines())
     return cleaned, line_count
+
+
+def _extract_docx(file_bytes: bytes) -> Tuple[str, int]:
+    """
+    Extracts text from Word documents (.docx/.doc) using python-docx with XML fallback.
+    Returns a tuple of (extracted_text, paragraph_count).
+    """
+    paragraph_texts = []
+    paragraph_count = 0
+
+    # 1. Primary extraction via python-docx
+    if docx is not None:
+        try:
+            doc = docx.Document(io.BytesIO(file_bytes))
+            paragraph_count = len(doc.paragraphs)
+
+            for p in doc.paragraphs:
+                p_text = p.text.strip()
+                if p_text:
+                    paragraph_texts.append(p_text)
+
+            # Also extract tables if present
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+                    if row_text:
+                        paragraph_texts.append(row_text)
+
+            combined_text = "\n\n".join(paragraph_texts)
+            if combined_text.strip():
+                return _clean_text(combined_text), paragraph_count
+        except Exception as e:
+            logger.warning(f"python-docx failed: {e}. Attempting direct XML parsing.")
+            paragraph_texts.clear()
+
+    # 2. Fallback: Parse XML from DOCX (ZIP container) directly
+    try:
+        with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+            doc_xml_files = [
+                f for f in z.namelist()
+                if f == "word/document.xml" or (
+                    f.startswith("word/")
+                    and f.endswith(".xml")
+                    and not f.startswith("word/theme")
+                    and not f.startswith("word/settings")
+                    and not f.startswith("word/webSettings")
+                    and not f.startswith("word/styles")
+                    and not f.startswith("word/fontTable")
+                )
+            ]
+            if "word/document.xml" in doc_xml_files:
+                doc_xml_files.remove("word/document.xml")
+                doc_xml_files.insert(0, "word/document.xml")
+
+            for xml_file in doc_xml_files:
+                try:
+                    xml_content = z.read(xml_file)
+                    tree = ET.fromstring(xml_content)
+                    for elem in tree.iter():
+                        if elem.tag.endswith("}p"):
+                            paragraph_count += 1
+                            texts = [t.text for t in elem.iter() if elem.tag.endswith("}t") or (t.tag.endswith("}t") and t.text)]
+                            p_str = "".join(t for t in texts if t).strip()
+                            if p_str:
+                                paragraph_texts.append(p_str)
+                except Exception as inner_e:
+                    logger.warning(f"Error parsing XML file {xml_file} in docx: {inner_e}")
+
+            if not paragraph_texts:
+                for xml_file in doc_xml_files:
+                    try:
+                        xml_content = z.read(xml_file)
+                        tree = ET.fromstring(xml_content)
+                        texts = [elem.text for elem in tree.iter() if elem.tag.endswith("}t") and elem.text]
+                        if texts:
+                            paragraph_texts.extend([t.strip() for t in texts if t.strip()])
+                    except Exception:
+                        pass
+
+            combined_text = "\n\n".join(paragraph_texts)
+            return _clean_text(combined_text), paragraph_count
+    except Exception as e:
+        logger.error(f"DOCX extraction error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Could not parse Word document: {str(e)}"
+        )
 
 
 def _chunk_document_text(text: str, chunk_size: int = 1000, chunk_overlap: int = 150) -> List[str]:
@@ -769,6 +863,7 @@ async def upload_document_for_rag(
     page_count: Optional[int] = None
     slide_count: Optional[int] = None
     line_count: Optional[int] = None
+    paragraph_count: Optional[int] = None
     extracted_text = ""
 
     try:
@@ -788,6 +883,8 @@ async def upload_document_for_rag(
                 extracted_text, slide_count = _extract_pptx(file_bytes)
         elif ext == ".txt":
             extracted_text, line_count = _extract_txt(file_bytes)
+        elif ext in {".docx", ".doc"}:
+            extracted_text, paragraph_count = _extract_docx(file_bytes)
 
     except HTTPException:
         raise
@@ -844,6 +941,7 @@ async def upload_document_for_rag(
         page_count=page_count,
         slide_count=slide_count,
         line_count=line_count,
+        paragraph_count=paragraph_count,
     )
 
     return DocumentUploadResponse(
