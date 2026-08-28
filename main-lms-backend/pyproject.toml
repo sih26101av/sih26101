@@ -1,0 +1,12 @@
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportMissingImports = "warning"
+reportMissingTypeStubs = "none"
+reportGeneralTypeIssues = "none"
+
+[tool.pylint.MASTER]
+extension-pkg-whitelist = ["pydantic"]
+
+[tool.pylint.MESSAGES CONTROL]
+disable = ["import-error", "no-name-in-module", "c-extension-no-member"]

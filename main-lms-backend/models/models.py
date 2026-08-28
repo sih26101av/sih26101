@@ -37,6 +37,9 @@ class CompetencyProfile(Base):
     __tablename__ = "competency_profiles"
     profileId = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     lastEvaluatedDate = Column(DateTime, nullable=True)
+    current_level = Column(Integer, nullable=True, default=1)
+    skill_name = Column(String, nullable=True, default="National Accounts")
+    target_level = Column(Integer, nullable=True, default=4)
 
     user_competencies = relationship("UserCompetency", back_populates="profile", cascade="all, delete-orphan")
     official = relationship("Official", back_populates="competency_profile", uselist=False)
