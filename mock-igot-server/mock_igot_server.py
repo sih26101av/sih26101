@@ -108,7 +108,15 @@ async def lifespan(app: FastAPI):
 
     # ── Authentic datasets (new primary sources) ────────────────────────────
     print("[STARTUP] Loading courses.json …", flush=True)
-    DB_COURSES = _load_json("courses.json")
+    raw_courses = _load_json("courses.json")
+    
+    # Filter to ensure we only load courses with English titles
+    DB_COURSES = []
+    for c in raw_courses:
+        name = c.get("name") or ""
+        ascii_cnt = sum(1 for ch in name if ord(ch) < 128)
+        if (ascii_cnt / max(len(name), 1)) > 0.8:
+            DB_COURSES.append(c)
 
     print("[STARTUP] Loading competencies.json …", flush=True)
     DB_COMPETENCIES = _load_json("competencies.json")

@@ -71,7 +71,15 @@ async def lifespan(app: FastAPI):
     global DB_COURSES, DB_COMPETENCIES, DB_JOB_PROFILES, _COURSE_INDEX
 
     print("[STARTUP] main.py — Loading courses.json …", flush=True)
-    DB_COURSES = _load_json("courses.json")
+    raw_courses = _load_json("courses.json")
+    
+    # Filter to ensure we only load courses with English titles
+    DB_COURSES = []
+    for c in raw_courses:
+        name = c.get("name") or ""
+        ascii_cnt = sum(1 for ch in name if ord(ch) < 128)
+        if (ascii_cnt / max(len(name), 1)) > 0.8:
+            DB_COURSES.append(c)
 
     print("[STARTUP] main.py — Loading competencies.json …", flush=True)
     DB_COMPETENCIES = _load_json("competencies.json")
