@@ -1,0 +1,1988 @@
+[
+  {
+    "competency_id": "CID0016",
+    "name": "Emerging Technology",
+    "category": "Functional",
+    "description": "Knowledge of developments and new applications of emerging technologies and their benefits, challenges, and applications to government processes."
+  },
+  {
+    "competency_id": "CID0030",
+    "name": "Institutional Governance",
+    "category": "Functional",
+    "description": "Applies institutional governance frameworks to strengthen state capacity, while focusing on transparent and accountable public sector governance and institutions."
+  },
+  {
+    "competency_id": "CID00657",
+    "name": "Monitoring and Evaluation",
+    "category": "Functional",
+    "description": "Gather information and undertake qualitative and quantitative assessments in order to determine the progress of a project or a set of activities towards pre-specified goals and objectives, and to highlight any positive or adverse impact which can hamper the slated goals. "
+  },
+  {
+    "competency_id": "CID00619",
+    "name": "Office Management",
+    "category": "Functional",
+    "description": "The administration and enforcement of compliance of secretarial work in compliance with the updated manual of office procedures (CSMOP) towards effective and efficient administration"
+  },
+  {
+    "competency_id": "CID00409",
+    "name": "Data Storytelling and Visualisation",
+    "category": "Functional",
+    "description": "Combine data insights, and dynamic visual displays with illustrative and interactive graphics and narrative representative formats to present patterns, trends, meanings, messages and analytical insights from data or new concepts in a strategic manner"
+  },
+  {
+    "competency_id": "CID0026",
+    "name": "Data collection and analysis",
+    "category": "Functional",
+    "description": "Proactively collect, clean, analyse, and communicate data from a range of stakeholders and sources to reach a conclusion and support decision making."
+  },
+  {
+    "competency_id": "CID0024",
+    "name": "Environmental Planning",
+    "category": "Domain",
+    "description": "Identify, assess and recommend future actions and development proposals that have environmental implications to improve the quality of the environment and the health and welfare of people\n"
+  },
+  {
+    "competency_id": "CID00252",
+    "name": "Financial Management",
+    "category": "Functional",
+    "description": "Ensure healthy finance to aid business growth and operations"
+  },
+  {
+    "competency_id": "CID00415",
+    "name": "Climate-Resilient Development",
+    "category": "Domain",
+    "description": "Identify, evaluate, select, implement, and adjust actions to reduce climate vulnerabilities and improve development outcomes."
+  },
+  {
+    "competency_id": "CID00413",
+    "name": "Sustainable Energy Infrastructure Design",
+    "category": "Domain",
+    "description": "Identify, plan and design urban sustainable energy-efficient public infrastructure."
+  },
+  {
+    "competency_id": "CID0027",
+    "name": "Environmental Impact Assessment",
+    "category": "Domain",
+    "description": "Demonstrates knowledge of environmental impact assessments in order to oversee and administer EIA processes that help determine the environmental impact of a proposed activity/project."
+  },
+  {
+    "competency_id": "CID00559",
+    "name": "Integrated Finance Division",
+    "category": "Domain",
+    "description": "Role and Functions of Integrated Finance Division (IFD)"
+  },
+  {
+    "competency_id": "CID00560",
+    "name": "Public Procurement of Goods",
+    "category": "Domain",
+    "description": "Role & Functions and in Public Procurement of Goods"
+  },
+  {
+    "competency_id": "CID00604",
+    "name": "Public Procurement of Services",
+    "category": "Domain",
+    "description": "Role & Functions and in Public Procurement of Services"
+  },
+  {
+    "competency_id": "CID00602",
+    "name": "Public Procurement of Works",
+    "category": "Domain",
+    "description": "Role & Functions and in Public Procurement of Works"
+  },
+  {
+    "competency_id": "CID00459",
+    "name": "Public Financial Management (PFM)",
+    "category": "Functional",
+    "description": "Understand, recognise, and evaluate the set of laws, rules, systems, and processes used by the central government to mobilise revenue, allocate public funds, undertake public spending, account for funds and audit results"
+  },
+  {
+    "competency_id": "CID0034",
+    "name": "Voluntary Exit Management",
+    "category": "Domain",
+    "description": "Establish and implement frameworks, guidelines, policies and processes to manage voluntary exits"
+  },
+  {
+    "competency_id": "CID00512",
+    "name": "Employee Engagement Management",
+    "category": "Domain",
+    "description": "Drive employee engagement programmes to facilitate commitment from employees to organisational values, vision and objectives"
+  },
+  {
+    "competency_id": "CID00256",
+    "name": "Financial Reporting",
+    "category": "Functional",
+    "description": "Prepare general-purpose financial statements and disclosure notes in accordance with applicable financial reporting framework"
+  },
+  {
+    "competency_id": "CID00393",
+    "name": "Financial Transactions",
+    "category": "Functional",
+    "description": "Prepare business documentation and cash balances"
+  },
+  {
+    "competency_id": "CID00670",
+    "name": "Control of Pollution",
+    "category": "Domain",
+    "description": "Learning about technologies pertaining to control of air, water and soil pollution, including industry specific cleaner technologies. Knowledge on the prevailing technologies for control of pollution, the operating principles, the required infrastructure, maintenance requirements and the emerging technologies including best available techniques.        "
+  },
+  {
+    "competency_id": "CID00457",
+    "name": "Regulatory Policy",
+    "category": "Functional",
+    "description": "Able to understand, define, and support the development of sector-specific regulatory strategies to contribute to public policies, with a focus on evolving trends in India’s regulatory environment."
+  },
+  {
+    "competency_id": "CID00287",
+    "name": "Regulatory Compliance",
+    "category": "Functional",
+    "description": "Develop, enforce, implement and practice regulatory compliance activities to ensure compliance to legislative and regulatory requirements"
+  },
+  {
+    "competency_id": "CID00186",
+    "name": "Communication Backbone System Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of communication backbone system"
+  },
+  {
+    "competency_id": "CID00184",
+    "name": "Communication Auxiliary Systems Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of communication auxiliary systems"
+  },
+  {
+    "competency_id": "CID00517",
+    "name": "Digital Marketing and Communication",
+    "category": "Domain",
+    "description": "Develop digital outreach plans and marketing collaterals to communicate and enhance the organisation's employer brand"
+  },
+  {
+    "competency_id": "CID00482",
+    "name": "Technology and Systems Application",
+    "category": "Functional",
+    "description": "Apply and integrate evaluated technologies into the organisation’s operations or processes to achieve the desired outcomes"
+  },
+  {
+    "competency_id": "CID00189",
+    "name": "Technology Application",
+    "category": "Functional",
+    "description": "Integrate technologies into business operations of the organisation to optimise efficiency and effectiveness of processes"
+  },
+  {
+    "competency_id": "CID0010",
+    "name": "Technology roadmapping",
+    "category": "Functional",
+    "description": "Understand, recognise, design, and visualise a technology roadmap to plan for new and existing technology-focused solutions in the government."
+  },
+  {
+    "competency_id": "CID2029",
+    "name": "Environment and Social Governance",
+    "category": "Domain",
+    "description": "Understand the latest industry and/or client standards regarding Environment and Social Governance (ESG) and undertake ESG research activities and document findings"
+  },
+  {
+    "competency_id": "CID00416",
+    "name": "Tax Computation",
+    "category": "Functional",
+    "description": "Compute Goods and Services Tax, and tax liabilities"
+  },
+  {
+    "competency_id": "CID00508",
+    "name": "Health and Wellness Programme Management",
+    "category": "Domain",
+    "description": "Develop and implement employee health and wellness programmes to promote a healthy and productive workforce"
+  },
+  {
+    "competency_id": "CID00660",
+    "name": "Learning and Development",
+    "category": "Functional",
+    "description": "Has the ability to identify learning and development requirements in the MDO and facilitate in capacity building at individual, division level and departmental/organizational level."
+  },
+  {
+    "competency_id": "CID00361",
+    "name": "Learning and Development",
+    "category": "Functional",
+    "description": "Develop knowledge, skills and abilities of self or employees to support the capability development needs of the organisation"
+  },
+  {
+    "competency_id": "CID00495",
+    "name": "Research and Information Synthesis",
+    "category": "Functional",
+    "description": "Identify, source and interpret information from various sources to obtain deep understanding of specific field or area to identify patterns, uncover insights, integrate findings into recommendations and/or guide decision-making"
+  },
+  {
+    "competency_id": "CID0021",
+    "name": "Project Planning",
+    "category": "Functional",
+    "description": "Identify, adapt, and streamline project deliverables by accounting for risks and planning for contingencies to help the team implement and close projects\n"
+  },
+  {
+    "competency_id": "CID00455",
+    "name": "Policy Implementation",
+    "category": "Functional",
+    "description": "Support and drive policy implementation to create appropriate policy systems that align government priorities."
+  },
+  {
+    "competency_id": "CID00307",
+    "name": "Infrastructure Strategy",
+    "category": "Functional",
+    "description": "Develop a robust strategy and plan for defining and managing a future-ready IT infrastructure, optimising its capacity, availability and synchronisation to enable an organisation's business operations. This involves evaluating infrastructure models and options for infrastructure components, managing infrastructure investments and facilitating the transformation toward the desired future infrastructure model"
+  },
+  {
+    "competency_id": "CID00369",
+    "name": "Planning and Coordination",
+    "category": "Behavioural",
+    "description": "Ability to plan, organise and monitor work with effective utilisation of resources such as time, money, and people"
+  },
+  {
+    "competency_id": "CID00282",
+    "name": "Project Management",
+    "category": "Functional",
+    "description": "Perform planning, organisation, monitoring and control of all aspects of an IT programme and the strategic utilisation of resources to achieve the objectives within the agreed timelines, costs and performance expectations. In addition, the identification, coordination and management of project interdependencies, ensuring alignment with and achievement of business objectives"
+  },
+  {
+    "competency_id": "CID00285",
+    "name": "Regulatory and Legal Advisory",
+    "category": "Domain",
+    "description": "Provide advice to business and management stakeholders on regulatory compliance and legal matters related to support business decision making"
+  },
+  {
+    "competency_id": "CID00434",
+    "name": "Tax Implications",
+    "category": "Functional",
+    "description": "Assess tax implication of changes in tax laws"
+  },
+  {
+    "competency_id": "CID00402",
+    "name": "Data Governance-Learning",
+    "category": "Functional",
+    "description": "Develop and implement guidelines, laws, and regulations across the organisation for the handling of data at various stages in its lifecycle as well as the provision of advice on proper data handling and resolution of data breaches in a range of complex, ambiguous or multi-faceted contexts"
+  },
+  {
+    "competency_id": "CID00334",
+    "name": "Procurement",
+    "category": "Functional",
+    "description": "Develop and apply procurement processes related to the solicitation of technology services through external providers. This includes the review of  proposals, setting of vendor selection guidelines, risk assessment through appropriate audits and tests and selection of external service providers based on stipulated evaluation criteria"
+  },
+  {
+    "competency_id": "CID00400",
+    "name": "Contract Management",
+    "category": "Functional",
+    "description": "Formalise contracts and/or service level agreements with providers of products and services including measure and manage supplier performance and fulfilment of agreed-upon service level agreements. This includes resolution of contractual issues and maintenance of vendor and/or provider relationships"
+  },
+  {
+    "competency_id": "CID0247",
+    "name": "People First",
+    "category": "COMPETENCY",
+    "description": "Passion for serving people with special care for the marginalized and disadvantaged. Being approachable, welcoming, caring and rising above all biases while interacting with people. Understands the needs of the people and constantly strive to improve the services."
+  },
+  {
+    "competency_id": "CID0266",
+    "name": "Conceptual Thinking",
+    "category": "COMPETENCY",
+    "description": "Understanding a situation or environment by putting the pieces together and identifying patterns that may not be obviously related. Connecting the dots while resisting stereotyping."
+  },
+  {
+    "competency_id": "CID0011",
+    "name": "Artificial Intelligence Application",
+    "category": "Functional",
+    "description": "Understand and apply artificial intelligence (AI) to technological artifacts, while assessing its benefits and challenges."
+  },
+  {
+    "competency_id": "CID00261",
+    "name": "Digital Technology Environment Scanning",
+    "category": "Domain",
+    "description": "Evaluate the digital technology environment and the impact of digital technology development"
+  },
+  {
+    "competency_id": "CID00263",
+    "name": "Digital Technology Adoption and Innovation",
+    "category": "Functional",
+    "description": "Develop digital technology enhancement projects to support the organisational objectives"
+  },
+  {
+    "competency_id": "CID0041",
+    "name": "Technology-enabled Learning Delivery",
+    "category": "Domain",
+    "description": "Implement and integrate learning technology to facilitate learning experiences"
+  },
+  {
+    "competency_id": "CID00236",
+    "name": "Emerging Technology Synthesis",
+    "category": "Functional",
+    "description": "Monitor, gather data and identify emerging technology trends, developments, products, services and techniques for integration. In addition, perform cost-benefit analysis and evaluation of their relevance, viability, sustainability and potential value add to the business."
+  },
+  {
+    "competency_id": "CID0037",
+    "name": "Technology Integration",
+    "category": "Functional",
+    "description": "Integrate new and emerging technology products, services and developments to enhance human resource (HR) operations and service delivery"
+  },
+  {
+    "competency_id": "CID00486",
+    "name": "Technology Road Mapping",
+    "category": "Functional",
+    "description": "Plan short-term and long-term goals with specific technology solutions to help meet those goals in order to make capital out of future market needs"
+  },
+  {
+    "competency_id": "CID0073",
+    "name": "Learning Technology Design",
+    "category": "Domain",
+    "description": "Design learning technologies to enhance learning experience and delivery"
+  },
+  {
+    "competency_id": "CID00484",
+    "name": "Technology Infrastructure Management and Integration",
+    "category": "Functional",
+    "description": "Evaluate latest available technologies to integrate into existing operations so as to improve customer service, reduce costs and streamline supply chains"
+  },
+  {
+    "competency_id": "CID00621",
+    "name": "Noting and Drafting",
+    "category": "Functional",
+    "description": "Understanding and practice of drafting an appropriate written communication by analysing a note, in order to move a proposal forward for decision making based on available evidence, established rules and precedents."
+  },
+  {
+    "competency_id": "CID0057",
+    "name": "Research Findings Communication",
+    "category": "Domain",
+    "description": "Communicate the research findings effectively to the relevant audiences using communication methods in accordance to established standards in the scientific community"
+  },
+  {
+    "competency_id": "CID00622",
+    "name": "Communication",
+    "category": "Behavioural",
+    "description": "Must be able to exchange information and ideas in a clear and concise manner appropriate for the audience in order to explain, persuade, convince and influence others to achieve the desired outcomes."
+  },
+  {
+    "competency_id": "CID0053",
+    "name": "Risk Management",
+    "category": "Domain",
+    "description": "Develop and implement risk management plans to support the continuity of business operations and services"
+  },
+  {
+    "competency_id": "CID00289",
+    "name": "Regulatory Risk Assessment",
+    "category": "Functional",
+    "description": "Analyse the impact of latest global regulatory developments and relevant laws on organisation’s risk exposure and the overall financial services industry"
+  },
+  {
+    "competency_id": "CID0028",
+    "name": "Public Sector Transformation and Innovation",
+    "category": "Functional",
+    "description": "Recognises and leverages the need for innovations that will systematically transform the public sector in India, by converting challenges into opportunities for change."
+  },
+  {
+    "competency_id": "CID00329",
+    "name": "Organisational Design",
+    "category": "Domain",
+    "description": "Develop and facilitate the implementation of organisational design to ensure its effectiveness and alignment with stakeholders' priorities"
+  },
+  {
+    "competency_id": "CID00458",
+    "name": "Policy Development",
+    "category": "Domain",
+    "description": "Understand, examine, and forecast policy development cycles, specifically in India, to ensure alignment with government priorities."
+  },
+  {
+    "competency_id": "CID0082",
+    "name": "Organisation Management",
+    "category": "Functional",
+    "description": "Oversee and manage centre operations to drive operational excellence"
+  },
+  {
+    "competency_id": "CID00460",
+    "name": "Management of Public Organisations",
+    "category": "Functional",
+    "description": "Oversee management processes within the administrative system  through the creation of an appropriate institutional framework for supporting, planning, implementing, and evaluating national plans to enable effective delivery of public services\n\n"
+  },
+  {
+    "competency_id": "CID00333",
+    "name": "Performance Management",
+    "category": "Functional",
+    "description": "Establish organisation-wide performance management strategies to facilitate performance management, including identification of key performance indicators and employee performance assessment"
+  },
+  {
+    "competency_id": "CID00405",
+    "name": "Data Management",
+    "category": "Functional",
+    "description": "Prepare, structure and manage human resource (HR) data and information to assist in the analyses of business and HR issues"
+  },
+  {
+    "competency_id": "CID00403",
+    "name": "Crisis Management",
+    "category": "Domain",
+    "description": "Apply strategies designed to enable an organisation to deal with disruptive events by planning for responses to potential crises, establishing monitoring systems and training systems,\ncommunicating both internally and externally, and leading recovery processes"
+  },
+  {
+    "competency_id": "CID00496",
+    "name": "Strategy Planning",
+    "category": "Functional",
+    "description": "Develop organisational strategies and policies by analysing the impact of internal and external influencing factors and seeking consultation from relevant stakeholders"
+  },
+  {
+    "competency_id": "CID00407",
+    "name": "Data Mining and Modelling",
+    "category": "Domain",
+    "description": "Establish and deploy data modelling techniques to support narrative and predictive analytics efforts and identify trends and patterns for simulation and forecasting purposes"
+  },
+  {
+    "competency_id": "CID00639",
+    "name": "Seeking Information/ Desire for Knowledge",
+    "category": "Behavioural",
+    "description": "An underlying curiosity to know more about things, people, or issue. This includes “digging” for exact information and keeping up-to-date with relevant knowledge."
+  },
+  {
+    "competency_id": "CID00267",
+    "name": "Flight Deck Communications",
+    "category": "Domain",
+    "description": "Communicate with Air Traffic Control (ATC), flight crew members and ground personnel using Crew Resource Management (CRM) techniques, conduct flight preparation activities and set up flight decks for take-off"
+  },
+  {
+    "competency_id": "CID00435",
+    "name": "Food Waste Management",
+    "category": "Domain",
+    "description": "Manage activities for the disposal of food waste in aircraft and central kitchens"
+  },
+  {
+    "competency_id": "CID00671",
+    "name": "Waste management and Resource Efficiency",
+    "category": "Domain",
+    "description": "Understanding the principles of resource efficiency and circular economy. Classification of wastes such as Electronic Waste, Hazardous Waste, Solid Waste, Bio Medical Waste, Plastic Waste, Construction and Demolition Waste, Waste Batteries, Waste Tyre, Solar Panels, End of Life Vehicles, etc. Approach for waste management including collection, handling, treatment, recycling, utilisation and disposal. Policies, regulations, technologies, practices, tools for environmentally sound management of wastes and use of secondary resources."
+  },
+  {
+    "competency_id": "CID0031",
+    "name": "Programme Implementation",
+    "category": "Functional",
+    "description": "Describe, draft, and develop programme implementation plans, to achieve predetermined outcomes, objectives, and long-term goals."
+  },
+  {
+    "competency_id": "CID00439",
+    "name": "Climate Change and Health",
+    "category": "Domain",
+    "description": "Understand and describe the impact of climate change on human health, to enhance climate resilience, adaptation, and mitigation efforts."
+  },
+  {
+    "competency_id": "CID00304",
+    "name": "Trainborne Automatic Train Control Equipment Maintenance",
+    "category": "Functional",
+    "description": "Implement preventive and corrective maintenance activities of trainborne Automatic Train Control equipment"
+  },
+  {
+    "competency_id": "CID00355",
+    "name": "Audit and Compliance",
+    "category": "Functional",
+    "description": "Develop compliance processes and audit strategy for the organisation to review adherence to statutory regulatory and standards. Assessment and enhancement of the thoroughness of compliance and/or governance processes and organisation's internal controls to align with changing compliance standards. This also includes the actual conduct and/or performance of audit activities"
+  },
+  {
+    "competency_id": "CID00337",
+    "name": "Train Supervisory System Maintenance",
+    "category": "Functional",
+    "description": "Implement preventive and corrective maintenance activities of train supervisory system"
+  },
+  {
+    "competency_id": "CID00370",
+    "name": "Desire for Knowledge",
+    "category": "Behavioural",
+    "description": "Keen to learn new things and development which improves our skills and knowledge in day to day work."
+  },
+  {
+    "competency_id": "CID00212",
+    "name": "Customer Relationship Management",
+    "category": "Domain",
+    "description": "Initiate and drive activities to enhance customer relationships and brand loyalty for the organisation"
+  },
+  {
+    "competency_id": "CID0042",
+    "name": "People First",
+    "category": "Behavioural",
+    "description": "Passion for serving people with special care for the marginalized and disadvantaged. Being approachable, welcoming, caring and rising above all biases while interacting with people. Understands the needs of the people and constantly strive to improve the services."
+  },
+  {
+    "competency_id": "CID00325",
+    "name": "Marketing Strategy Development",
+    "category": "Functional",
+    "description": "Perform market research to determine the ideal marketing strategy and positioning of  products/servoces"
+  },
+  {
+    "competency_id": "CID00323",
+    "name": "Knowledge Management",
+    "category": "Domain",
+    "description": "Drive knowledge management through establishing, maintaining and improving processes and systems"
+  },
+  {
+    "competency_id": "CID00475",
+    "name": "Customer Relationship Management Operations",
+    "category": "Domain",
+    "description": "Manage and analyse customer data to foster long-term relationships with customers and drive sales growth"
+  },
+  {
+    "competency_id": "CID00219",
+    "name": "IT Standards",
+    "category": "Functional",
+    "description": "Develop and review of standard operating procedures as well as service expectations for IT-related activities and processes. This includes the provision of clear guidelines for the organisation to carry out IT-related tasks in a manner that is effective, efficient and consistent with the IT service standards and quality standards of the organisation"
+  },
+  {
+    "competency_id": "CID00404",
+    "name": "Unit Load Devices Operations",
+    "category": "Domain",
+    "description": "Implement and develop standards for the handling, deployment and maintenance of Unit Load Devices (ULDs)"
+  },
+  {
+    "competency_id": "CID0083",
+    "name": "Seeking Information",
+    "category": "Behavioural",
+    "description": "An underlying curiosity to know more about things, people, or issues. This includes ‘digging’ for exact information and keeping up-to-date with relevant knowledge."
+  },
+  {
+    "competency_id": "CID00181",
+    "name": "Communication Power System Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of communication power system"
+  },
+  {
+    "competency_id": "CID00655",
+    "name": "Public Service Transformation",
+    "category": "Functional",
+    "description": "Recognises and leverages the need for innovations that will systematically enhance public service delivery, by converting challenges into opportunities for change."
+  },
+  {
+    "competency_id": "CID00626",
+    "name": " People First / Citizen Centricity",
+    "category": "Behavioural",
+    "description": "Passion for serving people with special care for the marginalised and disadvantaged. Being approachable, welcoming, caring and rising above bias while interacting with people. Aligns public needs with organizational objectives and takes into account impact on citizens before taking any decision. "
+  },
+  {
+    "competency_id": "CID00428",
+    "name": "Taxation Laws",
+    "category": "Domain",
+    "description": "Analyse impact of evolving tax legislation on business environment"
+  },
+  {
+    "competency_id": "CID0250",
+    "name": "Leading Others",
+    "category": "COMPETENCY",
+    "description": "Ability to engage, energise and enable the team to excel. \n"
+  },
+  {
+    "competency_id": "CID0280",
+    "name": "Desire for Knowledge ",
+    "category": "COMPETENCY",
+    "description": "Keeps up-to-date with relevant knowledge and technology shares the latest developments with others and advocates the application of acquired knowledge."
+  },
+  {
+    "competency_id": "CID0013",
+    "name": "Cyber Security",
+    "category": "Functional",
+    "description": "Understand the aspects of cyber security, uses of various security practices, develop awareness of cyber security threats and evangelise safe and secure cyber resource usage"
+  },
+  {
+    "competency_id": "CID0822",
+    "name": "Policy Design",
+    "category": "COMPETENCY",
+    "description": "Design policy responses using a range of tools, behaviours, and mechanisms, to solve policy problems. "
+  },
+  {
+    "competency_id": "CID0827",
+    "name": "Policy Development ",
+    "category": "COMPETENCY",
+    "description": "Understand, examine, and forecast policy development cycles, specifically in India, to ensure alignment with government priorities. "
+  },
+  {
+    "competency_id": "CID0018",
+    "name": "Crisis Situations Management/Disaster Management",
+    "category": "Functional",
+    "description": "Effectively identifie,  support, manage, and lead crisis/disaster situation teams and plans."
+  },
+  {
+    "competency_id": "CID0815",
+    "name": "Public Health Systems",
+    "category": "Domain",
+    "description": "Plan, design, and implement policies focusing on assessing, and improving the overall public health systems"
+  },
+  {
+    "competency_id": "CID00346",
+    "name": "Microeconomics",
+    "category": "Functional",
+    "description": "Understand microeconomic theory along with its applications and develop proficiency in econometric tools with the aim of designing effective policies"
+  },
+  {
+    "competency_id": "CID00237",
+    "name": "Data Management",
+    "category": "Functional",
+    "description": "Prepare, structure and manage human resource (HR) data and information to assist in the analyses of business and HR issues"
+  },
+  {
+    "competency_id": "CID00421",
+    "name": "Change Management",
+    "category": "Functional",
+    "description": "Manage organisational change management systems to drive organisational success and outcomes by preparing, equipping and supporting adoption of change"
+  },
+  {
+    "competency_id": "CID00422",
+    "name": "Sustainability Management",
+    "category": "Domain",
+    "description": "Plan, develop and roll out of an organisation-wide sustainability strategy. This includes the assessment of the organisation's utilisation and/or consumption of energy and other resources, vis-a-vis the availability and stability of supply sources and external best practices and standards in sustainability. This also includes the on-going monitoring and tracking of energy and/or resource-consumption over time, to identify impact on the organisation's internal and external environment as well as potential improvements in energy- or resource-\nefficiency."
+  },
+  {
+    "competency_id": "CID0279",
+    "name": "Planning and Coordination ",
+    "category": "Behavioural",
+    "description": "Ability to plan, organise and monitor work with effective utilisation of resources such as time, money, and people"
+  },
+  {
+    "competency_id": "CID0272",
+    "name": "Seeking Information",
+    "category": "COMPETENCY",
+    "description": "An underlying curiosity to know more about things, people, or issues. This includes ‘digging’ for exact information and keeping up-to-date with relevant knowledge."
+  },
+  {
+    "competency_id": "CID0254",
+    "name": "Attention to Detail ",
+    "category": "COMPETENCY",
+    "description": "Having an underlying drive to being thorough and meticulous and to comply with procedures, rules, guidelines, and standards. Digs deeper and strives to reduce uncertainties and errors. "
+  },
+  {
+    "competency_id": "CID0258",
+    "name": "Taking Accountability",
+    "category": "COMPETENCY",
+    "description": "Takes ownership for outcomes (successes or failures) while addressing performance issues fairly and promptly. "
+  },
+  {
+    "competency_id": "CID0265",
+    "name": "Result Orientation",
+    "category": "COMPETENCY",
+    "description": "High drive for achieving targets and competing against a standard of excellence."
+  },
+  {
+    "competency_id": "CID0253",
+    "name": "Self-Confidence",
+    "category": "COMPETENCY",
+    "description": "Belief in own capability to accomplish a task and being able to express confidence in dealing with challenging circumstances, without being arrogant or boastful. "
+  },
+  {
+    "competency_id": "CID0262",
+    "name": "Decision Making",
+    "category": "COMPETENCY",
+    "description": "Makes timely decisions that take into account relevant facts, tasks, goals, constraints, risks and conflicting points of view.\n"
+  },
+  {
+    "competency_id": "CID0261",
+    "name": "Consultation and Consensus Building",
+    "category": "COMPETENCY",
+    "description": "Ability to identify the stakeholders and influencers, seek their views and concerns through formal and informal channels. Build consensus through dialogue, persuasion, reconciliation of diverse views/interests and trusting relationships."
+  },
+  {
+    "competency_id": "CID0798",
+    "name": "Data Storytelling and Visualisation",
+    "category": "COMPETENCY",
+    "description": "Combine data insights, dynamic visual displays with illustrative and interactive graphics and narrative representative formats to present patterns, trends, meaninging, messages and analytical insights from data or new concepts in a strategic manner"
+  },
+  {
+    "competency_id": "CID00360",
+    "name": "Benchmarking",
+    "category": "Domain",
+    "description": "Compare organisational performance to other organisations and industries"
+  },
+  {
+    "competency_id": "CID00605",
+    "name": "Public Procurement through Government e-Market Place (GeM)",
+    "category": "Domain",
+    "description": "Role & Functions in Public Procurement through GeM"
+  },
+  {
+    "competency_id": "CID0096",
+    "name": "Result Orientation",
+    "category": "Behavioural",
+    "description": "High drive for achieving targets and competing against a standard of excellence."
+  },
+  {
+    "competency_id": "CID00647",
+    "name": "Project Management",
+    "category": "Functional",
+    "description": "Planning, developing, administering, and monitoring central government projects, ensuring that they are implemented on time and that potential risks are mitigated."
+  },
+  {
+    "competency_id": "CID0046",
+    "name": "Rail Operations Enhancement Management",
+    "category": "Domain",
+    "description": "Formulate rail operations strategies built on rail systems fundamentals, principles and knowledge to drive enhancement of service operations and performance excellence"
+  },
+  {
+    "competency_id": "CID00272",
+    "name": "Product Marketing and Branding",
+    "category": "Functional",
+    "description": "Develop and implement product marketing strategies by leading sales data collection, segmentation, market research, product marketing idea development and optimisation. Implement product marketing strategies and recommend changes based on desired product and/or corporate positioning and branding"
+  },
+  {
+    "competency_id": "CID00208",
+    "name": "Environment and Social Governance",
+    "category": "Domain",
+    "description": "Understand the latest industry and/or client standards regarding Environment and Social Governance (ESG) and undertake ESG research activities and document findings"
+  },
+  {
+    "competency_id": "CID00414",
+    "name": "Forestry Livelihood Management",
+    "category": "Domain",
+    "description": "Understand the need, importance of designing, managing, conserving and repairing forests and associated resources (forest-dependent SMEs) for human and environmental benefits."
+  },
+  {
+    "competency_id": "CID0012",
+    "name": "Change Management",
+    "category": "Functional",
+    "description": "Understands, contributes and drives the implementation of change management processes required for effectively supporting, planning,  implementing, evaluating and sustaining change."
+  },
+  {
+    "competency_id": "CID00500",
+    "name": "Ethics",
+    "category": "Functional",
+    "description": "Understand and apply ethics in the public sector, to solve ethical dilemmas and ensure prevalence of public sector values. \n"
+  },
+  {
+    "competency_id": "CID0033",
+    "name": "Self-Confidence",
+    "category": "Behavioural",
+    "description": "Belief in own capability to accomplish a task and being able to express confidence in dealing with challenging circumstances, without being arrogant or boastful."
+  },
+  {
+    "competency_id": "CID00515",
+    "name": "Employer Branding",
+    "category": "Domain",
+    "description": "Facilitate programmes to communicate Employee Value Proposition to new hires and prospective  hires into the organisation"
+  },
+  {
+    "competency_id": "CID00177",
+    "name": "Financial Planning and Budget Management",
+    "category": "Functional",
+    "description": "Maximise cost efficiency of organisational operations through financial planning, budget management and optimisation of operations"
+  },
+  {
+    "competency_id": "CID00364",
+    "name": "Budgeting",
+    "category": "Functional",
+    "description": "Preparing organisational budgets to support short and long-term business plans through forecasting, allocation and financial policy setting"
+  },
+  {
+    "competency_id": "CID009",
+    "name": "Budgeting",
+    "category": "Functional",
+    "description": "Support, prepare, forecast, and manage the budget for a specific organisation, period of time and/or project, in order to create a financial plan."
+  },
+  {
+    "competency_id": "CID001",
+    "name": "Budget Analysis",
+    "category": "Functional",
+    "description": "Read, interpret, and evaluate budget documents to understand and evaluate the underlying intent of a budgetary policy."
+  },
+  {
+    "competency_id": "CID00653",
+    "name": "Budget Management",
+    "category": "Functional",
+    "description": "Preparation, forecast, and manage the budget for a specific organisation, period of time and/or project, in order to create a financial plan aligned to the performance objectives of the Ministry, Department or an Organization."
+  },
+  {
+    "competency_id": "CID00418",
+    "name": "Cash Flow Reporting",
+    "category": "Functional",
+    "description": "Maintain business units’ cash flow reports by consolidating data and performing analysis on cash inflow and outflow"
+  },
+  {
+    "competency_id": "CID00506",
+    "name": "Financial Acumen",
+    "category": "Domain",
+    "description": "Exercise financial insight to establish budgets for human resource (HR) activities and monitor HR operations and outcomes against financial plans"
+  },
+  {
+    "competency_id": "CID00410",
+    "name": "Data Analytics",
+    "category": "Functional",
+    "description": "Apply data extraction and analytic methods to analyse and evaluate financial and non-financial information and provide business intelligence"
+  },
+  {
+    "competency_id": "CID00501",
+    "name": "Industry Networking",
+    "category": "Domain",
+    "description": "Establish broad external networks to enhance the organisation's value proposition and access to a community of professionals and potential candidates"
+  },
+  {
+    "competency_id": "CID00444",
+    "name": "Data and Statistical Analytics",
+    "category": "Functional",
+    "description": "Identify data sets for application of statistical techniques to analyse and interpret large complex data to uncover trends or patterns in order to locate and define new process improvement opportunities"
+  },
+  {
+    "competency_id": "CID00120",
+    "name": "Market Research",
+    "category": "Functional",
+    "description": "Conduct market research to identify opportunities for enhancing product suites, services and revenue opportunities for the organisation"
+  },
+  {
+    "competency_id": "CID00112",
+    "name": "Standard Operating Procedures Development",
+    "category": "Functional",
+    "description": "Implement and develop Standard Operating Procedures (SOPs) and enforce compliance with SOPs"
+  },
+  {
+    "competency_id": "CID00636",
+    "name": "Planning and Organizing",
+    "category": "Behavioural",
+    "description": "Ability to plan, organise and monitor work with effective utilisation of resources such as time, money, and people."
+  },
+  {
+    "competency_id": "CID00372",
+    "name": "Problem Solving",
+    "category": "Behavioural",
+    "description": "Understanding a situation by breaking it into smaller parts, organising information systematically, and setting priorities"
+  },
+  {
+    "competency_id": "CID00638",
+    "name": "Resourcefulness ",
+    "category": "Behavioural",
+    "description": "Resourcefulness is figuring out how to get over, around, or through barriers to success, and then doing it."
+  },
+  {
+    "competency_id": "CID00640",
+    "name": "Self-Awareness",
+    "category": "Behavioural",
+    "description": "Identifies one’s own emotional triggers and controls one’s emotional responses. Maintains sense of professionalism and emotional restraint when provoked, faced with hostility or working under increased stress. It includes resilience and stamina despite prolonged adversities"
+  },
+  {
+    "competency_id": "CID00654",
+    "name": "Process Optimization",
+    "category": "Functional",
+    "description": "Establish mechanisms in the Department / Organization to maximise efficiency of operations of processes and drive agility."
+  },
+  {
+    "competency_id": "CID00504",
+    "name": "Job Analysis and Evaluation",
+    "category": "Domain",
+    "description": "Define and evaluate job requirements and expectations against specific metrics, structures or systems"
+  },
+  {
+    "competency_id": "CID00368",
+    "name": "Capital Expenditure and Investment Evaluation",
+    "category": "Domain",
+    "description": "Assess investments based on alignment with strategies, affordability, acceptable returns and prioritisation of options"
+  },
+  {
+    "competency_id": "CID00251",
+    "name": "Financial Analysis",
+    "category": "Functional",
+    "description": "Analyse the financial statements and data to provide insights about the financial performance and position of the organisation over time"
+  },
+  {
+    "competency_id": "CID00258",
+    "name": "Financial Statements Analysis",
+    "category": "Functional",
+    "description": "Analyse financial statements in accordance with the applicable frameworks"
+  },
+  {
+    "competency_id": "CID00461",
+    "name": "Resource Allocation",
+    "category": "Functional",
+    "description": "Support, determine, and adapt resource allocation to citizen priorities using relevant tools and techniques, while ensuring there is no under-utlisation of resources."
+  },
+  {
+    "competency_id": "CID00260",
+    "name": "Financial Transactions",
+    "category": "Functional",
+    "description": "Prepare business documentation and cash balances as well as perform payments, collections and remittances in accordance with applicable frameworks and regulatory requirements"
+  },
+  {
+    "competency_id": "CID0014",
+    "name": "Commitment to the Organisation",
+    "category": "Behavioural",
+    "description": "Aligns behaviours and interests with the needs and goals of the organisation."
+  },
+  {
+    "competency_id": "CID00643",
+    "name": "Knowledge Management",
+    "category": "Functional",
+    "description": "Organize, analyse, and share knowledge in a way that is easy for employees to access in order to improve performance, anticipate risks, and cultivate a collaborative culture."
+  },
+  {
+    "competency_id": "CID00284",
+    "name": "Regulatory Compliance",
+    "category": "Functional",
+    "description": "Comply with policies, procedures, and external regulations"
+  },
+  {
+    "competency_id": "CID00225",
+    "name": "Financial Statements Review",
+    "category": "Functional",
+    "description": "Review financial statements in accordance with applicable frameworks and regulatory requirements"
+  },
+  {
+    "competency_id": "CID00128",
+    "name": "Network Systems Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of network systems"
+  },
+  {
+    "competency_id": "CID00339",
+    "name": "Networking",
+    "category": "Functional",
+    "description": "Identify and establish industry stakeholder relationships at all levels of business operations to further the organisation’s strategies and objectives"
+  },
+  {
+    "competency_id": "CID00513",
+    "name": "Employee Mobility Management",
+    "category": "Domain",
+    "description": "Establish policies to facilitate employee movements according to legal, organisational and professional requirements and guidelines"
+  },
+  {
+    "competency_id": "CID00297",
+    "name": "Public Health Resource Management",
+    "category": "Domain",
+    "description": "Identify, allocate, and manage resources for public health projects, policies, and schemes, to ensure health outcomes are achieved in a timely manner."
+  },
+  {
+    "competency_id": "CID0045",
+    "name": "Organisational Awareness",
+    "category": "Behavioural",
+    "description": "Understanding of the organisation’s mandate, structure, policies, processes, norms and its interface with other organisations. It also includes an understanding of the organisation’s informal structures, power dynamics, and constraints."
+  },
+  {
+    "competency_id": "CID00445",
+    "name": "Succession Planning",
+    "category": "Functional",
+    "description": "Develop succession strategies for critical roles in alignment with organisation’s strategic direction and priorities"
+  },
+  {
+    "competency_id": "CID0249",
+    "name": "Organisational Awareness",
+    "category": "COMPETENCY",
+    "description": "Understanding of the organisation’s mandate, structure, policies, processes, norms and its interface with other organisations. It also includes an understanding of the organisation’s informal structures, power dynamics, and constraints. "
+  },
+  {
+    "competency_id": "CID00633",
+    "name": "Innovation and Creativity",
+    "category": "Behavioural",
+    "description": "Proposes new ideas & provides fresh insights into situations; diverges from conventional methods; aims to design and implement new or cutting edge programs/processes."
+  },
+  {
+    "competency_id": "CID00306",
+    "name": "Monitoring and Surveillance",
+    "category": "Functional",
+    "description": "Develop and conduct checks and observations to assess adherence to statutory regulations and standards, thoroughness of compliance controls and monitor for irregular activities."
+  },
+  {
+    "competency_id": "CID00335",
+    "name": "Policy Implementation and Revision",
+    "category": "Functional",
+    "description": "Identify priority areas for policy development and evaluate existing policies to determine currency and relevance before implementing policies"
+  },
+  {
+    "competency_id": "CID0094",
+    "name": "Decision Making",
+    "category": "Behavioural",
+    "description": "Makes timely decisions that take into account relevant facts, tasks, goals, constraints, risks and conflicting points of view.\n"
+  },
+  {
+    "competency_id": "CID00464",
+    "name": "Policy Stakeholder Engagement",
+    "category": "Functional",
+    "description": "Identify, plan and involve community engagement to implement actions/policy designed to better serve the public while making efficient use of limited public resources.\n"
+  },
+  {
+    "competency_id": "CID00472",
+    "name": "Conduct and Behaviour Management",
+    "category": "Domain",
+    "description": "Manage the conduct and behaviour of the employees according to the organisation's code of conduct, values, ethics and disciplinary procedures"
+  },
+  {
+    "competency_id": "CID00652",
+    "name": "Workplace health and safety",
+    "category": "Functional",
+    "description": "Embed good health, safety and wellbeing effectively in workplace to ensure alignment with the needs of employers, as well as comply with national and international standards and policies on workplace safety and health."
+  },
+  {
+    "competency_id": "CID00317",
+    "name": "Public Health Communication",
+    "category": "Domain",
+    "description": "Prepare, evaluate and administer communication strategies to inform and influence individual and community decisions that affect public health outcomes\n"
+  },
+  {
+    "competency_id": "CID00450",
+    "name": "Health Strategy Plans",
+    "category": "Domain",
+    "description": "Develop, review, and oversee health strategy plans to monitor the progress of national health policies, schemes, and missions, while supporting key stakeholders."
+  },
+  {
+    "competency_id": "CID00499",
+    "name": "Health Promotion",
+    "category": "Domain",
+    "description": "Create, evaluate and communicate health promotion programs and strategies designed to enable people to increase control over and to improve, their health knowledge, attitudes, skills to reach a state of complete physical, mental and social well-being\n"
+  },
+  {
+    "competency_id": "CID00238",
+    "name": "Public Health Ethics",
+    "category": "Domain",
+    "description": "Document, support, and apply public health ethics for decision-making processes, while prioritising the role of cultural, social, and behavioural factors associated with ethics."
+  },
+  {
+    "competency_id": "CID00452",
+    "name": "Health Programme Evaluation",
+    "category": "Domain",
+    "description": "Understand, propose, and oversee healthcare-specific programme evaluations, to improve health systems, programmes, and organisational performance aligned with the Indian Public Health Standards."
+  },
+  {
+    "competency_id": "CID00467",
+    "name": "Public Health Systems",
+    "category": "Domain",
+    "description": "Plan, design, and implement policies focusing on assessing, and improving the overall public health systems"
+  },
+  {
+    "competency_id": "CID00318",
+    "name": "Education for Health and Wellbeing - Programme Development",
+    "category": "Domain",
+    "description": "Understand, develop and promote public health programs and strategies to educate and influence beliefs, practices and norms of school systems and local communities to ensure children and young people have access to safe, inclusive and health-promoting learning environments."
+  },
+  {
+    "competency_id": "CID00453",
+    "name": "Health Project Management (PM)",
+    "category": "Domain",
+    "description": "Understand, support, and evaluate project management methodologies in public healthcare projects, to eliminate bottlenecks while solving key healthcare challenges."
+  },
+  {
+    "competency_id": "CID00509",
+    "name": "Human Resource Service Quality Management",
+    "category": "Functional",
+    "description": "Develop and implement human resource (HR) service management frameworks, incorporating service quality standards, agreements and metrics"
+  },
+  {
+    "competency_id": "CID00314",
+    "name": "Human Factors Management",
+    "category": "Functional",
+    "description": "Identify and mitigate risks of aviation incidents and/or accidents caused by human factors"
+  },
+  {
+    "competency_id": "CID0085",
+    "name": "Learning and Development Programme Management",
+    "category": "Domain",
+    "description": "Establish and implement learning and development programmes and channels to facilitate employees' growth and capability building"
+  },
+  {
+    "competency_id": "CID00305",
+    "name": "Travel Information System Maintenance",
+    "category": "Functional",
+    "description": "Implement preventive and corrective maintenance activities of travel information system"
+  },
+  {
+    "competency_id": "CID0075",
+    "name": "Conceptual Thinking",
+    "category": "Behavioural",
+    "description": "Understanding a situation or environment by putting the pieces together and identifying patterns that may not be obviously related. Connecting the dots while resisting stereotyping."
+  },
+  {
+    "competency_id": "CID00431",
+    "name": "Conflict Management",
+    "category": "Functional",
+    "description": "Build consensus, maintain the best interests of the organisation and utilise knowledge of conflict management techniques to diffuse tensions and achieve resolutions effectively"
+  },
+  {
+    "competency_id": "CID00624",
+    "name": "Conflict Management ",
+    "category": "Behavioural",
+    "description": "Encouraging creative tension & differences in perspectives while minimizing the negative aspects of conflict. Anticipates and takes steps to prevent counter-productive confrontations. Manages and resolves conflicts and disagreements in a constructive manner."
+  },
+  {
+    "competency_id": "CID00490",
+    "name": "Workplace Optimisation",
+    "category": "Functional",
+    "description": "Plan and manage the work spaces to encourage collaboration and build organisation culture"
+  },
+  {
+    "competency_id": "CID00462",
+    "name": "Policy Communication",
+    "category": "Domain",
+    "description": "Effectively articulate, communicate and persuade the citizens to participate in and meet public policy requirements"
+  },
+  {
+    "competency_id": "CID0093",
+    "name": "Consultation and Consensus Building",
+    "category": "Behavioural",
+    "description": "Ability to identify the stakeholders and influencers, seek their views and concerns through formal and informal channels. Build consensus through dialogue, persuasion, reconciliation of diverse views/interests and trusting relationships."
+  },
+  {
+    "competency_id": "CID00144",
+    "name": "Network Planning and Operations",
+    "category": "Functional",
+    "description": "Establish profitable flight networks for airlines through optimising airline fleet deployment, adjusting frequency of schedules and identifying optimal departure and arrival times"
+  },
+  {
+    "competency_id": "CID00378",
+    "name": "Business Operational Planning",
+    "category": "Functional",
+    "description": "Plan detailed team/department level activities aligning to the organisation's long term  goals"
+  },
+  {
+    "competency_id": "CID00133",
+    "name": "Customer Service Delivery",
+    "category": "Domain",
+    "description": "Anticipate customer needs and provide quality customer services as ambassadors of the airports"
+  },
+  {
+    "competency_id": "CID0044",
+    "name": "Rail Operations Control Management",
+    "category": "Functional",
+    "description": "Manage rail operations and control to achieve and enhance rail service continuity and reliability"
+  },
+  {
+    "competency_id": "CID00406",
+    "name": "Cyber Risk Management",
+    "category": "Domain",
+    "description": "Develop cyber risk assessment and treatment techniques that can effectively pre-empt and identify significant security loopholes and weaknesses, demonstration of the business risks associated with these loopholes and provision of risk treatment and prioritisation strategies to effectively address the cyber-related risks, threats and vulnerabilities identified to ensure appropriate levels of protection, confidentiality, integrity and privacy in alignment with the security framework"
+  },
+  {
+    "competency_id": "CID00441",
+    "name": "Cybersecurity",
+    "category": "Functional",
+    "description": "Understand, develop and apply cybersecurity policies and procedures to ensure protection against cybersecurity risks and vulnerabilities, and to respond to cybersecurity breaches"
+  },
+  {
+    "competency_id": "CID00398",
+    "name": "Data Governance-IT",
+    "category": "Functional",
+    "description": "Develop, implement and practice guidelines, laws, and regulations across the organisation for the handling of data at various stages in its lifecycle as well as the provision of advice on proper data handling and resolution of data breaches"
+  },
+  {
+    "competency_id": "CID00205",
+    "name": "Service Branding and Coaching",
+    "category": "Domain",
+    "description": "Execute service brand guidelines and drive strategies to enhance the organisation’s service brands and value propositions"
+  },
+  {
+    "competency_id": "CID00620",
+    "name": "Handling Parliamentary Proceedings",
+    "category": "Functional",
+    "description": "Developing procedures, processes, and systems for effective publication of information in order to ensure smooth operation of parliamentary proceedings."
+  },
+  {
+    "competency_id": "CID00324",
+    "name": "Organisational Design",
+    "category": "Domain",
+    "description": "Develop and facilitate the implementation of organisational design to ensure its effectiveness and alignment with stakeholders' priorities"
+  },
+  {
+    "competency_id": "CID00397",
+    "name": "Data Collection and Preparation",
+    "category": "Functional",
+    "description": "Collect human resource (HR) data from employees for the purpose of generating business and HR insights"
+  },
+  {
+    "competency_id": "CID00438",
+    "name": "Data Analytics",
+    "category": "Functional",
+    "description": "Organise and analyse structured or unstructured data to create insights systematically"
+  },
+  {
+    "competency_id": "CID00408",
+    "name": "Data Analytics System Design",
+    "category": "Functional",
+    "description": "Integrate the use of data analytics in the production environment for the identification of bottlenecks and system improvements"
+  },
+  {
+    "competency_id": "CID00385",
+    "name": "Data Visualisation",
+    "category": "Functional",
+    "description": "Implement contemporary techniques, dynamic visual displays with illustrative and interactive graphics to present patterns, trends, analytical insights from data or new concepts in a strategic manner for the intended audience"
+  },
+  {
+    "competency_id": "CID00383",
+    "name": "Data Sharing",
+    "category": "Functional",
+    "description": "Assess the value of data to achieve a competitive advantage and business objectives"
+  },
+  {
+    "competency_id": "CID00493",
+    "name": "Learning Research Data Analysis",
+    "category": "Domain",
+    "description": "Analyse research data, interpret results generated and link them to the research question or related findings in scientific literature to derive new insights"
+  },
+  {
+    "competency_id": "CID00627",
+    "name": "Decision Making",
+    "category": "Behavioural",
+    "description": "Takes well informed & timely decisions taking into account the relevant facts, data, risks and differing points of view. "
+  },
+  {
+    "competency_id": "CID00223",
+    "name": "Management Decision Making",
+    "category": "Functional",
+    "description": "Make financial decisions based on management reports"
+  },
+  {
+    "competency_id": "CID00255",
+    "name": "Design Thinking Practice",
+    "category": "Functional",
+    "description": "Manage design thinking methodologies and processes to solve specific challenges for the organisation, and guide stakeholders through the phases of inspiration, empathy, ideation and implementation"
+  },
+  {
+    "competency_id": "CID0043",
+    "name": "Strategic Thinking",
+    "category": "Behavioural",
+    "description": "Ability to understand the dynamic internal and external environment and its impact.  Responds to the opportunities and challenges for the betterment of the society."
+  },
+  {
+    "competency_id": "CID0087",
+    "name": "Learning Solution Design",
+    "category": "Domain",
+    "description": "Design and evaluate learning solutions which drive performance enhancement"
+  },
+  {
+    "competency_id": "CID00234",
+    "name": "Data Design",
+    "category": "Domain",
+    "description": "Specify and create a data structure or database model, including the setting of various parameters or fields that can be modified to suit different structured or unstructured data requirements, the design of data flow, as well as the development of mechanisms for maintenance, storage and retrieval of data based on the business requirements"
+  },
+  {
+    "competency_id": "CID00249",
+    "name": "Business Needs Analysis",
+    "category": "Functional",
+    "description": "Identify and scope business requirements and priorities of the internal organisation and/or customer’s organisation, through rigorous information gathering and analyses as well as clarification of the solutions, initiatives and programmes to enable effective delivery. This also involves the development of a compelling and defensible business case and the\narticulation of the potential impact of the solution to the business"
+  },
+  {
+    "competency_id": "CID00291",
+    "name": "Strategic Service Excellence",
+    "category": "Functional",
+    "description": "Establish strategies and operating principles to consistently meet and manage customer's expectations in order to support business requirements"
+  },
+  {
+    "competency_id": "CID00663",
+    "name": "Goverment E Marketplace (GeM)",
+    "category": "Functional",
+    "description": "Goverment E Marketplace (GeM)"
+  },
+  {
+    "competency_id": "CID00665",
+    "name": "Goverment E Marketplace (GeM)",
+    "category": "Functional",
+    "description": "Goverment E Marketplace (GeM)"
+  },
+  {
+    "competency_id": "CID00395",
+    "name": "Leadership Development",
+    "category": "Functional",
+    "description": "Build a culture of strong leadership and drive initiatives to facilitate the development of leadership capabilities in the organisation"
+  },
+  {
+    "competency_id": "CID109",
+    "name": "Climate-Resilient Development",
+    "category": "Domain",
+    "description": "Identify, evaluate, select, implement, and adjust actions to reduce climate vulnerabilities and improve development outcomes."
+  },
+  {
+    "competency_id": "CID00511",
+    "name": "Employee Communication Management",
+    "category": "Domain",
+    "description": "Formulate overall employee communication strategies and facilitate conversations to ensure effective and timely dissemination of pertinent information to employees"
+  },
+  {
+    "competency_id": "CID00374",
+    "name": "Self Awareness and Self Control",
+    "category": "Behavioural",
+    "description": "Identifies one’s own emotional triggers and controls one’s emotional responses. Maintains a sense of professionalism and emotional restraint when provoked, faced with hostility or working under increased stress. It includes resilience and stamina despite prolonged adversities."
+  },
+  {
+    "competency_id": "CID00373",
+    "name": "Developing Others",
+    "category": "Behavioural",
+    "description": "Genuinely believes in others’ capabilities to develop and takes personal responsibility for their development. Creates a positive environment for learning and provides developmental opportunities for individuals and teams."
+  },
+  {
+    "competency_id": "CID00377",
+    "name": "Team-Working",
+    "category": "Behavioural",
+    "description": "Working together as a unit for the common goal. Building teams through mutual trust, respect and cooperation."
+  },
+  {
+    "competency_id": "CID0049",
+    "name": "Leading Others",
+    "category": "Behavioural",
+    "description": "Ability to engage, energise and enable the team to excel. \n"
+  },
+  {
+    "competency_id": "CID00617",
+    "name": "Developing Others / People Development",
+    "category": "Behavioural",
+    "description": "Creates a positive environment for learning and hones others' ability to perform and contribute to the nation by providing learning through formal & informal channels. "
+  },
+  {
+    "competency_id": "CID00632",
+    "name": "Initiative and Drive",
+    "category": "Behavioural",
+    "description": "Exceeding expectations while performing duties. Refusing to give up in the face of adversities. Remaining optimistic & persistent under pressure and bouncing ack quickly from any setbacks or failures. "
+  },
+  {
+    "competency_id": "CID00637",
+    "name": "Problem Solving",
+    "category": "Behavioural",
+    "description": "Understanding a situation by breaking it into small parts, organising information systematically and setting priorities."
+  },
+  {
+    "competency_id": "CID00629",
+    "name": "Drive for Results",
+    "category": "Behavioural",
+    "description": "High Drive for achieving targets and competing against a standard of excellence."
+  },
+  {
+    "competency_id": "CID00618",
+    "name": "Change Management",
+    "category": "Behavioural",
+    "description": " Flexibility & adaptability to change in order to successfully implement new initiatives and deliver quality results. \n Have a positive outlook towards change"
+  },
+  {
+    "competency_id": "CID108",
+    "name": "Sustainable Energy Infrastructure Design",
+    "category": "Domain",
+    "description": "Identify, plan and design urban sustainable energy-efficient public infrastructure."
+  },
+  {
+    "competency_id": "CID00152",
+    "name": "Emergency and Security Communication Systems Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of emergency and security communication systems"
+  },
+  {
+    "competency_id": "CID0095",
+    "name": "Delegation",
+    "category": "Behavioural",
+    "description": "Delegates responsibility with the appropriate level of autonomy so that others are free to innovate and take the lead."
+  },
+  {
+    "competency_id": "CID00411",
+    "name": "Livelihoods Design",
+    "category": "Domain",
+    "description": "Design and advocate for livelihood interventions that respond appropriately and ethically to various needs, including but not limited to psychosocial and mental health, social, and financial."
+  },
+  {
+    "competency_id": "CID00510",
+    "name": "Human Resource Systems Management",
+    "category": "Functional",
+    "description": "Establish and manage effective and efficient human resource (HR) management systems"
+  },
+  {
+    "competency_id": "CID0089",
+    "name": "Learning Experience Evaluation",
+    "category": "Domain",
+    "description": "Assess overall learning experiences to measure effectiveness and drive excellence across all learning activities"
+  },
+  {
+    "competency_id": "CID00456",
+    "name": "Policy Analysis",
+    "category": "Functional",
+    "description": "Understand, gather, and evaluate qualitative and quantitative evidence to conduct relevant policy analyses, to support public policy processes."
+  },
+  {
+    "competency_id": "CID00463",
+    "name": "Policy Design",
+    "category": "Domain",
+    "description": "Design policy responses using a range of tools, behaviours, and mechanisms, to solve policy problems."
+  },
+  {
+    "competency_id": "CID00646",
+    "name": "Policy management",
+    "category": "Functional",
+    "description": "Policy implementation, identify areas for policy development as per present requirements, evaluate existing policies to determine their credibility and relevance."
+  },
+  {
+    "competency_id": "CID00514",
+    "name": "Employee Relationship Management",
+    "category": "Domain",
+    "description": "Strengthen employee relationships and facilitate resolutions to conflicts and disputes"
+  },
+  {
+    "competency_id": "CID00290",
+    "name": "Strategic Human Resource Management",
+    "category": "Functional",
+    "description": "Establish strategies, policies and principles aligned to business objectives and leverage on organisational culture to enhance integration and maximisation of employee contributions"
+  },
+  {
+    "competency_id": "CID0078",
+    "name": "Performance Management",
+    "category": "Domain",
+    "description": "Establish organisation-wide performance management strategies to facilitate performance management, including identification of key performance indicators and employee performance assessment"
+  },
+  {
+    "competency_id": "CID00353",
+    "name": "Account Management",
+    "category": "Functional",
+    "description": "Manage, maintain and grow the sales and relationships with a specific customer or set of accounts. This includes in-depth customer engagement, relationship-building and provision of quality solutions and service to address customers' needs efficiently and generate revenue."
+  },
+  {
+    "competency_id": "CID00254",
+    "name": "Financial Planning",
+    "category": "Functional",
+    "description": "Evaluate and develop budget in line with organisation’s strategies and plans"
+  },
+  {
+    "competency_id": "CID00649",
+    "name": "Adherence to Vigilance Guidelines",
+    "category": "Functional",
+    "description": "Demonstrate and apply knowledge, and guide others on vigilance matters to maintain procedural compliance, identify malpractice / corruption prone spots, and adhere to established systems and procedures related to vigilance."
+  },
+  {
+    "competency_id": "CID0079",
+    "name": "Organisational Change Management",
+    "category": "Domain",
+    "description": "Establish change management strategies and policies to plan and facilitate the transition of employees, resources, business processes and operations to a desired end state in a manner that is seamless, sustainable and aligned with business objectives"
+  },
+  {
+    "competency_id": "CID105",
+    "name": "Gender Equality",
+    "category": "COMPETENCY",
+    "description": "Understand, identify, and advocate for gender equality in development programmes,  through the design and implementation of gender strategies."
+  },
+  {
+    "competency_id": "CID0814",
+    "name": "Gender and Energy",
+    "category": "Domain",
+    "description": "Understand, define, and contribute to planning and designing of energy policies to promote gender-equal impact."
+  },
+  {
+    "competency_id": "CID0791",
+    "name": "Gender Sensitivity",
+    "category": "Functional",
+    "description": "Knowledge and application of theoretical and practical approaches to developing and sustaining gender sensitivity processes required for gender mainstreaming."
+  },
+  {
+    "competency_id": "CID00412",
+    "name": "Gender Equality",
+    "category": "Domain",
+    "description": "Understand, identify, and advocate for gender equality in development programmes,  through the design and implementation of gender strategies."
+  },
+  {
+    "competency_id": "CID0017",
+    "name": "Gender Sensitivity",
+    "category": "Functional",
+    "description": "Knowledge and application of theoretical and practical approaches to developing and sustaining gender sensitivity processes required for gender mainstreaming."
+  },
+  {
+    "competency_id": "CID00466",
+    "name": "Gender and Energy",
+    "category": "Domain",
+    "description": "Understand, define, and contribute to planning and designing of energy policies to promote gender-equal impact."
+  },
+  {
+    "competency_id": "CID00518",
+    "name": "Diversity and Inclusion Management",
+    "category": "Domain",
+    "description": "Develop strategies and programmes to create an diverse and inclusive workplace where individual differences are accepted and respected"
+  },
+  {
+    "competency_id": "CID00566",
+    "name": "Geoinfromatics",
+    "category": "Domain",
+    "description": "Create, organize, manage and analyze geospatial data"
+  },
+  {
+    "competency_id": "CID00215",
+    "name": "Infrastructure Design",
+    "category": "Domain",
+    "description": "Establish design policies and principles covering elements of connectivity, capacity, security, access, interfacing as well as the translation of that into the specifications, outline and design of IT infrastructure within the organisation, in order to support the business requirements"
+  },
+  {
+    "competency_id": "CID00266",
+    "name": "Digital Course Development",
+    "category": "Domain",
+    "description": "Design, develop and deliver an e-learning course that matches learners’ needs by incorporating effective engagement and assessments strategies to capture the level of expertise the learner as obtained from the course."
+  },
+  {
+    "competency_id": "CID00419",
+    "name": "Tax Controversy Management",
+    "category": "Domain",
+    "description": "Respond to tax queries from the authorities with completeness, relevance and accuracy"
+  },
+  {
+    "competency_id": "CID00264",
+    "name": "Inquiry-based Instruction",
+    "category": "Domain",
+    "description": "Discuss, investigate and designs inquiry-based learning through 5E learning cycle to induce critical high-level conceptual thinking capacity in students."
+  },
+  {
+    "competency_id": "CID01202",
+    "name": "Public Health Communication",
+    "category": "COMPETENCY",
+    "description": "Prepare, evaluate and administer communication strategies to inform and influence individual and community decisions that affect public health outcomes\n"
+  },
+  {
+    "competency_id": "CID0091",
+    "name": "Learning and Development Strategy",
+    "category": "Domain",
+    "description": "Drive a learning and development culture with strategies to build the organisation's workforce capability"
+  },
+  {
+    "competency_id": "CID00157",
+    "name": "Locomotive Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of locomotive"
+  },
+  {
+    "competency_id": "CID0263",
+    "name": "Empathy",
+    "category": "COMPETENCY",
+    "description": "Empathy is about being able to accurately hear out and understand the thoughts, feelings and concerns of others, even when these are not made explicit. "
+  },
+  {
+    "competency_id": "CID0787",
+    "name": "Planning and coordination",
+    "category": "COMPETENCY",
+    "description": "Effectively build, engage, sustain, and manage relationships with stakeholders to ensure successful outcomes for short-term and long-term objectives"
+  },
+  {
+    "competency_id": "CID00174",
+    "name": "Import and Export Documentation Administration",
+    "category": "Domain",
+    "description": "Manage and execute documentation processes to facilitate the import and export of air cargo shipments"
+  },
+  {
+    "competency_id": "CID00259",
+    "name": "Digital Marketing",
+    "category": "Domain",
+    "description": "Develop, execute and evaluate digital marketing strategies and campaigns to promote online presence and deliver value proposition through the use of various digital marketing channels and platforms"
+  },
+  {
+    "competency_id": "CID20139",
+    "name": "Rail Operations Enhancement Management",
+    "category": "Domain",
+    "description": "Formulate rail operations strategies built on rail systems fundamentals, principles and knowledge to drive enhancement of service operations and performance excellence"
+  },
+  {
+    "competency_id": "CID00659",
+    "name": "Information security",
+    "category": "Functional",
+    "description": "Demonstrate the ability to utilize tools and techniques within the department / organization for protecting information against potential risks and adopting strategies protecting sensitive information from unauthorized activities, including inspection, modification, recording, and any disruption or destruction."
+  },
+  {
+    "competency_id": "CID00379",
+    "name": "Property and Infrastructural Planning",
+    "category": "Domain",
+    "description": "Understand, assess and design property and infrastructure plans in order to meet national and international infrastructure development goals, and contribute to public welfare"
+  },
+  {
+    "competency_id": "CID00387",
+    "name": "Audit Frameworks",
+    "category": "Domain",
+    "description": "Develop quality assurance frameworks to meet regulatory requirements"
+  },
+  {
+    "competency_id": "CID00631",
+    "name": "External/Org Awareness ",
+    "category": "Behavioural",
+    "description": "Understands and keeps up-to-date on local, national, and international policies and trends"
+  },
+  {
+    "competency_id": "CID00327",
+    "name": "Organisational Analysis",
+    "category": "Domain",
+    "description": "Evaluate factors that can affect the organization’s performance as well as strategically assessing the organization’s own resources and potential for improvement"
+  },
+  {
+    "competency_id": "CID00224",
+    "name": "Human Resource Practices Implementation",
+    "category": "Functional",
+    "description": "Implement of human resource (HR) practices by integrating local and international requirements, guidelines and best practices"
+  },
+  {
+    "competency_id": "CID00401",
+    "name": "Cargo Loading and Unloading Administration",
+    "category": "Domain",
+    "description": "Manage cargo loading and unloading activities to and from the aircraft in accordance with loading plans and Standard Operating Procedures (SOPs)"
+  },
+  {
+    "competency_id": "CID0015",
+    "name": "Internet of Things Management",
+    "category": "Functional",
+    "description": "Understand, identify, interpret, and develop IoT solutions towards pre-determined objectives, and improve existing processes."
+  },
+  {
+    "competency_id": "CID00519",
+    "name": "Drafting",
+    "category": "Functional",
+    "description": "Knowledge and practiced ability to draft  a communication in line with proposed decision, with correct form, right addressee and signatory, without making any noise whatsoever."
+  },
+  {
+    "competency_id": "CID00623",
+    "name": "Logical Thinking ",
+    "category": "Behavioural",
+    "description": "Understanding a situation or environment by putting the pieces together and identifying patterns that may not be obviously related. Connecting the dots while resisting stereotyping."
+  },
+  {
+    "competency_id": "CID0076",
+    "name": "Initiative and Drive",
+    "category": "Behavioural",
+    "description": "Contributing more than what is expected in the job, refusing to give up when faced with challenges, and finding or creating new opportunities."
+  },
+  {
+    "competency_id": "CID00641",
+    "name": "Self-Confidence",
+    "category": "Behavioural",
+    "description": "Belief in own capability to accomplish a task and being able to express confidence in dealing with challenging circumstances without being arrogant or boastful."
+  },
+  {
+    "competency_id": "CID00148",
+    "name": "Escalator and Travelator Maintenance",
+    "category": "Functional",
+    "description": "Implement preventive and corrective maintenance of escalator and travelator"
+  },
+  {
+    "competency_id": "CID104",
+    "name": "Gender-sensitive Disaster Risk Management (DRM)",
+    "category": "Domain",
+    "description": "Understand, define, and integrate gender sensitive policies and practices into disaster risk management projects."
+  },
+  {
+    "competency_id": "CID00294",
+    "name": "Project Management",
+    "category": "Functional",
+    "description": "Execute projects by managing stakeholder engagement, resources, budgets and resolving problems"
+  },
+  {
+    "competency_id": "CID00222",
+    "name": "Human Resource Policies and Legislation Framework Management",
+    "category": "Domain",
+    "description": "Develop and review human resource (HR) policies and procedures against organisational needs, and in compliance to legislative, ethical and regulatory standards"
+  },
+  {
+    "competency_id": "CID00221",
+    "name": "Legal Drafting and Writing",
+    "category": "Functional",
+    "description": "Produce legal documents through the identification, application and presentation of relevant facts and laws to communicate specific messages in an organised and logical format"
+  },
+  {
+    "competency_id": "CID0038",
+    "name": "Taking Accountability",
+    "category": "Behavioural",
+    "description": "Takes ownership for outcomes (successes or failures) while addressing performance issues fairly and promptly."
+  },
+  {
+    "competency_id": "CID1074",
+    "name": "Organisational Design",
+    "category": "COMPETENCY",
+    "description": "Develop and facilitate the implementation of organisational design to ensure its effectiveness and alignment with stakeholders' priorities"
+  },
+  {
+    "competency_id": "CID0025",
+    "name": "Scenario Planning",
+    "category": "Functional",
+    "description": "Understand and develop scenario plans to anticipate and solve for risks and uncertainties the Indian government might face, while managing social interests and government priorities."
+  },
+  {
+    "competency_id": "CID101",
+    "name": "Climate Change Policy Design",
+    "category": "Domain",
+    "description": "Plan and design climate change mitigation policy instruments (voluntary, regulatory, and market-based), geared towards climate-compatible development."
+  },
+  {
+    "competency_id": "CID00137",
+    "name": "Low Voltage Power Systems Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of low voltage power systems"
+  },
+  {
+    "competency_id": "CID00123",
+    "name": "Rail Track Maintenance",
+    "category": "Functional",
+    "description": "Implement preventive and corrective maintenance activities of rail track"
+  },
+  {
+    "competency_id": "CID00320",
+    "name": "Operational Risk Management",
+    "category": "Functional",
+    "description": "Develop and implement operational risk management strategies and structure to identify, measure, analyse, control, monitor and report on operational risks"
+  },
+  {
+    "competency_id": "CID00141",
+    "name": "High Voltage Power Systems Maintenance",
+    "category": "Domain",
+    "description": "Implement preventive and corrective maintenance activities of high voltage power systems"
+  },
+  {
+    "competency_id": "CID00281",
+    "name": "Qualitative Analysis",
+    "category": "Domain",
+    "description": "Formulate research questions and hypotheses, identify qualitative data sources for analysis of securities and provide investment recommendations based on analysis"
+  },
+  {
+    "competency_id": "CID00121",
+    "name": "Rail Track Inspection",
+    "category": "Functional",
+    "description": "Plan, coordinate and perform inspection of rail tracks through on-site patrols"
+  },
+  {
+    "competency_id": "CID00366",
+    "name": "Capital Management",
+    "category": "Functional",
+    "description": "Calculate capital adequacy ratios to determine capital buffers necessary for the bank or financial institution, while optimising returns on capital based on capital allocation strategies"
+  },
+  {
+    "competency_id": "CID00658",
+    "name": "Environment, Sustainability and Governance",
+    "category": "Functional",
+    "description": "Understand the impact of departmental strategies on the environment and undertake actions to enhance the sustainability of strategies, action plans, policies and associated schemes."
+  },
+  {
+    "competency_id": "CID00436",
+    "name": "Gender-sensitive Disaster Risk Management (DRM)",
+    "category": "Domain",
+    "description": "Understand, define, and integrate gender sensitive policies and practices into disaster risk management projects."
+  },
+  {
+    "competency_id": "CID00628",
+    "name": "Delegation",
+    "category": "Behavioural",
+    "description": "Assigning responsibilities and authority to the right employees taking their skill, interests and development into account. Following up on assigned tasks and providing guidance as and when needed. "
+  },
+  {
+    "competency_id": "CID00634",
+    "name": "Leading Others",
+    "category": "Behavioural",
+    "description": "Ability to engage, energise, and enable the team to excel."
+  },
+  {
+    "competency_id": "CID00642",
+    "name": "Strategic Orientation",
+    "category": "Behavioural",
+    "description": "Formulates objectives and priorities, and implements plans consistent with the long-term interests of the organization in a global environment. Capitalizes on opportunities and manages risks."
+  },
+  {
+    "competency_id": "CID00322",
+    "name": "Organisational Culture Development",
+    "category": "Domain",
+    "description": "Facilitate the development of the desired organisational culture in alignment with the organisation's brand and business imperatives"
+  },
+  {
+    "competency_id": "CID0077",
+    "name": "Organisational Impact Analysis",
+    "category": "Domain",
+    "description": "Assess the impact of learning solutions and interventions on organisation's desired outcomes and identify ways to enhance learning effectiveness"
+  },
+  {
+    "competency_id": "CID00447",
+    "name": "Data Ethics",
+    "category": "Functional",
+    "description": "Apply legal and ethical principles in the collection, use, storage and disposal of data"
+  },
+  {
+    "competency_id": "CID0035",
+    "name": "Workplace Learning Delivery",
+    "category": "Domain",
+    "description": "Implement workplace learning delivery approaches and solutions to drive performance improvement"
+  },
+  {
+    "competency_id": "CID00351",
+    "name": "Transport Management System Administration",
+    "category": "Domain",
+    "description": "Manage and administer process enforcement, analytics, and optimization of Transport Management System (TMS) for moving freight in all modes, including intermodal movements"
+  },
+  {
+    "competency_id": "CID00644",
+    "name": "Regulatory Compliance",
+    "category": "Functional",
+    "description": "Ensure compliance with policy and procedures, and provide reasonable assistance to those who seek information. Demonstrates knowledge, applies, and guides others on RTI matters to maintain procedural compliance,"
+  },
+  {
+    "competency_id": "CID0092",
+    "name": "Learning Experience Delivery",
+    "category": "Domain",
+    "description": "Drive learning delivery activities to facilitate learning experiences, knowledge transfer and skills application"
+  },
+  {
+    "competency_id": "CID0022",
+    "name": "Project Risk Identification",
+    "category": "Functional",
+    "description": "Identify, prepare and assess for internal and external risk impacting the project using a situational analysis framework to mitigate negative effects and maximise positive effects for project success."
+  },
+  {
+    "competency_id": "CID0050",
+    "name": "Integrity",
+    "category": "Behavioural",
+    "description": "Consistently behaves in an open, fair, and transparent manner; honours one’s commitments; and works to uphold the Public Service Values."
+  },
+  {
+    "competency_id": "CID0849",
+    "name": "Institutional Governance",
+    "category": "Functional",
+    "description": "Applies institutional governance frameworks to strengthen state capacity, while focusing on transparent and accountable public sector governance and institutions. "
+  },
+  {
+    "competency_id": "CID008",
+    "name": "Project Administration",
+    "category": "Functional",
+    "description": "Understand, maintain, and handle the administrative functions of a project to deliver a successful outcome."
+  },
+  {
+    "competency_id": "CID003",
+    "name": "Project Resource Planning",
+    "category": "Functional",
+    "description": "Develop and assess project resource plans to ensure optimal resource utilisation."
+  },
+  {
+    "competency_id": "CID00354",
+    "name": "Procurement",
+    "category": "Functional",
+    "description": "Prepare, contribute, and oversee procurement policies across their life-cycle, while identifying and solving bottlenecks through IT and other tools."
+  },
+  {
+    "competency_id": "CID0806",
+    "name": "Planning and coordination",
+    "category": "COMPETENCY",
+    "description": "Ability to plan, organise and monitor work with effective utilisation of resources such as time, money, and people."
+  },
+  {
+    "competency_id": "CID00635",
+    "name": "Networking and Partnerships",
+    "category": "Behavioural",
+    "description": "Working collaboratively, sharing information when required and building supportive,  trusting and professional relationships with stakeholders and a wide range of people within and outside the Civil Service."
+  },
+  {
+    "competency_id": "CID0036",
+    "name": "Attention to Detail",
+    "category": "Behavioural",
+    "description": "Having an underlying drive to being thorough and meticulous and to comply with procedures, rules, guidelines, and standards. Digs deeper and strives to reduce uncertainties and errors."
+  },
+  {
+    "competency_id": "CID106",
+    "name": "Livelihoods Design",
+    "category": "COMPETENCY",
+    "description": "Design and advocate for livelihood interventions that respond appropriately and ethically to various needs, including but not limited to psychosocial and mental health, social, and financial."
+  },
+  {
+    "competency_id": "CID00286",
+    "name": "Risk Management",
+    "category": "Functional",
+    "description": "Identify, evaluate and manage risks by developing and implementing risk management strategies, frameworks, policies, procedures and practices"
+  },
+  {
+    "competency_id": "CID00507",
+    "name": "Group Dynamics Facilitation",
+    "category": "Domain",
+    "description": "Assess group profile and dynamics to inform learning facilitation and group interaction approaches"
+  },
+  {
+    "competency_id": "CID00505",
+    "name": "Labour Relations Management",
+    "category": "Domain",
+    "description": "Manage labour relations to support, enhance and strengthen the relationships amongst trade unions, work councils and employee forums"
+  },
+  {
+    "competency_id": "CID0871",
+    "name": "Stakeholder Management",
+    "category": "Functional",
+    "description": "Effectively build, engage, sustain, and manage relationships with stakeholders to ensure successful outcomes for short-term and long-term objectives. "
+  },
+  {
+    "competency_id": "CID0872",
+    "name": "Project Administration",
+    "category": "Functional",
+    "description": "Understand, maintain, and handle the administrative functions of a project to deliver a successful outcome."
+  },
+  {
+    "competency_id": "CID2016",
+    "name": "Data Management",
+    "category": "Functional",
+    "description": "Prepare, structure and manage human resource (HR) data and information to assist in the analyses of business and HR issues"
+  },
+  {
+    "competency_id": "CID1063",
+    "name": "Innovation Management",
+    "category": "Functional",
+    "description": "Manage organisation's ability to respond to internal and external opportunities by using creativity to introduce new ideas, processes and products"
+  },
+  {
+    "competency_id": "CID0885",
+    "name": "Project Resource Planning",
+    "category": "Functional",
+    "description": "Develop and assess project resource plans to ensure optimal resource utilisation."
+  },
+  {
+    "competency_id": "CID0252",
+    "name": "Integrity ",
+    "category": "COMPETENCY",
+    "description": "Consistently behaves in an open, fair, and transparent manner; honours one’s commitments; and works to uphold the Public Service Values. "
+  },
+  {
+    "competency_id": "CID00451",
+    "name": "Scientific Communication",
+    "category": "Domain",
+    "description": "Interpret and communicate science themes to a range of audiences, to support decision-making, while influencing policy-agendas."
+  },
+  {
+    "competency_id": "CID00154",
+    "name": "Crisis Communication and Media Management",
+    "category": "Functional",
+    "description": "Manage communications with the media and/or relevant stakeholders during crises to maintain a positive image of the organisation"
+  },
+  {
+    "competency_id": "CID2041",
+    "name": "Knowledge Management",
+    "category": "Domain",
+    "description": "Drive knowledge management through establishing, maintaining and improving processes and systems"
+  },
+  {
+    "competency_id": "CID00343",
+    "name": "Environmental Audits (EA)",
+    "category": "Domain",
+    "description": "Assess the environmental operations and procedures (for businesses, governments, or utility companies) to ensure compliance with environmental standards and suggest corrective measures accordingly"
+  },
+  {
+    "competency_id": "CID00442",
+    "name": "Security Strategy",
+    "category": "Domain",
+    "description": "Establish the organisation's security vision, strategy and initiatives to ensure adequate protection of assets. This involves the planning, implementation and review of enterprise-wide security controls which includes policies, processes, physical infrastructure, software and hardware functions to govern and preserve the privacy, security and confidentiality of the organisation's information and assets"
+  },
+  {
+    "competency_id": "CID00164",
+    "name": "Security Governance & Risk Compliance",
+    "category": "Functional",
+    "description": "Develop and disseminate corporate security policies, frameworks and guidelines to ensure that day-to-day business operations guard or are well protected against risks, threats and vulnerabilities"
+  },
+  {
+    "competency_id": "CID107",
+    "name": "Forestry Livelihood Management",
+    "category": "COMPETENCY",
+    "description": "Understand the need, importance of designing, managing, conserving and repairing forests and associated resources (forest-dependent SMEs) for human and environmental benefits."
+  },
+  {
+    "competency_id": "CID102",
+    "name": "Prevention of Gender-based Violence (G-BV)",
+    "category": "COMPETENCY",
+    "description": "Understand, describe, and promote integration of gender-based violence (G-BV) principles within development projects, with a special focus on violence against women and girls (VAWG)."
+  },
+  {
+    "competency_id": "CID0055",
+    "name": "Recruitment Channel Management",
+    "category": "Domain",
+    "description": "Evaluate recruitment methods to establish the most effective channels in sourcing, selecting and securing candidates"
+  },
+  {
+    "competency_id": "CID00381",
+    "name": "Coaching and Mentoring",
+    "category": "Domain",
+    "description": "Develop and implement coaching and mentoring approaches to address learner developmental needs"
+  },
+  {
+    "competency_id": "CID00645",
+    "name": "Scheme Management",
+    "category": "Functional",
+    "description": "Planning, developing, administering, implementing, monitoring and mitigating risks of central government schemes, ensuring that they provide the benefits to the intended citizens "
+  },
+  {
+    "competency_id": "CID00375",
+    "name": "Climate Finance",
+    "category": "Domain",
+    "description": "Plan, access, deliver, and monitor climate finance at the national level to reduce climate risks and contribute to sustainable development goals."
+  },
+  {
+    "competency_id": "CID00295",
+    "name": "Professional and Business Ethics",
+    "category": "Functional",
+    "description": "Foster strong ethical standards and resolve ethical conflicts in accordance with the relevant principles and processes"
+  },
+  {
+    "competency_id": "CID0019",
+    "name": "Impact measurement",
+    "category": "Functional",
+    "description": "Define, identify, develop, and manage impact measurement processes to reflect the reality of projects and programs."
+  }
+]
