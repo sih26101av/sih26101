@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
     _COURSE_INDEX = {c["identifier"]: c for c in DB_COURSES if c.get("identifier")}
 
     print(
-        f"[STARTUP] ✓ {len(DB_COURSES)} courses | "
+        f"[STARTUP] [OK] {len(DB_COURSES)} courses | "
         f"{len(DB_COMPETENCIES)} competencies | "
         f"{len(DB_JOB_PROFILES)} job profiles loaded.",
         flush=True,

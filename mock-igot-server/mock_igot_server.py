@@ -143,7 +143,7 @@ async def lifespan(app: FastAPI):
         print(f"[WARN] Legacy seed data not found: {exc}", flush=True)
 
     print(
-        f"[STARTUP] ✓ {len(DB_COURSES)} courses | "
+        f"[STARTUP] [OK] {len(DB_COURSES)} courses | "
         f"{len(DB_COMPETENCIES)} competencies | "
         f"{len(DB_JOB_PROFILES)} job profiles loaded into memory.",
         flush=True,
