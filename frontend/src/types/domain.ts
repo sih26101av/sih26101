@@ -114,4 +114,5 @@ export interface UseLearnerDashboardResult {
   achievements: Achievement[];
   isLoading: boolean;
   error: string | null;
+  refetch: () => Promise<void>;
 }

@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard, BookOpen, TrendingUp, LogOut, AlertTriangle,
-  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home
+  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
@@ -14,7 +14,6 @@ import { useAuth } from "../context/AuthContext";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
 import SkillGapCard from "../components/dashboard/SkillGapCard";
 import CourseCard from "../components/dashboard/CourseCard";
-import AssessmentUploadZone from "../components/dashboard/AssessmentUploadZone";
 import MyCoursesView from "../components/dashboard/MyCoursesView";
 import ProgressView from "../components/dashboard/ProgressView";
 import ChatWidget from "../components/dashboard/ChatWidget";
@@ -219,6 +218,7 @@ const TopbarSignOut: React.FC = () => {
 // ——— Main Dashboard ————————————————————————————————————————————————————————————————————————
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
 
   // Priority: AuthContext user → prop → first real user from mock server
   const userId = authUser?.username ?? officialId ?? 'usr_720465595';
@@ -286,7 +286,31 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                       mandatoryGaps={mandatoryGaps.length}
                       recommendedCourses={recommendations.length}
                     />
-                    <AssessmentUploadZone onFileSelect={(f) => console.info("Ready:", f.name)} />
+                    <div className="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 flex flex-col gap-5 transition-colors duration-300 h-full justify-between">
+                      <div>
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-[44px] h-[44px] rounded-[14px] bg-[#1e2a4a] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+                            <Bot size={22} className="text-white dark:text-blue-400 transition-colors duration-300" />
+                          </div>
+                          <div>
+                            <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Generator</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">RAG Document-to-Quiz Pipeline</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                          Ready to test your knowledge? Upload any official MoSPI training document and our AI will generate a custom assessment on the fly.
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={() => navigate("/assessment")}
+                        className="relative w-full bg-gradient-to-r from-[#93c5fd] via-[#ffffff] to-[#93c5fd] dark:from-[#1e3a8a] dark:via-[#3b82f6] dark:to-[#1e3a8a] text-[#1e40af] dark:text-white border border-[#bfdbfe] dark:border-blue-700 shadow-[0_4px_16px_-2px_rgba(59,130,246,0.3)] dark:shadow-[0_4px_16px_-2px_rgba(37,99,235,0.4)] font-bold text-[14px] py-3.5 rounded-[16px] flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.4)] dark:hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.5)] active:scale-[0.98]"
+                      >
+                        <div className="absolute inset-0 rounded-[16px] pointer-events-none shadow-[inset_0_1px_3px_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)]" />
+                        <Bot size={18} className="text-[#2563eb] dark:text-blue-200 relative z-10 transition-colors duration-300" />
+                        <span className="relative z-10">Go to Assessment Studio</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 

@@ -34,6 +34,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // ─── Lazy-loaded dashboards ────────────────────────────────────────────────────
 const LearnerDashboard = React.lazy(() => import('./pages/LearnerDashboard'));
 const AdminDashboard   = React.lazy(() => import('./pages/AdminDashboard'));
+const AssessmentPage   = React.lazy(() => import('./pages/AssessmentPage'));
 
 // ─── Loading fallback ──────────────────────────────────────────────────────────
 const PageLoader: React.FC = () => (
@@ -140,6 +141,16 @@ const App: React.FC = () => (
               element={
                 <ProtectedRoute>
                   <LearnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ── Assessment Page ────────────────────────────────────────────── */}
+            <Route
+              path="/assessment"
+              element={
+                <ProtectedRoute>
+                  <AssessmentPage />
                 </ProtectedRoute>
               }
             />

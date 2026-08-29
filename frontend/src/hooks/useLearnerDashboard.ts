@@ -30,45 +30,38 @@ export function useLearnerDashboard(officialId: string): UseLearnerDashboardResu
   const [isLoading, setIsLoading]             = useState(true);
   const [error, setError]                     = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!officialId) return;
-    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Step 1: skill gaps + profile (sequential — recs depend on gaps)
+      const { profile: p, skillGaps: g } = await fetchSkillGapsAndProfile(officialId);
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Step 1: skill gaps + profile (sequential — recs depend on gaps)
-        const { profile: p, skillGaps: g } = await fetchSkillGapsAndProfile(officialId);
+      // Step 2: remaining 3 endpoints fire concurrently
+      const [recs, enrs, achs] = await Promise.all([
+        fetchRecommendations(officialId, g),
+        fetchEnrollments(officialId),
+        fetchAchievements(officialId),
+      ]);
 
-        // Step 2: remaining 3 endpoints fire concurrently
-        const [recs, enrs, achs] = await Promise.all([
-          fetchRecommendations(officialId, g),
-          fetchEnrollments(officialId),
-          fetchAchievements(officialId),
-        ]);
+      setProfile(p);
+      setSkillGaps(g);
+      setRecommendations(recs);
+      setEnrollments(enrs);
+      setAchievements(achs);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[useLearnerDashboard]', msg);
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        if (!cancelled) {
-          setProfile(p);
-          setSkillGaps(g);
-          setRecommendations(recs);
-          setEnrollments(enrs);
-          setAchievements(achs);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Unknown error';
-          console.error('[useLearnerDashboard]', msg);
-          setError(msg);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
+  useEffect(() => {
     load();
-    return () => { cancelled = true; };
   }, [officialId]);
 
-  return { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error };
+  return { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error, refetch: load };
 }
