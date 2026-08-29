@@ -12,18 +12,22 @@
 # 2. Install dependencies:
 #      pip install -r requirements.txt
 #
-# 3. Install Ollama (local AI runtime — NOT in pip, must install separately):
+#    The sentence-transformers model (all-MiniLM-L6-v2, ~80 MB) is downloaded
+#    automatically from HuggingFace Hub on first run and cached locally.
+#    No API key required. Works on Render free tier (512 MB RAM).
+#
+# 3. (OPTIONAL — local dev only) Install Ollama for Tier 3 RAG:
 #      Windows : winget install Ollama.Ollama
 #      Mac     : brew install ollama
 #      Linux   : curl -fsSL https://ollama.com/install.sh | sh
 #
-# 4. Pull the two required AI models (one-time, ~2.3 GB total):
+# 4. (OPTIONAL) Pull Ollama models (~2.3 GB total):
 #      ollama pull llama3.2:3b        # Chat LLM (~2 GB)
 #      ollama pull nomic-embed-text   # Embeddings (~274 MB)
 #
 # 5. Copy .env.example → .env and fill in your values.
 #
-# 6. Seed the local knowledge base (first time only):
+# 6. (OPTIONAL) Seed local knowledge base:
 #      python -m ai.seed_knowledge
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -56,15 +60,22 @@ python-pptx>=1.0.0
 # ── AI: Gemini (cloud — for quiz MCQ generation) ─────────────────────────────
 google-generativeai>=0.8.0
 
+# ── AI: Semantic Intent Engine (PRIMARY — Render-deployable) ─────────────────
+# all-MiniLM-L6-v2 model (~80 MB) auto-downloads from HuggingFace on first run.
+# CPU-only, no GPU needed. Fits Render free tier (512 MB RAM).
+sentence-transformers>=2.7.0
+
 # ── AI: LangChain orchestration layer ────────────────────────────────────────
 langchain>=0.3.0
 langchain-core>=0.3.0
 langchain-community>=0.3.0
 langchain-text-splitters>=0.3.0
 
-# ── AI: Ollama integration (local LLM — requires Ollama app installed) ────────
+# ── AI: Ollama integration (DISCONNECTED — Tier 3, local dev only) ────────────
+# Kept for easy revert. NOT called in production hot path.
+# See routers/chatbot.py → REVERT_OLLAMA comment to re-enable.
 langchain-ollama>=0.2.0
 
-# ── AI: ChromaDB vector store (local, no server required) ────────────────────
+# ── AI: ChromaDB vector store (used by PDF upload feature + Ollama Tier 3) ───
 langchain-chroma>=0.1.4
 chromadb>=0.5.0
