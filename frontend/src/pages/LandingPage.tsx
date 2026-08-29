@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Search, Settings, User, BookOpen, Activity, Award, Cpu, TabletSmartphone, Route, Moon, Sun, BrainCircuit, BookOpenCheck, FileQuestion, RefreshCw, Shield, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import LoginPage from './LoginPage';
 
 
 const translations: Record<string, React.ReactNode> = {
@@ -72,9 +72,9 @@ const LandingPage: React.FC = () => {
 
   const { theme, toggleTheme } = useTheme();
   const [lang, setLang] = useState<'en' | 'hi'>('en');
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  const toggleLang = () => setLang(l => l === 'en' ? 'hi' : 'en');
-
+  
   const t = (key: string, enText: string | React.ReactNode) => {
     return lang === 'en' ? enText : translations[key] || enText;
   };
@@ -141,12 +141,12 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 ml-2">
-            <Link to="/login" className="px-5 py-[9px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[11px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-sm">
+            <button onClick={() => setIsLoginModalOpen(true)} className="px-5 py-[9px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[11px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-sm">
               OFFICIAL LOGIN
-            </Link>
-            <Link to="/login" className="px-5 py-[8px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[11px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none">
+            </button>
+            <button onClick={() => setIsLoginModalOpen(true)} className="px-5 py-[8px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[11px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none">
               ADMIN PORTAL
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -169,12 +169,12 @@ const LandingPage: React.FC = () => {
           </p>
           
           <div className="flex gap-[16px] mb-8">
-            <Link to="/login" className="px-[30px] py-[13px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[13px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-md">
+            <button onClick={() => setIsLoginModalOpen(true)} className="px-[30px] py-[13px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[13px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-md">
               LOGIN AS OFFICIAL
-            </Link>
-            <Link to="/login" className="px-[30px] py-[11.5px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[13px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none shadow-sm">
+            </button>
+            <button onClick={() => setIsLoginModalOpen(true)} className="px-[30px] py-[11.5px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[13px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none shadow-sm">
               ADMIN PORTAL
-            </Link>
+            </button>
           </div>
 
           {/* Capabilities */}
@@ -442,6 +442,11 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Login Modal Overlay */}
+      {isLoginModalOpen && (
+        <LoginPage isModal onClose={() => setIsLoginModalOpen(false)} />
+      )}
     </div>
   );
 };

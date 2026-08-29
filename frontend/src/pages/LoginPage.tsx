@@ -12,9 +12,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Hash, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Hash, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
-const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  isModal?: boolean;
+  onClose?: () => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
   const navigate         = useNavigate();
   const location         = useLocation();
   const { login }        = useAuth();
@@ -78,19 +83,30 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300">
+    <div className={isModal ? "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm font-sans transition-colors duration-300" : "min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300"}>
       {/* Background */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.20] dark:opacity-10 dark:invert"
-        style={{
-          backgroundImage: `url('/bg-new-topo.png')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          transform: 'scale(1.2) translateX(-5%)',
-        }}
-      />
+      {!isModal && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none opacity-[0.20] dark:opacity-10 dark:invert"
+          style={{
+            backgroundImage: `url('/bg-new-topo.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            transform: 'scale(1.2) translateX(-5%)',
+          }}
+        />
+      )}
 
       <div className="relative z-10 w-full max-w-md px-4">
+        {isModal && (
+          <button 
+            onClick={onClose}
+            className="absolute -top-12 left-4 flex items-center gap-2 text-white/90 hover:text-white bg-slate-800/50 hover:bg-slate-800 px-3 py-1.5 rounded-full text-[12px] font-bold backdrop-blur-md transition-all shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </button>
+        )}
+        
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 cursor-default">
           <div className="flex items-center gap-1.5">
