@@ -244,6 +244,26 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "how to stay motivated", "it's too much work",
     ],
 
+    # ── About Platform / MoSPI ───────────────────────────────────────────────
+    "about_platform": [
+        "tell me about this website", "what is this platform", "what does this site do",
+        "explain this app", "what is MoSPI skill intelligence platform",
+        "yeh website kya hai", "yeh platform kya karta hai",
+        "what can I do here", "what is this tool", "platform ke baare mein batao",
+        "about this app", "describe this platform", "what is this system",
+        "what features does this have", "platform ki features kya hain",
+    ],
+
+    # ── About MoSPI (the ministry) ───────────────────────────────────────────
+    "about_mospi": [
+        "what is MoSPI", "what is mospi about", "tell me about MoSPI",
+        "MoSPI kya hai", "Ministry of Statistics", "what does MoSPI do",
+        "MoSPI ka kaam kya hai", "what is iGOT Karmayogi",
+        "iGOT kya hai", "what is Mission Karmayogi", "Karmayogi kya hai",
+        "what is NSSO", "NSO kya hai", "National Statistical Office",
+        "what is the ministry of statistics", "who runs MoSPI",
+    ],
+
     # ── Farewells ─────────────────────────────────────────────────────────────
     "farewell": [
         "bye", "goodbye", "thanks", "thank you", "alvida", "shukriya",

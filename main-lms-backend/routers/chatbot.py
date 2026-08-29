@@ -145,7 +145,7 @@ def _fmt_gaps(gaps: List[SkillGapContext], lang: str) -> str:
             return "Aapke sabhi competencies target level par hain! Badhai ho! 🎉"
         return "All your competencies are at target level! 🎉"
     lines = []
-    for g in sorted(active, key=lambda x: -x.gapScore)[:4]:
+    for g in sorted(active, key=lambda x: -x.gapScore):  # show ALL gaps, sorted by severity
         if lang == "hi":
             lines.append(f"• **{g.skillName}** ({g.domain}): Level {g.currentLevel} → {g.targetLevel} chahiye (Gap: {g.gapScore})")
         else:
@@ -519,6 +519,68 @@ def _handle_semantic(
             f"🏠 **Landing Page** — click the Home icon to go back to the landing page\n\n"
             f"📋 **Your Profile** (read-only) is always visible at the top of each tab:\n"
             f"   Shows your name, job role, department, Profile ID, and last assessment date."
+        )
+
+    # ── About the Platform ───────────────────────────────────────────────────
+    if intent == "about_platform":
+        if lang == "hi":
+            return (
+                f"**MoSPI Skill Intelligence Platform** — aapka AI-powered learning tool hai "
+                f"MoSPI ke government officials ke liye.\n\n"
+                f"🎯 **Yeh platform kya karta hai:**\n"
+                f"• Aapki **skill gaps** identify karta hai — job role ke liye kaunsi competencies target se kam hain\n"
+                f"• **Personalized courses** recommend karta hai jo aapke gaps close karein\n"
+                f"• **AI Assessment Generator** — PDF/PPTX upload karein, automatic MCQ quiz banega\n"
+                f"• **Gyan AI Chatbot** (main hoon!) — training, statistics, platform navigation ke sawal ka jawab\n\n"
+                f"📌 **Tabs:**\n"
+                f"• **Dashboard** — skill gaps + recommended courses + quiz generator\n"
+                f"• **My Courses** — active enrollments aur course progress\n"
+                f"• **Progress** — competency radar chart aur achievements\n\n"
+                f"Yeh platform iGOT Karmayogi ke FRAC framework se aligned hai — Mission Karmayogi ka hissa. 🇮🇳"
+            )
+        return (
+            f"**MoSPI Skill Intelligence Platform** is an AI-powered learning tool "
+            f"for government statistical officials.\n\n"
+            f"🎯 **What this platform does:**\n"
+            f"• Identifies your **skill gaps** — which competencies are below target for your job role\n"
+            f"• Recommends **personalized courses** from iGOT Karmayogi to close those gaps\n"
+            f"• **AI Assessment Generator** — upload any PDF/PPTX and get instant MCQ quizzes\n"
+            f"• **Gyan AI Chatbot** (that's me!) — answers questions about training, statistics, and navigation\n\n"
+            f"📌 **Three tabs:**\n"
+            f"• **Dashboard** — skill gaps + AI-recommended courses + quiz generator\n"
+            f"• **My Courses** — active enrollments and progress tracking\n"
+            f"• **Progress** — competency radar chart and achievement history\n\n"
+            f"Built for **Mission Karmayogi**, aligned with the iGOT FRAC competency framework. 🇮🇳"
+        )
+
+    # ── About MoSPI ──────────────────────────────────────────────────────────
+    if intent == "about_mospi":
+        if lang == "hi":
+            return (
+                f"**MoSPI (Ministry of Statistics and Programme Implementation)** "
+                f"— Bharat Sarkar ka apex statistical body hai.\n\n"
+                f"📊 **MoSPI ke kaam:**\n"
+                f"• **GDP, CPI, IIP, WPI** jaise national statistics compile karna\n"
+                f"• **NSO** (National Statistical Office) ko supervise karna\n"
+                f"• Large surveys: **PLFS** (Labour Force), **HCES** (Household Consumer Expenditure)\n"
+                f"• **SDG India Index** — UN Sustainable Development Goals ka tracking\n\n"
+                f"🎓 **iGOT Karmayogi** — Mission Karmayogi ke under training platform:\n"
+                f"• Government officials ki capacity building\n"
+                f"• **FRAC framework** (Roles, Activities, Competencies) par based\n"
+                f"• Yeh platform us training journey ka AI-powered hissa hai 🇮🇳"
+            )
+        return (
+            f"**MoSPI (Ministry of Statistics and Programme Implementation)** "
+            f"is India's apex body for the national statistical system.\n\n"
+            f"📊 **What MoSPI does:**\n"
+            f"• Compiles national statistics: **GDP, CPI, IIP, WPI**\n"
+            f"• Oversees the **NSO** (National Statistical Office)\n"
+            f"• Conducts large-scale surveys: **PLFS** (Labour Force), **HCES** (Consumer Expenditure)\n"
+            f"• Tracks India's progress on the **SDG India Index**\n\n"
+            f"🎓 **iGOT Karmayogi** — the learning platform under **Mission Karmayogi**:\n"
+            f"• National capacity building for civil servants\n"
+            f"• Based on the **FRAC framework** (Roles, Activities, Competencies)\n"
+            f"• This platform is an AI-powered extension of that journey 🇮🇳"
         )
 
     # ── Statistics ───────────────────────────────────────────────────────────
