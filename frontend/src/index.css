@@ -41,12 +41,3 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-[#1f2d4d] dark:bg-[#3b82f6];
 }
-
-/* Nudge UserWay accessibility widget downwards to avoid Topbar overlap */
-body > [class*="uwy"] {
-  top: 75px !important;
-}
-body > iframe[title*="accessibility" i],
-body > iframe[title*="UserWay" i] {
-  top: 75px !important;
-}
