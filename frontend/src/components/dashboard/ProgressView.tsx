@@ -23,7 +23,7 @@ const AchievementRow: React.FC<{ achievement: Achievement; isLast: boolean }> = 
         ${isQuiz ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
         {isQuiz ? <Target size={16} /> : <Trophy size={16} />}
       </div>
-      <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm group-hover:border-blue-200 dark:group-hover:border-blue-800 transition-all">
+      <div className="flex-1 bg-[#F2F0EF] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm group-hover:border-blue-200 dark:group-hover:border-blue-800 transition-all">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
           <h4 className="text-slate-800 dark:text-slate-200 font-bold text-sm">Passed {achievement.category}: {achievement.title}</h4>
           <span className="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg whitespace-nowrap">
@@ -81,7 +81,7 @@ const ProgressView: React.FC<ProgressViewProps> = ({ achievements, skillGaps }) 
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">All data sourced live from the FastAPI backend.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
+        <div className="bg-[#F2F0EF] dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
           <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
             <h3 className="text-slate-800 dark:text-slate-200 font-bold text-sm flex items-center gap-2">
               <Activity size={16} className="text-blue-600 dark:text-blue-500" />Competency Radar
@@ -107,7 +107,7 @@ const ProgressView: React.FC<ProgressViewProps> = ({ achievements, skillGaps }) 
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
+        <div className="bg-[#F2F0EF] dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
           <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between sticky top-0 z-10">
             <h3 className="text-slate-800 dark:text-slate-200 font-bold text-sm flex items-center gap-2"><Trophy size={16} className="text-amber-500" />Recent Achievements</h3>
             <button className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center">View All <ChevronRight size={14} /></button>

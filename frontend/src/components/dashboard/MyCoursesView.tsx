@@ -28,7 +28,7 @@ const EnrolledCourseCard: React.FC<{ enrollment: Enrollment }> = ({ enrollment }
     : 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800/50';
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden">
+    <div className="bg-[#F2F0EF] dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden">
       <div className={`h-1.5 w-full ${isIGOT ? 'bg-indigo-500' : 'bg-teal-500'}`} />
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-3">
@@ -69,7 +69,7 @@ const MyCoursesView: React.FC<MyCoursesViewProps> = ({ enrollments }) => (
       {enrollments.map(enr => <EnrolledCourseCard key={enr.enrollmentId} enrollment={enr} />)}
     </div>
     {enrollments.length === 0 && (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+      <div className="bg-[#F2F0EF] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
         <CheckCircle2 size={40} className="text-green-500 dark:text-green-400 mb-3" />
         <h3 className="text-slate-800 dark:text-slate-200 font-bold text-lg">You are all caught up!</h3>
         <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm mt-1">

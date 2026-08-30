@@ -22,10 +22,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, totalAssessed })
   const initials = displayName.substring(0, 1).toUpperCase();
 
   return (
-    <div className="relative bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-colors duration-300">
+    <div className="relative bg-[#E2E8F0] dark:bg-slate-800/40 rounded-3xl overflow-hidden transition-colors duration-300">
       
-      {/* Blue top line */}
-      <div className="absolute top-0 left-0 right-0 h-[6px] bg-[#3b82f6]" />
+      {/* Dark blue top line */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-[#1e293b]" />
 
       {/* Dotted circuit background — right 60% */}
       <div
@@ -41,7 +41,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, totalAssessed })
         {/* Left: Avatar + Info */}
         <div className="flex items-center gap-6">
           {/* Avatar circle */}
-          <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0 shadow-sm dark:shadow-none transition-colors duration-300">
+          <div className="w-20 h-20 rounded-full bg-[#D1D5DB] dark:bg-slate-800 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
             <span className="text-slate-700 dark:text-slate-300 font-medium text-3xl transition-colors duration-300">{initials}</span>
           </div>
 
@@ -49,7 +49,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, totalAssessed })
           <div>
             <div className="flex items-center gap-3 mb-1.5">
               <h1 className="text-slate-900 dark:text-white font-extrabold text-[24px] tracking-tight leading-none transition-colors duration-300">{displayName}</h1>
-              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-[#eff6ff] dark:bg-blue-900/30 text-[#3b82f6] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-900/50 px-2 py-0.5 rounded-full transition-colors duration-300">
+              <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-transparent text-[#3b82f6] dark:text-blue-400 border border-[#3b82f6] px-2 py-0.5 rounded-full transition-colors duration-300">
                 <BadgeCheck size={11} className="text-[#3b82f6] dark:text-blue-400" />
                 Verified Official
               </span>
@@ -69,15 +69,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, totalAssessed })
           </div>
         </div>
 
-        {/* Right: Stat Boxes */}
-        <div className="flex flex-row md:flex-col gap-3 md:min-w-[180px]">
-          <div className="bg-[#fafafa] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 rounded-[16px] px-4 py-3 flex flex-col items-center justify-center shadow-sm dark:shadow-none flex-1 md:flex-initial transition-colors duration-300">
+        {/* Right: Stats Text */}
+        <div className="flex flex-col gap-5 md:min-w-[180px] text-center md:text-right">
+          <div className="flex flex-col items-center justify-center">
             <span className="text-slate-900 dark:text-white text-[20px] font-black leading-none transition-colors duration-300">{totalAssessed}</span>
-            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium mt-1 text-center transition-colors duration-300">Competencies Assessed</span>
+            <span className="text-slate-700 dark:text-slate-400 text-[11px] font-medium mt-1 transition-colors duration-300">Competencies Assessed</span>
           </div>
-          <div className="bg-[#fafafa] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 rounded-[16px] px-4 py-3 flex flex-col items-center justify-center shadow-sm dark:shadow-none flex-1 md:flex-initial transition-colors duration-300">
+          <div className="flex flex-col items-center justify-center">
             <span className="text-slate-800 dark:text-slate-200 text-[13px] font-bold font-mono tracking-wider leading-none transition-colors duration-300">{profile.competencyProfile.profileId}</span>
-            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium mt-1 text-center transition-colors duration-300">Profile ID</span>
+            <span className="text-slate-700 dark:text-slate-400 text-[11px] font-medium mt-1 transition-colors duration-300">Profile ID</span>
           </div>
         </div>
       </div>

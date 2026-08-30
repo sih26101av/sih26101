@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, Shield, Users, Lightbulb, LucideIcon, Hexagon } from "lucide-react";
+import { Target, CheckCircle2, Shield, Users, Lightbulb, LucideIcon, Hexagon, AlertCircle } from "lucide-react";
 import type { SkillGapEntry, CompetencyDomain } from "../../types/domain";
 
 interface SkillGapCardProps { skillGaps: SkillGapEntry[]; }
@@ -15,25 +15,21 @@ const DOMAIN_ICONS: Record<CompetencyDomain, LucideIcon> = {
   Leadership: Target,
 };
 
-const DOMAIN_BADGE: Record<CompetencyDomain, string> = {
-  Statistical: "bg-white dark:bg-slate-800 text-[#3b82f6] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-900/50",
-  Technical:   "bg-white dark:bg-slate-800 text-[#8b5cf6] dark:text-purple-400 border border-[#ddd6fe] dark:border-purple-900/50",
-  Governance:  "bg-white dark:bg-slate-800 text-[#22c55e] dark:text-green-400 border border-[#bbf7d0] dark:border-green-900/50",
-  Leadership:  "bg-white dark:bg-slate-800 text-[#f59e0b] dark:text-amber-400 border border-[#fde68a] dark:border-amber-900/50",
+const DOMAIN_BADGE: Record<string, string> = {
+  Statistical: "bg-[#dbeafe] dark:bg-blue-900/40 text-[#2563eb] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-800",
+  Technical:   "bg-[#f3e8ff] dark:bg-purple-900/40 text-[#7c3aed] dark:text-purple-400 border border-[#e9d5ff] dark:border-purple-800",
+  Governance:  "bg-[#dcfce7] dark:bg-green-900/40 text-[#16a34a] dark:text-green-400 border border-[#bbf7d0] dark:border-green-800",
+  Leadership:  "bg-[#fef3c7] dark:bg-amber-900/40 text-[#d97706] dark:text-amber-400 border border-[#fde68a] dark:border-amber-800",
+  Functional:  "bg-[#dbeafe] dark:bg-blue-900/40 text-[#2563eb] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-800",
+  Domain:      "bg-[#f3e8ff] dark:bg-purple-900/40 text-[#7c3aed] dark:text-purple-400 border border-[#e9d5ff] dark:border-purple-800",
 };
 
 const LevelBox: React.FC<{ filled: boolean }> = ({ filled }) => (
   <div
-    className={`relative w-[26px] h-[16px] rounded-[4px] border border-[#334155] dark:border-slate-500 transition-colors duration-300 ${
-      filled
-        ? "bg-[#e0f2fe] dark:bg-blue-900/40 shadow-[0_2px_4px_rgba(56,189,248,0.15)] dark:shadow-none"
-        : "bg-transparent"
+    className={`w-[26px] h-[14px] rounded-sm border border-slate-800 dark:border-slate-500 transition-colors duration-300 ${
+      filled ? "bg-[#bfdbfe]" : "bg-[#f8fafc]"
     }`}
-  >
-    {filled && (
-      <div className="absolute inset-0 rounded-[3px] pointer-events-none shadow-[inset_0_1px_2px_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)]" />
-    )}
-  </div>
+  />
 );
 
 const PipStrip: React.FC<{ current: number }> = ({ current }) => {
@@ -56,7 +52,6 @@ const TargetRow: React.FC<{ target: number }> = ({ target }) => (
 );
 
 const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> = ({ current, domain }) => {
-  const Icon = DOMAIN_ICONS[domain] ?? Target;
   const getSlicePath = (startDeg: number, endDeg: number) => {
     const or = 76, ir = 54, cx = 100, cy = 100;
     const polar = (r: number, deg: number) => {
@@ -71,21 +66,7 @@ const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> =
   return (
     <div className="relative w-[180px] h-[90px] flex justify-center items-end">
       <svg width="180" height="90" viewBox="10 10 180 90" className="absolute bottom-0 overflow-visible">
-        <defs>
-          <linearGradient id="glassyFill" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#bae6fd" stopOpacity="0.4" />
-          </linearGradient>
-          <linearGradient id="glassyFillDark" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1e3a8a" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#172554" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="gaugeShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor="#93c5fd" floodOpacity="0.4" />
-          </filter>
-        </defs>
-        {/* We apply shadow using tailwind on the parent in dark mode to avoid hardcoding SVG filter colors */}
-        <g className="drop-shadow-[0_6px_5px_rgba(147,197,253,0.4)] dark:drop-shadow-none">
+        <g>
           {Array.from({ length: 5 }).map((_, i) => {
             const start = i * 36; const end = start + 36;
             const isFilled = i < current;
@@ -93,10 +74,10 @@ const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> =
               <path
                 key={i}
                 d={getSlicePath(start, end)}
-                className={`transition-colors duration-300 stroke-[#334155] dark:stroke-slate-500 ${
-                  isFilled ? "fill-[url(#glassyFill)] dark:fill-[url(#glassyFillDark)]" : "fill-transparent"
+                className={`transition-colors duration-300 stroke-slate-400 ${
+                  isFilled ? "fill-[#bfdbfe]" : "fill-[#f1f5f9]"
                 }`}
-                strokeWidth="0.8"
+                strokeWidth="1.2"
                 strokeLinejoin="round"
               />
             );
@@ -104,7 +85,7 @@ const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> =
         </g>
       </svg>
       <div className="absolute bottom-[2px] text-slate-800 dark:text-slate-200 transition-colors duration-300">
-        <Icon size={26} strokeWidth={1.5} />
+        <Target size={22} strokeWidth={1.5} />
       </div>
     </div>
   );
@@ -116,15 +97,8 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
   const badge = DOMAIN_BADGE[competency.domain] ?? DOMAIN_BADGE.Statistical;
 
   return (
-    <div className="relative rounded-2xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
-      <div
-        className="absolute top-0 right-0 w-[55%] h-full pointer-events-none opacity-[0.3] dark:opacity-[0.05] transition-opacity duration-300"
-        style={{
-          backgroundImage: `repeating-linear-gradient(45deg, #f1f5f9 25%, transparent 25%, transparent 75%, #f1f5f9 75%, #f1f5f9), repeating-linear-gradient(45deg, #f1f5f9 25%, transparent 25%, transparent 75%, #f1f5f9 75%, #f1f5f9)`,
-          backgroundPosition: `0 0, 10px 10px`,
-          backgroundSize: `20px 20px`,
-        }}
-      />
+    <div className="relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-slate-800 dark:border-slate-700/50 shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
+
 
       <div className="flex-1 relative z-10 w-full">
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -132,7 +106,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
             {competency.domain}
           </span>
           {isMandatory && (
-            <span className="text-[11px] font-bold px-3 py-0.5 rounded-full bg-white dark:bg-slate-800 text-[#ea580c] dark:text-orange-400 border border-[#fed7aa] dark:border-orange-900/50 transition-colors duration-300">
+            <span className="text-[11px] font-bold px-3 py-0.5 rounded-full bg-[#ffedd5] dark:bg-orange-900/40 text-[#ea580c] dark:text-orange-400 border border-[#fed7aa] dark:border-orange-800 transition-colors duration-300">
               &amp; Mandatory
             </span>
           )}
@@ -158,7 +132,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
           <div className="absolute -top-6 right-0">
             {hasGap ? (
               <span className="flex items-center gap-1.5 text-[11px] font-bold bg-[#fee2e2] dark:bg-red-900/30 text-[#ef4444] dark:text-red-400 px-3 py-1 rounded-full transition-colors duration-300">
-                <Hexagon size={12} className="fill-[#fca5a5] dark:fill-red-800 text-[#ef4444] dark:text-red-400" /> Gap -{gap}
+                <AlertCircle size={12} className="text-[#ef4444] dark:text-red-400" /> Gap -{gap}
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-[11px] font-bold bg-[#dcfce7] dark:bg-green-900/30 text-[#15803d] dark:text-green-400 px-3 py-1 rounded-full transition-colors duration-300">
@@ -181,21 +155,23 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
   const met = skillGaps.filter(e => e.gap === 0);
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 transition-colors duration-300">
-      <div className="flex items-center justify-between mb-8">
+    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 transition-colors duration-300">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-slate-900 dark:text-white font-extrabold text-[19px] flex items-center gap-2 tracking-tight transition-colors duration-300">
+          <h2 className="text-slate-900 dark:text-white font-bold text-lg tracking-tight transition-colors duration-300">
             Competency &amp; Skill-Gap Analysis
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 text-[12px] mt-1 font-medium transition-colors duration-300">
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 transition-colors duration-300">
             Computed by SkillGapEngine — benchmarked against Job Role
           </p>
         </div>
-        <div className="flex gap-2">
-          <span className="text-[12px] font-bold px-3 py-1.5 rounded-full bg-[#fee2e2] dark:bg-red-900/30 text-[#ef4444] dark:text-red-400 transition-colors duration-300">
-            {withGaps.length} Gaps
+        <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <span className="font-medium">Competency Status:</span>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#fee2e2] dark:bg-red-900/30 text-[#ef4444] dark:text-red-400 transition-colors duration-300">
+            {withGaps.length} Active Gaps
           </span>
-          <span className="text-[12px] font-bold px-3 py-1.5 rounded-full bg-[#dcfce7] dark:bg-green-900/30 text-[#15803d] dark:text-green-400 transition-colors duration-300">
+          <span className="text-slate-300 dark:text-slate-600">|</span>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#dcfce7] dark:bg-green-900/30 text-[#15803d] dark:text-green-400 transition-colors duration-300">
             {met.length} Met
           </span>
         </div>
@@ -205,8 +181,8 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
         {withGaps.length > 0 && (
           <>
             <div className="flex items-center gap-2 py-2 mb-2">
-              <Hexagon size={14} className="fill-[#fca5a5] dark:fill-red-800 text-[#ef4444] dark:text-red-400 transition-colors duration-300" />
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest transition-colors duration-300">Active Gaps</span>
+              <AlertCircle size={14} className="text-[#ef4444] dark:text-red-400 transition-colors duration-300" />
+              <span className="text-[11px] font-bold text-[#ef4444] dark:text-red-400 uppercase tracking-widest transition-colors duration-300">Active Gaps</span>
             </div>
             {withGaps.map(e => <GapRow key={e.competency.compId} entry={e} />)}
           </>

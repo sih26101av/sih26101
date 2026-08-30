@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FILE: src/components/dashboard/CourseCard.tsx
  */
 
@@ -33,7 +33,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
   const sourceStyle = getSourceStyle(course.source);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 flex flex-col h-full">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-800 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-600 dark:hover:border-blue-500 transition-all duration-200 flex flex-col h-full">
       <div className="px-4 pt-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="w-7 h-7 rounded-full bg-blue-900 dark:bg-blue-800 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 shadow">{priorityRank}</span>

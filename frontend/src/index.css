@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -25,4 +25,28 @@
 }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   @apply bg-slate-300 dark:bg-slate-600;
+}
+
+/* Global Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-[#e5e7eb] dark:bg-[#1e293b];
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-[#1f2d4d]/60 dark:bg-[#3b82f6]/60 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-[#1f2d4d] dark:bg-[#3b82f6];
+}
+
+/* Nudge UserWay accessibility widget downwards to avoid Topbar overlap */
+body > [class*="uwy"] {
+  top: 75px !important;
+}
+body > iframe[title*="accessibility" i],
+body > iframe[title*="UserWay" i] {
+  top: 75px !important;
 }

@@ -88,7 +88,7 @@ const StatsSummary: React.FC<{
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 transition-colors duration-300">
+    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 transition-colors duration-300">
       <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 transition-colors duration-300">
         Learning Snapshot
       </p>
@@ -96,7 +96,7 @@ const StatsSummary: React.FC<{
         {stats.map(({ label, value, valueColor, iconBg, icon }) => (
           <div
             key={label}
-            className="bg-white dark:bg-slate-800/60 rounded-[20px] shadow-[0_4px_16px_-4px_rgba(0,0,0,0.05)] dark:shadow-none border border-slate-100 dark:border-slate-700/50 p-4 flex flex-col items-center justify-center hover:-translate-y-0.5 transition-all duration-300"
+            className="bg-white dark:bg-slate-800/60 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-4 flex flex-col items-center justify-center hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="flex items-center gap-4 w-full justify-center mb-1.5">
               <div className={`w-[42px] h-[42px] rounded-[12px] flex items-center justify-center transition-colors duration-300 ${iconBg}`}>
@@ -123,75 +123,47 @@ const Topbar: React.FC<{
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   return (
-    <nav className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-700/50 px-5 md:px-6 py-2 flex items-center justify-between sticky top-0 z-50 shadow-[0_1px_8px_-2px_rgba(0,0,0,0.06)]">
-      {/* Logo */}
+    <nav className="bg-[#1e293b] px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
+      {/* Logo and Title */}
       <div
-        className="flex items-center gap-2.5 cursor-pointer select-none"
+        className="flex items-center gap-3 cursor-pointer select-none"
         onClick={() => onTabChange("dashboard")}
       >
-        <div className="flex flex-col gap-[3px] w-[5px]">
-          <div className="h-[5px] w-[5px] bg-[#FF9933] rounded-full" />
-          <div className="h-[5px] w-[5px] bg-slate-400 rounded-full" />
-          <div className="h-[5px] w-[5px] bg-[#138808] rounded-full" />
+        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
+          {/* Placeholder for the emblem */}
+          <div className="w-6 h-6 border-[1.5px] border-slate-400 rounded-full flex flex-col items-center justify-center">
+             <div className="w-1 h-1 bg-slate-400 rounded-full mb-[1px]"></div>
+             <div className="w-3 h-1.5 border border-slate-400 rounded-t-full"></div>
+          </div>
         </div>
-        <div>
-          <div className="text-slate-900 dark:text-white font-extrabold text-[13px] leading-none tracking-wide">MoSPI</div>
-          <div className="text-slate-400 dark:text-slate-500 text-[10px] leading-none mt-[3px]">Skill Intelligence Platform</div>
+        <div className="text-white font-semibold text-lg tracking-wide">
+          National Statistical Office (NSO) Training Portal
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="hidden md:flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-full px-1.5 py-1.5">
-        {(
-          [
-            { id: "dashboard", icon: <LayoutDashboard size={13} />, label: "Dashboard" },
-            { id: "my-courses", icon: <BookOpen size={13} />, label: "My Courses" },
-            { id: "progress", icon: <TrendingUp size={13} />, label: "Progress" },
-          ] as const
-        ).map(({ id, icon, label }) => (
-          <button
-            key={id}
-            onClick={() => onTabChange(id)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-              activeTab === id
-                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-600/50"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-            }`}
-          >
-            {icon} {label}
-          </button>
-        ))}
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-3">
-        {userName && (
-          <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold hidden md:block bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-full">
-            {userName}
-          </span>
-        )}
+      <div className="flex items-center gap-3 text-white">
         <button
           onClick={() => navigate("/")}
-          className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center"
+          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
           title="Go to Home"
         >
-          <Home size={15} />
+          <Home size={18} />
         </button>
         <button
           onClick={toggleTheme}
-          className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
           title="Toggle Theme"
         >
-          {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button
-          onClick={() => navigate("/change-password")}
-          className="p-1.5 rounded-full text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title="Change Password"
-        >
-          <Lock size={15} />
+        <button className="p-1.5 hover:bg-white/10 rounded-full transition-colors" title="Search">
+          <Search size={18} />
         </button>
-        <TopbarSignOut />
+        <button className="w-8 h-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center hover:bg-white transition-colors relative">
+          <div className="w-[11px] h-[11px] border-[1.5px] border-current rounded-full absolute top-[6px]"></div>
+          <div className="w-[18px] h-[8px] border-[1.5px] border-current rounded-t-full absolute bottom-[4px]"></div>
+        </button>
       </div>
     </nav>
   );
@@ -247,7 +219,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 relative transition-colors duration-300" key={retryKey}>
+    <div className="min-h-screen bg-[#F2F0EF] dark:bg-slate-950 relative transition-colors duration-300" key={retryKey}>
       {/* Network Mesh Background */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
@@ -286,36 +258,32 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                       mandatoryGaps={mandatoryGaps.length}
                       recommendedCourses={recommendations.length}
                     />
-                    <div className="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 flex flex-col gap-5 transition-colors duration-300 h-full justify-between">
+                    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 flex flex-col gap-5 transition-colors duration-300 h-full justify-between">
                       <div>
                         <div className="flex items-center gap-4 mb-4">
-                          <div className="w-[44px] h-[44px] rounded-[14px] bg-[#1e2a4a] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-                            <Bot size={22} className="text-white dark:text-blue-400 transition-colors duration-300" />
+                          <div className="w-[44px] h-[44px] rounded-[14px] bg-[#eef2ff] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+                            <Bot size={22} className="text-blue-800 dark:text-blue-400 transition-colors duration-300" />
                           </div>
                           <div>
-                            <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Generator</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">RAG Document-to-Quiz Pipeline</p>
+                            <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Studio</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload MoSPI training documents to auto-generate custom assessments.</p>
                           </div>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                          Ready to test your knowledge? Upload any official MoSPI training document and our AI will generate a custom assessment on the fly.
-                        </p>
                       </div>
                       
                       <button
                         onClick={() => navigate("/assessment")}
-                        className="relative w-full bg-gradient-to-r from-[#93c5fd] via-[#ffffff] to-[#93c5fd] dark:from-[#1e3a8a] dark:via-[#3b82f6] dark:to-[#1e3a8a] text-[#1e40af] dark:text-white border border-[#bfdbfe] dark:border-blue-700 shadow-[0_4px_16px_-2px_rgba(59,130,246,0.3)] dark:shadow-[0_4px_16px_-2px_rgba(37,99,235,0.4)] font-bold text-[14px] py-3.5 rounded-[16px] flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-4px_rgba(59,130,246,0.4)] dark:hover:shadow-[0_8px_24px_-4px_rgba(37,99,235,0.5)] active:scale-[0.98]"
+                        className="relative w-full bg-white dark:bg-slate-800 text-blue-900 dark:text-white border-2 border-blue-900 dark:border-blue-700 font-bold text-[14px] py-2.5 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-slate-700"
                       >
-                        <div className="absolute inset-0 rounded-[16px] pointer-events-none shadow-[inset_0_1px_3px_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)]" />
-                        <Bot size={18} className="text-[#2563eb] dark:text-blue-200 relative z-10 transition-colors duration-300" />
-                        <span className="relative z-10">Go to Assessment Studio</span>
+                        <Bot size={18} className="text-blue-900 dark:text-blue-200 relative z-10 transition-colors duration-300" />
+                        <span className="relative z-10">Open Assessment Studio</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {/* Recommended Courses section */}
-                <section className="bg-white/70 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/80 dark:border-slate-700/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.05)] transition-colors duration-300">
+                <section className="bg-[#F2F0EF] dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/80 dark:border-slate-700/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.05)] transition-colors duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
                     <div>
                       <h2 className="text-slate-900 dark:text-white font-extrabold text-lg flex items-center gap-2">
