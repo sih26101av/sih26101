@@ -147,6 +147,14 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   }, [isOpen]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [inputValue]);
+
   // Send a message
   const handleSend = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -310,7 +318,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
               placeholder={lang === 'hi' ? 'Kuch bhi poochiye...' : 'Ask anything about your training...'}
               rows={1}
               disabled={isTyping}
-              className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder-slate-400 resize-none focus:outline-none max-h-24 leading-relaxed disabled:opacity-50"
+              className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder-slate-400 resize-none focus:outline-none max-h-24 overflow-y-auto leading-relaxed disabled:opacity-50"
               style={{ minHeight: '24px' }}
             />
             <button
