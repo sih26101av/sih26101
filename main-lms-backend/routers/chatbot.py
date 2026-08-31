@@ -95,13 +95,15 @@ class ChatResponse(BaseModel):
 _HINDI_DEVANAGARI = re.compile(r'[\u0900-\u097F]')
 _HINGLISH_WORDS = {
     'kya', 'kaun', 'kaise', 'mujhe', 'mera', 'meri', 'mein', 'hai', 'hain',
-    'nahi', 'batao', 'bolo', 'karo', 'lena', 'chahiye', 'course', 'acha',
+    'nahi', 'batao', 'bolo', 'karo', 'lena', 'chahiye', 'acha',
     'theek', 'samjhao', 'kab', 'kyun', 'kitna', 'kitne', 'sikho', 'padhna',
-    'seekhna', 'lagta', 'zyada', 'thoda', 'bahut', 'sir', 'madam', 'help',
-    'kuch', 'sab', 'jo', 'woh', 'abhi', 'aaj', 'kal', 'dikhao', 'batao',
-    # Additional Hinglish words for better detection
+    'seekhna', 'lagta', 'zyada', 'thoda', 'bahut', 'sir', 'madam',
+    'kuch', 'sab', 'jo', 'woh', 'abhi', 'aaj', 'kal', 'dikhao',
+    # Extended Hinglish
     'aap', 'kon', 'hoon', 'naam', 'mere', 'apna', 'ho', 'hua', 'hui',
     'raha', 'rahi', 'tha', 'thi', 'accha', 'bilkul', 'zaruri', 'milta',
+    'namaste', 'namaskar', 'pranam', 'alvida', 'shukriya', 'dhanyavad',
+    'tum', 'wah', 'zabardast', 'bahut', 'bahut', 'parichay',
 }
 
 
@@ -223,7 +225,47 @@ def _handle_semantic(
             f"How can I help you today? 🎓"
         )
 
-    # ── User Identity ────────────────────────────────────────────────────────
+    # ── Bot Identity (who is Gyan) ─────────────────────────────────────────────────
+    if intent == "bot_identity":
+        if lang == "hi":
+            return (
+                f"Main **Gyan (\u091c\u094d\u091e\u093e\u0928)** hoon \u2014 MoSPI ka AI-powered Learning Assistant. \U0001f916\n\n"
+                f"Main ek **semantic AI chatbot** hoon jo sentence-transformers model use karta hai "
+                f"aapke sawalon ko samajhne ke liye.\n\n"
+                f"Main aapki madad kar sakta hoon:\n"
+                f"\u2022 **Skill Gaps** \u2014 aapke current aur target levels\n"
+                f"\u2022 **Course Recommendations** \u2014 personalized learning pathway\n"
+                f"\u2022 **Platform Navigation** \u2014 Dashboard, My Courses, Progress tabs\n"
+                f"\u2022 **Statistics** \u2014 GDP, CPI, Sampling, FRAC framework\n\n"
+                f"Aap {role} hain {dept} mein. Aaj main aapki kya madad kar sakta hoon? \U0001f393"
+            )
+        return (
+            f"I'm **Gyan (\u091c\u094d\u091e\u093e\u0928)** \u2014 the AI-powered Learning Assistant for MoSPI. \U0001f916\n\n"
+            f"I'm a **semantic AI chatbot** powered by sentence-transformers, "
+            f"built to understand natural language \u2014 in English, Hindi, and Hinglish.\n\n"
+            f"I can help you with:\n"
+            f"\u2022 **Skill Gaps** \u2014 your current vs target competency levels\n"
+            f"\u2022 **Course Recommendations** \u2014 your personalized learning pathway\n"
+            f"\u2022 **Platform Navigation** \u2014 how to use Dashboard, My Courses, Progress tabs\n"
+            f"\u2022 **Statistics** \u2014 GDP, CPI, Sampling, FRAC framework\n\n"
+            f"You're a **{role}** in {dept}. What can I help you with today? \U0001f393"
+        )
+
+    # ── Gratitude (thanks/great without goodbye) ───────────────────────────────
+    if intent == "gratitude":
+        if lang == "hi":
+            return random.choice([
+                f"Khushi hui madad karke! \U0001f604 Kya aur kuch poochna hai?",
+                f"Bilkul! Agar aur koi sawaal ho toh zaroor poochein. \U0001f393",
+                f"Main hamesha yahan hoon. Aur kuch chahiye? \U0001f916",
+            ])
+        return random.choice([
+            f"Glad I could help! \U0001f604 Anything else you'd like to know?",
+            f"You're welcome! Feel free to ask me anything else. \U0001f393",
+            f"Happy to assist! Is there anything else I can help with? \U0001f916",
+        ])
+
+    # ── User Identity ─────────────────────────────────────────────────────────────
     if intent == "user_identity":
         if lang == "hi":
             return (

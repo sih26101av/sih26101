@@ -86,17 +86,30 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "hi", "hello", "hey there", "good morning", "good evening",
         "namaste", "namaskar", "pranam", "hie", "howdy",
         "sup", "what's up", "kaise ho", "sab theek",
+        "nice to meet you", "pleasure to meet you", "greetings",
+        "good afternoon", "hey gyan", "hello gyan", "hi gyan",
+    ],
+
+    # ── Bot Identity (what/who is Gyan) ──────────────────────────────────────
+    "bot_identity": [
+        "who are you", "what are you", "tell me about yourself",
+        "introduce yourself", "who is gyan", "what is gyan",
+        "aap kon ho", "tum kon ho", "aap kya ho",
+        "apna parichay do", "aapka naam kya hai",
+        "are you a bot", "are you AI", "are you human",
+        "what can you do", "how do you work",
     ],
 
     # ── User Identity / Personal Info ───────────────────────────────────────────────
     "user_identity": [
-        "what is my name", "who am I", "tell me my name",
+        "what is my name", "tell me my name",
         "what is my employee id", "my emp id", "what is my gov id",
         "what is my user id", "what is my profile id",
         "mera naam kya hai", "mera employee id kya hai",
         "meri id kya hai", "mera id batao", "meri profile ID batao",
         "which department am I in", "what department do I belong to",
-        "what is my job role", "what role am I", "mera role kya hai",
+        "am I verified", "am I a verified official", "mera verification status kya hai",
+        "mera role kya hai",
     ],
 
     # ── Last Assessment / Evaluation Date ────────────────────────────────────
@@ -290,8 +303,18 @@ INTENT_CORPUS: dict[str, list[str]] = {
 
     # ── Farewells ─────────────────────────────────────────────────────────────
     "farewell": [
-        "bye", "goodbye", "thanks", "thank you", "alvida", "shukriya",
+        "bye", "goodbye", "alvida", "shukriya",
         "dhanyavad", "ok bye", "see you", "tataa", "that's all",
+        "good night", "shubh ratri", "good bye", "see ya",
+        "thanks bye", "thank you bye", "ok thank you", "ok thanks",
+    ],
+
+    # ── Gratitude (thanks without bye — keep conversation going) ────────────────
+    "gratitude": [
+        "thanks", "thank you", "great", "awesome", "wonderful", "perfect",
+        "that's helpful", "very helpful", "good job", "well done",
+        "shukriya", "bahut acha", "zabardast", "wah", "bhai wah", "nice",
+        "that helped", "got it", "understood", "ok got it", "clear",
     ],
 }
 
