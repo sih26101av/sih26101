@@ -99,7 +99,11 @@ _HINGLISH_WORDS = {
     'theek', 'samjhao', 'kab', 'kyun', 'kitna', 'kitne', 'sikho', 'padhna',
     'seekhna', 'lagta', 'zyada', 'thoda', 'bahut', 'sir', 'madam', 'help',
     'kuch', 'sab', 'jo', 'woh', 'abhi', 'aaj', 'kal', 'dikhao', 'batao',
+    # Additional Hinglish words for better detection
+    'aap', 'kon', 'hoon', 'naam', 'mere', 'apna', 'ho', 'hua', 'hui',
+    'raha', 'rahi', 'tha', 'thi', 'accha', 'bilkul', 'zaruri', 'milta',
 }
+
 
 def detect_language(text: str) -> str:
     if _HINDI_DEVANAGARI.search(text):
@@ -217,6 +221,57 @@ def _handle_semantic(
             f"• How to navigate different parts of this platform\n"
             f"• Statistical concepts (GDP, CPI, Sampling, FRAC)\n\n"
             f"How can I help you today? 🎓"
+        )
+
+    # ── User Identity ────────────────────────────────────────────────────────
+    if intent == "user_identity":
+        if lang == "hi":
+            return (
+                f"Aapki personal details **Profile Header** mein hoti hain — "
+                f"jo har tab ke **top** par dikhti hai.\n\n"
+                f"Wahan aapko milega:\n"
+                f"👤 **Full Name** aur 'Verified Official' badge\n"
+                f"🪪 **Gov ID / Employee ID** (User icon ke paas)\n"
+                f"🏢 **Department**: {dept}\n"
+                f"💼 **Job Role**: {role}\n"
+                f"📅 **Last Assessment Date** (Clock icon ke paas)\n\n"
+                f"Right side par **Profile ID** aur **Competencies Assessed** count bhi dikhta hai."
+            )
+        return (
+            f"Your personal details are in the **Profile Header** — "
+            f"visible at the **top of every tab**.\n\n"
+            f"It shows:\n"
+            f"👤 **Full Name** with 'Verified Official' badge\n"
+            f"🪪 **Gov ID / Employee ID** (next to the User icon)\n"
+            f"🏢 **Department**: {dept}\n"
+            f"💼 **Job Role**: {role}\n"
+            f"📅 **Last Assessment Date** (next to the Clock icon)\n\n"
+            f"On the right side you'll also see your **Profile ID** and **Competencies Assessed** count."
+        )
+
+    # ── Last Assessment Date ─────────────────────────────────────────────────
+    if intent == "last_assessment":
+        if lang == "hi":
+            return (
+                f"Aapki **last assessment date** Profile Header mein dikhti hai — "
+                f"jo har tab ke top par hoti hai.\n\n"
+                f"📅 **Clock icon** ke paas, 'Last assessed: DD Mon YYYY' format mein date dikhti hai.\n\n"
+                f"Detailed assessment history aur quiz scores dekhne ke liye "
+                f"**Progress tab** par jayein (top navbar mein TrendingUp icon). "
+                f"Wahan aapki achievements timeline hoti hai jisme:\n"
+                f"• RAG Quiz results (score % ke saath)\n"
+                f"• External Certifications\n"
+                f"• Date aur title har achievement ka"
+            )
+        return (
+            f"Your **last assessment date** is shown in the **Profile Header** — "
+            f"at the top of every tab.\n\n"
+            f"📅 Look for the **Clock icon** — it shows 'Last assessed: DD Mon YYYY'.\n\n"
+            f"For detailed assessment history and quiz scores, go to the "
+            f"**Progress tab** (TrendingUp icon in the top navbar). There you'll find:\n"
+            f"• RAG Quiz results with scores (%)\n"
+            f"• External Certifications\n"
+            f"• Date and title for each achievement"
         )
 
     # ── Profile Stats ────────────────────────────────────────────────────────

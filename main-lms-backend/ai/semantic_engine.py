@@ -88,6 +88,26 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "sup", "what's up", "kaise ho", "sab theek",
     ],
 
+    # ── User Identity / Personal Info ───────────────────────────────────────────────
+    "user_identity": [
+        "what is my name", "who am I", "tell me my name",
+        "what is my employee id", "my emp id", "what is my gov id",
+        "what is my user id", "what is my profile id",
+        "mera naam kya hai", "mera employee id kya hai",
+        "meri id kya hai", "mera id batao", "meri profile ID batao",
+        "which department am I in", "what department do I belong to",
+        "what is my job role", "what role am I", "mera role kya hai",
+    ],
+
+    # ── Last Assessment / Evaluation Date ────────────────────────────────────
+    "last_assessment": [
+        "when did I last assess myself", "when was my last assessment",
+        "last assessment date", "when was I evaluated", "last evaluation date",
+        "kab assess kiya tha", "last assess kab hua",
+        "mera last evaluation kab tha", "assessment date kya hai",
+        "when was my competency evaluated", "last evaluated date",
+    ],
+
     # ── Profile Overview / Stats Summary ─────────────────────────────────────
     # Triggered when user wants to understand their overall profile numbers.
     # Corresponds to: ProfileHeader + StatsSummary (Learning Snapshot widget)
@@ -175,6 +195,10 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "how to continue a course", "resume course kaise karu",
         "iGOT course status kahan hai", "enrollment status",
         "where to track my courses", "go to my courses",
+        "what courses have I enrolled into", "which courses am I enrolled in",
+        "show my enrollments", "meri enrollments dikhao",
+        "maine kaunse courses enroll kiye hain", "enrolled courses list",
+        "courses I am taking", "my active courses", "currently enrolled in courses",
     ],
 
     # ── Navigation: Progress Tab ──────────────────────────────────────────────
