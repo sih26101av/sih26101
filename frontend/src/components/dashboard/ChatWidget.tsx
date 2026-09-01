@@ -24,6 +24,8 @@ import { sendChatMessage, type ChatMessage } from '../../services/chatApi';
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface ChatWidgetProps {
   officialId: string;
+  fullName?: string;
+  govId?: string;
   jobRole?: string;
   department?: string;
   skillGaps: SkillGapEntry[];
@@ -117,6 +119,8 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
 // ─── Main Widget ──────────────────────────────────────────────────────────────
 const ChatWidget: React.FC<ChatWidgetProps> = ({
   officialId,
+  fullName,
+  govId,
   jobRole   = 'Statistical Official',
   department = 'MoSPI',
   skillGaps,
@@ -179,7 +183,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         jobRole,
         department,
         skillGaps,
-        recommendations
+        recommendations,
+        fullName,
+        govId,
       );
 
       // Simulate realistic typing delay (600ms–1.2s)
@@ -206,7 +212,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     } finally {
       setIsTyping(false);
     }
-  }, [isTyping, messages, officialId, jobRole, department, skillGaps, recommendations, lang]);
+  }, [isTyping, messages, officialId, fullName, govId, jobRole, department, skillGaps, recommendations, lang]);
 
   // Handle Enter key (Shift+Enter = newline)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

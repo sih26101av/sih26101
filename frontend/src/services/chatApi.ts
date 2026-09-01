@@ -28,6 +28,8 @@ interface ChatApiPayload {
   history: { role: string; content: string }[];
   job_role: string;
   department: string;
+  full_name?: string;
+  gov_id?: string;
   skill_gaps: {
     skillName: string;
     domain: string;
@@ -243,7 +245,9 @@ export async function sendChatMessage(
   jobRole: string,
   department: string,
   skillGaps: SkillGapEntry[],
-  recommendations: CourseRecommendation[]
+  recommendations: CourseRecommendation[],
+  fullName?: string,
+  govId?: string,
 ): Promise<{ reply: string; detectedLanguage: 'en' | 'hi' }> {
 
   const payload: ChatApiPayload = {
@@ -252,6 +256,8 @@ export async function sendChatMessage(
     history: history.map(m => ({ role: m.role, content: m.content })),
     job_role: jobRole,
     department,
+    full_name: fullName,
+    gov_id: govId,
     skill_gaps: skillGaps.map(g => ({
       skillName: g.competency.skillName,
       domain: g.competency.domain,

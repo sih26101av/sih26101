@@ -327,6 +327,8 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
         {profile && (
           <ChatWidget
             officialId={userId}
+            fullName={profile.fullName}
+            govId={profile.govId}
             jobRole={profile.jobRole.title}
             department={profile.department}
             skillGaps={skillGaps}

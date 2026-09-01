@@ -79,6 +79,8 @@ class ChatRequest(BaseModel):
     history: List[ChatHistoryItem] = []
     job_role: Optional[str] = "Statistical Official"
     department: Optional[str] = "MoSPI"
+    full_name: Optional[str] = None
+    gov_id: Optional[str] = None
     skill_gaps: List[SkillGapContext] = []
     recommendations: List[RecommendationContext] = []
 
@@ -194,8 +196,10 @@ def _handle_semantic(
     """
     gaps = req.skill_gaps
     recs = req.recommendations
-    role = req.job_role or "Statistical Official"
-    dept = req.department or "MoSPI"
+    role      = req.job_role   or "Statistical Official"
+    dept      = req.department or "MoSPI"
+    full_name = req.full_name  or None
+    gov_id    = req.gov_id     or None
     top = _top_gap(gaps)
     active_gaps = [g for g in gaps if g.gapScore > 0]
 
@@ -251,47 +255,44 @@ def _handle_semantic(
             f"You're a **{role}** in {dept}. What can I help you with today? \U0001f393"
         )
 
-    # ── Gratitude (thanks/great without goodbye) ───────────────────────────────
+    # ── Gratitude (thanks/great without goodbye) ─────────────────────────────
     if intent == "gratitude":
         if lang == "hi":
             return random.choice([
-                f"Khushi hui madad karke! \U0001f604 Kya aur kuch poochna hai?",
-                f"Bilkul! Agar aur koi sawaal ho toh zaroor poochein. \U0001f393",
-                f"Main hamesha yahan hoon. Aur kuch chahiye? \U0001f916",
+                "Khushi hui madad karke! \U0001f604 Kya aur kuch poochna hai?",
+                "Bilkul! Agar aur koi sawaal ho toh zaroor poochein. \U0001f393",
+                "Main hamesha yahan hoon. Aur kuch chahiye? \U0001f916",
             ])
         return random.choice([
-            f"Glad I could help! \U0001f604 Anything else you'd like to know?",
-            f"You're welcome! Feel free to ask me anything else. \U0001f393",
-            f"Happy to assist! Is there anything else I can help with? \U0001f916",
+            "Glad I could help! \U0001f604 Anything else you'd like to know?",
+            "You're welcome! Feel free to ask me anything else. \U0001f393",
+            "Happy to assist! Is there anything else I can help with? \U0001f916",
         ])
 
-    # ── User Identity ─────────────────────────────────────────────────────────────
+    # ── User Identity ────────────────────────────────────────────────────────────
     if intent == "user_identity":
+        name_line = f"Full Name: {full_name}" if full_name else "Full Name: shown in Profile Header (top of every tab)"
+        id_line   = f"Gov ID / Employee ID: {gov_id}" if gov_id else "Gov ID / Employee ID: shown next to the User icon in Profile Header"
         if lang == "hi":
             return (
-                f"Aapki personal details **Profile Header** mein hoti hain — "
-                f"jo har tab ke **top** par dikhti hai.\n\n"
-                f"Wahan aapko milega:\n"
-                f"👤 **Full Name** aur 'Verified Official' badge\n"
-                f"🪪 **Gov ID / Employee ID** (User icon ke paas)\n"
+                f"👤 **{name_line}**\n"
+                f"🪪 **{id_line}**\n"
                 f"🏢 **Department**: {dept}\n"
                 f"💼 **Job Role**: {role}\n"
-                f"📅 **Last Assessment Date** (Clock icon ke paas)\n\n"
-                f"Right side par **Profile ID** aur **Competencies Assessed** count bhi dikhta hai."
+                f"✅ **Verified Official** badge aapke naam ke saath dikhta hai.\n\n"
+                f"📅 Last Assessment Date bhi Profile Header mein Clock icon ke paas dikhti hai."
             )
         return (
-            f"Your personal details are in the **Profile Header** — "
-            f"visible at the **top of every tab**.\n\n"
-            f"It shows:\n"
-            f"👤 **Full Name** with 'Verified Official' badge\n"
-            f"🪪 **Gov ID / Employee ID** (next to the User icon)\n"
+            f"👤 **{name_line}**\n"
+            f"🪪 **{id_line}**\n"
             f"🏢 **Department**: {dept}\n"
             f"💼 **Job Role**: {role}\n"
-            f"📅 **Last Assessment Date** (next to the Clock icon)\n\n"
-            f"On the right side you'll also see your **Profile ID** and **Competencies Assessed** count."
+            f"✅ **Verified Official** - you have a verified government official badge.\n\n"
+            f"📅 Your last assessment date is also shown in the Profile Header next to the Clock icon."
         )
 
     # ── Last Assessment Date ─────────────────────────────────────────────────
+
     if intent == "last_assessment":
         if lang == "hi":
             return (
