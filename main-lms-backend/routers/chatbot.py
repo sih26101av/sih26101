@@ -229,7 +229,55 @@ def _handle_semantic(
             f"How can I help you today? 🎓"
         )
 
-    # ── Bot Identity (who is Gyan) ─────────────────────────────────────────────────
+    # ── How Are You ──────────────────────────────────────────────────────────
+    if intent == "how_are_you":
+        if lang == "hi":
+            return random.choice([
+                "Main bilkul theek hoon! \U0001f916 Ek AI hoon — kabhi thakta nahi!\n\nAap batao, main aapki kya madad kar sakta hoon? \U0001f393",
+                "Bahut acha hoon, shukriya poochne ke liye! \U0001f604\nAapke skill gaps aur courses ke liye main hamesha taiyaar hoon.",
+            ])
+        return random.choice([
+            "I'm doing great, thanks for asking! \U0001f916 I'm an AI — I never get tired!\n\nHow can I help you today? \U0001f393",
+            "All systems running smoothly! \U0001f60a\nReady to help you with your skill gaps, courses, or anything else.",
+        ])
+
+    # ── Concept: What IS a Skill Gap? ────────────────────────────────────────
+    if intent == "concept_skill_gap":
+        if lang == "hi":
+            return (
+                "**Skill Gap** ka matlab hai — aapke **current competency level** aur \n"
+                "aapki job role ke liye **required (target) level** ke beech ka antar.\n\n"
+                "**Example:**\n"
+                "Maan lijiye 'Strategic Thinking' competency mein:\n"
+                "• Aapka current level: **Level 1** (beginner)\n"
+                "• Aapki Deputy Director role ke liye zaruri: **Level 4** (expert)\n"
+                "• **Gap Score = 3** — matlab aapko 3 levels aur improve karna hai\n\n"
+                "**Competency Levels (FRAC framework):**\n"
+                "• Level 1 — Awareness (basic knowledge)\n"
+                "• Level 2 — Foundational (can apply with guidance)\n"
+                "• Level 3 — Practitioner (independent application)\n"
+                "• Level 4 — Expert (guides others, sets policy)\n\n"
+                "Aapke Dashboard par **Competency & Skill-Gap Analysis** card mein \n"
+                "har skill ka current level (pip dots) aur target level dikh ta hai. \U0001f4ca"
+            )
+        return (
+            "A **Skill Gap** is the difference between your **current competency level** \n"
+            "and the **required (target) level** for your job role.\n\n"
+            "**Example:**\n"
+            "For 'Strategic Thinking' competency:\n"
+            "• Your current level: **Level 1** (beginner)\n"
+            "• Required for Deputy Director: **Level 4** (expert)\n"
+            "• **Gap Score = 3** — you need to improve by 3 levels\n\n"
+            "**Competency Levels (FRAC framework):**\n"
+            "• Level 1 — Awareness (basic knowledge)\n"
+            "• Level 2 — Foundational (can apply with guidance)\n"
+            "• Level 3 — Practitioner (independent application)\n"
+            "• Level 4 — Expert (can guide others, shapes policy)\n\n"
+            "On your **Dashboard**, the **Competency & Skill-Gap Analysis** card shows \n"
+            "each skill's current level (pip dots) vs. target level visually. \U0001f4ca"
+        )
+
+    # ── Bot Identity (who is Gyan) ────────────────────────────────────────────
     if intent == "bot_identity":
         if lang == "hi":
             return (

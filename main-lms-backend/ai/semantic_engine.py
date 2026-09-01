@@ -45,20 +45,22 @@ _NAV_VOCAB = [
     "recommend", "recommendation", "pathway", "learning",
     "navigate", "how", "where", "help", "find", "access", "open", "go to",
     "tab", "section", "button", "panel",
+    # Short slang / abbreviations
+    "great", "thanks", "good", "bye", "yes", "okay",
 ]
 
 
 def _correct_tokens(query: str) -> str:
     """
     Apply difflib fuzzy correction on each token to catch common typos
-    like 'dasboard' → 'dashboard',  'progres' → 'progress', etc.
-    Only corrects tokens of length >= 4 (avoids corrupting short words).
+    like 'dasboard' -> 'dashboard', 'gr8' -> 'great', etc.
+    Corrects tokens of length >= 3 (lowered from 4 to catch short slang).
     """
     tokens = query.lower().split()
     corrected = []
     for tok in tokens:
-        if len(tok) >= 4:
-            match = get_close_matches(tok, _NAV_VOCAB, n=1, cutoff=0.80)
+        if len(tok) >= 3:
+            match = get_close_matches(tok, _NAV_VOCAB, n=1, cutoff=0.75)
             corrected.append(match[0] if match else tok)
         else:
             corrected.append(tok)
@@ -81,7 +83,7 @@ def _correct_tokens(query: str) -> str:
 
 INTENT_CORPUS: dict[str, list[str]] = {
 
-    # ── Greetings ─────────────────────────────────────────────────────────────
+    # -- Greetings and Casual Conversation ------------------------------------
     "greeting": [
         "hi", "hello", "hey there", "good morning", "good evening",
         "namaste", "namaskar", "pranam", "hie", "howdy",
@@ -90,7 +92,16 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "good afternoon", "hey gyan", "hello gyan", "hi gyan",
     ],
 
-    # ── Bot Identity (what/who is Gyan) ──────────────────────────────────────
+    # -- How are you (casual well-being) ---------------------------------------
+    "how_are_you": [
+        "how are you", "how are you doing", "how do you do",
+        "are you okay", "are you good", "you okay",
+        "kaisa hai", "kaise hain aap", "aap kaise hain",
+        "theek ho", "sab theek hai", "kya haal hai",
+        "how is it going", "what's going on", "hows it going",
+    ],
+
+    # -- Bot Identity (what/who is Gyan) ---------------------------------------
     "bot_identity": [
         "who are you", "what are you", "tell me about yourself",
         "introduce yourself", "who is gyan", "what is gyan",
@@ -100,7 +111,7 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "what can you do", "how do you work",
     ],
 
-    # ── User Identity / Personal Info ───────────────────────────────────────────────
+    # -- User Identity / Personal Info ----------------------------------------
     "user_identity": [
         "what is my name", "tell me my name",
         "what is my employee id", "my emp id", "what is my gov id",
@@ -110,6 +121,20 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "which department am I in", "what department do I belong to",
         "am I verified", "am I a verified official", "mera verification status kya hai",
         "mera role kya hai",
+        "where do I work", "where am I posted", "which office do I work in",
+        "meri posting kahan hai", "kahan kaam karta hoon",
+    ],
+
+    # -- Concept: What IS a Skill Gap? (educational explanation) ---------------
+    "concept_skill_gap": [
+        "what is a skill gap", "what do you mean by skill gap",
+        "explain skill gap", "what does skill gap mean",
+        "I don't understand skill gap", "what is competency gap",
+        "skill gap kya hota hai", "skill gap ka matlab kya hai",
+        "competency kya hai", "what is a competency", "explain competency",
+        "what is frac competency", "what do competency levels mean",
+        "what does level 1 mean", "what does level 4 mean",
+        "gap score kya hai", "current level target level kya hai",
     ],
 
     # ── Last Assessment / Evaluation Date ────────────────────────────────────
@@ -309,12 +334,22 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "thanks bye", "thank you bye", "ok thank you", "ok thanks",
     ],
 
-    # ── Gratitude (thanks without bye — keep conversation going) ────────────────
+    # -- Gratitude (thanks without bye) ----------------------------------------
     "gratitude": [
         "thanks", "thank you", "great", "awesome", "wonderful", "perfect",
         "that's helpful", "very helpful", "good job", "well done",
-        "shukriya", "bahut acha", "zabardast", "wah", "bhai wah", "nice",
+        "bahut acha", "zabardast", "wah", "bhai wah", "nice",
         "that helped", "got it", "understood", "ok got it", "clear",
+        "shukriya", "dhanyavad", "bahut shukriya", "bahut dhanyavad",
+        "gr8", "thx", "ty", "thnx", "tysm", "thank u",
+    ],
+
+    # -- Farewells -------------------------------------------------------------
+    "farewell": [
+        "bye", "goodbye", "alvida",
+        "ok bye", "see you", "tataa", "that's all",
+        "good night", "shubh ratri", "good bye", "see ya",
+        "thanks bye", "thank you bye", "ok thank you", "ok thanks",
     ],
 }
 
