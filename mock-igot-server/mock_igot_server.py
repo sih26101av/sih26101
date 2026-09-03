@@ -78,6 +78,7 @@ def _load_json_from_dir(directory: str, filename: str) -> Any:
 
 # Primary authentic datasets (root-level JSON files)
 DB_COURSES: list[dict] = []          # courses.json      — 8 848 courses
+DB_COURSES_ENRICHED: list[dict] = [] # courses_1.json    — 754 FRAC-tagged enriched courses
 DB_COMPETENCIES: list[dict] = []     # competencies.json — FRAC dictionary
 DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
@@ -88,6 +89,7 @@ DB_CONTENT_STATES: dict[str, dict] = {}
 
 # O(1) course lookup index: identifier → course dict (built at startup)
 _COURSE_INDEX: dict[str, dict] = {}
+_ENRICHED_INDEX: dict[str, dict] = {}  # identifier → enriched course dict
 
 # Runtime stores (grow during the server's lifetime)
 TELEMETRY_STORE: list[dict] = []         # incoming telemetry events
@@ -103,10 +105,11 @@ async def lifespan(app: FastAPI):
     courses.json is large (~27 MB / 8 848 records) — loading it here avoids
     repeated file-system I/O on every API request.
     """
-    global DB_COURSES, DB_COMPETENCIES, DB_JOB_PROFILES
-    global DB_USERS, DB_ENROLLMENTS, DB_CONTENT_STATES, _COURSE_INDEX
+    global DB_COURSES, DB_COURSES_ENRICHED, DB_COMPETENCIES, DB_JOB_PROFILES
+    global DB_USERS, DB_ENROLLMENTS, DB_CONTENT_STATES, _COURSE_INDEX, _ENRICHED_INDEX
 
     # ── Authentic datasets (new primary sources) ────────────────────────────
+    
     print("[STARTUP] Loading courses.json …", flush=True)
     raw_courses = _load_json("courses.json")
     
@@ -127,10 +130,16 @@ async def lifespan(app: FastAPI):
     # Build fast O(1) lookup index keyed by course identifier
     _COURSE_INDEX = {c["identifier"]: c for c in DB_COURSES if c.get("identifier")}
 
+    print("[STARTUP] Loading courses_1.json (FRAC-tagged enriched courses) …", flush=True)
+    DB_COURSES_ENRICHED = _load_json("courses_1.json")
+    _ENRICHED_INDEX = {c["identifier"]: c for c in DB_COURSES_ENRICHED if c.get("identifier")}
+    print(f"[STARTUP] {len(DB_COURSES_ENRICHED)} enriched FRAC-tagged courses loaded.", flush=True)
+
     # ── Legacy seed data (users / enrolments / content-states) ─────────────
     data_dir = os.path.join(ROOT_DIR, "data")
     try:
-        DB_USERS = _load_json_from_dir(data_dir, "users.json")
+        print("[STARTUP] Loading legacy seed data (users, enrollments, content states) …", flush=True)
+        DB_USERS = _load_json_from_dir(data_dir, "userdata.json")
         DB_ENROLLMENTS = _load_json_from_dir(data_dir, "enrollments.json")
         DB_CONTENT_STATES = _load_json_from_dir(data_dir, "content_states.json")
         print(
@@ -283,6 +292,52 @@ async def get_course_catalog(
     return sunbird_ok(API_ID, VER, {
         "count": len(DB_COURSES),
         "content": page,
+    })
+
+
+
+# ─────────────────────────────────────────────────────────────
+# ① b  GET /api/courses/enriched  — FRAC-tagged enriched courses
+#         (courses_1.json: 754 courses with rating, completion_rate,
+#          enrollment_count, tpac_flag, frac_competencies)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/courses/enriched")
+async def get_enriched_courses(
+    request: Request,
+    x_authenticated_user_token: str | None = Header(default=None),
+):
+    """
+    Returns courses from courses_1.json — the 754 English iGOT courses
+    with verified FRAC competency tags and realistic engagement signals.
+
+    Query params:
+      ?competency_id=CID0016   filter by a specific FRAC competency ID
+      ?limit=50&offset=0       pagination (default limit 50)
+    """
+    API_ID, VER = "api.courses.enriched", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+
+    competency_id = request.query_params.get("competency_id")
+    try:
+        limit  = int(request.query_params.get("limit", 50))
+        offset = int(request.query_params.get("offset", 0))
+    except ValueError:
+        limit, offset = 50, 0
+
+    pool = DB_COURSES_ENRICHED
+
+    # Filter by FRAC competency ID if provided
+    if competency_id:
+        pool = [
+            c for c in pool
+            if any(fc["id"] == competency_id for fc in c.get("frac_competencies", []))
+        ]
+
+    page = pool[offset: offset + limit]
+    return sunbird_ok(API_ID, VER, {
+        "count": len(pool),
+        "courses": page,
     })
 
 
@@ -804,3 +859,11 @@ async def http_exc_handler(request: Request, exc: HTTPException):
 
 if __name__ == "__main__":
     uvicorn.run("mock_igot_server:app", host="0.0.0.0", port=8001, reload=True)
+
+# Trigger reload for userdata.json update
+
+# reload trigger
+
+# courses_1 expanded reload
+
+# userdata rebuilt reload

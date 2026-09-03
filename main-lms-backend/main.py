@@ -82,22 +82,7 @@ adapter = MockIgotAdapter()
 _IGOT_BASE = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
 _IGOT_TOKEN = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
 
-# ── Role-level requirements for Deputy Director, National Accounts Division ────
-ROLE_REQUIREMENTS = {
-    "C-001": {"skillName": "National Accounts Framework (SNA 2008)", "domain": "Statistical", "targetLevel": 4},
-    "C-002": {"skillName": "Survey Methodology",                      "domain": "Statistical", "targetLevel": 4},
-    "C-003": {"skillName": "Price Statistics & CPI Construction",     "domain": "Statistical", "targetLevel": 3},
-    "C-004": {"skillName": "Data Analysis with Python & R",           "domain": "Technical",   "targetLevel": 4},
-    "C-005": {"skillName": "Machine Learning for Statistics",          "domain": "Technical",   "targetLevel": 3},
-}
 
-# ── Static achievement log (keyed by govId) ────────────────────────────────────
-ACHIEVEMENTS_BY_USER: dict[str, list] = {
-    "EMP-8472": [
-        {"id": "ACH-001", "title": "National Accounts Framework (SNA 2008)", "score": 88, "date": "2025-10-13T10:00:00Z", "category": "External Certification"},
-        {"id": "ACH-002", "title": "Survey Methodology & Sampling Techniques", "score": 94, "date": "2025-11-20T14:30:00Z", "category": "RAG Quiz"},
-    ]
-}
 
 
 # ── Helper: parse competency level string → int ────────────────────────────────
@@ -160,8 +145,8 @@ async def get_skill_gaps_by_user_id(
 
     skill_gaps = []
     for comp in competencies:
-        current_level = _level_to_int(comp.get("competencyLevel", "Level 2"))
-        target_level  = 4
+        current_level = _level_to_int(comp.get("competencyLevel", "Level 0"))  # Algo will calculate this later
+        target_level  = comp.get("requiredLevel", 3)
         gap = max(0, target_level - current_level)
         skill_gaps.append({
             "competencyId": comp.get("id", ""),
@@ -230,8 +215,8 @@ async def get_recommendations_by_user_id(
 
     gaps: dict[str, dict] = {}
     for comp in competencies:
-        current = _level_to_int(comp.get("competencyLevel", "Level 2"))
-        gaps[comp.get("name", "")] = {"current": current, "gap": max(0, 4 - current)}
+        current = _level_to_int(comp.get("competencyLevel", "Level 0"))
+        gaps[comp.get("name", "")] = {"current": current, "gap": max(0, comp.get("requiredLevel", 3) - current)}
 
     recommendations = []
     for course in catalog:
@@ -318,139 +303,6 @@ async def get_achievements_by_user_id(
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LEARNER ENDPOINTS — legacy by govId (kept for backward compat)
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.get("/api/v1/users/{gov_id}/skill-gaps", response_model=SkillGapResponse)
-async def get_skill_gaps(
-    gov_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
-):
-    """
-    Skill Gap Engine: dynamically computes competency gaps from iGOT history.
-    Protected — requires a valid JWT access token.
-    """
-    history = await adapter.fetch_user_history(gov_id)
-    catalog = await adapter.fetch_catalog()
-
-    current_levels = {
-        "C-001": 1,
-        "C-002": 3,
-        "C-003": 2,
-        "C-004": 2,
-        "C-005": 1,
-    }
-
-    for enrollment in history:
-        if enrollment.get("status") == "COMPLETED":
-            course = next((c for c in catalog if c["igot_course_id"] == enrollment["igot_course_id"]), None)
-            if course:
-                for skill in course.get("skills_covered", []):
-                    sid = skill["external_skill_id"]
-                    if sid in current_levels:
-                        current_levels[sid] = max(current_levels[sid], skill["proficiency_taught"])
-
-    skill_gaps = [
-        {
-            "competencyId": cid,
-            "skillName": req["skillName"],
-            "domain": req["domain"],
-            "currentLevel": current_levels[cid],
-            "targetLevel": req["targetLevel"],
-            "gapScore": max(0, req["targetLevel"] - current_levels[cid]),
-        }
-        for cid, req in ROLE_REQUIREMENTS.items()
-    ]
-
-    return {
-        "officialId": gov_id,
-        "jobRole": "Deputy Director",
-        "department": "National Accounts Division",
-        "skillGaps": skill_gaps,
-    }
-
-
-@app.get("/api/v1/recommendations/{gov_id}", response_model=RecommendationResponse)
-async def get_recommendations(
-    gov_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
-):
-    """
-    Recommendation Engine: returns courses from iGOT catalog bridging the user's active gaps.
-    Protected — requires a valid JWT access token.
-    """
-    catalog = await adapter.fetch_catalog()
-    gaps_data = await get_skill_gaps(gov_id, _current_user)
-    gaps = gaps_data["skillGaps"]
-
-    recommendations = []
-    for course in catalog:
-        for skill in course.get("skills_covered", []):
-            gap_info = next(
-                (g for g in gaps if g["competencyId"] == skill["external_skill_id"] and g["gapScore"] > 0),
-                None,
-            )
-            if gap_info and skill["proficiency_taught"] > gap_info["currentLevel"]:
-                recommendations.append({
-                    "courseId": course["igot_course_id"],
-                    "title": course["course_title"],
-                    "provider": course["provider_name"],
-                    "durationHours": round(course["duration_minutes"] / 60.0, 1),
-                    "matchReason": f"Directly addresses your {gap_info['gapScore']}-level gap in {gap_info['skillName']}.",
-                    "tags": [gap_info["domain"], gap_info["skillName"]],
-                })
-                break
-
-    return {"status": "success", "recommendations": recommendations}
-
-
-@app.get("/api/v1/users/{gov_id}/enrollments", response_model=EnrollmentsResponse)
-async def get_enrollments(
-    gov_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
-):
-    """
-    Active Enrollments: returns IN_PROGRESS courses from iGOT history.
-    Protected — requires a valid JWT access token.
-    """
-    history = await adapter.fetch_user_history(gov_id)
-    catalog = await adapter.fetch_catalog()
-
-    enrollments = []
-    for i, enrollment in enumerate(history):
-        if enrollment.get("status") == "IN_PROGRESS":
-            course = next((c for c in catalog if c["igot_course_id"] == enrollment["igot_course_id"]), None)
-            total_hours = (course["duration_minutes"] / 60.0) if course else 0
-            remaining_hours = round(enrollment.get("remaining_minutes", 0) / 60.0, 1)
-            enrollments.append({
-                "enrollmentId": f"ENR-{gov_id}-{i:03d}",
-                "courseId": enrollment["igot_course_id"],
-                "courseTitle": enrollment["course_title"],
-                "provider": course["provider_name"] if course else "iGOT Karmayogi",
-                "durationHours": round(total_hours, 1),
-                "progressPercentage": enrollment.get("progress_percentage", 0),
-                "remainingHours": remaining_hours,
-                "lastAccessed": enrollment.get("last_accessed_at", ""),
-                "status": enrollment.get("status", "IN_PROGRESS"),
-            })
-
-    return {"status": "success", "enrollments": enrollments}
-
-
-@app.get("/api/v1/users/{gov_id}/achievements", response_model=AchievementsResponse)
-async def get_achievements(
-    gov_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
-):
-    """
-    Achievements: returns completed assessments and certifications.
-    Protected — requires a valid JWT access token.
-    """
-    achievements = ACHIEVEMENTS_BY_USER.get(gov_id, [])
-    return {"status": "success", "achievements": achievements}
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN ENDPOINTS (protected — requires role=admin)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/v1/admin/users")
