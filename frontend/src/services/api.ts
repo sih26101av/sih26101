@@ -301,3 +301,22 @@ export async function fetchAllUsers(): Promise<RawUserProfile[]> {
   );
   return result.users ?? [];
 }
+
+/**
+ * Fetch the FRAC competency dictionary via the LMS backend's admin proxy endpoint.
+ * The backend enforces role=admin before proxying to the mock server with auth.
+ */
+export interface FracCompetency {
+  competency_id: string;
+  name:          string;
+  category:      string;
+  description:   string;
+}
+
+export async function fetchCompetencies(): Promise<FracCompetency[]> {
+  const result = await lmsFetch<{ competencies: FracCompetency[]; count: number }>(
+    '/api/v1/admin/frac/competencies',
+    'frac-competencies'
+  );
+  return result.competencies ?? [];
+}

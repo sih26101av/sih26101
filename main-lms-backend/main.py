@@ -329,5 +329,28 @@ async def get_admin_roster(
     return data.get("result", {})
 
 
+@app.get("/api/v1/admin/frac/competencies")
+async def get_frac_competencies(
+    _current_user: UserAuth = Depends(require_role("admin")),
+):
+    """
+    FRAC Competency Dictionary: proxies the mock iGOT server's
+    /api/frac/competencies endpoint.
+
+    Enforces: authenticated + admin role.
+    Returns the unwrapped list: { count, competencies }
+    """
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{_IGOT_BASE}/api/frac/competencies",
+            headers={"x-authenticated-user-token": _IGOT_TOKEN},
+            timeout=15.0,
+        )
+        resp.raise_for_status()
+
+    data = resp.json()
+    return data.get("result", {})
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

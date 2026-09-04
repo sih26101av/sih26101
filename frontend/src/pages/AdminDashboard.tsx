@@ -259,7 +259,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <ChevronDown className="w-4 h-4 text-slate-500" />
             </div>
-            <Home className="w-5 h-5 text-slate-500 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300" onClick={() => navigate("/")} title="Go to Home" />
+            <button onClick={() => navigate("/")} title="Go to Home" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><Home className="w-5 h-5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" /></button>
             <Bell className="w-5 h-5 text-slate-500 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300" />
             <button
               onClick={handleSignOut}

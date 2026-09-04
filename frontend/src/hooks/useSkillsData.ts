@@ -1,35 +1,38 @@
 import { useState, useEffect } from 'react';
+import { fetchCompetencies, FracCompetency } from '../services/api';
 
-export interface SkillRow {
-  competency_id: string;
-  name: string;
-  category: string;
-  description: string;
-}
+// Re-export as SkillRow so AdminDashboard.tsx doesn't need changes
+export type SkillRow = FracCompetency;
 
 export function useSkillsData() {
   const [skills, setSkills] = useState<SkillRow[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
-  const fetchSkills = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('http://localhost:8001/api/frac/competencies');
-      if (!res.ok) throw new Error('Failed to fetch skills');
-      const body = await res.json();
-      setSkills(body.result?.competencies || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch skills data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refetch = () => setTick(t => t + 1);
 
   useEffect(() => {
-    fetchSkills();
-  }, []);
+    let cancelled = false;
 
-  return { skills, isLoading, error, refetch: fetchSkills };
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const competencies = await fetchCompetencies();
+        if (!cancelled) setSkills(competencies);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch skills data');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [tick]);
+
+  return { skills, isLoading, error, refetch };
 }
