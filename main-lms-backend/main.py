@@ -30,6 +30,7 @@ from models.domain import (
 from routers.chatbot import router as chatbot_router
 from routers.rag import router as rag_router
 from routers.ai_tools import router as ai_tools_router
+from routers.karma import router as karma_router
 import httpx
 import json
 import os
@@ -62,15 +63,19 @@ app.add_middleware(
 # ── Startup: create auth.db table ─────────────────────────────────────────────
 @app.on_event("startup")
 async def _startup():
-    """Create users_auth table if it doesn't exist yet."""
+    """Create users_auth table and karma tables if they don't exist yet."""
     AuthBase.metadata.create_all(bind=engine)
+    # Create karma tables (KarmaEvent, KarmaMonthlyUsage) in the same auth.db
+    from models.models import Base as DomainBase
+    DomainBase.metadata.create_all(bind=engine)
 
 
 # ── Register routers ───────────────────────────────────────────────────────────
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(chatbot_router, prefix="/api/v1", tags=["chatbot"])
-app.include_router(rag_router, prefix="/api/v1/rag", tags=["rag"])
-app.include_router(ai_tools_router, prefix="/api/v1/ai", tags=["ai-tools"])
+app.include_router(auth_router,    prefix="/auth",       tags=["auth"])
+app.include_router(chatbot_router, prefix="/api/v1",     tags=["chatbot"])
+app.include_router(rag_router,     prefix="/api/v1/rag", tags=["rag"])
+app.include_router(ai_tools_router,prefix="/api/v1/ai",  tags=["ai-tools"])
+app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
 
 
 # ── iGOT Adapter singleton (HTTP → mock_igot_server.py on port 8001) ────────────

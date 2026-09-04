@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FILE: src/hooks/useLearnerDashboard.ts
  *
  * Fetches ALL dashboard data from live FastAPI endpoints.
@@ -11,6 +11,7 @@ import {
   fetchRecommendations,
   fetchEnrollments,
   fetchAchievements,
+  fetchKarmaLedger,
 } from '../services/api';
 import type {
   UseLearnerDashboardResult,
@@ -19,6 +20,7 @@ import type {
   CourseRecommendation,
   Enrollment,
   Achievement,
+  KarmaLedger,
 } from '../types/domain';
 
 export function useLearnerDashboard(officialId: string): UseLearnerDashboardResult {
@@ -27,6 +29,7 @@ export function useLearnerDashboard(officialId: string): UseLearnerDashboardResu
   const [recommendations, setRecommendations] = useState<CourseRecommendation[]>([]);
   const [enrollments, setEnrollments]         = useState<Enrollment[]>([]);
   const [achievements, setAchievements]       = useState<Achievement[]>([]);
+  const [karma, setKarma]                     = useState<KarmaLedger | null>(null);
   const [isLoading, setIsLoading]             = useState(true);
   const [error, setError]                     = useState<string | null>(null);
 
@@ -38,11 +41,12 @@ export function useLearnerDashboard(officialId: string): UseLearnerDashboardResu
       // Step 1: skill gaps + profile (sequential — recs depend on gaps)
       const { profile: p, skillGaps: g } = await fetchSkillGapsAndProfile(officialId);
 
-      // Step 2: remaining 3 endpoints fire concurrently
-      const [recs, enrs, achs] = await Promise.all([
+      // Step 2: remaining 4 endpoints fire concurrently (karma is non-blocking)
+      const [recs, enrs, achs, karmaData] = await Promise.all([
         fetchRecommendations(officialId, g),
         fetchEnrollments(officialId),
         fetchAchievements(officialId),
+        fetchKarmaLedger(officialId),  // null on error, never throws
       ]);
 
       setProfile(p);
@@ -50,6 +54,7 @@ export function useLearnerDashboard(officialId: string): UseLearnerDashboardResu
       setRecommendations(recs);
       setEnrollments(enrs);
       setAchievements(achs);
+      setKarma(karmaData);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       console.error('[useLearnerDashboard]', msg);
@@ -63,5 +68,5 @@ export function useLearnerDashboard(officialId: string): UseLearnerDashboardResu
     load();
   }, [officialId]);
 
-  return { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error, refetch: load };
+  return { profile, skillGaps, recommendations, enrollments, achievements, karma, isLoading, error, refetch: load };
 }

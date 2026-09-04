@@ -28,6 +28,8 @@ import type {
   CourseRecommendation,
   Enrollment,
   Achievement,
+  KarmaLedger,
+  KarmaEventType,
 } from '../types/domain';
 import { refresh } from './authApi';
 
@@ -319,4 +321,68 @@ export async function fetchCompetencies(): Promise<FracCompetency[]> {
     'frac-competencies'
   );
   return result.competencies ?? [];
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KARMA POINTS API
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fetches the full Karma Points ledger for a learner.
+ * Returns totalPoints, streak, monthlyUsage, breakdown, and the 10 most recent
+ * transactions. Returns null (never throws) on error so the dashboard degrades
+ * gracefully if the karma service is unavailable.
+ */
+export async function fetchKarmaLedger(userId: string): Promise<KarmaLedger | null> {
+  try {
+    return await lmsFetch<KarmaLedger>(
+      `/api/v1/learner/${userId}/karma`,
+      'karma-ledger',
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Awards Karma Points for a specific user action.
+ * Follows the Strategy pattern on the backend — the engine picks the right
+ * strategy and enforces all iGOT rules (cap, idempotency, etc.).
+ */
+export async function awardKarmaEvent(
+  userId: string,
+  eventType: KarmaEventType,
+  options: { courseId?: string; isCbp?: boolean; is_mdo_onboarded?: boolean } = {},
+): Promise<{ pointsAwarded: number; capReached: boolean; newBalance: number }> {
+  return lmsFetch(
+    `/api/v1/learner/${userId}/karma/event`,
+    'karma-award',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        eventType,
+        courseId: options.courseId ?? null,
+        isCbp: options.isCbp ?? false,
+        is_mdo_onboarded: options.is_mdo_onboarded ?? false,
+      }),
+    },
+  );
+}
+
+/**
+ * Retroactive CBP +10 claim. Idempotent — safe to call multiple times.
+ */
+export async function claimCbpBonus(
+  userId: string,
+  courseId: string,
+): Promise<{ pointsAwarded: number; alreadyClaimed: boolean; newBalance: number }> {
+  return lmsFetch(
+    `/api/v1/learner/${userId}/karma/claim-cbp-bonus`,
+    'karma-cbp-claim',
+    {
+      method: 'POST',
+      body: JSON.stringify({ courseId }),
+    },
+  );
 }

@@ -106,12 +106,52 @@ export interface Achievement {
   category: 'RAG Quiz' | 'External Certification';
 }
 
+// ─── Karma Points — iGOT Karmayogi gamification layer ────────────────────────
+
+export type KarmaEventType =
+  | 'SELF_REGISTRATION'
+  | 'FIRST_ENROLLMENT'
+  | 'COURSE_COMPLETION'
+  | 'ASSESSMENT_PASSED'
+  | 'COURSE_RATED'
+  | 'CBP_BONUS';
+
+export interface KarmaTransaction {
+  eventId: string;
+  eventType: KarmaEventType;
+  pointsAwarded: number;
+  courseId: string | null;
+  isCbp: boolean;
+  createdAt: string;
+}
+
+export interface KarmaMonthlyUsage {
+  used: number;
+  cap: number;
+  remaining: number;
+}
+
+/** Per-event-type totals (e.g. { COURSE_COMPLETION: 25, ASSESSMENT_PASSED: 10 }) */
+export type KarmaBreakdown = Partial<Record<KarmaEventType, number>>;
+
+export interface KarmaLedger {
+  userId: string;
+  totalPoints: number;
+  streak: number;
+  monthlyUsage: KarmaMonthlyUsage;
+  breakdown: KarmaBreakdown;
+  ledger: KarmaTransaction[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface UseLearnerDashboardResult {
   profile: Official | null;
   skillGaps: SkillGapEntry[];
   recommendations: CourseRecommendation[];
   enrollments: Enrollment[];
   achievements: Achievement[];
+  karma: KarmaLedger | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;

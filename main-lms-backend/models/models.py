@@ -167,3 +167,47 @@ class OutboxEntry(Base):
     payload = Column(String, nullable=False) # JSON string
     status = Column(String, nullable=False, default="PENDING")
     retryCount = Column(Integer, nullable=False, default=0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KARMA POINTS INFRASTRUCTURE
+# Two support tables (analogous to OutboxEntry — not in core Mermaid domain)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class KarmaEventType(enum.Enum):
+    """Exact event types from the iGOT Karmayogi karma algorithm."""
+    SELF_REGISTRATION = "SELF_REGISTRATION"   # +5, one-time (self-registered only)
+    FIRST_ENROLLMENT  = "FIRST_ENROLLMENT"    # +5, one-time
+    COURSE_COMPLETION = "COURSE_COMPLETION"   # +5, capped at 4/month for non-CBP
+    ASSESSMENT_PASSED = "ASSESSMENT_PASSED"   # +5, per assessment
+    COURSE_RATED      = "COURSE_RATED"        # +2, per rating
+    CBP_BONUS         = "CBP_BONUS"           # +10, once per mandated course
+
+
+class KarmaEvent(Base):
+    """
+    Immutable, append-only ledger of every karma point transaction.
+    Never update rows — always insert a new one.
+    """
+    __tablename__ = "karma_events"
+    eventId      = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId       = Column(String, nullable=False, index=True)
+    eventType    = Column(Enum(KarmaEventType), nullable=False)
+    pointsAwarded = Column(Integer, nullable=False, default=0)
+    courseId     = Column(String, nullable=True)   # set for COURSE_COMPLETION / CBP_BONUS
+    isCbp        = Column(Boolean, default=False)  # True → CBP-mandated, exempt from cap
+    createdAt    = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class KarmaMonthlyUsage(Base):
+    """
+    Tracks how many non-CBP course completions a user has done in a given
+    calendar month. Used by CompletionKarmaStrategy to enforce the 4-course cap.
+    One row per (userId, year, month).
+    """
+    __tablename__ = "karma_monthly_usage"
+    id                 = Column(Integer, primary_key=True, autoincrement=True)
+    userId             = Column(String, nullable=False, index=True)
+    year               = Column(Integer, nullable=False)
+    month              = Column(Integer, nullable=False)
+    nonCbpCompletions  = Column(Integer, nullable=False, default=0)

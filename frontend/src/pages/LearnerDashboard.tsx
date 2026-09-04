@@ -257,7 +257,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
   const userId = authUser?.username ?? officialId ?? 'usr_720465595';
 
 
-  const { profile, skillGaps, recommendations, enrollments, achievements, isLoading, error } =
+  const { profile, skillGaps, recommendations, enrollments, achievements, karma, isLoading, error } =
     useLearnerDashboard(userId);
   const [retryKey, setRetryKey] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
@@ -343,7 +343,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                     <CertificateUploadZone />
 
                     {/* Karma + Career */}
-                    <RightSidebar />
+                    <RightSidebar karma={karma} userId={userId} />
                   </div>
                 </div>
 
