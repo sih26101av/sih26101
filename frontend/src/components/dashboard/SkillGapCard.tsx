@@ -51,7 +51,7 @@ const TargetRow: React.FC<{ target: number }> = ({ target }) => (
   </div>
 );
 
-const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> = ({ current, domain }) => {
+const ExactGlassGauge: React.FC<{ target: number; domain: CompetencyDomain }> = ({ target, domain }) => {
   const getSlicePath = (startDeg: number, endDeg: number) => {
     const or = 76, ir = 54, cx = 100, cy = 100;
     const polar = (r: number, deg: number) => {
@@ -69,7 +69,7 @@ const ExactGlassGauge: React.FC<{ current: number; domain: CompetencyDomain }> =
         <g>
           {Array.from({ length: 5 }).map((_, i) => {
             const start = i * 36; const end = start + 36;
-            const isFilled = i < current;
+            const isFilled = i < target;
             return (
               <path
                 key={i}
@@ -140,7 +140,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
               </span>
             )}
           </div>
-          <ExactGlassGauge current={currentLevel} domain={competency.domain} />
+          <ExactGlassGauge target={requiredLevel} domain={competency.domain} />
           <p className="text-[12px] text-slate-800 dark:text-slate-300 mt-2 font-bold tracking-wide transition-colors duration-300">
             Target Level: {requiredLevel}/5
           </p>

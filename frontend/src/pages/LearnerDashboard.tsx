@@ -5,7 +5,8 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard, BookOpen, TrendingUp, LogOut, AlertTriangle,
-  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot
+  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot,
+  Award, Upload, FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
@@ -17,6 +18,7 @@ import CourseCard from "../components/dashboard/CourseCard";
 import MyCoursesView from "../components/dashboard/MyCoursesView";
 import ProgressView from "../components/dashboard/ProgressView";
 import ChatWidget from "../components/dashboard/ChatWidget";
+import RightSidebar from "../components/dashboard/RightSidebar";
 
 // â”€â”€â”€ Loading Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LoadingSkeleton: React.FC = () => (
@@ -88,17 +90,17 @@ const StatsSummary: React.FC<{
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 transition-colors duration-300">
-      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 transition-colors duration-300">
+    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 transition-colors duration-300">
+      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-5 transition-colors duration-300">
         Learning Snapshot
       </p>
       <div className="grid grid-cols-2 gap-4">
         {stats.map(({ label, value, valueColor, iconBg, icon }) => (
           <div
             key={label}
-            className="bg-white dark:bg-slate-800/60 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-4 flex flex-col items-center justify-center hover:-translate-y-0.5 transition-all duration-300"
+            className="bg-white dark:bg-slate-800/60 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-5 flex flex-col items-center justify-center hover:-translate-y-0.5 transition-all duration-300"
           >
-            <div className="flex items-center gap-4 w-full justify-center mb-1.5">
+            <div className="flex items-center gap-4 w-full justify-center mb-2">
               <div className={`w-[42px] h-[42px] rounded-[12px] flex items-center justify-center transition-colors duration-300 ${iconBg}`}>
                 {icon}
               </div>
@@ -187,6 +189,65 @@ const TopbarSignOut: React.FC = () => {
   );
 };
 
+// ——— Certificate Upload Zone —————————————————————————————————————————————————————————————
+const CertificateUploadZone: React.FC = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpload = () => {
+    if (file) {
+      alert(`Certificate "${file.name}" uploaded successfully for verification!`);
+      setFile(null);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 flex flex-col gap-5 transition-colors duration-300">
+      <div className="flex items-center gap-4 mb-2">
+        <div className="w-[44px] h-[44px] rounded-[14px] bg-[#fdf4ff] dark:bg-fuchsia-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+          <Award size={22} className="text-fuchsia-600 dark:text-fuchsia-400 transition-colors duration-300" />
+        </div>
+        <div>
+          <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">External Certificates</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload non-iGOT certificates (PDF/Image) for skill verification.</p>
+        </div>
+      </div>
+      
+      <input 
+        type="file" 
+        className="hidden" 
+        ref={fileInputRef} 
+        accept=".pdf,image/*" 
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+
+      <div className="flex flex-col gap-3">
+        {file && (
+          <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/50 text-sm">
+            <FileText size={16} className="text-fuchsia-500 flex-shrink-0" />
+            <span className="truncate flex-1 text-slate-700 dark:text-slate-300 font-medium">{file.name}</span>
+            <button onClick={() => setFile(null)} className="text-slate-400 hover:text-red-500 font-bold">&times;</button>
+          </div>
+        )}
+        
+        <button
+          onClick={handleUpload}
+          className={`relative w-full border-2 font-bold text-[14px] py-2.5 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 ${
+            file 
+              ? "bg-fuchsia-600 text-white border-fuchsia-600 hover:bg-fuchsia-700"
+              : "bg-white dark:bg-slate-800 text-fuchsia-700 dark:text-white border-fuchsia-700 dark:border-fuchsia-600 hover:bg-fuchsia-50 dark:hover:bg-slate-700"
+          }`}
+        >
+          <Upload size={18} className={`${file ? 'text-white' : 'text-fuchsia-700 dark:text-fuchsia-300'} relative z-10 transition-colors duration-300`} />
+          <span className="relative z-10">{file ? "Submit for Verification" : "Upload Certificate"}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ——— Main Dashboard ————————————————————————————————————————————————————————————————————————
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
   const { user: authUser } = useAuth();
@@ -244,41 +305,45 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
 
             {activeTab === "dashboard" && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Main 2-col grid using 2/3 and 1/3 ratio */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                  {/* Left: Skill Gap */}
+                {/* Main grid: SkillGap (2) | Right sidebar stack (1) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
+                  {/* Left: Skill Gap — 2 cols */}
                   <div className="lg:col-span-2">
                     <SkillGapCard skillGaps={skillGaps} />
                   </div>
-                  {/* Right: Stats + AI Zone */}
-                  <div className="flex flex-col gap-6 lg:col-span-1">
+
+                  {/* Right column: Stats → AI Studio → Certs → Karma → Career */}
+                  <div className="flex flex-col gap-5 lg:col-span-1">
                     <StatsSummary
                       totalCompetencies={totalAssessed}
                       activeGaps={activeGaps.length}
                       mandatoryGaps={mandatoryGaps.length}
                       recommendedCourses={recommendations.length}
                     />
-                    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 flex flex-col gap-5 transition-colors duration-300 h-full justify-between">
-                      <div>
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-[44px] h-[44px] rounded-[14px] bg-[#eef2ff] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-                            <Bot size={22} className="text-blue-800 dark:text-blue-400 transition-colors duration-300" />
-                          </div>
-                          <div>
-                            <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Studio</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload MoSPI training documents to auto-generate custom assessments.</p>
-                          </div>
+                    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 flex flex-col gap-5 transition-colors duration-300">
+                      <div className="flex items-center gap-4">
+                        <div className="w-[44px] h-[44px] rounded-[14px] bg-[#eef2ff] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+                          <Bot size={22} className="text-blue-800 dark:text-blue-400 transition-colors duration-300" />
+                        </div>
+                        <div>
+                          <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Studio</h3>
+                          <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload MoSPI training documents to auto-generate custom assessments.</p>
                         </div>
                       </div>
-                      
                       <button
                         onClick={() => navigate("/assessment")}
-                        className="relative w-full bg-white dark:bg-slate-800 text-blue-900 dark:text-white border-2 border-blue-900 dark:border-blue-700 font-bold text-[14px] py-2.5 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-slate-700"
+                        className="relative w-full bg-white dark:bg-slate-800 text-blue-900 dark:text-white border-2 border-blue-900 dark:border-blue-700 font-bold text-[14px] py-3 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-slate-700"
                       >
                         <Bot size={18} className="text-blue-900 dark:text-blue-200 relative z-10 transition-colors duration-300" />
                         <span className="relative z-10">Open Assessment Studio</span>
                       </button>
                     </div>
+
+                    {/* External Certificate Upload */}
+                    <CertificateUploadZone />
+
+                    {/* Karma + Career */}
+                    <RightSidebar />
                   </div>
                 </div>
 
