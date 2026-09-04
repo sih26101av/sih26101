@@ -1,25 +1,19 @@
 /**
  * FILE: src/components/dashboard/ChatWidget.tsx
  *
- * Gyan (ज्ञान) — Multilingual AI Learning Assistant
- * Floating chat bubble widget for the MoSPI Skill Intelligence Platform.
+ * Gyan (ज्ञान) — Dashboard Chat Widget
+ * Uses useChatEngine hook for shared logic.
+ * Adds: ✅ Voice input (Web Speech API) | ✅ Navigate action confirmation
  *
  * Archit Shukla | SIH 2026
- *
- * Features:
- *  - Animated floating bubble (bottom-right, fixed)
- *  - Slide-up chat panel with glassmorphism styling
- *  - Personalized suggestion chips (context-aware)
- *  - Auto-scroll to latest message
- *  - Typing indicator (3-dot animation)
- *  - EN/HI language toggle
- *  - Renders markdown bold via simple parser
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Bot, Languages, ChevronDown } from 'lucide-react';
+import { X, Send, Bot, Languages, ChevronDown, Mic, MicOff, Navigation } from 'lucide-react';
 import type { SkillGapEntry, CourseRecommendation } from '../../types/domain';
-import { sendChatMessage, type ChatMessage } from '../../services/chatApi';
+import type { NavigateAction } from '../../services/chatApi';
+import type { ChatMessage } from '../../services/chatApi';
+import { useChatEngine } from '../../hooks/useChatEngine';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface ChatWidgetProps {
@@ -30,9 +24,10 @@ interface ChatWidgetProps {
   department?: string;
   skillGaps: SkillGapEntry[];
   recommendations: CourseRecommendation[];
+  onNavigate?: (action: NavigateAction) => void;
 }
 
-// ─── Suggestion chips (bilingual) ──────────────────────────────────────────────
+// ─── Suggestion chips ─────────────────────────────────────────────────────────
 const SUGGESTIONS_EN = [
   'What are my skill gaps?',
   'Which course should I take first?',
@@ -46,14 +41,13 @@ const SUGGESTIONS_HI = [
   'यह platform कैसे use करूँ?',
 ];
 
-// ─── Tiny markdown renderer (bold only) ──────────────────────────────────────
+// ─── Markdown renderer (bold only) ───────────────────────────────────────────
 function renderMarkdown(text: string): React.ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i}>{part.slice(2, -2)}</strong>;
     }
-    // Preserve newlines
     return part.split('\n').map((line, j, arr) => (
       <React.Fragment key={`${i}-${j}`}>
         {line}
@@ -116,6 +110,88 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
   );
 };
 
+// ─── Nav Confirmation Banner ──────────────────────────────────────────────────
+const NavConfirmBanner: React.FC<{
+  action: NavigateAction;
+  lang: 'en' | 'hi';
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ action, lang, onConfirm, onCancel }) => (
+  <div className="mx-4 mb-3 p-3 rounded-xl bg-blue-50 border border-blue-200 flex flex-col gap-2">
+    <p className="text-[12px] text-blue-800 font-medium flex items-center gap-1.5">
+      <Navigation size={12} />
+      {lang === 'hi'
+        ? `क्या मैं आपको "${action.label}" पर ले जाऊं?`
+        : `Take you to the ${action.label}?`}
+    </p>
+    <div className="flex gap-2">
+      <button
+        onClick={onConfirm}
+        className="flex-1 py-1.5 bg-[#2b4c7e] text-white text-[11px] font-bold rounded-lg hover:bg-[#1a3660] transition-colors"
+      >
+        {lang === 'hi' ? 'हाँ, ले चलो ✈️' : 'Yes, go there ✈️'}
+      </button>
+      <button
+        onClick={onCancel}
+        className="px-3 py-1.5 text-slate-500 text-[11px] font-medium rounded-lg hover:bg-slate-100 transition-colors"
+      >
+        {lang === 'hi' ? 'नहीं' : 'No'}
+      </button>
+    </div>
+  </div>
+);
+
+// ─── Voice Button ─────────────────────────────────────────────────────────────
+const VoiceButton: React.FC<{
+  lang: 'en' | 'hi';
+  onResult: (text: string) => void;
+}> = ({ lang, onResult }) => {
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const SpeechRecognitionAPI =
+    (window as { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition ||
+    (window as { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+
+  if (!SpeechRecognitionAPI) return null; // hide on unsupported browsers
+
+  const toggleListening = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const rec = new SpeechRecognitionAPI();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+    rec.onresult = (e: SpeechRecognitionEvent) => {
+      const transcript = e.results[0][0].transcript;
+      onResult(transcript);
+      setListening(false);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setListening(true);
+  };
+
+  return (
+    <button
+      onClick={toggleListening}
+      title={listening ? 'Stop listening' : 'Voice input'}
+      className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all
+        ${listening
+          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200'
+          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+        }`}
+    >
+      {listening ? <MicOff size={13} /> : <Mic size={13} />}
+    </button>
+  );
+};
+
 // ─── Main Widget ──────────────────────────────────────────────────────────────
 const ChatWidget: React.FC<ChatWidgetProps> = ({
   officialId,
@@ -125,25 +201,26 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   department = 'MoSPI',
   skillGaps,
   recommendations,
+  onNavigate,
 }) => {
-  const [isOpen, setIsOpen]         = useState(false);
-  const [messages, setMessages]     = useState<ChatMessage[]>([]);
+  const [isOpen, setIsOpen]       = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping]     = useState(false);
-  const [lang, setLang]             = useState<'en' | 'hi'>('en');
-  const [hasUnread, setHasUnread]   = useState(true);
+  const [lang, setLang]           = useState<'en' | 'hi'>('en');
+  const [hasUnread, setHasUnread] = useState(true);
+  const inputRef                  = useRef<HTMLTextAreaElement>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef       = useRef<HTMLTextAreaElement>(null);
+  const { messages, isTyping, pendingNav, handleSend, confirmNav, cancelNav, messagesEndRef } =
+    useChatEngine({
+      officialId, fullName, govId, jobRole, department,
+      skillGaps, recommendations,
+      context: 'dashboard',
+      lang,
+      onNavigate,
+    });
 
+  const activeGapsCount = skillGaps.filter(g => g.gap > 0).length;
   const suggestions = lang === 'hi' ? SUGGESTIONS_HI : SUGGESTIONS_EN;
 
-  // Auto-scroll on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
@@ -151,7 +228,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   }, [isOpen]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
@@ -159,70 +235,22 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   }, [inputValue]);
 
-  // Send a message
-  const handleSend = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || isTyping) return;
-
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    setInputValue('');
-    setIsTyping(true);
-
-    try {
-      const { reply, detectedLanguage } = await sendChatMessage(
-        officialId,
-        trimmed,
-        messages,
-        jobRole,
-        department,
-        skillGaps,
-        recommendations,
-        fullName,
-        govId,
-      );
-
-      // Simulate realistic typing delay (600ms–1.2s)
-      await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 600));
-
-      const botMsg: ChatMessage = {
-        id: `msg-${Date.now()}-bot`,
-        role: 'model',
-        content: reply,
-        timestamp: new Date(),
-        detectedLanguage,
-      };
-      setMessages(prev => [...prev, botMsg]);
-    } catch {
-      const errMsg: ChatMessage = {
-        id: `msg-err-${Date.now()}`,
-        role: 'model',
-        content: lang === 'hi'
-          ? 'Maafi chahta hoon, abhi kuch technical problem aa gayi. Thodi der baad dobara try karein. 🙏'
-          : 'Sorry, I encountered a technical issue. Please try again in a moment. 🙏',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errMsg]);
-    } finally {
-      setIsTyping(false);
-    }
-  }, [isTyping, messages, officialId, fullName, govId, jobRole, department, skillGaps, recommendations, lang]);
-
-  // Handle Enter key (Shift+Enter = newline)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend(inputValue);
+      setInputValue('');
     }
   };
 
-  const activeGapsCount = skillGaps.filter(g => g.gap > 0).length;
+  const onVoiceResult = useCallback((text: string) => {
+    setInputValue(text);
+    // Auto-send after brief delay so user can see what was recognized
+    setTimeout(() => {
+      handleSend(text);
+      setInputValue('');
+    }, 800);
+  }, [handleSend]);
 
   return (
     <>
@@ -271,28 +299,25 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-4 py-3 scroll-smooth min-h-0">
-          {/* Empty state: suggestion chips */}
           {messages.length === 0 && (
             <div className="flex flex-col items-center pt-2 pb-4">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2b4c7e] to-[#1e3a5f] flex items-center justify-center shadow-md mb-3">
                 <Bot size={22} className="text-white" />
               </div>
               <p className="text-slate-700 font-bold text-[13px] text-center">
-                {lang === 'hi' ? 'Namaste! Main Gyan hoon 🙏' : 'Hello! I\'m Gyan 👋'}
+                {lang === 'hi' ? 'Namaste! Main Gyan hoon 🙏' : "Hello! I'm Gyan 👋"}
               </p>
               <p className="text-slate-500 text-[11px] text-center mt-1 mb-4 leading-relaxed">
                 {lang === 'hi'
-                  ? `Aapke paas ${activeGapsCount} active skill gap${activeGapsCount !== 1 ? 's' : ''} hain. Main aapki madad karunga!`
+                  ? `Aapke paas ${activeGapsCount} active skill gap${activeGapsCount !== 1 ? 's' : ''} hain.`
                   : `You have ${activeGapsCount} active skill gap${activeGapsCount !== 1 ? 's' : ''}. Ask me anything!`
                 }
               </p>
-
-              {/* Suggestion chips */}
               <div className="flex flex-col gap-2 w-full">
                 {suggestions.map((s, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSend(s)}
+                    onClick={() => { handleSend(s); }}
                     className="text-left px-3 py-2 rounded-xl bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-[12px] text-slate-700 font-medium transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
                   >
                     {s}
@@ -302,16 +327,20 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             </div>
           )}
 
-          {/* Message list */}
-          {messages.map(msg => (
-            <MessageBubble key={msg.id} msg={msg} />
-          ))}
-
-          {/* Typing indicator */}
+          {messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
           {isTyping && <TypingIndicator />}
-
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Navigation Confirmation Banner */}
+        {pendingNav && (
+          <NavConfirmBanner
+            action={pendingNav.action}
+            lang={lang}
+            onConfirm={confirmNav}
+            onCancel={cancelNav}
+          />
+        )}
 
         {/* Input bar */}
         <div className="flex-shrink-0 bg-white border-t border-slate-100 rounded-b-3xl px-3 py-3">
@@ -327,8 +356,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
               className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder-slate-400 resize-none focus:outline-none max-h-24 overflow-y-auto leading-relaxed disabled:opacity-50"
               style={{ minHeight: '24px' }}
             />
+            <VoiceButton lang={lang} onResult={onVoiceResult} />
             <button
-              onClick={() => handleSend(inputValue)}
+              onClick={() => { handleSend(inputValue); setInputValue(''); }}
               disabled={!inputValue.trim() || isTyping}
               className="flex-shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-[#2b4c7e] to-[#1a3660] text-white flex items-center justify-center shadow-md hover:shadow-lg hover:from-[#3a5d91] transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             >
@@ -336,7 +366,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             </button>
           </div>
           <p className="text-[10px] text-slate-400 text-center mt-1.5">
-            {lang === 'hi' ? 'Shift+Enter नई line के लिए' : 'Shift+Enter for new line'}
+            {lang === 'hi' ? 'Shift+Enter नई line | 🎤 बोलकर पूछें' : 'Shift+Enter for new line | 🎤 speak to ask'}
           </p>
         </div>
       </div>
@@ -350,8 +380,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
           text-white shadow-[0_8px_32px_-8px_rgba(43,76,126,0.6)]
           hover:shadow-[0_12px_40px_-8px_rgba(43,76,126,0.8)]
           hover:scale-110 active:scale-95
-          transition-all duration-200 flex items-center justify-center
-          ${isOpen ? 'rotate-0' : ''}`}
+          transition-all duration-200 flex items-center justify-center`}
         title={lang === 'hi' ? 'Gyan AI से बात करें' : 'Chat with Gyan AI'}
         aria-label="Open AI chat assistant"
       >
@@ -360,7 +389,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         ) : (
           <>
             <Bot size={22} />
-            {/* Unread notification dot */}
             {hasUnread && (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
             )}

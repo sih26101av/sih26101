@@ -326,15 +326,7 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "what is the ministry of statistics", "who runs MoSPI",
     ],
 
-    # ── Farewells ─────────────────────────────────────────────────────────────
-    "farewell": [
-        "bye", "goodbye", "alvida", "shukriya",
-        "dhanyavad", "ok bye", "see you", "tataa", "that's all",
-        "good night", "shubh ratri", "good bye", "see ya",
-        "thanks bye", "thank you bye", "ok thank you", "ok thanks",
-    ],
-
-    # -- Gratitude (thanks without bye) ----------------------------------------
+    # ── Gratitude (thanks without bye) ────────────────────────────────────────
     "gratitude": [
         "thanks", "thank you", "great", "awesome", "wonderful", "perfect",
         "that's helpful", "very helpful", "good job", "well done",
@@ -344,14 +336,76 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "gr8", "thx", "ty", "thnx", "tysm", "thank u",
     ],
 
-    # -- Farewells -------------------------------------------------------------
+    # ── Farewells ─────────────────────────────────────────────────────────────
     "farewell": [
         "bye", "goodbye", "alvida",
         "ok bye", "see you", "tataa", "that's all",
         "good night", "shubh ratri", "good bye", "see ya",
         "thanks bye", "thank you bye", "ok thank you", "ok thanks",
     ],
+
+    # ── Dashboard Tab Navigation ───────────────────────────────────────────────
+    "navigation_dashboard": [
+        "go to dashboard", "open dashboard", "take me to dashboard",
+        "show me dashboard", "dashboard tab", "go back to dashboard",
+        "show main dashboard", "dashboard dikhao", "main page",
+    ],
+
+    "navigation_my_courses": [
+        "go to my courses", "open my courses", "show my courses",
+        "my courses tab", "enrolled courses", "take me to courses",
+        "mere courses dikhao", "course list kahan hai",
+        "where are my enrolled courses", "active courses",
+    ],
+
+    "navigation_progress": [
+        "go to progress", "show my progress", "open progress tab",
+        "progress tab", "view achievements", "see my progress",
+        "progress dikhao", "meri progress kahan hai",
+        "show my radar chart", "competency radar", "achievement history",
+        "quiz results", "certification history",
+    ],
+
+    "navigation_ai_quiz": [
+        "ai quiz generator", "generate quiz", "upload document for quiz",
+        "document to quiz", "rag quiz", "take me to ai assessment",
+        "pdf quiz", "create assessment", "quiz banao",
+    ],
+
+    # ── Homepage Section Navigation ────────────────────────────────────────────
+    "navigation_home": [
+        "go to top", "scroll to top", "home section", "go home",
+        "take me to home", "back to top", "top of page",
+        "homepage", "main page dikhao",
+    ],
+
+    "navigation_features": [
+        "show features", "go to features", "features section",
+        "what are the features", "platform features dikhao",
+        "tell me features", "features kahan hain", "features tab",
+        "scroll to features",
+    ],
+
+    "navigation_about": [
+        "go to about", "about section", "about platform", "about mospi",
+        "about us", "about page", "about kahan hai",
+        "take me to about", "scroll to about",
+    ],
+
+    "navigation_contact": [
+        "contact us", "contact section", "how to contact",
+        "contact kahan hai", "help and contact", "reach out",
+        "where is contact", "scroll to contact", "contact dikhao",
+    ],
+
+    "navigation_login": [
+        "login", "sign in", "log in", "open login", "take me to login",
+        "how to login", "login page", "official login",
+        "login karna hai", "sign in karna hai", "login kahan hai",
+        "login as official", "admin portal", "admin login",
+    ],
 }
+
 
 # Flat list of intents and their prototype sentences (for vectorization)
 _INTENT_LABELS: list[str] = []

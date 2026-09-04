@@ -22,6 +22,12 @@ export interface ChatMessage {
   detectedLanguage?: 'en' | 'hi';
 }
 
+export interface NavigateAction {
+  type: 'scroll' | 'tab' | 'modal';
+  target: string;          // e.g. '#features', 'my-courses', 'login'
+  label: string;           // human-readable, e.g. 'Features section'
+}
+
 interface ChatApiPayload {
   user_id: string;
   message: string;
@@ -30,6 +36,7 @@ interface ChatApiPayload {
   department: string;
   full_name?: string;
   gov_id?: string;
+  context?: string;
   skill_gaps: {
     skillName: string;
     domain: string;
@@ -248,7 +255,8 @@ export async function sendChatMessage(
   recommendations: CourseRecommendation[],
   fullName?: string,
   govId?: string,
-): Promise<{ reply: string; detectedLanguage: 'en' | 'hi' }> {
+  context?: string,
+): Promise<{ reply: string; detectedLanguage: 'en' | 'hi'; navigateAction?: NavigateAction }> {
 
   const payload: ChatApiPayload = {
     user_id: officialId,
@@ -258,6 +266,7 @@ export async function sendChatMessage(
     department,
     full_name: fullName,
     gov_id: govId,
+    context,
     skill_gaps: skillGaps.map(g => ({
       skillName: g.competency.skillName,
       domain: g.competency.domain,
@@ -286,6 +295,7 @@ export async function sendChatMessage(
     return {
       reply: data.reply,
       detectedLanguage: (data.detected_language as 'en' | 'hi') ?? 'en',
+      navigateAction: data.navigate_action ?? undefined,
     };
   } catch {
     // ── Backend unavailable → use client-side engine ──────────────────────────
@@ -294,6 +304,6 @@ export async function sendChatMessage(
     const reply = buildLocalReply(
       intent, lang, officialId, jobRole, department, skillGaps, recommendations, message
     );
-    return { reply, detectedLanguage: lang };
+    return { reply, detectedLanguage: lang, navigateAction: undefined };
   }
 }

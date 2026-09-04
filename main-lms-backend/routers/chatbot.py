@@ -81,6 +81,7 @@ class ChatRequest(BaseModel):
     department: Optional[str] = "MoSPI"
     full_name: Optional[str] = None
     gov_id: Optional[str] = None
+    context: Optional[str] = "dashboard"   # "dashboard" | "home"
     skill_gaps: List[SkillGapContext] = []
     recommendations: List[RecommendationContext] = []
 
@@ -88,6 +89,7 @@ class ChatResponse(BaseModel):
     reply: str
     detected_language: str  # "hi" | "en"
     engine: str = "template"  # "semantic" | "template"
+    navigate_action: Optional[dict] = None  # {type, target, label}
 
 
 # =============================================================================
@@ -200,11 +202,34 @@ def _handle_semantic(
     dept      = req.department or "MoSPI"
     full_name = req.full_name  or None
     gov_id    = req.gov_id     or None
+    ctx       = req.context    or "dashboard"
     top = _top_gap(gaps)
     active_gaps = [g for g in gaps if g.gapScore > 0]
 
     # ── Greeting ────────────────────────────────────────────────────────────
     if intent in ("greeting", "hindi_greeting"):
+        if ctx == "home":
+            # Anonymous visitor on homepage
+            if lang == "hi":
+                return (
+                    "Namaste! 🙏 Main **Gyan** hoon — MoSPI ka AI Assistant.\n\n"
+                    "Main aapko yeh platform samajhne mein madad kar sakta hoon:\n"
+                    "• Platform ke features aur sections ke baare mein\n"
+                    "• MoSPI aur iGOT Karmayogi ke baare mein\n"
+                    "• Login karne mein guide karna\n"
+                    "• Kisi bhi section par le jaana\n\n"
+                    "Aaj main aapki kya madad kar sakta hoon? 🎓"
+                )
+            return (
+                "Hello! 👋 I'm **Gyan**, the MoSPI AI Assistant.\n\n"
+                "I can help you explore this platform:\n"
+                "• Features & capabilities of the Skill Intelligence Platform\n"
+                "• About MoSPI and iGOT Karmayogi\n"
+                "• How to login as an official\n"
+                "• Navigate to any section\n\n"
+                "What would you like to know? 🎓"
+            )
+        # Logged-in dashboard user
         if lang == "hi":
             return (
                 f"Namaste! 🙏 Main **Gyan** hoon — aapka MoSPI AI Training Assistant.\n\n"
@@ -908,6 +933,59 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
             return f"Progress: ✅ {met}/{total} competencies target par ({pct}%)."
         return f"Progress: ✅ {met}/{total} competencies at target ({pct}%)."
 
+    # -- Navigation: Dashboard Tabs --------------------------------------------
+    if intent == "navigation_dashboard":
+        return "Taking you to the **Dashboard** tab! 📊" if lang == "en" else "Dashboard tab par le ja raha hoon! 📊"
+
+    if intent == "navigation_my_courses":
+        return "Opening your **My Courses** tab — all your enrolled courses are there! 📚" if lang == "en" else "My Courses tab khol raha hoon — sare enrolled courses wahan hain! 📚"
+
+    if intent == "navigation_progress":
+        return "Taking you to **Progress** — your radar chart, quiz results and achievements await! 📈" if lang == "en" else "Progress tab par le ja raha hoon — radar chart aur achievements wahan hain! 📈"
+
+    if intent == "navigation_ai_quiz":
+        return "Taking you to the **AI Quiz Generator** on the Dashboard! Upload a PDF to generate your custom quiz. 🤖" if lang == "en" else "AI Quiz Generator par le ja raha hoon! PDF upload karein apna quiz banane ke liye. 🤖"
+
+    # -- Navigation: Homepage Sections -----------------------------------------
+    if intent == "navigation_home":
+        return "Scrolling back to the **top** of the page! 🏠" if lang == "en" else "Page ke top par le ja raha hoon! 🏠"
+
+    if intent == "navigation_features":
+        return (
+            "The **Features** section covers all 6 capabilities:\n"
+            "AI Skill Gap Analysis, iGOT Course Mapping, RAG Document-to-Quiz, "
+            "Real-Time Karmayogi Sync, Air-Gapped NLP, and Ministry Analytics Dashboard.\n\n"
+            "Shall I scroll you there?"
+        ) if lang == "en" else (
+            "**Features** section mein 6 capabilities hain:\n"
+            "AI Skill Gap Analysis, iGOT Course Mapping, RAG Quiz, Karmayogi Sync, NLP Assistant aur Analytics Dashboard.\n\n"
+            "Kya main aapko wahan le chaloon?"
+        )
+
+    if intent == "navigation_about":
+        return (
+            "The **About** section describes MoSPI's mission, the FRAC framework, "
+            "iGOT integration, and our security-first approach.\n\nShall I scroll you there?"
+        ) if lang == "en" else (
+            "**About** section mein MoSPI ka mission, FRAC framework aur iGOT integration describe hai.\n\nKya le chaloon?"
+        )
+
+    if intent == "navigation_contact":
+        return (
+            "The **Contact** section has links to Privacy Policy, Terms, and Help & FAQ.\n\nShall I scroll you there?"
+        ) if lang == "en" else (
+            "**Contact** section mein Privacy Policy, Terms aur Help & FAQ ke links hain.\n\nKya le chaloon?"
+        )
+
+    if intent == "navigation_login":
+        return (
+            "You can login as an **Official** or access the **Admin Portal** using the buttons at the top of the page.\n\n"
+            "Shall I open the **Login** dialog for you?"
+        ) if lang == "en" else (
+            "Page ke top par **Official Login** aur **Admin Portal** buttons hain.\n\n"
+            "Kya main **Login** dialog kholoon?"
+        )
+
     if intent == "platform_help":
         if lang == "hi":
             return (
@@ -977,7 +1055,35 @@ async def chat(req: ChatRequest):
             # Confidence threshold: use semantic handler if ≥ 0.40
             # If below, still try it but note low confidence
             reply = _handle_semantic(intent, req, lang)
-            return ChatResponse(reply=reply, detected_language=lang, engine="semantic")
+
+            # Build navigate_action for navigation intents
+            nav_action = None
+            if ctx == "home":
+                # Homepage scroll targets
+                _home_nav_map = {
+                    "navigation_features":       {"type": "scroll", "target": "#features", "label": "Features section"},
+                    "navigation_about":          {"type": "scroll", "target": "#about",    "label": "About section"},
+                    "navigation_contact":        {"type": "scroll", "target": "#contact",  "label": "Contact section"},
+                    "navigation_login":          {"type": "modal",  "target": "login",     "label": "Login"},
+                    "navigation_home":           {"type": "scroll", "target": "#home",     "label": "Home (top)"},
+                }
+                nav_action = _home_nav_map.get(intent)
+            else:
+                # Dashboard tab targets
+                _dash_nav_map = {
+                    "navigation_my_courses":  {"type": "tab", "target": "my-courses", "label": "My Courses tab"},
+                    "navigation_progress":    {"type": "tab", "target": "progress",   "label": "Progress tab"},
+                    "navigation_dashboard":   {"type": "tab", "target": "dashboard",  "label": "Dashboard tab"},
+                    "navigation_ai_quiz":     {"type": "tab", "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
+                }
+                nav_action = _dash_nav_map.get(intent)
+
+            return ChatResponse(
+                reply=reply,
+                detected_language=lang,
+                engine="semantic",
+                navigate_action=nav_action,
+            )
         else:
             logger.info("[Gyan] Semantic engine not ready → falling back to templates")
 

@@ -398,6 +398,17 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
             department={profile.department}
             skillGaps={skillGaps}
             recommendations={recommendations}
+            onNavigate={(action) => {
+              if (action.type === 'tab') {
+                const tabMap: Record<string, string> = {
+                  'dashboard': 'dashboard',
+                  'my-courses': 'my-courses',
+                  'progress': 'progress',
+                };
+                const target = tabMap[action.target];
+                if (target) setActiveTab(target as TabType);
+              }
+            }}
           />
         )}
       </div>

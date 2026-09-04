@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Settings, User, BookOpen, Activity, Award, Cpu, TabletSmartphone, Route, Moon, Sun, BrainCircuit, BookOpenCheck, FileQuestion, RefreshCw, Shield, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import LoginPage from './LoginPage';
+import HomeChatWidget from '../components/home/HomeChatWidget';
 
 
 const translations: Record<string, React.ReactNode> = {
@@ -447,6 +448,15 @@ const LandingPage: React.FC = () => {
       {isLoginModalOpen && (
         <LoginPage isModal onClose={() => setIsLoginModalOpen(false)} />
       )}
+
+      {/* Gyan AI — Homepage Chat Widget */}
+      <HomeChatWidget
+        onScrollToSection={(id) => {
+          if (id === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
+          else document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
+      />
     </div>
   );
 };
