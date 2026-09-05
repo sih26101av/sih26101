@@ -536,7 +536,7 @@ def _handle_semantic(
             f"Your learning progress as **{role}**:\n\n"
             f"✅ **{met}/{total}** competencies at target level ({pct}% complete)\n"
             f"⚠️ **{len(active_gaps)}** gap(s) still to close\n\n"
-            f"{'Great progress! You\'re well on track. 👏' if pct >= 60 else 'Keep going — follow your recommended courses to close the remaining gaps!'}\n\n"
+            f"{'Great progress! You are well on track. 👏' if pct >= 60 else 'Keep going — follow your recommended courses to close the remaining gaps!'}\n\n"
             f"💡 *For a detailed radar chart of all your skills (Current vs Target), "
             f"switch to the **Progress tab** (TrendingUp icon in the top navbar). "
             f"You'll also see your quiz and certification achievements there.*"

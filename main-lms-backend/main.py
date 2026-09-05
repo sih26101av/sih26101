@@ -12,7 +12,9 @@ Responsibilities
 
 On startup: creates users_auth table in auth.db (idempotent).
 """
-
+from main import _rec_engine
+from routers import competency
+from services.recommendation_service import HybridRecommendationEngine
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -61,13 +63,33 @@ app.add_middleware(
 )
 
 # ── Startup: create auth.db table ─────────────────────────────────────────────
+# ── App-level recommendation engine singleton ─────────────────────────────────
+# Built once at startup: loads catalog JSON, builds FAISS index + BM25 corpus.
+# All recommendation requests share this singleton (thread-safe read-only).
+_rec_engine: HybridRecommendationEngine | None = None
+
+
 @app.on_event("startup")
 async def _startup():
     """Create users_auth table and karma tables if they don't exist yet."""
+    global _rec_engine
     AuthBase.metadata.create_all(bind=engine)
     # Create karma tables (KarmaEvent, KarmaMonthlyUsage) in the same auth.db
     from models.models import Base as DomainBase
     DomainBase.metadata.create_all(bind=engine)
+
+    try:
+        _rec_engine = HybridRecommendationEngine()
+        import logging
+        logging.getLogger(__name__).info("[startup] HybridRecommendationEngine ready.")
+
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(
+            "[startup] RecommendationEngine failed to initialise: %s", exc
+        )
+        _rec_engine = None
+
 
 
 # ── Register routers ───────────────────────────────────────────────────────────
@@ -76,6 +98,10 @@ app.include_router(chatbot_router, prefix="/api/v1",     tags=["chatbot"])
 app.include_router(rag_router,     prefix="/api/v1/rag", tags=["rag"])
 app.include_router(ai_tools_router,prefix="/api/v1/ai",  tags=["ai-tools"])
 app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
+app.include_router(competency.router)
+    
+    
+
 
 
 # ── iGOT Adapter singleton (HTTP → mock_igot_server.py on port 8001) ────────────
@@ -210,79 +236,104 @@ async def get_recommendations_by_user_id(
     user_id: str,
     _current_user: UserAuth = Depends(get_current_user),
 ):
-    """AI-ranked course recommendations personalised by skill gap."""
-    user    = await adapter.fetch_user_by_id(user_id)
-    catalog = await adapter.fetch_catalog()
+    """
+    3-Stage Hybrid Recommendation Engine:
+      Stage 0 — Cross-gap prioritization (priority_k = gap_k * target_k/5)
+      Stage 1 — Mandatory FRAC-tag filtering (no untagged courses)
+      Stage 2 — Dense FAISS + Sparse BM25 + RRF fusion + NSSTA 1.25× boost
+      Stage 3 — final = 0.6*relevance + 0.4*quality (Wilson rating, log-pop)
+    """
+    from fastapi import HTTPException
 
-    # Build gap map from profile competencies
-    competencies = (user.get("profileDetails") or {}).get("competencies") or [] if user else []
-    enrolled_ids = {e.get("courseId") for e in await adapter.fetch_user_enrollments(user_id)}
+    if _rec_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Recommendation engine is not available. Check startup logs.",
+        )
 
-    gaps: dict[str, dict] = {}
+    # 1. Fetch user profile to derive competency baselines
+    user = await adapter.fetch_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    competencies = (user.get("profileDetails") or {}).get("competencies") or []
+
+    # Build baselines map: comp_id → current_level (float)
+    baselines: dict[str, float] = {}
     for comp in competencies:
-        current = _level_to_int(comp.get("competencyLevel", "Level 0"))
-        gaps[comp.get("name", "")] = {"current": current, "gap": max(0, comp.get("requiredLevel", 3) - current)}
+        cid = comp.get("id", "")
+        if cid:
+            baselines[cid] = float(_level_to_int(comp.get("competencyLevel", "Level 2")))
 
-    recommendations = []
-    for course in catalog:
-        if course.get("identifier") in enrolled_ids:
-            continue  # skip already enrolled courses
-        for skill in (course.get("competencies_v3") and [] or []):  # safe fallback
-            pass
-        # Match against user gap map via course name / description keywords
-        # Primary: use course competency tag fields if available
-        comp_tags = []
-        raw_v3 = course.get("competencies_v3", "")
-        if raw_v3:
-            try:
-                comp_tags = json.loads(raw_v3) if isinstance(raw_v3, str) else raw_v3
-            except Exception:
-                pass
+    # Build targets map: comp_id → target_level (from ROLE_REQUIREMENTS or default 4.0)
+    # For each competency in the user's profile, set target to 4 unless overridden
+    targets: dict[str, float] = {
+        cid: 4.0 for cid in baselines
+    }
 
-        best_gap = 0
-        match_skill = ""
-        match_reason = ""
-        for tag in comp_tags:
-            name = tag.get("name", "") if isinstance(tag, dict) else ""
-            gap_info = gaps.get(name)
-            if gap_info and gap_info["gap"] > best_gap:
-                best_gap = gap_info["gap"]
-                match_skill = name
-                match_reason = f"Bridges your gap in {name}."
+    # 2. Get set of already-enrolled course IDs to exclude
+    enrolled_raw  = await adapter.fetch_user_enrollments(user_id)
+    enrolled_ids  = {e.get("courseId", "") for e in enrolled_raw}
 
-        if not match_skill:
-            # Fallback: recommend courses whose primaryCategory matches any gap skill
-            cat = course.get("primaryCategory", "")
-            for skill_name, gap_info in gaps.items():
-                if gap_info["gap"] > 0 and (skill_name.lower() in cat.lower() or cat.lower() in skill_name.lower()):
-                    match_skill = skill_name
-                    match_reason = f"Recommended for your role."
-                    best_gap = gap_info["gap"]
-                    break
+    # 3. Compute prioritised gaps (Stage 0)
+    gaps = _rec_engine.calculate_gaps(baselines, targets)
 
-        if not match_skill and gaps:
-            # Last resort: include top courses anyway with a generic reason
-            match_reason = "Recommended for MoSPI officials."
+    if not gaps:
+        return {
+            "status": "success",
+            "officialId": user_id,
+            "message": "No skill gaps detected. Keep learning!",
+            "skillGaps": [],
+            "recommendations": [],
+            }
 
-        duration_sec = course.get("duration", "0")
-        try:
-            duration_hrs = round(int(duration_sec) / 3600, 1) if duration_sec else 0
-        except (ValueError, TypeError):
-            duration_hrs = round((course.get("leafNodesCount") or 10) * 0.5, 1)
+    # 4. Run hybrid search + scoring (Stages 1-3)
+    recs = _rec_engine.get_recommendations(
+        gaps=gaps,
+        limit_per_gap=3,
+        enrolled_ids=enrolled_ids,
+    )
 
-        recommendations.append({
-            "courseId":     course.get("identifier", ""),
-            "title":        course.get("name", ""),
-            "provider":     course.get("source", course.get("channel", "iGOT Karmayogi")),
-            "durationHours": duration_hrs,
-            "matchReason":  match_reason,
-            "tags":         [match_skill] if match_skill else [],
-            "gapScore":     best_gap,
-        })
+    # 5. Shape response — map to what api.ts fetchRecommendations expects
+    skill_gaps_payload = [
+        {
+            "competencyId":   g.competencyId,
+            "competencyName": g.competencyName,
+            "currentLevel":   g.currentLevel,
+            "targetLevel":    g.targetLevel,
+            "gapScore":       g.gapScore,
+            "priorityScore":  g.priorityScore,
+        }
+        for g in gaps
+    ]
 
-    # Sort by gap score descending, limit to top 8
-    recommendations.sort(key=lambda r: r["gapScore"], reverse=True)
-    return {"status": "success", "recommendations": recommendations[:8]}
+    recommendations_payload = [
+        {
+            "courseId":       r.courseId,
+            "title":          r.title,
+            "provider":       r.provider,
+            "durationHours":  r.durationHours,
+            "finalScore":     r.finalScore,
+            "relevanceScore": r.relevanceScore,
+            "qualityScore":   r.qualityScore,
+            "isTpac":         r.isTpac,
+            "competencyId":   r.competencyId,
+            "competencyName": r.competencyName,
+            "priorityRank":   r.priorityRank,
+            "matchReasons":   r.matchReasons,
+            # Legacy alias consumed by older api.ts mapper
+            "matchReason":    r.matchReasons[0] if r.matchReasons else "",
+            "tags":           [r.competencyName],
+        }
+        for r in recs
+    ]
+
+    return {
+        "status":          "success",
+        "officialId":      user_id,
+        "skillGaps":       skill_gaps_payload,
+        "recommendations": recommendations_payload,
+    }
 
 
 @app.get("/api/v1/learner/{user_id}/achievements")

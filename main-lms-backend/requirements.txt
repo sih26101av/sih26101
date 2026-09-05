@@ -65,6 +65,12 @@ google-generativeai>=0.8.0
 # CPU-only, no GPU needed. Fits Render free tier (512 MB RAM).
 sentence-transformers>=2.7.0
 
+# ── AI: Hybrid Recommendation Engine (FAISS + BM25) ──────────────────────────
+# faiss-cpu: in-process dense vector index (384-dim, IndexFlatIP cosine search)
+# rank-bm25: sparse keyword retrieval for exact acronyms / statistical codes
+faiss-cpu>=1.8.0
+rank-bm25>=0.2.2
+
 # ── AI: LangChain orchestration layer ────────────────────────────────────────
 langchain>=0.3.0
 langchain-core>=0.3.0

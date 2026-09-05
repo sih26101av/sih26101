@@ -253,26 +253,45 @@ export async function fetchRecommendations(
   const result = await lmsFetch<{
     status: string;
     recommendations: {
-      courseId: string; title: string; provider: string;
-      durationHours: number; matchReason: string; tags: string[];
+      courseId:       string;
+      title:          string;
+      provider:       string;
+      durationHours:  number;
+      finalScore:     number;
+      relevanceScore: number;
+      qualityScore:   number;
+      isTpac:         boolean;
+      competencyId:   string;
+      competencyName: string;
+      priorityRank:   number;
+      matchReasons:   string[];
+      // legacy fallbacks (always present on backend)
+      matchReason:    string;
+      tags:           string[];
     }[];
   }>(`/api/v1/learner/${userId}/recommendations`, 'recommendations');
 
-  return (result.recommendations ?? []).map((r, i) => ({
+  return (result.recommendations ?? []).map((r) => ({
     course: {
-      courseId:     r.courseId,
-      title:        r.title,
-      source:       r.provider,
+      courseId:      r.courseId,
+      title:         r.title,
+      source:        r.provider,
       durationHours: r.durationHours,
     },
-    matchScore:    Math.max(0.6, 0.98 - i * 0.06),
+    // finalScore from backend — no more fabricated client-side value
+    matchScore:     r.finalScore ?? 0,
+    finalScore:     r.finalScore ?? 0,
+    relevanceScore: r.relevanceScore ?? 0,
+    qualityScore:   r.qualityScore ?? 0,
+    isTpac:         r.isTpac ?? false,
     bridgesGapFor: {
-      compId:    `COMP-REC-${i}`,
+      compId:    r.competencyId ?? `COMP-${r.priorityRank}`,
       domain:    'Statistical' as const,
-      skillName: r.tags[0] ?? 'General',
+      skillName: r.competencyName ?? (r.tags?.[0] ?? 'General'),
     },
-    aiMatchTag:   r.matchReason,
-    priorityRank: i + 1,
+    aiMatchTag:   r.matchReasons?.[0] ?? r.matchReason ?? '',
+    matchReasons: r.matchReasons ?? (r.matchReason ? [r.matchReason] : []),
+    priorityRank: r.priorityRank,
   }));
 }
 

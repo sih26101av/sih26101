@@ -81,9 +81,21 @@ export interface SkillGapReport {
 
 export interface CourseRecommendation {
   course: Course;
+  /** Backward-compat alias for finalScore — used by MatchScoreBar */
   matchScore: number;
+  /** 0.6*relevanceScore + 0.4*qualityScore ∈ [0,1] */
+  finalScore: number;
+  /** RRF score normalised to [0,1] */
+  relevanceScore: number;
+  /** 0.35*completion + 0.35*wilsonRating + 0.20*logPop + 0.10*tpac ∈ [0,1] */
+  qualityScore: number;
+  /** True if course is NSSTA/TPAC-vetted */
+  isTpac: boolean;
   bridgesGapFor: Competency;
+  /** First element of matchReasons (legacy) */
   aiMatchTag: string;
+  /** Human-readable chips explaining the recommendation */
+  matchReasons: string[];
   priorityRank: number;
 }
 
