@@ -1,0 +1,43 @@
+134:     "navigation_login":    r'\b(login|log\s*in|sign\s*in|signin|admin\s*portal|admin\s*login|kaise\s*login|login\s*karna)\b',
+135:     "navigation_features": r'\b(feature|features|capabilities|feature\s*section|show\s*feature|scroll\s*to\s*feature)\b',
+142:     "ui_action_request":   r'\b(dark\s*mode|light\s*mode|theme|toggle\s*theme|change.*language|switch.*language|language.*hindi|hindi.*language|language.*english|font\s*size|accessibility)\b',
+268:     if intent == "how_are_you":
+280:     if intent == "concept_skill_gap":
+316:     if intent == "bot_identity":
+342:     if intent == "gratitude":
+356:     if intent == "user_identity":
+393:     if intent == "last_assessment":
+419:     if intent == "profile_stats":
+470:     if intent == "skill_gaps":
+496:     if intent == "recommend":
+521:     if intent == "progress":
+546:     if intent == "achievements":
+570:     if intent == "navigation_dashboard":
+603:     if intent == "navigation_my_courses":
+635:     if intent == "navigation_progress":
+661:     if intent == "navigation_quiz":
+692:     if intent == "navigation_profile":
+720:     if intent == "about_platform":
+752:     if intent == "about_mospi":
+782:     if intent == "statistics_gdp":
+801:     if intent == "statistics_cpi":
+818:     if intent == "statistics_sampling":
+835:     if intent == "statistics_frac":
+853:     if intent == "motivation":
+874:     if intent == "farewell":
+968:     if intent == "farewell":
+973:     if intent == "skill_gaps":
+985:     if intent == "recommend":
+993:     if intent == "progress":
+1002:     if intent == "navigation_dashboard":
+1005:     if intent == "navigation_my_courses":
+1008:     if intent == "navigation_progress":
+1011:     if intent == "navigation_ai_quiz":
+1015:     if intent == "navigation_home":
+1018:     if intent == "navigation_features":
+1030:     if intent == "navigation_about":
+1038:     if intent == "navigation_contact":
+1045:     if intent == "navigation_login":
+1054:     if intent == "platform_help":
+1164:                     "navigation_features":       {"type": "scroll", "target": "#features", "label": "Features section"},
+1167:                     "navigation_login":          {"type": "modal",  "target": "login",     "label": "Login"},

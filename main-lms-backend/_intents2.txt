@@ -1,0 +1,7 @@
+'How do I login?' -> 'navigation_login'
+'take me to features section' -> 'navigation_features'
+'turn on dark mode' -> 'ui_action_request'
+'change language to hindi' -> 'ui_action_request'
+'can u take me to admin portal' -> 'navigation_login'
+'change to contact tab' -> 'navigation_contact'
+'take me to about section' -> 'navigation_about'

@@ -344,6 +344,18 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "thanks bye", "thank you bye", "ok thank you", "ok thanks",
     ],
 
+    # ── UI Action Requests (things we can guide but not do directly) ──────────
+    "ui_action_request": [
+        "turn on dark mode", "enable dark mode", "switch to dark mode",
+        "turn on light mode", "enable light mode", "switch to light mode",
+        "change the theme", "toggle theme", "toggle dark mode",
+        "change language to hindi", "change language to english",
+        "switch language", "change website language", "hindi mein karo",
+        "hinglish mode", "change to hindi", "bhasha badlo",
+        "increase font size", "accessibility settings",
+        "website ka theme badlo", "dark mode on karo",
+    ],
+
     # ── Dashboard Tab Navigation ───────────────────────────────────────────────
     "navigation_dashboard": [
         "go to dashboard", "open dashboard", "take me to dashboard",

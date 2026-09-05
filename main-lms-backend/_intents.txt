@@ -1,0 +1,7 @@
+'How do I login?' -> 'platform_help'
+'take me to features section' -> 'general'
+'turn on dark mode' -> 'general'
+'change language to hindi' -> 'general'
+'can u take me to admin portal' -> 'general'
+'change to contact tab' -> 'general'
+'take me to about section' -> 'general'

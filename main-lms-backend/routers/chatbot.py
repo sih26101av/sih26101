@@ -125,15 +125,25 @@ def detect_language(text: str) -> str:
 # =============================================================================
 
 _INTENTS = {
-    "greeting":       r'\b(hi|hello|hey|namaste|namaskar|hie|good\s*(morning|evening|afternoon)|sup)\b',
-    "skill_gaps":     r'\b(gap|gaps|skill\s*gap|missing|weak|improve|kya\s*gap|kitna\s*gap|deficiency|lacking|kahan\s*weak)\b',
-    "recommend":      r'\b(recommend|suggest|course|courses|kya\s*padhu|kya\s*lu|kya\s*seekhu|path|pathway|next|start|begin|enroll|kaunsa|which)\b',
-    "progress":       r'\b(progress|how\s*am\s*i|doing|status|achievement|score|result|kitna\s*seekha|kahan\s*tak)\b',
-    "statistics":     r'\b(gdp|cpi|wpi|sampling|national\s*accounts|sna|frac|nsso|plfs|census|econometrics|regression|time\s*series|price\s*index)\b',
-    "platform_help":  r'\b(how\s*to|kaise\s*karu|navigate|use|igot|platform|login|enroll|karmayogi|where\s*can\s*i|help|assist)\b',
-    "hindi_greeting": r'\b(namaste|namaskar|pranam|kaise\s*(ho|hain)|sab\s*(theek|thik))\b',
-    "farewell":       r'\b(bye|goodbye|alvida|shukriya|thanks|thank\s*you|dhanyavad|dhanyabad|ok\s*bye|acha\s*bye)\b',
-    "motivation":     r'\b(motivat|difficult|hard|tough|mushkil|give\s*up|hopeless|boring|struggle)\b',
+    "greeting":            r'\b(hi|hello|hey|namaste|namaskar|hie|good\s*(morning|evening|afternoon)|sup)\b',
+    "skill_gaps":          r'\b(gap|gaps|skill\s*gap|missing|weak|improve|kya\s*gap|kitna\s*gap|deficiency|lacking|kahan\s*weak)\b',
+    "recommend":           r'\b(recommend|suggest|course|courses|kya\s*padhu|kya\s*lu|kya\s*seekhu|pathway|next|start|begin|enroll|kaunsa)\b',
+    "progress":            r'\b(progress|how\s*am\s*i|doing|achievement|score|result|kitna\s*seekha|kahan\s*tak)\b',
+    "statistics":          r'\b(gdp|cpi|wpi|sampling|national\s*accounts|sna|frac|nsso|plfs|census|econometrics|regression|time\s*series|price\s*index)\b',
+    # Navigation — specific patterns first, before platform_help catches them
+    "navigation_login":    r'\b(login|log\s*in|sign\s*in|signin|admin\s*portal|admin\s*login|kaise\s*login|login\s*karna)\b',
+    "navigation_features": r'\b(feature|features|capabilities|feature\s*section|show\s*feature|scroll\s*to\s*feature)\b',
+    "navigation_about":    r'\b(about\s*section|about\s*us|about\s*page|about\s*mospi|about\s*platform|scroll\s*to\s*about|take.*about)\b',
+    "navigation_contact":  r'\b(contact|contact\s*section|reach\s*out|contact\s*us|contact\s*tab)\b',
+    "navigation_my_courses": r'\b(my\s*courses|enrolled\s*courses|course\s*list|course\s*tab)\b',
+    "navigation_progress": r'\b(progress\s*tab|show.*progress|radar\s*chart|achievement\s*history)\b',
+    "navigation_dashboard": r'\b(dashboard\s*tab|go\s*to\s*dashboard|open\s*dashboard)\b',
+    # UI actions (dark mode, language) — bot can't do these but should explain
+    "ui_action_request":   r'\b(dark\s*mode|light\s*mode|theme|toggle\s*theme|change.*language|switch.*language|language.*hindi|hindi.*language|language.*english|font\s*size|accessibility)\b',
+    "platform_help":       r'\b(how\s*to|kaise\s*karu|navigate|use|igot|platform|karmayogi|where\s*can\s*i|help|assist|what\s*can)\b',
+    "hindi_greeting":      r'\b(namaste|namaskar|pranam|kaise\s*(ho|hain)|sab\s*(theek|thik))\b',
+    "farewell":            r'\b(bye|goodbye|alvida|shukriya|thanks|thank\s*you|dhanyavad|dhanyabad|ok\s*bye|acha\s*bye)\b',
+    "motivation":          r'\b(motivat|difficult|hard|tough|mushkil|give\s*up|hopeless|boring|struggle)\b',
 }
 
 def detect_intent_keyword(text: str) -> str:
@@ -860,32 +870,82 @@ def _handle_semantic(
             f"Find it on the **Dashboard tab → AI Recommended Learning Pathway** section."
         )
 
+    # ── UI Action Request (dark mode / language / theme) ──────────────────────
+    if intent == "ui_action_request":
+        msg_l = req.message.lower()
+        if "dark" in msg_l or "light" in msg_l or "theme" in msg_l:
+            if lang == "hi":
+                return (
+                    "Dark/Light mode toggle ke liye — top navigation bar mein right side par "
+                    "🌙 / ☀️ **moon/sun icon** par click karein.\n\n"
+                    "Main directly theme nahi badal sakta, "
+                    "lekin woh button aapke page ko instantly switch karta hai!"
+                )
+            return (
+                "To toggle **Dark / Light mode** — click the 🌙 / ☀️ **moon/sun icon** "
+                "in the top-right of the navigation bar.\n\n"
+                "I can't change the theme directly, but that button switches it instantly!"
+            )
+        # Language toggle
+        if lang == "hi":
+            return (
+                "Website ki **language change** karne ke liye — navbar mein "
+                "**Eng | हिंदी** toggle button par click karein.\n\n"
+                "Main directly language nahi badal sakta, "
+                "lekin woh button page ko instantly switch karta hai."
+            )
+        return (
+            "To **change the website language** — click the **Eng | हिंदी** toggle "
+            "in the top navigation bar.\n\n"
+            "I can't change it directly, but that button switches it instantly!"
+        )
+
     # ── Farewell ─────────────────────────────────────────────────────────────
     if intent == "farewell":
         if lang == "hi":
             return "Alvida! 🙏 Aapki learning mein safalta ki shubhkamanayein. **Jai Hind!** 🇮🇳"
         return "Goodbye! 👋 Best of luck with your learning journey. **Jai Hind!** 🇮🇳"
 
-    # ── General / Unknown ────────────────────────────────────────────────────
+    # ── Unknown / Out-of-scope (Semantic fallback) ────────────────────────────
+    if ctx == "home":
+        if lang == "hi":
+            return (
+                "Maafi chahta hoon, main is sawaal ka jawab nahi de sakta. 🙏\n\n"
+                "Main madad kar sakta hoon:\n"
+                "• Platform features ke baare mein\n"
+                "• MoSPI / iGOT ke baare mein\n"
+                "• Login karne mein\n"
+                "• Kisi section par scroll karne mein\n\n"
+                "Kuch aur poochna chahte hain?"
+            )
+        return (
+            "I'm not sure I have an answer for that. 🤔\n\n"
+            "On this page I can help with:\n"
+            "• Platform features and capabilities\n"
+            "• About MoSPI and iGOT Karmayogi\n"
+            "• How to login as an official\n"
+            "• Scrolling to any section\n\n"
+            "Try: *\"show me features\"* or *\"how do I login?\"*"
+        )
     if lang == "hi":
-        return random.choice([
-            f"Yeh ek interesting sawaal hai! Main aapki madad kar sakta hoon:\n"
-            f"• **Skill Gaps** — 'mera gap dikhao'\n"
-            f"• **Courses** — 'course suggest karo'\n"
-            f"• **Progress** — 'meri progress dikhao'\n"
-            f"• **Navigation** — 'dashboard kahan hai', 'quiz kaise generate karu'\n"
-            f"• **Statistics** — 'GDP kya hai', 'CPI explain karo'\n\n"
-            f"Kya aap apna sawaal aur clearly pooch sakte hain?",
-        ])
-    return random.choice([
-        f"Great question! I can help with:\n"
-        f"• **Skill Gaps** — 'show my gaps'\n"
-        f"• **Courses** — 'recommend me a course'\n"
-        f"• **Progress** — 'show my progress'\n"
-        f"• **Navigation** — 'where is the dashboard', 'how to generate a quiz'\n"
-        f"• **Statistics** — 'explain GDP', 'what is CPI'\n\n"
-        f"Could you rephrase your question?",
-    ])
+        return (
+            "Main is sawaal ka jawab nahi de sakta. 🙏\n\n"
+            "Main madad kar sakta hoon:\n"
+            "• Skill gaps aur competency analysis\n"
+            "• Course recommendations\n"
+            "• Platform navigation (Dashboard, My Courses, Progress)\n"
+            "• Statistics topics (GDP, CPI, FRAC, Sampling)\n\n"
+            "Kya aap inmein se kuch poochhna chahte hain?"
+        )
+    return (
+        "I'm not sure I understand that. 🤔\n\n"
+        "I can help with:\n"
+        "• Your skill gaps and competency levels\n"
+        "• Course recommendations and learning pathway\n"
+        "• Platform navigation (Dashboard, My Courses, Progress)\n"
+        "• Statistics concepts (GDP, CPI, FRAC, Sampling)\n\n"
+        "Try: *\"What are my skill gaps?\"* or *\"take me to My Courses\"*"
+    )
 
 
 # =============================================================================
@@ -968,7 +1028,18 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
             return f"Progress: ✅ {met}/{total} competencies target par ({pct}%)."
         return f"Progress: ✅ {met}/{total} competencies at target ({pct}%)."
 
-    # -- Navigation: Dashboard Tabs --------------------------------------------
+    # -- Navigation intents (Tier 2 template) ----------------------------------
+    if intent in ("navigation_login", "navigation_features", "navigation_about",
+                  "navigation_contact", "navigation_home", "navigation_my_courses",
+                  "navigation_progress", "navigation_dashboard", "navigation_ai_quiz"):
+        # Reuse the semantic handlers (they don’t rely on profile data)
+        return _handle_semantic(intent, req, lang)
+
+    # -- UI action (dark mode / language) -------------------------------------
+    if intent == "ui_action_request":
+        return _handle_semantic(intent, req, lang)
+
+    # -- Navigation: Dashboard Tabs (legacy — kept for template engine direct) --
     if intent == "navigation_dashboard":
         return "Taking you to the **Dashboard** tab! 📊" if lang == "en" else "Dashboard tab par le ja raha hoon! 📊"
 
