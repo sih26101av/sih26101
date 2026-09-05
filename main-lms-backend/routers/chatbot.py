@@ -342,10 +342,24 @@ def _handle_semantic(
             "Happy to assist! Is there anything else I can help with? \U0001f916",
         ])
 
-    # ── User Identity ────────────────────────────────────────────────────────────
+    # ── User Identity ─────────────────────────────────────────────────────────
     if intent == "user_identity":
+        # On homepage: visitor is not logged in, redirect to login
+        if ctx == "home":
+            if lang == "hi":
+                return (
+                    "🔐 Aapka naam aur employee ID dekhne ke liye **login karna hoga**.\n\n"
+                    "Page ke top par **Official Login** button click karein — "
+                    "ya main aapke liye login dialog khol sakta hoon."
+                )
+            return (
+                "🔐 Your personal details (name, employee ID) are only visible **after you log in**.\n\n"
+                "Click the **Official Login** button at the top of the page, "
+                "or I can open the login dialog for you."
+            )
+        # Logged-in dashboard user
         name_line = f"Full Name: {full_name}" if full_name else "Full Name: shown in Profile Header (top of every tab)"
-        id_line   = f"Gov ID / Employee ID: {gov_id}" if gov_id else "Gov ID / Employee ID: shown next to the User icon in Profile Header"
+        id_line   = f"Gov ID / Employee ID: {gov_id}" if gov_id else "Gov ID / Employee ID: shown in Profile Header"
         if lang == "hi":
             return (
                 f"👤 **{name_line}**\n"
@@ -890,6 +904,27 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
     msg_lower = req.message.lower()
 
     if intent in ("greeting", "hindi_greeting"):
+        is_home = (req.context or "dashboard") == "home"
+        if is_home:
+            if lang == "hi":
+                return (
+                    "Namaste! 🙏 Main **Gyan** hoon — MoSPI ka AI Assistant.\n\n"
+                    "Main aapko in topics mein madad kar sakta hoon:\n"
+                    "• Platform ke features aur sections\n"
+                    "• MoSPI aur iGOT Karmayogi ke baare mein\n"
+                    "• Login mein guide karna\n"
+                    "• Kisi bhi section par le jaana\n\n"
+                    "Aaj main aapki kya madad kar sakta hoon? 🎓"
+                )
+            return (
+                "Hello! 👋 I'm **Gyan**, MoSPI's AI Assistant.\n\n"
+                "I can help you with:\n"
+                "• Features & capabilities of the Skill Intelligence Platform\n"
+                "• About MoSPI and iGOT Karmayogi\n"
+                "• How to login as an official\n"
+                "• Navigate to any section on this page\n\n"
+                "What would you like to know? 🎓"
+            )
         if lang == "hi":
             return (
                 f"Namaste! 🙏 Main Gyan hoon — aapka MoSPI AI Training Assistant.\n\n"
@@ -1007,14 +1042,48 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
         if kw in msg_lower:
             return f"You asked about **{label}**. Please ask Gyan via the AI-powered tier for a detailed answer."
 
-    fallback_en = (
-        f"I'm Gyan — ask me about your skill gaps, courses, platform navigation, "
-        f"or statistics topics (GDP, CPI, FRAC, Sampling). 🎓"
+    # ── Unknown / Out-of-scope query ──────────────────────────────────────────
+    if ctx == "home":
+        if lang == "hi":
+            return (
+                "Maafi chahta hoon, main is sawaal ka jawab dene mein asmarth hoon. 🙏\n\n"
+                "Main aapki madad kar sakta hoon:\n"
+                "• Platform ke features smjhne mein\n"
+                "• MoSPI / iGOT ke baare mein\n"
+                "• Login karne mein\n"
+                "• Kisi section par scroll karne mein\n\n"
+                "Kuch aur poochna chahte hain?"
+            )
+        return (
+            "I'm not sure I have an answer for that. 🤔\n\n"
+            "As a public assistant, I can help with:\n"
+            "• Platform features and capabilities\n"
+            "• About MoSPI and iGOT Karmayogi\n"
+            "• How to login as an official\n"
+            "• Scrolling to any section on this page\n\n"
+            "Try asking: *\"What are the features?\"* or *\"take me to About\"*"
+        )
+    # Dashboard fallback
+    if lang == "hi":
+        return (
+            "Main is sawaal ka jawab nahi de sakta. 🙏\n\n"
+            "Main aapki madad kar sakta hoon inn topics mein:\n"
+            "• Skill gaps aur competency analysis\n"
+            "• Course recommendations\n"
+            "• Platform navigation (Dashboard, My Courses, Progress)\n"
+            "• Statistics topics (GDP, CPI, FRAC, Sampling)\n\n"
+            "Kya aap inmein se kuch poochhna chahte hain?"
+        )
+    return (
+        "I'm not sure I understand that query. 🤔\n\n"
+        "I can help you with:\n"
+        "• Your skill gaps and competency levels\n"
+        "• Course recommendations and learning pathway\n"
+        "• Platform navigation (Dashboard, My Courses, Progress tabs)\n"
+        "• Statistics concepts (GDP, CPI, FRAC framework, Sampling)\n\n"
+        "Try asking: *\"What are my skill gaps?\"* or *\"Which course should I take first?\"*"
     )
-    fallback_hi = (
-        f"Main Gyan hoon — apne skill gaps, courses, ya platform navigation ke baare mein poochiye. 🎓"
-    )
-    return fallback_hi if lang == "hi" else fallback_en
+
 
 
 # =============================================================================
@@ -1039,7 +1108,8 @@ async def chat(req: ChatRequest):
       - NOT called from here in production
       - Search REVERT_OLLAMA to re-enable
     """
-    lang   = detect_language(req.message)
+    lang = detect_language(req.message)
+    ctx  = req.context or "dashboard"   # "home" | "dashboard"
 
     # ── TIER 1: Semantic Engine ───────────────────────────────────────────────
     try:
