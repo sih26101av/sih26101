@@ -407,6 +407,9 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                 };
                 const target = tabMap[action.target];
                 if (target) setActiveTab(target as TabType);
+              } else if (action.type === 'redirect') {
+                // navigate() from react-router-dom — goes to landing page
+                navigate(action.target);
               }
             }}
           />

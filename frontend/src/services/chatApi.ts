@@ -23,8 +23,8 @@ export interface ChatMessage {
 }
 
 export interface NavigateAction {
-  type: 'scroll' | 'tab' | 'modal';
-  target: string;          // e.g. '#features', 'my-courses', 'login'
+  type: 'scroll' | 'tab' | 'modal' | 'redirect';
+  target: string;          // e.g. '#features', 'my-courses', 'login', '/'
   label: string;           // human-readable, e.g. 'Features section'
 }
 

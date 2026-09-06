@@ -387,8 +387,11 @@ INTENT_CORPUS: dict[str, list[str]] = {
     # ── Homepage Section Navigation ────────────────────────────────────────────
     "navigation_home": [
         "go to top", "scroll to top", "home section", "go home",
-        "take me to home", "back to top", "top of page",
-        "homepage", "main page dikhao",
+        "take me to home", "back to top", "top of page", "homepage",
+        "main page dikhao", "go to home page", "take me to home page",
+        "go to the home page", "take me to the home page",
+        "go to landing page", "back to landing page", "home page dikhao",
+        "wapas home par jao", "home par le jao",
     ],
 
     "navigation_features": [
@@ -415,6 +418,18 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "how to login", "login page", "official login",
         "login karna hai", "sign in karna hai", "login kahan hai",
         "login as official", "admin portal", "admin login",
+    ],
+
+    # ── Out-of-scope: off-topic questions the bot cannot answer ───────────────
+    "out_of_scope": [
+        "who is shahrukh khan", "who is salman khan", "who is amitabh",
+        "who is the prime minister", "who is modi", "who is obama",
+        "tell me about cricket", "who won IPL", "latest news",
+        "what is the weather", "tell me a joke", "sing a song",
+        "write a poem", "stock market today", "bitcoin price",
+        "who invented the internet", "when did world war happen",
+        "what is the capital of france", "tell me something funny",
+        "yaar kaisi hai zindagi", "cricket khabar", "aaj ka mausam",
     ],
 }
 

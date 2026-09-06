@@ -1,0 +1,5 @@
+'take me to the home page' -> 'general'
+'go to the home page' -> 'general'
+'who is shahrukh khan' -> 'general'
+'who is salman' -> 'general'
+'turn on dark mode' -> 'ui_action_request'

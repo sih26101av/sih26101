@@ -135,6 +135,7 @@ _INTENTS = {
     "navigation_features": r'\b(feature|features|capabilities|feature\s*section|show\s*feature|scroll\s*to\s*feature)\b',
     "navigation_about":    r'\b(about\s*section|about\s*us|about\s*page|about\s*mospi|about\s*platform|scroll\s*to\s*about|take.*about)\b',
     "navigation_contact":  r'\b(contact|contact\s*section|reach\s*out|contact\s*us|contact\s*tab)\b',
+    "navigation_home":     r'\b(home\s*page|landing\s*page|go\s*(to\s*)?home|take.*home|back\s*(to\s*)?home|homepage|scroll\s*to\s*top|back\s*to\s*top|top\s*of\s*page|ghar\s*jao)\b',
     "navigation_my_courses": r'\b(my\s*courses|enrolled\s*courses|course\s*list|course\s*tab)\b',
     "navigation_progress": r'\b(progress\s*tab|show.*progress|radar\s*chart|achievement\s*history)\b',
     "navigation_dashboard": r'\b(dashboard\s*tab|go\s*to\s*dashboard|open\s*dashboard)\b',
@@ -865,9 +866,27 @@ def _handle_semantic(
             f"I understand — balancing work and upskilling is genuinely challenging. 💪\n\n"
             f"Remember: **India's statistical system depends on dedicated officials like you.** "
             f"Your data — from GDP estimates to poverty measurement — impacts millions of lives.\n\n"
-            f"Just **30 minutes a day** will show results within weeks. "
-            f"Start with **{first_rec}**! 🚀\n\n"
-            f"Find it on the **Dashboard tab → AI Recommended Learning Pathway** section."
+                f"Just **30 minutes a day** will show results within weeks. "
+                f"Start with **{first_rec}**! 🚀\n\n"
+                f"Find it on the **Dashboard tab → AI Recommended Learning Pathway** section."
+            )
+
+    # ── Out-of-scope / Off-topic ────────────────────────────────────────
+    if intent == "out_of_scope":
+        if lang == "hi":
+            return (
+                "Yeh sawaal meri knowledge ke bahar hai. 🙏\n\n"
+                "Main ek **MoSPI training assistant** hoon — "
+                "main sirf government statistical training, skill gaps, "
+                "courses, aur platform navigation ke baare mein baat kar sakta hoon.\n\n"
+                "Kya aap apne training se related kuch poochna chahte hain?"
+            )
+        return (
+            "That's outside my area of knowledge. 🤔\n\n"
+            "I'm a **MoSPI training assistant** — I can only help with "
+            "government statistical training, skill gaps, courses, "
+            "and platform navigation.\n\n"
+            "Is there something training-related I can help you with?"
         )
 
     # ── UI Action Request (dark mode / language / theme) ──────────────────────
@@ -1052,8 +1071,15 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
     if intent == "navigation_ai_quiz":
         return "Taking you to the **AI Quiz Generator** on the Dashboard! Upload a PDF to generate your custom quiz. 🤖" if lang == "en" else "AI Quiz Generator par le ja raha hoon! PDF upload karein apna quiz banane ke liye. 🤖"
 
-    # -- Navigation: Homepage Sections -----------------------------------------
+    # -- Navigation: Homepage Sections / Landing page --------------------------
     if intent == "navigation_home":
+        if ctx == "dashboard":
+            # On the dashboard, "go to home page" means navigate to landing page
+            return (
+                "Taking you back to the **Landing Page**! 🏠"
+                if lang == "en" else
+                "Aapko **Landing Page** par wapas le ja raha hoon! 🏠"
+            )
         return "Scrolling back to the **top** of the page! 🏠" if lang == "en" else "Page ke top par le ja raha hoon! 🏠"
 
     if intent == "navigation_features":
@@ -1193,8 +1219,16 @@ async def chat(req: ChatRequest):
                 intent, confidence, req.message
             )
 
-            # Confidence threshold: use semantic handler if ≥ 0.40
-            # If below, still try it but note low confidence
+            # ── Confidence threshold: reject low-confidence semantic matches ───
+            # If confidence < 0.45 AND it's NOT a clear navigation/greeting intent,
+            # fall through to Tier-2 keyword engine for a more accurate response.
+            CONFIDENT_ALWAYS = {"greeting", "hindi_greeting", "farewell", "gratitude",
+                                 "how_are_you", "bot_identity"}
+            if confidence < 0.45 and intent not in CONFIDENT_ALWAYS:
+                logger.info("[Gyan] Low confidence %.3f for '%s' → Tier-2 keyword",
+                            confidence, intent)
+                raise ValueError("low_confidence")   # jumps to Tier-2
+
             reply = _handle_semantic(intent, req, lang)
 
             # Build navigate_action for navigation intents
@@ -1210,12 +1244,13 @@ async def chat(req: ChatRequest):
                 }
                 nav_action = _home_nav_map.get(intent)
             else:
-                # Dashboard tab targets
+                # Dashboard tab targets (navigation_home goes back to landing page)
                 _dash_nav_map = {
-                    "navigation_my_courses":  {"type": "tab", "target": "my-courses", "label": "My Courses tab"},
-                    "navigation_progress":    {"type": "tab", "target": "progress",   "label": "Progress tab"},
-                    "navigation_dashboard":   {"type": "tab", "target": "dashboard",  "label": "Dashboard tab"},
-                    "navigation_ai_quiz":     {"type": "tab", "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
+                    "navigation_my_courses":  {"type": "tab",      "target": "my-courses", "label": "My Courses tab"},
+                    "navigation_progress":    {"type": "tab",      "target": "progress",   "label": "Progress tab"},
+                    "navigation_dashboard":   {"type": "tab",      "target": "dashboard",  "label": "Dashboard tab"},
+                    "navigation_ai_quiz":     {"type": "tab",      "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
+                    "navigation_home":        {"type": "redirect", "target": "/",          "label": "Landing Page"},
                 }
                 nav_action = _dash_nav_map.get(intent)
 
