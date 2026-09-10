@@ -186,3 +186,38 @@ class EvidenceLog(Base):
 
     user = relationship("BaseUser")
     competency = relationship("Competency")
+
+
+# ── Karma Points System ────────────────────────────────────────────────────────
+
+class KarmaEventType(enum.Enum):
+    SELF_REGISTRATION = "SELF_REGISTRATION"
+    FIRST_ENROLLMENT  = "FIRST_ENROLLMENT"
+    COURSE_COMPLETION  = "COURSE_COMPLETION"
+    ASSESSMENT_PASSED  = "ASSESSMENT_PASSED"
+    COURSE_RATED       = "COURSE_RATED"
+    CBP_BONUS          = "CBP_BONUS"
+
+
+class KarmaEvent(Base):
+    """Immutable ledger entry — one row per karma award."""
+    __tablename__ = "karma_events"
+
+    eventId       = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId        = Column(String, nullable=False, index=True)
+    eventType     = Column(Enum(KarmaEventType), nullable=False)
+    pointsAwarded = Column(Integer, nullable=False, default=0)
+    courseId      = Column(String, nullable=True)
+    isCbp         = Column(Boolean, nullable=False, default=False)
+    createdAt     = Column(DateTime, default=datetime.utcnow)
+
+
+class KarmaMonthlyUsage(Base):
+    """Tracks non-CBP course completions per user per calendar month (cap = 4)."""
+    __tablename__ = "karma_monthly_usage"
+
+    id                = Column(Integer, primary_key=True, autoincrement=True)
+    userId            = Column(String, nullable=False, index=True)
+    year              = Column(Integer, nullable=False)
+    month             = Column(Integer, nullable=False)
+    nonCbpCompletions = Column(Integer, nullable=False, default=0)

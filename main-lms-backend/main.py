@@ -12,7 +12,7 @@ Responsibilities
 
 On startup: creates users_auth table in auth.db (idempotent).
 """
-from main import _rec_engine
+
 from routers import competency
 from services.recommendation_service import HybridRecommendationEngine
 from fastapi import Depends, FastAPI
