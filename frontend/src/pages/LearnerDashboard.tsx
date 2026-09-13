@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import {
-  LayoutDashboard, BookOpen, TrendingUp, LogOut, AlertTriangle,
+  LogOut, AlertTriangle,
   Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot,
   Award, Upload, FileText
 } from "lucide-react";
@@ -119,9 +119,9 @@ type TabType = "dashboard" | "my-courses" | "progress";
 
 const Topbar: React.FC<{
   userName?: string;
-  activeTab: TabType;
+  activeTab?: TabType;
   onTabChange: (tab: TabType) => void;
-}> = ({ userName, activeTab, onTabChange }) => {
+}> = ({ userName, onTabChange }) => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   return (
@@ -145,6 +145,11 @@ const Topbar: React.FC<{
 
       {/* Right Actions */}
       <div className="flex items-center gap-3 text-white">
+        {userName && (
+          <span className="text-xs font-semibold px-2.5 py-1 bg-white/10 rounded-full hidden sm:inline-block">
+            {userName}
+          </span>
+        )}
         <button
           onClick={() => navigate("/")}
           className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
@@ -162,10 +167,7 @@ const Topbar: React.FC<{
         <button className="p-1.5 hover:bg-white/10 rounded-full transition-colors" title="Search">
           <Search size={18} />
         </button>
-        <button className="w-8 h-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center hover:bg-white transition-colors relative">
-          <div className="w-[11px] h-[11px] border-[1.5px] border-current rounded-full absolute top-[6px]"></div>
-          <div className="w-[18px] h-[8px] border-[1.5px] border-current rounded-t-full absolute bottom-[4px]"></div>
-        </button>
+        <TopbarSignOut />
       </div>
     </nav>
   );

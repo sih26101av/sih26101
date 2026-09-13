@@ -186,3 +186,45 @@ class EvidenceLog(Base):
 
     user = relationship("BaseUser")
     competency = relationship("Competency")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KARMA / GAMIFICATION MODELS — iGOT Karmayogi Points Layer
+# Supports the Observer pattern: AssessmentPassedEvent → KarmaEngine → KarmaEvent
+# ─────────────────────────────────────────────────────────────────────────────
+
+class KarmaEventType(enum.Enum):
+    SELF_REGISTRATION = "SELF_REGISTRATION"
+    FIRST_ENROLLMENT  = "FIRST_ENROLLMENT"
+    COURSE_COMPLETION = "COURSE_COMPLETION"
+    ASSESSMENT_PASSED = "ASSESSMENT_PASSED"
+    COURSE_RATED      = "COURSE_RATED"
+    CBP_BONUS         = "CBP_BONUS"
+
+
+class KarmaEvent(Base):
+    """Immutable ledger entry — one row per karma point award event."""
+    __tablename__ = "karma_events"
+
+    eventId       = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId        = Column(String, ForeignKey("users.uuid"), nullable=False)
+    eventType     = Column(Enum(KarmaEventType), nullable=False)
+    pointsAwarded = Column(Integer, nullable=False, default=0)
+    courseId      = Column(String, nullable=True)   # optional course reference
+    isCbp         = Column(Boolean, default=False)  # True if CBP-mandated course
+    createdAt     = Column(DateTime, default=datetime.utcnow)
+
+
+class KarmaMonthlyUsage(Base):
+    """
+    Rolling monthly counter for non-CBP COURSE_COMPLETION events.
+    Enforces the 4-completions-per-calendar-month cap.
+    """
+    __tablename__ = "karma_monthly_usage"
+
+    id                = Column(Integer, primary_key=True, autoincrement=True)
+    userId            = Column(String, ForeignKey("users.uuid"), nullable=False)
+    year              = Column(Integer, nullable=False)
+    month             = Column(Integer, nullable=False)   # 1–12
+    nonCbpCompletions = Column(Integer, nullable=False, default=0)
+

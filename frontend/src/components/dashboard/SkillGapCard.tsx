@@ -3,17 +3,10 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, Shield, Users, Lightbulb, LucideIcon, Hexagon, AlertCircle } from "lucide-react";
+import { Target, CheckCircle2, AlertCircle } from "lucide-react";
 import type { SkillGapEntry, CompetencyDomain } from "../../types/domain";
 
 interface SkillGapCardProps { skillGaps: SkillGapEntry[]; }
-
-const DOMAIN_ICONS: Record<CompetencyDomain, LucideIcon> = {
-  Statistical: Users,
-  Governance: Shield,
-  Technical: Lightbulb,
-  Leadership: Target,
-};
 
 const DOMAIN_BADGE: Record<string, string> = {
   Statistical: "bg-[#dbeafe] dark:bg-blue-900/40 text-[#2563eb] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-800",
@@ -51,7 +44,7 @@ const TargetRow: React.FC<{ target: number }> = ({ target }) => (
   </div>
 );
 
-const ExactGlassGauge: React.FC<{ target: number; domain: CompetencyDomain }> = ({ target, domain }) => {
+const ExactGlassGauge: React.FC<{ target: number; domain?: CompetencyDomain }> = ({ target }) => {
   const getSlicePath = (startDeg: number, endDeg: number) => {
     const or = 76, ir = 54, cx = 100, cy = 100;
     const polar = (r: number, deg: number) => {
@@ -91,14 +84,34 @@ const ExactGlassGauge: React.FC<{ target: number; domain: CompetencyDomain }> = 
   );
 };
 
+const CONFIDENCE_CONFIG = {
+  HIGH:   { label: 'Verified',   bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+  MEDIUM: { label: 'Documented', bg: 'bg-amber-100 dark:bg-amber-900/30',   text: 'text-amber-700 dark:text-amber-400',   dot: 'bg-amber-500'   },
+  LOW:    { label: 'Inferred',   bg: 'bg-slate-100 dark:bg-slate-700/50',   text: 'text-slate-600 dark:text-slate-400',   dot: 'bg-slate-400'   },
+};
+
+const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color: string }> = ({ label, value, max = 5, color }) => {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div className="flex items-center gap-2 text-[10px]">
+      <span className="w-[72px] text-slate-400 dark:text-slate-500 font-medium shrink-0">{label}</span>
+      <div className="flex-1 h-[5px] bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-300 ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-[24px] text-right text-slate-500 dark:text-slate-400 font-mono">{value.toFixed(1)}</span>
+    </div>
+  );
+};
+
 const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
-  const { competency, currentLevel, requiredLevel, gap, isMandatory, verificationSource } = entry;
+  const { competency, currentLevel, requiredLevel, gap, isMandatory, confidence, rawScore, evidence } = entry;
   const hasGap = gap > 0;
   const badge = DOMAIN_BADGE[competency.domain] ?? DOMAIN_BADGE.Statistical;
+  const conf = CONFIDENCE_CONFIG[confidence ?? 'LOW'];
+  const [showEvidence, setShowEvidence] = React.useState(false);
 
   return (
     <div className="relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-slate-800 dark:border-slate-700/50 shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
-
 
       <div className="flex-1 relative z-10 w-full">
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -110,6 +123,11 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
               &amp; Mandatory
             </span>
           )}
+          {/* Confidence badge */}
+          <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${conf.bg} ${conf.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${conf.dot}`} />
+            {conf.label} Evidence
+          </span>
         </div>
 
         <h3 className="text-slate-900 dark:text-white font-bold text-[15px] leading-snug mb-1.5 transition-colors duration-300">
@@ -117,10 +135,39 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
         </h3>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mb-1 transition-colors duration-300">Current Level</p>
         <PipStrip current={currentLevel} />
-        <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-medium transition-colors duration-300">
-          <CheckCircle2 size={12} className="text-emerald-500 dark:text-emerald-400" />
-          <span>Verified via {verificationSource}</span>
-        </div>
+
+        {/* b_k raw score */}
+        {rawScore !== undefined && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-[5px] bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden max-w-[140px]">
+              <div
+                className="h-full rounded-full bg-blue-400 dark:bg-blue-500 transition-all duration-500"
+                style={{ width: `${(rawScore / 5) * 100}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">b_k = {rawScore.toFixed(2)}/5</span>
+          </div>
+        )}
+
+        {/* Evidence breakdown toggle */}
+        {evidence && (
+          <button
+            onClick={() => setShowEvidence(v => !v)}
+            className="mt-2 text-[10px] text-blue-500 dark:text-blue-400 font-semibold hover:underline"
+          >
+            {showEvidence ? '▲ Hide' : '▼ Evidence breakdown'}
+          </button>
+        )}
+        {showEvidence && evidence && (
+          <div className="mt-2 space-y-1 pr-4">
+            <EvidenceBar label="Verified"    value={evidence.verified}    color="bg-emerald-400 dark:bg-emerald-500" />
+            <EvidenceBar label="Documented"  value={evidence.documented}  color="bg-amber-400 dark:bg-amber-500" />
+            <EvidenceBar label="Tenure"      value={evidence.tenure}      color="bg-indigo-400 dark:bg-indigo-500" />
+            <EvidenceBar label="Education"   value={evidence.education}   color="bg-purple-400 dark:bg-purple-500" />
+            <EvidenceBar label="Seniority"   value={evidence.seniority}   color="bg-sky-400 dark:bg-sky-500" />
+            <EvidenceBar label="Self-Report" value={evidence.selfReport}  color="bg-rose-400 dark:bg-rose-500" />
+          </div>
+        )}
       </div>
 
       <div className="flex items-end gap-6 relative z-10">
@@ -150,6 +197,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
   );
 };
 
+
 const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
   const withGaps = skillGaps.filter(e => e.gap > 0);
   const met = skillGaps.filter(e => e.gap === 0);
@@ -162,7 +210,7 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
             Competency &amp; Skill-Gap Analysis
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 transition-colors duration-300">
-            Computed by SkillGapEngine — benchmarked against Job Role
+            6-term formula: Verified · Documented · Tenure · Education · Seniority · Self-Report
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">

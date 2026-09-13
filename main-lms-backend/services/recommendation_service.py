@@ -295,14 +295,21 @@ class HybridRecommendationEngine:
         """
         Stage 1 + Stage 2 for a single competency gap.
         Returns list of (catalog_idx, rrf_score) sorted by rrf_score DESC.
+
+        Fallback: if Stage 1 FRAC-tag filter finds no tagged courses,
+        degrades to a full-corpus semantic search (FAISS only, no BM25 boost).
+        This ensures users always receive recommendations.
         """
         # Stage 1: FRAC-tag filter
         candidate_indices = self._comp_index.get(gap.competencyId, [])
-        if not candidate_indices:
-            logger.debug("[RecEngine] No courses tagged for comp %s", gap.competencyId)
-            return []
 
-        candidate_set = set(candidate_indices)
+        # ── Semantic-only fallback ─────────────────────────────────────────
+        semantic_fallback = len(candidate_indices) == 0
+        if semantic_fallback:
+            logger.info(
+                "[RecEngine] No FRAC-tagged courses for '%s' (%s) — using full semantic fallback.",
+                gap.competencyName, gap.competencyId,
+            )
 
         # Stage 2: Build query anchor from official FRAC description
         frac_meta   = self._frac_map.get(gap.competencyId, {})
@@ -316,6 +323,23 @@ class HybridRecommendationEngine:
         q_emb = self._embedder.encode(
             [query_text], normalize_embeddings=True, show_progress_bar=False
         ).astype("float32")
+
+        if semantic_fallback:
+            # Full corpus FAISS search — return top_k directly
+            n_search = min(len(self._catalog), top_k)
+            _scores, dense_indices_raw = self._faiss_index.search(q_emb, n_search)
+            results: List[Tuple[int, float]] = []
+            for idx, score in zip(dense_indices_raw[0], _scores[0]):
+                if idx >= 0:
+                    rrf = float(score)  # use raw cosine score as proxy
+                    if self._catalog[idx].is_tpac:
+                        rrf *= _NSSTA_BOOST
+                    results.append((int(idx), rrf))
+            return results
+
+        # Normal path — Stage 1 candidates exist
+        candidate_set = set(candidate_indices)
+
         # Search across whole corpus, then filter to candidates
         n_search = min(len(self._catalog), max(top_k * 4, 50))
         _scores, dense_indices = self._faiss_index.search(q_emb, n_search)

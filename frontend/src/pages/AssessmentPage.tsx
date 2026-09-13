@@ -31,9 +31,10 @@ const AssessmentPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [historyData] = useState([
-    { id: 1, date: 'Oct 26, 2023', title: 'Biology_Ch3_Lecture.mp4', type: 'Video', score: '90%', action: 'Review' },
-    { id: 2, date: 'Oct 26, 2023', title: 'Cell Structure Formats.mp4', type: 'PDF', score: '75%', action: 'Retake' },
-    { id: 3, date: 'Oct 26, 2023', title: 'Advanced Topics.pdf', type: 'PDF', score: '82%', action: 'Review' }
+    { id: 1, date: 'Aug 26, 2026', title: 'National_Accounts_and_GDP_Estimation.mp4', type: 'Video', score: '90%', action: 'Review' },
+    { id: 2, date: 'Aug 24, 2026', title: 'Survey_Sampling_Methodology_NSSO.pdf', type: 'PDF', score: '75%', action: 'Retake' },
+    { id: 3, date: 'Aug 20, 2026', title: 'Consumer_Price_Index_Compilation_Guide.pdf', type: 'PDF', score: '85%', action: 'Review' },
+    { id: 4, date: 'Aug 15, 2026', title: 'Official_Statistics_Governance_and_FRAC.pdf', type: 'PDF', score: '92%', action: 'Review' }
   ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,6 +284,12 @@ const AssessmentPage: React.FC = () => {
                       </div>
                     )}
 
+                    {errorMsg && (
+                      <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-6 border border-red-200 dark:border-red-800/50 text-sm font-medium">
+                        {errorMsg}
+                      </div>
+                    )}
+
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <button 
                         onClick={handleGenerate}
@@ -319,21 +326,21 @@ const AssessmentPage: React.FC = () => {
                       <div className="space-y-3">
                         <div className="flex items-start gap-2">
                           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Source:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Biology_Ch3_Lecture.mp4</span>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">National_Accounts_and_GDP_Estimation.mp4</span>
                         </div>
                         <div className="flex items-start gap-2">
                           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Date:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Oct 26, 2023</span>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Aug 26, 2026</span>
                         </div>
                         <div className="flex items-start gap-2">
                           <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Topic:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Cell Structure</span>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">National Accounts & GDP Aggregates</span>
                         </div>
                       </div>
                       
                       <div className="space-y-4">
                         <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
-                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">Simplistic multiple-choice format: is.</p>
+                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">Which indicator measures total economic output in National Accounts?</p>
                           <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
                             <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500"/> Correct</div>
                             <div className="flex items-center gap-1"><div className="w-4 h-4 rounded-full border border-slate-300" /> Incorrect</div>
@@ -341,7 +348,7 @@ const AssessmentPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
-                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">Sample questions aligns the equations _______.</p>
+                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">In Gross Value Added (GVA) estimation at basic prices, net product taxes are _______.</p>
                           <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
                             <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500"/> Correct</div>
                             <div className="flex items-center gap-1"><div className="w-4 h-4 rounded-full border border-slate-300" /> Incorrect</div>

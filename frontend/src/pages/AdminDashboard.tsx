@@ -5,8 +5,8 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, ChevronDown, CheckCircle, Flame, TrendingUp, Search, Filter, SlidersHorizontal, 
-  User, AlertTriangle, Sun, Moon, RefreshCcw, Home, LogOut, KeyRound,
+  Bell, ChevronDown, CheckCircle, Search, SlidersHorizontal, 
+  User, AlertTriangle, Sun, Moon, RefreshCcw, Home, LogOut,
   LayoutDashboard, Users, BookOpen, FileText, Settings, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
@@ -125,7 +125,7 @@ const AdminDashboard: React.FC = () => {
   const { logout }                            = useAuth();
   
   // Data Hooks
-  const { roster, kpis, heatmap, isLoading, error, refetch } = useAdminData();
+  const { roster, kpis, isLoading, error, refetch } = useAdminData();
   const { skills, isLoading: isSkillsLoading, error: skillsError, refetch: refetchSkills } = useSkillsData();
   
   // State for Navigation and Search/Pagination

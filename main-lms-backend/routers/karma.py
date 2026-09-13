@@ -62,12 +62,26 @@ def _serialize_ledger(events) -> list:
     ]
 
 
+# --- Identity guard -----------------------------------------------------------
+
+def _assert_self_or_admin(user_id: str, current_user: UserAuth) -> None:
+    """
+    Raises HTTP 403 if current_user is not admin AND is accessing a different
+    user's karma data. Learners can only read/write their own records.
+    """
+    if current_user.role != "admin" and current_user.username != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own karma data.",
+        )
+
+
 # --- Routes -------------------------------------------------------------------
 
 @router.get("/learner/{user_id}/karma")
 async def get_karma_ledger(
     user_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
+    current_user: UserAuth = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -75,6 +89,8 @@ async def get_karma_ledger(
     On the very first call (empty ledger), automatically seeds karma events
     from the user's real iGOT enrollment history so the card is never blank.
     """
+    _assert_self_or_admin(user_id, current_user)
+
     # ── Auto-seed on first visit ───────────────────────────────────────────────
     existing = karma_engine.get_ledger(user_id, db, limit=1)
     if not existing:
@@ -106,7 +122,7 @@ async def get_karma_ledger(
 async def award_karma_event(
     user_id: str,
     body: KarmaEventRequest,
-    _current_user: UserAuth = Depends(get_current_user),
+    current_user: UserAuth = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -115,6 +131,8 @@ async def award_karma_event(
     enforces all iGOT rules (one-time guards, monthly cap, idempotency),
     and appends an immutable ledger entry.
     """
+    _assert_self_or_admin(user_id, current_user)
+
     try:
         event_type = KarmaEventType(body.eventType)
     except ValueError:
@@ -145,7 +163,7 @@ async def award_karma_event(
 async def claim_cbp_bonus(
     user_id: str,
     body: CbpClaimRequest,
-    _current_user: UserAuth = Depends(get_current_user),
+    current_user: UserAuth = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -153,6 +171,8 @@ async def claim_cbp_bonus(
     Idempotent: if the user already claimed the bonus for this courseId, returns
     alreadyClaimed=True and pointsAwarded=0 (no double-dipping).
     """
+    _assert_self_or_admin(user_id, current_user)
+
     result = karma_engine.award(
         user_id,
         KarmaEventType.CBP_BONUS,
@@ -167,3 +187,4 @@ async def claim_cbp_bonus(
         "alreadyClaimed": result.already_claimed,
         "newBalance":    karma_engine.get_balance(user_id, db),
     }
+

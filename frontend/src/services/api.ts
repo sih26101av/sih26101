@@ -201,22 +201,36 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
         evaluatedAt:        new Date().toISOString(),
         competency: {
           compId:    c.id ?? `COMP-${i}`,
-          domain:    (c.type === 'Domain' ? 'Statistical' : c.type === 'Functional' ? 'Governance' : 'Leadership') as any,
+          // Backend now sends correct domain strings — pass through with safe fallback
+          domain:    (c.type === 'Domain'      ? 'Statistical'
+                    : c.type === 'Functional'  ? 'Governance'
+                    : c.type === 'Behavioural' ? 'Leadership'
+                    : c.type === 'Technical'   ? 'Technical'
+                    : 'Statistical') as any,
           skillName: c.name,
         },
       })),
     },
   };
 
-  const skillGaps: SkillGapEntry[] = gapsRaw.skillGaps.map(g => ({
-    competency:         { compId: g.competencyId, domain: g.domain as any, skillName: g.skillName },
+  // Backend now returns correct domain strings, confidence tags, b_k rawScore, and evidence breakdown
+  const skillGaps: SkillGapEntry[] = (gapsRaw.skillGaps ?? []).map((g: any) => ({
+    competency: {
+      compId:    g.competencyId,
+      domain:    (g.domain as any) ?? 'Statistical',
+      skillName: g.skillName,
+    },
     currentLevel:       g.currentLevel,
     requiredLevel:      g.targetLevel,
     gap:                g.gapScore,
     isMandatory:        g.gapScore > 0,
     verificationSource: 'iGOT FRAC Profile',
     evaluatedAt:        new Date().toISOString(),
+    confidence:         g.confidence as 'HIGH' | 'MEDIUM' | 'LOW' | undefined,
+    rawScore:           g.rawScore,
+    evidence:           g.evidence,
   }));
+
 
   return { profile, skillGaps };
 }

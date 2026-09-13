@@ -73,6 +73,16 @@ export interface SkillGapEntry {
   isMandatory: boolean;
   verificationSource: string;
   evaluatedAt: string;
+  confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+  rawScore?: number;
+  evidence?: {
+    verified: number;
+    documented: number;
+    tenure: number;
+    selfReport: number;
+    education: number;
+    seniority: number;
+  };
 }
 
 export interface SkillGapReport {
