@@ -187,7 +187,6 @@ class EvidenceLog(Base):
     user = relationship("BaseUser")
     competency = relationship("Competency")
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # KARMA / GAMIFICATION MODELS — iGOT Karmayogi Points Layer
 # Supports the Observer pattern: AssessmentPassedEvent → KarmaEngine → KarmaEvent
@@ -227,4 +226,3 @@ class KarmaMonthlyUsage(Base):
     year              = Column(Integer, nullable=False)
     month             = Column(Integer, nullable=False)   # 1–12
     nonCbpCompletions = Column(Integer, nullable=False, default=0)
-
