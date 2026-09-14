@@ -23,8 +23,8 @@ export interface ChatMessage {
 }
 
 export interface NavigateAction {
-  type: 'scroll' | 'tab' | 'modal' | 'redirect';
-  target: string;          // e.g. '#features', 'my-courses', 'login', '/'
+  type: 'scroll' | 'tab' | 'modal' | 'redirect' | 'theme' | 'language';
+  target: string;          // e.g. '#features', 'my-courses', 'login', '/', 'dark', 'hi', 'en'
   label: string;           // human-readable, e.g. 'Features section'
 }
 
@@ -256,7 +256,7 @@ export async function sendChatMessage(
   fullName?: string,
   govId?: string,
   context?: string,
-): Promise<{ reply: string; detectedLanguage: 'en' | 'hi'; navigateAction?: NavigateAction }> {
+): Promise<{ reply: string; detectedLanguage: 'en' | 'hi'; navigateAction?: NavigateAction; navigateActions: NavigateAction[] }> {
 
   const payload: ChatApiPayload = {
     user_id: officialId,
@@ -296,6 +296,7 @@ export async function sendChatMessage(
       reply: data.reply,
       detectedLanguage: (data.detected_language as 'en' | 'hi') ?? 'en',
       navigateAction: data.navigate_action ?? undefined,
+      navigateActions: (data.navigate_actions ?? []) as NavigateAction[],
     };
   } catch {
     // ── Backend unavailable → use client-side engine ──────────────────────────
@@ -304,6 +305,6 @@ export async function sendChatMessage(
     const reply = buildLocalReply(
       intent, lang, officialId, jobRole, department, skillGaps, recommendations, message
     );
-    return { reply, detectedLanguage: lang, navigateAction: undefined };
+    return { reply, detectedLanguage: lang, navigateAction: undefined, navigateActions: [] };
   }
 }

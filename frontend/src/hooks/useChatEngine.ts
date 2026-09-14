@@ -30,6 +30,8 @@ export interface UseChatEngineOptions {
   context?: 'dashboard' | 'home';
   lang: 'en' | 'hi';
   onNavigate?: (action: NavigateAction) => void;
+  onThemeToggle?: (target: 'dark' | 'light' | 'toggle') => void;
+  onLanguageChange?: (target: 'en' | 'hi') => void;
 }
 
 export interface UseChatEngineReturn {
@@ -55,6 +57,8 @@ export function useChatEngine({
   context = 'dashboard',
   lang,
   onNavigate,
+  onThemeToggle,
+  onLanguageChange,
 }: UseChatEngineOptions): UseChatEngineReturn {
   const [messages, setMessages]       = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping]       = useState(false);
@@ -81,7 +85,7 @@ export function useChatEngine({
     setIsTyping(true);
 
     try {
-      const { reply, detectedLanguage, navigateAction } = await sendChatMessage(
+      const { reply, detectedLanguage, navigateAction, navigateActions } = await sendChatMessage(
         officialId, trimmed, messages,
         jobRole, department, skillGaps, recommendations,
         fullName, govId, context,
@@ -98,8 +102,26 @@ export function useChatEngine({
       };
       setMessages(prev => [...prev, botMsg]);
 
-      // If backend returned a navigation action, hold it for confirmation
-      if (navigateAction) {
+      // Compound actions (navigate_actions array) — execute all immediately
+      if (navigateActions.length > 0) {
+        for (const action of navigateActions) {
+          if (action.type === 'theme') {
+            onThemeToggle?.(action.target as 'dark' | 'light' | 'toggle');
+          } else if (action.type === 'language') {
+            onLanguageChange?.(action.target as 'en' | 'hi');
+          } else if (action.type !== 'scroll' && action.type !== 'modal') {
+            // Other non-confirmation actions: ignore for now
+          }
+        }
+      }
+      // Single action (navigate_action) — existing flow
+      // Theme action → execute immediately, no confirmation needed
+      if (navigateAction?.type === 'theme') {
+        onThemeToggle?.(navigateAction.target as 'dark' | 'light' | 'toggle');
+      } else if (navigateAction?.type === 'language') {
+        onLanguageChange?.(navigateAction.target as 'en' | 'hi');
+      } else if (navigateAction) {
+        // All other navigation actions → show confirmation dialog
         setPendingNav({ action: navigateAction, confirming: true });
       }
     } catch {
@@ -115,7 +137,7 @@ export function useChatEngine({
     } finally {
       setIsTyping(false);
     }
-  }, [isTyping, messages, officialId, jobRole, department, fullName, govId, skillGaps, recommendations, context, lang]);
+  }, [isTyping, messages, officialId, jobRole, department, fullName, govId, skillGaps, recommendations, context, lang, onThemeToggle, onLanguageChange]);
 
   const confirmNav = useCallback(() => {
     if (!pendingNav) return;

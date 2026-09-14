@@ -1,0 +1,20 @@
+85:     skill_gaps: List[SkillGapContext] = []
+129:     "skill_gaps":          r'\b(gap|gaps|skill\s*gap|missing|weak|improve|kya\s*gap|kitna\s*gap|deficiency|lacking|kahan\s*weak)\b',
+134:     "navigation_login":    r'\b(login|log\s*in|sign\s*in|signin|admin\s*portal|admin\s*login|kaise\s*login|login\s*karna)\b',
+210:     gaps = req.skill_gaps
+222:         if ctx == "home":
+357:     if intent == "user_identity":
+359:         if ctx == "home":
+420:     if intent == "profile_stats":
+471:     if intent == "skill_gaps":
+929:     if ctx == "home":
+979:     gaps      = req.skill_gaps
+1022:     if intent == "skill_gaps":
+1051:     if intent in ("navigation_login", "navigation_features", "navigation_about",
+1076:         if ctx == "dashboard":
+1112:     if intent == "navigation_login":
+1143:     if ctx == "home":
+1236:             if ctx == "home":
+1242:                     "navigation_login":          {"type": "modal",  "target": "login",     "label": "Login"},
+1281:     #         gaps_dicts = [{...} for g in req.skill_gaps]
+1288:     #             skill_gaps=gaps_dicts, recommendations=recs_dicts,

@@ -89,7 +89,8 @@ class ChatResponse(BaseModel):
     reply: str
     detected_language: str  # "hi" | "en"
     engine: str = "template"  # "semantic" | "template"
-    navigate_action: Optional[dict] = None  # {type, target, label}
+    navigate_action: Optional[dict] = None   # single action {type, target, label}
+    navigate_actions: List[dict] = []        # compound: multiple simultaneous actions
 
 
 # =============================================================================
@@ -418,6 +419,16 @@ def _handle_semantic(
     # ── Profile Stats ────────────────────────────────────────────────────────
     # Uses vectorize_profile() to compute stats from live incoming data
     if intent == "profile_stats":
+        # Homepage visitor is not logged in — no profile data exists
+        if ctx == "home":
+            return (
+                "🔐 Your profile stats are only available **after you log in**.\n\n"
+                "Click **Official Login** at the top of the page to access your "
+                "personalised competency dashboard."
+            ) if lang == "en" else (
+                "🔐 Aapki profile stats **login karne ke baad** hi dikhti hain.\n\n"
+                "Page ke top par **Official Login** button click karein."
+            )
         from ai.semantic_engine import vectorize_profile
         gaps_dicts = [
             {"skillName": g.skillName, "domain": g.domain,
@@ -469,6 +480,16 @@ def _handle_semantic(
 
     # ── Skill Gaps ───────────────────────────────────────────────────────────
     if intent == "skill_gaps":
+        # Homepage visitor — no user data to display
+        if ctx == "home":
+            return (
+                "🔐 Your skill gaps are only visible **after you log in**.\n\n"
+                "Click **Official Login** at the top of the page — "
+                "your personalised competency analysis will then appear on the Dashboard."
+            ) if lang == "en" else (
+                "🔐 Aapke skill gaps **login karne ke baad** dikhenge.\n\n"
+                "Page ke top par **Official Login** button click karein."
+            )
         gap_text = _fmt_gaps(gaps, lang)
         if lang == "hi":
             if not active_gaps:
@@ -1073,7 +1094,7 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
 
     # -- Navigation: Homepage Sections / Landing page --------------------------
     if intent == "navigation_home":
-        if ctx == "dashboard":
+        if (req.context or "dashboard") == "dashboard":
             # On the dashboard, "go to home page" means navigate to landing page
             return (
                 "Taking you back to the **Landing Page**! 🏠"
@@ -1140,7 +1161,7 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
             return f"You asked about **{label}**. Please ask Gyan via the AI-powered tier for a detailed answer."
 
     # ── Unknown / Out-of-scope query ──────────────────────────────────────────
-    if ctx == "home":
+    if (req.context or "dashboard") == "home":
         if lang == "hi":
             return (
                 "Maafi chahta hoon, main is sawaal ka jawab dene mein asmarth hoon. 🙏\n\n"
@@ -1208,6 +1229,170 @@ async def chat(req: ChatRequest):
     lang = detect_language(req.message)
     ctx  = req.context or "dashboard"   # "home" | "dashboard"
 
+    # ── Pre-semantic priority intercept: bypass Tier-1 for high-signal queries ─
+    # The semantic engine occasionally mismaps these with high confidence.
+
+    # 1. "who am i" → user_identity  (semantic keeps matching it to bot_identity)
+    if re.search(r'\bwho\s+am\s+i\b', req.message, re.IGNORECASE):
+        _reply = _handle_semantic("user_identity", req, lang)
+        return ChatResponse(reply=_reply, detected_language=lang, engine="template")
+
+    # 1b. Scroll-to-section on homepage (only for ctx == "home")
+    # e.g. "scroll to contact", "take me to features", "show about section"
+    if ctx == "home":
+        _SECTION_MAP = {
+            "contact":  ("contact",  "Contact section", "Aapko **Contact** section par scroll kar raha hoon!" if lang == "hi" else "Scrolling to the **Contact** section! 📬"),
+            "feature":  ("features", "Features section", "Aapko **Features** section par le ja raha hoon!" if lang == "hi" else "Taking you to the **Features** section! 🚀"),
+            "about":    ("about",    "About section",    "Aapko **About** section par scroll kar raha hoon!" if lang == "hi" else "Scrolling to the **About** section! 📖"),
+            "home":     ("home",     "Top of page",      "Page ke top par wapas ja raha hoon!" if lang == "hi" else "Scrolling back to the **top** of the page! 🏠"),
+        }
+        _scroll_trigger = re.search(
+            r'\b(scroll|take\s+me|go|jump|show|navigate|open)\b.{0,25}\b(contact|feature|about|home|top)\b'
+            r'|\b(contact|feature|about)\b.{0,15}\b(section|page|area)\b',
+            req.message, re.IGNORECASE
+        )
+        if _scroll_trigger:
+            _msg_l = req.message.lower()
+            for _kw, (_target, _label, _reply_text) in _SECTION_MAP.items():
+                if _kw in _msg_l:
+                    return ChatResponse(
+                        reply=_reply_text,
+                        detected_language=lang,
+                        engine="template",
+                        navigate_action={"type": "scroll", "target": f"#{_target}", "label": _label},
+                    )
+
+    # 1c. Website language change → navigate_action type="language"
+    _lang_change = re.search(
+        r'\b(change|switch|set|turn|make).{0,20}\b(language|lang|website|site|ui|interface).{0,15}\b(hindi|english|hindi|en|hi)\b'
+        r'|\b(switch|change)\s+(to\s+)?(hindi|english|en|hi)\b'
+        r'|\b(website|site|ui)\s+(language|lang)\s+(to\s+)?(hindi|english)\b',
+        req.message, re.IGNORECASE
+    )
+    if _lang_change:
+        _want_hindi = bool(re.search(r'\b(hindi|hi)\b', req.message, re.IGNORECASE))
+        _lang_target = "hi" if _want_hindi else "en"
+        _lang_name   = "Hindi" if _want_hindi else "English"
+        _lang_reply  = (
+            f"Ho gaya! Main ne website ko **{_lang_name}** mein switch kar diya. 🇮🇳"
+            if lang == "hi" else
+            f"Done! I've switched the website to **{_lang_name}**. 🌐"
+        )
+        return ChatResponse(
+            reply=_lang_reply,
+            detected_language=lang,
+            engine="template",
+            navigate_action={"type": "language", "target": _lang_target, "label": f"{_lang_name} Language"},
+        )
+
+    # 2a. COMPOUND COMMAND: theme + language change in one message
+    # e.g. "toggle to light mode and change language to hindi"
+    _has_theme_kw = re.search(
+        r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
+        r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light)|toggle.*?(dark|light)|light|dark)\b',
+        req.message, re.IGNORECASE
+    )
+    _has_lang_kw  = re.search(
+        r'\b(hindi|english|change.*lang|switch.*lang|lang.*hindi|website.*hindi)\b',
+        req.message, re.IGNORECASE
+    )
+    if _has_theme_kw and _has_lang_kw:
+        _c_theme  = "light" if re.search(r'\blight\b', req.message, re.IGNORECASE) else "dark"
+        _c_lang   = "hi" if re.search(r'\bhindi\b', req.message, re.IGNORECASE) else "en"
+        _c_reply  = (
+            f"Done! ✅ I've switched to **{'Light' if _c_theme == 'light' else 'Dark'} Mode** "
+            f"and changed the website to **{'Hindi' if _c_lang == 'hi' else 'English'}**."
+            if lang == "en" else
+            f"Ho gaya! ✅ **{'Light' if _c_theme == 'light' else 'Dark'} Mode** aur "
+            f"**{'Hindi' if _c_lang == 'hi' else 'English'}** language — dono switch kar diye."
+        )
+        return ChatResponse(
+            reply=_c_reply,
+            detected_language=lang,
+            engine="template",
+            navigate_actions=[
+                {"type": "theme",    "target": _c_theme, "label": f"{_c_theme.capitalize()} Mode"},
+                {"type": "language", "target": _c_lang,  "label": "Hindi" if _c_lang == "hi" else "English"},
+            ],
+        )
+
+    # 2. "dark mode / light mode / turn on dark" → execute theme toggle via navigate_action
+    if re.search(
+        r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
+        r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light))\b',
+        req.message, re.IGNORECASE
+    ):
+        _theme_target = "light" if re.search(r'\blight\b', req.message, re.IGNORECASE) else "dark"
+        _theme_reply_en = (
+            "Done! ☀️ I've switched to **Light Mode** for you."
+            if _theme_target == "light" else
+            "Done! 🌙 I've switched to **Dark Mode** for you."
+        )
+        _theme_reply_hi = (
+            "Ho gaya! ☀️ Main ne aapke liye **Light Mode** switch kar diya."
+            if _theme_target == "light" else
+            "Ho gaya! 🌙 Main ne aapke liye **Dark Mode** switch kar diya."
+        )
+        return ChatResponse(
+            reply=_theme_reply_hi if lang == "hi" else _theme_reply_en,
+            detected_language=lang,
+            engine="template",
+            navigate_action={"type": "theme", "target": _theme_target, "label": f"{_theme_target.capitalize()} Mode"},
+        )
+
+    # 3. login / sign-in → navigation_login (reply hardcoded here to avoid delegation fallthrough)
+    if re.search(r'\b(login|log\s*in|sign\s*in|signin)\b', req.message, re.IGNORECASE):
+        _has_creds = re.search(
+            r'\b(username|password|credentials|details|user\s*id|pass|userid)\b',
+            req.message, re.IGNORECASE
+        )
+        if _has_creds:
+            # User wants bot to fill in credentials — explain why we can't, but open the modal
+            _p_reply = (
+                "I can open the **Official Login** dialog for you right away! 🔑\n\n"
+                "However, for your **security**, I won't enter credentials through the chat window — "
+                "your username and password should only be typed directly into the secure login form.\n\n"
+                "The login dialog is opening now — please type your details there directly. 🛡️"
+            ) if lang == "en" else (
+                "Main aapke liye **Official Login** dialog abhi khol raha hoon! 🔑\n\n"
+                "Lekin **suraksha ke liye**, main chat ke zariye credentials enter nahi kar sakta — "
+                "aapka username aur password seedha secure login form mein hi type karein.\n\n"
+                "Login dialog khul raha hai — wahan seedha details type karein. 🛡️"
+            )
+        else:
+            _p_reply = (
+                "Opening the **Official Login** dialog for you! 🔑\n\n"
+                "You can login as a **Statistical Official** or access the **Admin Portal** "
+                "using the form that's about to open."
+            ) if lang == "en" else (
+                "**Official Login** dialog khol raha hoon! 🔑\n\n"
+                "Aap **Statistical Official** ke roop mein login kar sakte hain ya "
+                "**Admin Portal** access kar sakte hain."
+            )
+        _p_nav = {"type": "modal", "target": "login", "label": "Login"} if ctx == "home" else None
+        return ChatResponse(
+            reply=_p_reply, detected_language=lang,
+            engine="template", navigate_action=_p_nav,
+        )
+
+    # 4. Entertainment / celebrity / movie queries → out_of_scope
+    # Prevents semantic engine from mismatching these to 'gratitude' or 'greeting'.
+    _oos_re = re.compile(
+        r'\b(when\s+was|when\s+is|who\s+is|who\s+was|tell\s+me\s+about|'  
+        r'what\s+is\s+photosynthesis|circular\s+convolution|'             
+        r'released|born|died|movie|film|actor|actress|singer|'             
+        r'cricketer|footballer|celebrity)\b',
+        re.IGNORECASE
+    )
+    _mospi_re = re.compile(
+        r'\b(mospi|igot|karmayogi|frac|gdp|cpi|census|plfs|nso|sna|'     
+        r'skill|course|dashboard|competency|training|platform)\b',
+        re.IGNORECASE
+    )
+    if _oos_re.search(req.message) and not _mospi_re.search(req.message):
+        _reply = _handle_semantic("out_of_scope", req, lang)
+        return ChatResponse(reply=_reply, detected_language=lang, engine="template")
+
     # ── TIER 1: Semantic Engine ───────────────────────────────────────────────
     try:
         from ai.semantic_engine import classify_intent, is_semantic_engine_ready
@@ -1220,11 +1405,14 @@ async def chat(req: ChatRequest):
             )
 
             # ── Confidence threshold: reject low-confidence semantic matches ───
-            # If confidence < 0.45 AND it's NOT a clear navigation/greeting intent,
-            # fall through to Tier-2 keyword engine for a more accurate response.
-            CONFIDENT_ALWAYS = {"greeting", "hindi_greeting", "farewell", "gratitude",
-                                 "how_are_you", "bot_identity"}
-            if confidence < 0.45 and intent not in CONFIDENT_ALWAYS:
+            # Raised to 0.50 to reduce false-positive misclassification on
+            # slang / entertainment queries (e.g. 'noice', 'when was X sleeping').
+            # Greeting / farewell / bot_identity always trusted (genuine patterns).
+            # 'gratitude' and 'how_are_you' deliberately removed — movie-release
+            # queries were scoring >= 0.45 against those corpora.
+            CONFIDENT_ALWAYS = {"greeting", "hindi_greeting", "farewell",
+                                 "bot_identity", "navigation_login", "out_of_scope"}
+            if confidence < 0.50 and intent not in CONFIDENT_ALWAYS:
                 logger.info("[Gyan] Low confidence %.3f for '%s' → Tier-2 keyword",
                             confidence, intent)
                 raise ValueError("low_confidence")   # jumps to Tier-2

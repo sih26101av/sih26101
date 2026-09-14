@@ -14,6 +14,7 @@ import type { SkillGapEntry, CourseRecommendation } from '../../types/domain';
 import type { NavigateAction } from '../../services/chatApi';
 import type { ChatMessage } from '../../services/chatApi';
 import { useChatEngine } from '../../hooks/useChatEngine';
+import { useTheme } from '../../hooks/useTheme';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface ChatWidgetProps {
@@ -209,6 +210,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [hasUnread, setHasUnread] = useState(true);
   const inputRef                  = useRef<HTMLTextAreaElement>(null);
 
+  const { theme, toggleTheme } = useTheme();
+
   const { messages, isTyping, pendingNav, handleSend, confirmNav, cancelNav, messagesEndRef } =
     useChatEngine({
       officialId, fullName, govId, jobRole, department,
@@ -216,6 +219,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       context: 'dashboard',
       lang,
       onNavigate,
+      onThemeToggle: (target) => {
+        // 'toggle' always flips; 'dark'/'light' only act if not already that theme
+        if (target === 'toggle') { toggleTheme(); }
+        else if (target === 'dark'  && theme !== 'dark')  { toggleTheme(); }
+        else if (target === 'light' && theme !== 'light') { toggleTheme(); }
+      },
     });
 
   const activeGapsCount = skillGaps.filter(g => g.gap > 0).length;

@@ -16,11 +16,13 @@ import { X, Send, Bot, Languages, ChevronDown, Mic, MicOff, Navigation } from 'l
 import type { NavigateAction } from '../../services/chatApi';
 import type { ChatMessage } from '../../services/chatApi';
 import { useChatEngine } from '../../hooks/useChatEngine';
+import { useTheme } from '../../hooks/useTheme';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 interface HomeChatWidgetProps {
   onScrollToSection: (sectionId: string) => void;
   onOpenLogin: () => void;
+  onLanguageChange?: (lang: 'en' | 'hi') => void;
 }
 
 // ─── Homepage-specific suggestions ───────────────────────────────────────────
@@ -163,7 +165,7 @@ const VoiceButton: React.FC<{ lang: 'en' | 'hi'; onResult: (t: string) => void }
 };
 
 // ─── Main HomeChatWidget ───────────────────────────────────────────────────────
-const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOpenLogin }) => {
+const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOpenLogin, onLanguageChange }) => {
   const [isOpen, setIsOpen]         = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [lang, setLang]             = useState<'en' | 'hi'>('en');
@@ -181,12 +183,20 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
     }
   }, [onScrollToSection, onOpenLogin]);
 
+  const { theme, toggleTheme } = useTheme();
+
   const { messages, isTyping, pendingNav, handleSend, confirmNav, cancelNav, messagesEndRef } =
     useChatEngine({
       officialId: 'anonymous',
       context: 'home',
       lang,
       onNavigate: handleNavigate,
+      onThemeToggle: (target) => {
+        if (target === 'toggle') { toggleTheme(); }
+        else if (target === 'dark'  && theme !== 'dark')  { toggleTheme(); }
+        else if (target === 'light' && theme !== 'light') { toggleTheme(); }
+      },
+      onLanguageChange,
     });
 
   const suggestions = lang === 'hi' ? SUGGESTIONS_HI : SUGGESTIONS_EN;

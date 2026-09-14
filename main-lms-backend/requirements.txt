@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # requirements.txt — MoSPI LMS Backend
-# SIH 2026 | Archit Shukla
+# SIH 2026 | 
 #
 # SETUP GUIDE FOR TEAMMATES
 # ──────────────────────────
