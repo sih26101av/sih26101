@@ -36,12 +36,12 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from pydantic import BaseModel
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
+
+from ai.embedder import get_embedder
 
 logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-_EMBED_MODEL   = "sentence-transformers/all-MiniLM-L6-v2"
 _RRF_K         = 60          # RRF constant
 _NSSTA_BOOST   = 1.25        # multiplier for NSSTA/TPAC courses
 _WILSON_Z      = 1.96        # 95% confidence interval
@@ -172,11 +172,12 @@ class HybridRecommendationEngine:
         logger.info("[RecEngine] BM25 index built over %d documents.", len(self._catalog))
 
         # ── 4. Load sentence-transformer + build FAISS index ──────────────────
-        logger.info("[RecEngine] Loading embedding model %s …", _EMBED_MODEL)
-        self._embedder = SentenceTransformer(_EMBED_MODEL)
+                # Model loaded ONCE for whole backend via ai/embedder.py singleton.
+        logger.info("[RecEngine] Acquiring shared multilingual embedder...")
+        embedder = get_embedder()
 
         corpus_texts = [doc.corpus_text for doc in self._catalog]
-        embeddings = self._embedder.encode(
+        embeddings = embedder.encode(
             corpus_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=False
         )
         embeddings = np.array(embeddings, dtype="float32")
@@ -319,8 +320,8 @@ class HybridRecommendationEngine:
         query_tok   = query_text.lower().split()
 
         # 2a. Dense search (FAISS cosine, L2-normalised)
-        import faiss  # already loaded at startup
-        q_emb = self._embedder.encode(
+        import faiss
+        q_emb = get_embedder().encode(
             [query_text], normalize_embeddings=True, show_progress_bar=False
         ).astype("float32")
 
