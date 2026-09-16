@@ -494,21 +494,34 @@ const AssessmentPage: React.FC = () => {
           {status === "result" && scoreInfo && (
             <div className="max-w-2xl mx-auto">
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-8 md:p-12 shadow-xl text-center">
-                <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-12 h-12 text-green-500" />
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${scoreInfo.passed ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                  <CheckCircle className={`w-12 h-12 ${scoreInfo.passed ? 'text-green-500' : 'text-red-400'}`} />
                 </div>
                 
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">Assessment Complete!</h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">You've successfully completed the module.</p>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">
+                  {scoreInfo.passed ? 'Assessment Passed! 🎉' : 'Assessment Complete'}
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">
+                  {scoreInfo.passed
+                    ? "Your competency profile has been updated on iGOT."
+                    : "You need 70% or more to pass. Review and try again!"}
+                </p>
+                {scoreInfo.message && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mb-8 px-4 leading-relaxed">{scoreInfo.message}</p>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700">
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Score</p>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">{Math.round((scoreInfo.score / scoreInfo.total) * 100)}%</p>
+                    <p className={`text-4xl font-black ${scoreInfo.passed ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                      {scoreInfo.score}%
+                    </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700">
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Correct</p>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">{scoreInfo.score}<span className="text-xl text-slate-400">/{scoreInfo.total}</span></p>
+                    <p className="text-4xl font-black text-slate-800 dark:text-white">
+                      {scoreInfo.correct_count}<span className="text-xl text-slate-400">/{scoreInfo.total_questions}</span>
+                    </p>
                   </div>
                 </div>
 

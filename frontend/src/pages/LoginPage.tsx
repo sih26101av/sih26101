@@ -1,12 +1,8 @@
 /**
  * FILE: src/pages/LoginPage.tsx
  *
- * Gateway page — calls My App Backend /auth/login (real JWT auth).
+ * Gateway page — calls MoSPI LMS Backend /auth/login (real JWT auth).
  * Uses DashboardFactory to resolve the post-login route.
- *
- * Credentials: username = usr_XXXXXXXXX (iGOT userId) or "admin"
- * Default passwords: lowercase(firstName) + last 2 digits of userId
- * e.g. Gabriel / usr_720465595 → gabriel95
  */
 
 import React, { useState } from 'react';
@@ -70,18 +66,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
     }
   };
 
-  // Quick-fill helpers for the demo (SIH presentation convenience)
-  const fillCredentials = (preset: 'gabriel' | 'admin' | 'priya') => {
-    const map = {
-      gabriel: { username: 'usr_720465595', pass: 'gabriel95' },
-      admin:   { username: 'admin',         pass: 'admin123'  },
-      priya:   { username: 'usr_EMP8472',   pass: 'priya72'   },
-    };
-    setUsername(map[preset].username);
-    setPassword(map[preset].pass);
-    setError('');
-  };
-
   return (
     <div className={isModal ? "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm font-sans transition-colors duration-300" : "min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300"}>
       {/* Background */}
@@ -126,28 +110,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
           <h2 className="text-[20px] font-bold text-[#0f172a] dark:text-white mb-1">Welcome back</h2>
           <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">Sign in to access your MoSPI dashboard.</p>
 
-          {/* Quick-fill buttons */}
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => fillCredentials('gabriel')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
-            >
-              Gabriel (Official)
-            </button>
-            <button
-              onClick={() => fillCredentials('priya')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
-            >
-              Priya (Official)
-            </button>
-            <button
-              onClick={() => fillCredentials('admin')}
-              className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-600 transition-all"
-            >
-              Admin
-            </button>
-          </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Username */}
             <div>
@@ -159,7 +121,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
-                placeholder="usr_720465595 or admin"
+                placeholder="Enter your iGOT User ID or admin"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all"
               />
             </div>
