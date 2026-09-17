@@ -30,7 +30,9 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from auth.database import SessionLocal, engine
+from auth.database import SessionLocal, engine, get_db
+from auth.dependencies import get_current_user
+from auth.models import UserAuth
 from models.models import (
     Base,
     Competency,
@@ -38,7 +40,10 @@ from models.models import (
     CompetencyProfile,
     Official,
     Assessment,
+    EvidenceLog,
+    QuizAttempt,
 )
+from fastapi import Depends
 
 # Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
@@ -108,14 +113,17 @@ class DocumentUploadResponse(BaseModel):
 
 
 class GradeRequest(BaseModel):
-    user_id: str = Field(..., description="User ID or Government ID of the learner submitting the quiz")
+    # FIX (Bug #10): user_id removed from request body.
+    # The authenticated user's iGOT userId is derived from current_user.username
+    # (populated via JWT in Depends(get_current_user)).
+    # Accepting user_id from the body allowed unauthenticated identity spoofing.
     quiz_id: str = Field(..., description="Unique ID of the quiz session being graded")
-    answers: List[int] = Field(..., description="List of chosen option indices corresponding to each question (0-indexed)")
+    answers: List[int] = Field(..., description="List of chosen option indices (0-indexed)")
 
 
 class GradeResponse(BaseModel):
     status: str = Field("success", description="Status code or status description ('success' or 'error')")
-    user_id: str = Field(..., description="User ID of the learner")
+    user_id: str = Field(..., description="User ID of the learner (from JWT)")
     quiz_id: str = Field(..., description="Quiz ID evaluated")
     score: float = Field(..., description="Percentage score achieved (0-100)")
     passed: bool = Field(..., description="True if score >= 70%, False otherwise")
@@ -124,7 +132,11 @@ class GradeResponse(BaseModel):
     message: str = Field(..., description="Human-readable result summary message")
     synced_to_igot: Optional[bool] = Field(None, description="Indicates whether the competency update was pushed to iGOT")
     igot_response: Optional[Dict[str, Any]] = Field(None, description="Response from the mock iGOT server if synced")
-    db_updated: Optional[bool] = Field(None, description="Indicates whether the internal SQLite database (auth.db) was updated with the competency level increase")
+    db_updated: Optional[bool] = Field(None, description="Indicates whether the internal SQLite database was updated")
+    # FIX (Bug #10): new field — True only on first submission
+    evidenceWritten: Optional[bool] = Field(None, description="True if a new EvidenceLog row was written (first submission only)")
+
+
 
 
 class ErrorResponse(BaseModel):
@@ -865,32 +877,44 @@ async def upload_document_for_rag(
     responses={
         200: {"description": "Quiz evaluated successfully."},
         400: {"model": ErrorResponse, "description": "Invalid submission or answers format."},
+        401: {"model": ErrorResponse, "description": "Authentication required."},
         404: {"model": ErrorResponse, "description": "Quiz session not found."},
         500: {"model": ErrorResponse, "description": "Internal grading error."},
     },
 )
-async def grade_quiz(payload: GradeRequest) -> GradeResponse:
+async def grade_quiz(
+    payload: GradeRequest,
+    current_user: UserAuth = Depends(get_current_user),   # FIX (Bug #10): auth required
+) -> GradeResponse:
     """
-    **Grade Quiz & Sync Competency to Internal DB (auth.db) & Mock iGOT Server**
-    
-    1. Accepts JSON payload with `user_id`, `quiz_id`, and `answers` (list of selected option indices).
-    2. Compares submitted option indices against stored correct answers.
-    3. Calculates percentage score: `(correct_count / total_questions) * 100`.
-    4. If `score >= 70%` (Pass):
-       - Dynamically resolves the skill name from the quiz session, document content, or fallback.
-       - Updates internal SQLite database (`auth.db`) via SQLAlchemy models (profileId, skillName, currentLevel).
-       - If user does not exist in database: creates record with current_level = 3.
-       - If user already exists: increments current_level by 1 (capped at max 5).
-       - Calls external mock iGOT server at `http://localhost:8001/competencies/update` using `httpx`.
-    5. If `score < 70%` (Fail): Database is NOT touched.
-    6. Returns score, pass/fail status, detailed message, db update status, and iGOT synchronization results.
+    **Grade Quiz & Sync Competency to Internal DB & Mock iGOT Server**
+
+    FIX (Bug #10): Requires a valid JWT (Bearer token). user_id is derived
+    from current_user.username (the iGOT userId like usr_XXXXXXXXX) — never
+    from the request body (which was spoofable).
+
+    FIX (Bug #10) Idempotency: A QuizAttempt row with UNIQUE(userId, quizId)
+    is written BEFORE evidence. If the same user submits the same quiz again,
+    the score is re-calculated for UX but NO second EvidenceLog row is written.
+
+    FIX (Bug #9): On pass + first submission, writes an EvidenceLog row with:
+      evidenceType = "PRACTICE_ASSESSMENT"
+      userId       = current_user.username (iGOT userId, same identity space
+                     as BaselineAssembler.compute_for_user)
+      grantedValue = clamp(2.5 + (score-70)/30 * 1.5, 2.5, 4.0)
+
+    The _update_internal_db_competency helper is kept for backward-compat UI
+    display of db_updated field and the legacy CompetencyProfile table.
     """
+    # Derive iGOT userId from JWT (Bug #10)
+    igot_user_id = current_user.username   # e.g. "usr_720465595"
+
     # 1. Validate quiz existence in store
     quiz = QUIZ_STORE.get(payload.quiz_id)
     if not quiz:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz session '{payload.quiz_id}' not found. Please upload a document to generate a quiz or provide a valid quiz_id.",
+            detail=f"Quiz session '{payload.quiz_id}' not found. Please upload a document to generate a quiz.",
         )
 
     questions: List[QuizQuestion] = quiz.get("questions", [])
@@ -913,53 +937,136 @@ async def grade_quiz(payload: GradeRequest) -> GradeResponse:
     correct_count = 0
     for idx, question in enumerate(questions):
         if idx < len(payload.answers):
-            user_choice = payload.answers[idx]
-            if user_choice == question.correct_answer:
+            if payload.answers[idx] == question.correct_answer:
                 correct_count += 1
 
     score_percentage = round((correct_count / total_questions) * 100.0, 2)
     passed = score_percentage >= 70.0
 
-    # 4. If passed (score >= 70%): Update internal auth.db AND sync with mock iGOT server
+    # 4. Idempotency check + evidence write (Bug #10 + #9)
     synced_to_igot: Optional[bool] = None
     igot_response_data: Optional[Dict[str, Any]] = None
     db_updated: Optional[bool] = None
+    evidence_written: Optional[bool] = None
     final_level: int = 3
 
+    def _grant_value_for_score(score: float) -> float:
+        """Maps pass score [70,100] → evidence level [2.5, 4.0] (Bug #10)."""
+        return round(max(2.5, min(4.0, 2.5 + (score - 70) / 30 * 1.5)), 2)
+
+    # Write QuizAttempt row (idempotency) + EvidenceLog (Bug #9) if first attempt
+    db = SessionLocal()
+    try:
+        existing_attempt = db.query(QuizAttempt).filter(
+            QuizAttempt.userId == igot_user_id,
+            QuizAttempt.quizId == payload.quiz_id,
+        ).first()
+
+        if existing_attempt:
+            # Re-submission: return score for UX, do NOT write new evidence
+            evidence_written = False
+            logger.info(
+                "[grade_quiz] Re-submission detected for user=%s quiz=%s — skipping evidence write.",
+                igot_user_id, payload.quiz_id,
+            )
+        else:
+            # First submission: persist attempt record
+            quiz_comp_id = quiz.get("competency_id") or None
+            attempt = QuizAttempt(
+                userId          = igot_user_id,
+                quizId          = payload.quiz_id,
+                compId          = quiz_comp_id,
+                answers         = payload.answers,
+                score           = score_percentage,
+                passed          = passed,
+                evidenceWritten = False,
+            )
+            db.add(attempt)
+            db.flush()   # get attemptId without committing yet
+
+            if passed:
+                # FIX (Bug #9): write EvidenceLog keyed by iGOT userId
+                granted = _grant_value_for_score(score_percentage)
+
+                # Try to resolve comp_id to a real Competency row
+                comp_obj = None
+                if quiz_comp_id:
+                    comp_obj = db.query(Competency).filter(
+                        Competency.compId == quiz_comp_id
+                    ).first()
+                if not comp_obj:
+                    # Fallback: find/create by skill name
+                    skill_name = quiz.get("skill_name", "General Statistics")
+                    comp_obj = db.query(Competency).filter(
+                        Competency.skillName == skill_name
+                    ).first()
+                    if not comp_obj:
+                        comp_obj = Competency(
+                            compId    = f"COMP-{uuid.uuid4().hex[:6].upper()}",
+                            domain    = "Statistical",
+                            skillName = skill_name,
+                        )
+                        db.add(comp_obj)
+                        db.flush()
+
+                from datetime import timezone as _tz
+                evidence_row = EvidenceLog(
+                    userId       = igot_user_id,           # iGOT userId (Bug #9)
+                    compId       = comp_obj.compId,
+                    evidenceType = "PRACTICE_ASSESSMENT",  # (Bug #9)
+                    grantedValue = granted,                # formula, not +1 (Bug #10)
+                    issueDate    = datetime.now(_tz.utc),
+                    metadata_payload = {
+                        "quiz_id":    payload.quiz_id,
+                        "score":      score_percentage,
+                        "pass_threshold": 70.0,
+                    },
+                )
+                db.add(evidence_row)
+                attempt.evidenceWritten = True
+                evidence_written = True
+                logger.info(
+                    "[grade_quiz] EvidenceLog written: user=%s comp=%s granted=%.2f",
+                    igot_user_id, comp_obj.compId, granted,
+                )
+            else:
+                evidence_written = False
+
+            db.commit()
+
+    except Exception as exc:
+        db.rollback()
+        evidence_written = False
+        logger.exception("[grade_quiz] DB error during QuizAttempt/EvidenceLog write: %s", exc)
+    finally:
+        db.close()
+
+    # 5. If passed: update legacy CompetencyProfile table + sync to iGOT
     if passed:
-        # Dynamically determine skill name:
-        # Priority 1: Quiz session skill_name or competency
-        # Priority 2: Inferred from document content/filename
-        # Priority 3: 'General Statistics' fallback
         skill_name = (
             quiz.get("skill_name")
             or quiz.get("competency")
-            or _detect_skill_name(
-                text=quiz.get("extracted_text", ""),
-                filename=quiz.get("filename", "")
-            )
+            or _detect_skill_name(text=quiz.get("extracted_text", ""), filename=quiz.get("filename", ""))
             or "General Statistics"
         )
 
-        # A. Update Internal SQLite Database (auth.db) via SQLAlchemy
+        # A. Update legacy internal DB (backward-compat — drives db_updated response field)
         db_updated, final_level = _update_internal_db_competency(
-            user_id=payload.user_id,
+            user_id=igot_user_id,
             competency_name=skill_name,
             default_level=3,
             score=score_percentage,
             quiz_id=payload.quiz_id,
         )
 
-        # B. Sync with mock iGOT server at http://localhost:8001/competencies/update
-        igot_url = os.getenv("IGOT_COMPETENCIES_UPDATE_URL", "http://localhost:8001/competencies/update")
+        # B. Sync with mock iGOT server
+        igot_url   = os.getenv("IGOT_COMPETENCIES_UPDATE_URL", "http://localhost:8001/competencies/update")
         igot_token = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
-
         update_payload = {
-            "user_id": payload.user_id,
+            "user_id":   igot_user_id,
             "competency": skill_name,
-            "new_level": final_level,
+            "new_level":  final_level,
         }
-
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(
@@ -975,40 +1082,46 @@ async def grade_quiz(payload: GradeRequest) -> GradeResponse:
                         igot_response_data = {"status": "success", "raw": resp.text}
                 else:
                     synced_to_igot = False
-                    logger.warning(f"iGOT competency update responded with HTTP {resp.status_code}: {resp.text}")
                     igot_response_data = {"status_code": resp.status_code, "response": resp.text}
-
         except httpx.RequestError as exc:
             synced_to_igot = False
-            logger.warning(f"Could not connect to mock iGOT server at {igot_url}: {exc}")
             igot_response_data = {"warning": f"iGOT server unreachable at {igot_url}: {str(exc)}"}
         except Exception as exc:
             synced_to_igot = False
-            logger.error(f"Unexpected error communicating with mock iGOT server: {exc}")
             igot_response_data = {"error": str(exc)}
 
-    # 5. Formulate summary message
+    # 6. Build response message
     if passed:
         msg = f"Passed! You scored {score_percentage}% ({correct_count}/{total_questions} correct)."
         if db_updated:
-            msg += f" Internal competency profile in auth.db (profileId='{payload.user_id}') updated to Level {final_level}."
+            msg += f" Competency profile updated to Level {final_level}."
+        if evidence_written:
+            msg += " Practice assessment evidence recorded for skill gap analysis."
+        elif evidence_written is False and not (existing_attempt if 'existing_attempt' in dir() else True):
+            msg += " (Evidence already recorded from a previous submission.)"
         if synced_to_igot:
-            msg += " Competency record was successfully synced to the iGOT platform."
+            msg += " Synced to iGOT."
         elif synced_to_igot is False:
-            msg += " (Note: iGOT mock server sync was not reachable, but internal database was updated)."
+            msg += " (iGOT sync unavailable — internal DB updated.)"
     else:
-        msg = f"Did not pass. You scored {score_percentage}% ({correct_count}/{total_questions} correct). A minimum score of 70% is required to pass and update your competency profile."
+        msg = (
+            f"Did not pass. You scored {score_percentage}% ({correct_count}/{total_questions} correct). "
+            "A minimum score of 70% is required to update your competency profile."
+        )
 
     return GradeResponse(
-        status="success",
-        user_id=payload.user_id,
-        quiz_id=payload.quiz_id,
-        score=score_percentage,
-        passed=passed,
-        correct_count=correct_count,
-        total_questions=total_questions,
-        message=msg,
-        synced_to_igot=synced_to_igot,
-        igot_response=igot_response_data,
-        db_updated=db_updated,
+        status          = "success",
+        user_id         = igot_user_id,
+        quiz_id         = payload.quiz_id,
+        score           = score_percentage,
+        passed          = passed,
+        correct_count   = correct_count,
+        total_questions = total_questions,
+        message         = msg,
+        synced_to_igot  = synced_to_igot,
+        igot_response   = igot_response_data,
+        db_updated      = db_updated,
+        evidenceWritten = evidence_written,
     )
+
+

@@ -3,10 +3,13 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, AlertCircle } from "lucide-react";
+import { Target, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 import type { SkillGapEntry, CompetencyDomain } from "../../types/domain";
 
-interface SkillGapCardProps { skillGaps: SkillGapEntry[]; }
+interface SkillGapCardProps {
+  skillGaps: SkillGapEntry[];
+  onFindCourses?: (skillName: string) => void;
+}
 
 const DOMAIN_BADGE: Record<string, string> = {
   Statistical: "bg-[#dbeafe] dark:bg-blue-900/40 text-[#2563eb] dark:text-blue-400 border border-[#bfdbfe] dark:border-blue-800",
@@ -103,7 +106,7 @@ const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color:
   );
 };
 
-const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
+const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: string) => void }> = ({ entry, onFindCourses }) => {
   const { competency, currentLevel, requiredLevel, gap, isMandatory, confidence, rawScore, evidence } = entry;
   const hasGap = gap > 0;
   const badge = DOMAIN_BADGE[competency.domain] ?? DOMAIN_BADGE.Statistical;
@@ -168,6 +171,17 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
             <EvidenceBar label="Self-Report" value={evidence.selfReport}  color="bg-rose-400 dark:bg-rose-500" />
           </div>
         )}
+
+        {/* Find Courses button — only shown when there is a gap */}
+        {hasGap && onFindCourses && (
+          <button
+            onClick={() => onFindCourses(competency.skillName)}
+            className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all"
+          >
+            <BookOpen size={12} />
+            Find Courses for this Gap →
+          </button>
+        )}
       </div>
 
       <div className="flex items-end gap-6 relative z-10">
@@ -198,7 +212,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
 };
 
 
-const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
+const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses }) => {
   const withGaps = skillGaps.filter(e => e.gap > 0);
   const met = skillGaps.filter(e => e.gap === 0);
 
@@ -232,7 +246,7 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps }) => {
               <AlertCircle size={14} className="text-[#ef4444] dark:text-red-400 transition-colors duration-300" />
               <span className="text-[11px] font-bold text-[#ef4444] dark:text-red-400 uppercase tracking-widest transition-colors duration-300">Active Gaps</span>
             </div>
-            {withGaps.map(e => <GapRow key={e.competency.compId} entry={e} />)}
+            {withGaps.map(e => <GapRow key={e.competency.compId} entry={e} onFindCourses={onFindCourses} />)}
           </>
         )}
         {withGaps.length === 0 && (

@@ -2,7 +2,7 @@
  * FILE: src/pages/LearnerDashboard.tsx
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   LogOut, AlertTriangle,
   Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot,
@@ -269,6 +269,18 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
   const totalAssessed = profile?.competencyProfile.userCompetencies.length ?? 0;
   const sortedRecs = [...recommendations].sort((a, b) => a.priorityRank - b.priorityRank);
 
+  // Course filter: driven by "Find Courses" click in SkillGapCard
+  const [courseFilter, setCourseFilter] = useState<string>('');
+  const recsSectionRef = useRef<HTMLElement>(null);
+
+  const handleFindCourses = (skillName: string) => {
+    setCourseFilter(skillName);
+    setActiveTab('dashboard');
+    setTimeout(() => {
+      recsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-[#eef2f7] relative" key={retryKey}>
@@ -311,7 +323,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
                   {/* Left: Skill Gap — 2 cols */}
                   <div className="lg:col-span-2">
-                    <SkillGapCard skillGaps={skillGaps} />
+                    <SkillGapCard skillGaps={skillGaps} onFindCourses={handleFindCourses} />
                   </div>
 
                   {/* Right column: Stats → AI Studio → Certs → Karma → Career */}
@@ -350,7 +362,10 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                 </div>
 
                 {/* Recommended Courses section */}
-                <section className="bg-[#F2F0EF] dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/80 dark:border-slate-700/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.05)] transition-colors duration-300">
+                <section
+                  ref={recsSectionRef as React.RefObject<HTMLElement>}
+                  className="bg-[#F2F0EF] dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/80 dark:border-slate-700/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.05)] transition-colors duration-300"
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
                     <div>
                       <h2 className="text-slate-900 dark:text-white font-extrabold text-lg flex items-center gap-2">
@@ -361,18 +376,56 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                         Directly addresses your active competency gaps
                       </p>
                     </div>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600/50 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap">
-                      {sortedRecs.length} Courses Found
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      {courseFilter && (
+                        <span className="flex items-center gap-1.5 text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-3 py-1.5 rounded-full">
+                          Filtered: {courseFilter}
+                          <button
+                            onClick={() => setCourseFilter('')}
+                            className="ml-1 text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 font-black leading-none"
+                            title="Clear filter"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )}
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600/50 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap">
+                        {courseFilter
+                          ? `${sortedRecs.filter(r => r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) || (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase())).length} Matching`
+                          : `${sortedRecs.length} Courses Found`}
+                      </span>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {sortedRecs.map((rec) => (
+                    {(courseFilter
+                      ? sortedRecs.filter(r =>
+                          r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) ||
+                          (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase()) ||
+                          (r as any).matchReasons?.some((m: string) => m.toLowerCase().includes(courseFilter.toLowerCase()))
+                        )
+                      : sortedRecs
+                    ).map((rec) => (
                       <CourseCard key={rec.course.courseId} recommendation={rec} />
                     ))}
                     {sortedRecs.length === 0 && (
                       <p className="col-span-4 text-center text-slate-400 dark:text-slate-500 text-sm py-8">
-                        No recommendations available â€” all competencies are met!
+                        No recommendations available — all competencies are met!
                       </p>
+                    )}
+                    {courseFilter && sortedRecs.filter(r =>
+                      r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) ||
+                      (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase()) ||
+                      (r as any).matchReasons?.some((m: string) => m.toLowerCase().includes(courseFilter.toLowerCase()))
+                    ).length === 0 && sortedRecs.length > 0 && (
+                      <div className="col-span-4 text-center py-8">
+                        <p className="text-slate-400 dark:text-slate-500 text-sm mb-3">No courses matched "{courseFilter}".</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-xs">Showing all recommended courses instead:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                          {sortedRecs.map((rec) => (
+                            <CourseCard key={rec.course.courseId} recommendation={rec} />
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </section>

@@ -308,31 +308,68 @@ async def get_skill_gaps_by_user_id(
         skill_name = base_name if name_counts.get(base_name, 1) == 1 \
                      else f"{base_name} ({cid})"
 
-        # Get baseline result from assembler (or fallback to 0)
-        bline         = baseline_results.get(cid, {})
-        current_level = int(bline.get("currentLevel", 0))
-        confidence    = bline.get("confidence", "LOW")
-        raw_score     = float(bline.get("score", 0.0))
-        evidence      = bline.get("_evidence", {})
+        # Get baseline result from assembler
+        bline      = baseline_results.get(cid, {})
+        confidence = bline.get("confidence", "UNASSESSED")
+        raw_score  = float(bline.get("score", 0.0))
+        evidence   = bline.get("_evidence", {})
 
-        gap = max(0, target_level - current_level)
+        # FIX (Realism): Level display priority:
+        #   HIGH/MEDIUM confidence → trust 6-term formula (verified/documented evidence present)
+        #   LOW confidence         → prefer iGOT self-reported competencyLevel; use formula as
+        #                            a floor (prevents absurd regression from profile level)
+        #   UNASSESSED             → None (no evidence at all — shown as "?" in UI)
+        #
+        # This means someone who self-reports Level 4 on iGOT but has LOW evidence
+        # will display as Level 4, not Level 0 or 1. The gap is still correctly
+        # computed from targetLevel, just uses the self-report as the baseline.
+        assembler_level = bline.get("currentLevel")   # int or None
+
+        # Parse iGOT profile self-reported level (from enriched mock data)
+        igot_level_str = comp.get("competencyLevel", "") or ""
+        _m = __import__("re").search(r"\d+", igot_level_str)
+        igot_level = int(_m.group()) if _m else 0
+
+        if confidence in ("HIGH", "MEDIUM") and assembler_level and assembler_level > 0:
+            # Verified/documented evidence present — formula result is trustworthy
+            current_level = assembler_level
+        elif igot_level > 0:
+            # Self-reported level from iGOT profile (our enriched mock data)
+            # Use max(assembler_level, igot_level) so formula can only improve, not regress
+            current_level = max(igot_level, assembler_level or 0)
+            if confidence == "UNASSESSED":
+                confidence = "LOW"   # self-report is weak evidence but beats nothing
+        elif assembler_level and assembler_level > 0:
+            # Have formula result but no self-report — use formula
+            current_level = assembler_level
+        else:
+            current_level = None
+            confidence = "UNASSESSED"
+
+        gap = max(0, target_level - current_level) if current_level is not None else None
 
         skill_gaps.append({
             "competencyId": cid,
             "skillName":    skill_name,
             "domain":       domain,
-            "currentLevel": current_level,
+            "currentLevel": current_level,   # None when UNASSESSED
             "targetLevel":  target_level,
-            "gapScore":     gap,
-            "confidence":   confidence,       # HIGH | MEDIUM | LOW
-            "rawScore":     round(raw_score, 3),  # b_k ∈ [0, 5]
-            "evidence":     evidence,              # per-term breakdown
+            "gapScore":     gap,             # None when UNASSESSED
+            "confidence":   confidence,      # "UNASSESSED" | "LOW" | "MEDIUM" | "HIGH"
+            "rawScore":     round(raw_score, 3),
+            "evidence":     evidence,        # per-channel breakdown dict
         })
 
 
 
-    # Sort by gap desc, then by rawScore asc (biggest gaps with lowest scores first)
-    skill_gaps.sort(key=lambda g: (-g["gapScore"], g["rawScore"]))
+    # Sort: known gaps first (largest gap, lowest score), UNASSESSED last
+    skill_gaps.sort(key=lambda g: (
+        g["gapScore"] is None,           # False (0) sorts before True (1)
+        -(g["gapScore"] or 0),           # larger gap first
+        g["rawScore"],                    # lower raw score first within same gap
+    ))
+
+
 
     total_courses     = len(enrollments)
     completed_courses = sum(1 for e in enrollments if (e.get("completionPercentage") or 0) >= 100)
@@ -516,12 +553,15 @@ async def get_recommendations_by_user_id(
         for g in gaps
     ]
 
-    recommendations_payload = [
-        {
+    recommendations_payload = []
+    for r in recs:
+        recommendations_payload.append({
             "courseId":       r.courseId,
             "title":          r.title,
             "provider":       r.provider,
             "durationHours":  r.durationHours,
+            "matchReason":    r.matchReasons[0] if r.matchReasons else "",
+            "tags":           r.matchReasons,
             "finalScore":     r.finalScore,
             "relevanceScore": r.relevanceScore,
             "qualityScore":   r.qualityScore,
@@ -530,12 +570,10 @@ async def get_recommendations_by_user_id(
             "competencyName": r.competencyName,
             "priorityRank":   r.priorityRank,
             "matchReasons":   r.matchReasons,
-            # Legacy alias consumed by older api.ts mapper
-            "matchReason":    r.matchReasons[0] if r.matchReasons else "",
-            "tags":           [r.competencyName],
-        }
-        for r in recs
-    ]
+            "matchType":      r.matchType,     # "frac_tag" | "semantic_fallback"
+            "tpacSource":     r.tpacSource,    # "verified" | "inferred" | "none"
+        })
+
 
     return {
         "status":          "success",

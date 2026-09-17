@@ -71,8 +71,12 @@ class RecommendationResult(BaseModel):
     isTpac:         bool
     competencyId:   str
     competencyName: str
-    priorityRank:   int            # 1-based, across all returned recs
+    priorityRank:   int            # 1-based, within priority-preserving concat (Bug #8)
     matchReasons:   List[str]      # human-readable explanation chips
+    # FIX (Bug #6): distinguish how TPAC status was determined
+    matchType:   Optional[str] = None  # "frac_tag" | "semantic_fallback"
+    tpacSource:  Optional[str] = None  # "verified" | "inferred" | "none"
+
 
 
 class GapEntry(BaseModel):
@@ -98,30 +102,47 @@ class _CourseDoc:
     duration_hrs:     float
     comp_ids:         List[str]    # parsed from competencies_v3
     comp_names:       List[str]
-    rating:           float = 3.5
-    rating_count:     int   = 30
-    enrollment_count: int   = 100
-    completion_rate:  float = 0.60
+    # FIX (Bug #7): these fields are Optional — missing = excluded from
+    # normalization pool, NOT replaced with fabricated defaults.
+    # A course with no rating data does not get a free 3.5/30 bonus.
+    rating:           Optional[float] = None
+    rating_count:     Optional[int]   = None
+    enrollment_count: Optional[int]   = None
+    completion_rate:  Optional[float] = None
     is_tpac:          bool  = False
+    # FIX (Bug #6): distinguishes catalog-confirmed TPAC from inferred-by-name.
+    # "verified" = is_tpac field present & True in raw catalog JSON
+    # "inferred" = creator/org name matched NSSTA_CREATORS heuristic
+    # "none"     = no TPAC signal found
+    tpac_source:      str   = "none"
     corpus_text:      str   = ""   # title + description, lowercased, for BM25
 
 
-# ── Wilson lower bound ─────────────────────────────────────────────────────────
+# ── Bayesian shrinkage rating (Bug #5 fix — replaces Wilson lower bound) ───────
+# Wilson lower bound is only valid for a *binomial proportion* (0/1 outcomes).
+# It is mathematically invalid when applied to mean star ratings (1-5 scale).
+# Bayesian additive shrinkage is the correct tool:
+#   shrunk = (n * mean + k * prior) / (n + k)
+# where k is the "prior weight" (how many prior-mean observations to assume).
+# This pulls sparse-rated courses toward the global prior mean (3.0 stars),
+# preventing a single 5-star rating from dominating quality ranking.
 
-def _wilson_lower_bound(rating: float, n: int, z: float = _WILSON_Z) -> float:
+_PRIOR_MEAN = 3.0   # global prior mean (midpoint of 1-5 scale)
+_SHRINK_K   = 15    # prior weight — equivalent to 15 "average" reviews
+
+
+def _shrunk_rating(rating: Optional[float], count: Optional[int]) -> Optional[float]:
     """
-    Convert a mean rating (0-5 scale) and count n into Wilson lower bound.
-    Treats each rating as a fraction of 5 (proxy for binary positive votes).
-    Returns 0.0 if n < 1.
+    Bayesian shrinkage toward global prior mean.
+    Returns None if either input is None (course excluded from normalization pool).
     """
-    if n < 1:
-        return 0.0
-    phat = rating / 5.0
-    phat = max(0.0, min(1.0, phat))
-    denom = 1.0 + (z * z) / n
-    centre = phat + (z * z) / (2 * n)
-    spread = z * math.sqrt(phat * (1.0 - phat) / n + (z * z) / (4 * n * n))
-    return max(0.0, (centre - spread) / denom)
+    if rating is None or count is None:
+        return None
+    if count < 0:
+        return None
+    return (_SHRINK_K * _PRIOR_MEAN + count * rating) / (_SHRINK_K + count)
+
+
 
 
 # ── Main Engine ────────────────────────────────────────────────────────────────
@@ -215,19 +236,38 @@ class HybridRecommendationEngine:
             if dur_hrs <= 0:
                 dur_hrs = _FALLBACK_DURS
 
-            # TPAC / NSSTA flag — use pre-enriched field if available, else infer
-            is_tpac = item.get("is_tpac", None)
-            if is_tpac is None:
+            # FIX (Bug #6): separate verified vs inferred TPAC.
+            # "verified" = catalog JSON has explicit is_tpac: true field.
+            # "inferred" = creator/org name matches NSSTA_CREATORS heuristic.
+            # "none"     = no signal found.
+            # Different boost factors apply: 1.15× verified, 1.05× inferred.
+            raw_is_tpac = item.get("is_tpac", None)
+            if raw_is_tpac is True:
+                tpac_source = "verified"
+                is_tpac = True
+            else:
                 creator = item.get("creator", "")
                 orgs    = item.get("organisation", [])
-                is_tpac = (
+                name_match = (
                     any(kw in creator for kw in NSSTA_CREATORS)
                     or any(any(kw in org for kw in NSSTA_CREATORS) for org in orgs)
                 )
+                if name_match:
+                    tpac_source = "inferred"
+                    is_tpac = True
+                else:
+                    tpac_source = "none"
+                    is_tpac = False
 
             corpus_text = (
                 (item.get("name", "") + " " + item.get("description", "")).lower().strip()
             )
+
+            # FIX (Bug #7): use None for missing quality fields — no fabricated defaults.
+            raw_rating    = item.get("rating")
+            raw_count     = item.get("rating_count")
+            raw_enroll    = item.get("enrollment_count")
+            raw_compl     = item.get("completion_rate")
 
             doc = _CourseDoc(
                 idx              = idx,
@@ -240,11 +280,12 @@ class HybridRecommendationEngine:
                 duration_hrs     = dur_hrs,
                 comp_ids         = comp_ids,
                 comp_names       = comp_names,
-                rating           = float(item.get("rating", 3.5)),
-                rating_count     = int(item.get("rating_count", 30)),
-                enrollment_count = int(item.get("enrollment_count", 100)),
-                completion_rate  = float(item.get("completion_rate", 0.60)),
-                is_tpac          = bool(is_tpac),
+                rating           = float(raw_rating)    if raw_rating    is not None else None,
+                rating_count     = int(raw_count)       if raw_count     is not None else None,
+                enrollment_count = int(raw_enroll)      if raw_enroll    is not None else None,
+                completion_rate  = float(raw_compl)     if raw_compl     is not None else None,
+                is_tpac          = is_tpac,
+                tpac_source      = tpac_source,
                 corpus_text      = corpus_text,
             )
             self._catalog.append(doc)
@@ -252,6 +293,8 @@ class HybridRecommendationEngine:
             # Build reverse index: comp_id → doc indices
             for cid in comp_ids:
                 self._comp_index.setdefault(cid, []).append(idx)
+
+
 
     # ── Stage 0: Gap prioritization ────────────────────────────────────────────
 
@@ -378,40 +421,66 @@ class HybridRecommendationEngine:
     @staticmethod
     def _quality_score(doc: _CourseDoc, shortlist: List[_CourseDoc]) -> float:
         """
-        quality = 0.35*completion + 0.35*rating_wilson + 0.20*pop_norm + 0.10*tpac_flag
-        All sub-scores are normalised within the shortlist.
+        quality = 0.35*completion_n + 0.35*rating_n + 0.20*pop_n + 0.10*tpac_flag
+
+        FIX (Bug #7): each component is normalized ONLY within the subset of
+        shortlist docs that HAVE that field. Courses missing a field are excluded
+        from the normalization pool for that component — not given a free default.
+
+        FIX (Bug #5): rating uses Bayesian shrinkage (_shrunk_rating) instead of
+        Wilson lower bound, which is only valid for binomial proportions.
         """
         if not shortlist:
             return 0.0
 
-        # completion_rate is already [0,1] — normalise within shortlist
-        completions   = [d.completion_rate for d in shortlist]
-        c_min, c_max  = min(completions), max(completions)
-        c_range       = c_max - c_min if c_max > c_min else 1.0
-        completion_n  = (doc.completion_rate - c_min) / c_range
+        # ── completion_rate ────────────────────────────────────────────────────
+        docs_with_compl = [d for d in shortlist if d.completion_rate is not None]
+        if docs_with_compl and doc.completion_rate is not None:
+            completions  = [d.completion_rate for d in docs_with_compl]
+            c_min, c_max = min(completions), max(completions)
+            c_range      = c_max - c_min if c_max > c_min else 1.0
+            completion_n = (doc.completion_rate - c_min) / c_range
+        else:
+            completion_n = 0.0   # excluded from pool → contributes 0
 
-        # Wilson lower bound for rating, normalised within shortlist
-        wilson_scores = [_wilson_lower_bound(d.rating, d.rating_count) for d in shortlist]
-        w_min, w_max  = min(wilson_scores), max(wilson_scores)
-        w_range       = w_max - w_min if w_max > w_min else 1.0
-        my_wilson     = _wilson_lower_bound(doc.rating, doc.rating_count)
-        rating_n      = (my_wilson - w_min) / w_range
+        # ── rating (Bayesian shrinkage — Bug #5) ──────────────────────────────
+        shrunk_vals = [
+            s for s in (
+                _shrunk_rating(d.rating, d.rating_count) for d in shortlist
+            )
+            if s is not None
+        ]
+        my_shrunk = _shrunk_rating(doc.rating, doc.rating_count)
+        if shrunk_vals and my_shrunk is not None:
+            w_min, w_max = min(shrunk_vals), max(shrunk_vals)
+            w_range      = w_max - w_min if w_max > w_min else 1.0
+            rating_n     = (my_shrunk - w_min) / w_range
+        else:
+            rating_n = 0.0
 
-        # log(1 + enroll), normalised within shortlist
-        pop_raw       = [math.log1p(d.enrollment_count) for d in shortlist]
-        p_min, p_max  = min(pop_raw), max(pop_raw)
-        p_range       = p_max - p_min if p_max > p_min else 1.0
-        my_pop        = math.log1p(doc.enrollment_count)
-        pop_n         = (my_pop - p_min) / p_range
+        # ── enrollment (log-popularity) ────────────────────────────────────────
+        docs_with_enroll = [d for d in shortlist if d.enrollment_count is not None]
+        if docs_with_enroll and doc.enrollment_count is not None:
+            pop_raw      = [math.log1p(d.enrollment_count) for d in docs_with_enroll]
+            p_min, p_max = min(pop_raw), max(pop_raw)
+            p_range      = p_max - p_min if p_max > p_min else 1.0
+            my_pop       = math.log1p(doc.enrollment_count)
+            pop_n        = (my_pop - p_min) / p_range
+        else:
+            pop_n = 0.0
 
-        tpac_flag = 1.0 if doc.is_tpac else 0.0
+        # ── TPAC flag (Bug #6: verified > inferred) ────────────────────────────
+        tpac_flag = 1.0 if doc.tpac_source == "verified" else (0.5 if doc.tpac_source == "inferred" else 0.0)
 
-        return (
+        return round(
             0.35 * completion_n
             + 0.35 * rating_n
             + 0.20 * pop_n
-            + 0.10 * tpac_flag
+            + 0.10 * tpac_flag,
+            4,
         )
+
+
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -422,13 +491,16 @@ class HybridRecommendationEngine:
         enrolled_ids:   Optional[set] = None,
     ) -> List[RecommendationResult]:
         """
-        Returns deduplicated, globally ranked RecommendationResult list.
+        Returns deduplicated recommendations in gap-priority order.
 
-        Parameters
-        ----------
-        gaps           : output of calculate_gaps(), sorted by priority DESC
-        limit_per_gap  : max courses to return per gap (default 3)
-        enrolled_ids   : set of courseIds already enrolled — excluded from results
+        FIX (Bug #8): The global finalScore sort after building all_results is
+        REMOVED. Per-gap blocks are concatenated in the order returned by
+        calculate_gaps() (priority DESC). Within each gap's block, courses are
+        sorted by finalScore DESC. This guarantees that the highest-priority
+        gap's courses appear before all lower-priority gaps' courses, regardless
+        of their absolute finalScore.
+
+        priorityRank is assigned via enumerate on the final concatenation.
         """
         if enrolled_ids is None:
             enrolled_ids = set()
@@ -461,8 +533,15 @@ class HybridRecommendationEngine:
             rrf_min   = min(rrf_vals) if rrf_vals else 0.0
             rrf_range = rrf_max - rrf_min if rrf_max > rrf_min else 1.0
 
-            gap_results: List[Tuple[float, RecommendationResult]] = []
+            gap_results: List[RecommendationResult] = []
             for (idx, rrf_raw), doc in zip(retrieved, shortlist_docs):
+                # Determine match type from whether this gap had FRAC-tagged courses
+                match_type = (
+                    "semantic_fallback"
+                    if len(self._comp_index.get(gap.competencyId, [])) == 0
+                    else "frac_tag"
+                )
+
                 # Stage 3 scores
                 relevance_n = (rrf_raw - rrf_min) / rrf_range
                 quality_n   = self._quality_score(doc, shortlist_docs)
@@ -470,8 +549,10 @@ class HybridRecommendationEngine:
 
                 # Build human-readable match reasons
                 reasons = [f"FRAC tag: {gap.competencyName}"]
-                if doc.is_tpac:
-                    reasons.append("NSSTA TPAC-vetted course")
+                if doc.tpac_source == "verified":
+                    reasons.append("NSSTA TPAC-vetted course (verified)")
+                elif doc.tpac_source == "inferred":
+                    reasons.append("NSSTA TPAC-vetted course (inferred)")
                 if relevance_n >= 0.8:
                     reasons.append("High semantic relevance to competency")
                 elif relevance_n >= 0.5:
@@ -492,22 +573,26 @@ class HybridRecommendationEngine:
                     isTpac         = doc.is_tpac,
                     competencyId   = gap.competencyId,
                     competencyName = gap.competencyName,
-                    priorityRank   = 0,   # assigned after global sort below
+                    priorityRank   = 0,   # assigned below via enumerate
                     matchReasons   = reasons,
+                    matchType      = match_type,       # Bug #6
+                    tpacSource     = doc.tpac_source,  # Bug #6
                 )
-                gap_results.append((final, result))
+                gap_results.append(result)
                 seen_course_ids.add(doc.identifier)
 
-            # Keep top-K per gap
-            gap_results.sort(key=lambda x: x[0], reverse=True)
-            all_results.extend(r for _, r in gap_results[:limit_per_gap])
+            # Sort within this gap's block by finalScore DESC, take top-K
+            gap_results.sort(key=lambda r: r.finalScore, reverse=True)
+            all_results.extend(gap_results[:limit_per_gap])
 
-        # Global sort by finalScore, assign priorityRank
-        all_results.sort(key=lambda r: r.finalScore, reverse=True)
+        # FIX (Bug #8): NO global sort here — gap-priority order is preserved.
+        # priorityRank = position in the priority-ordered concatenation.
         for rank, rec in enumerate(all_results, start=1):
             rec.priorityRank = rank
 
         return all_results
+
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

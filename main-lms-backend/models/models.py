@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Enum, JSON
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Enum, JSON, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 import uuid
 import enum
@@ -168,24 +168,71 @@ class OutboxEntry(Base):
     status = Column(String, nullable=False, default="PENDING")
     retryCount = Column(Integer, nullable=False, default=0)
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EVIDENCE LOG — canonical evidence store for all competency evidence channels
+# ─────────────────────────────────────────────────────────────────────────────
+# evidenceType values:
+#   'VERIFIED_IGOT'       — iGOT/NSSTA enrollment completion, FRAC-tag-matched
+#   'DOCUMENTED_CERT'     — uploaded certificate (grantedValue = cert level 1-5)
+#   'TENURE'              — career history evidence
+#   'SELF_REPORT'         — user-declared level (0.6x reliability discount applied)
+#   'PRACTICE_ASSESSMENT' — RAG quiz pass; keyed by iGOT userId, feeds into the
+#                           documented channel of CompetencyCalculator.
+
 class EvidenceLog(Base):
     __tablename__ = "evidence_log"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    userId = Column(String, ForeignKey("users.uuid"), nullable=False)
-    compId = Column(String, ForeignKey("competencies.compId"), nullable=False)
-    
-    # 'VERIFIED_IGOT', 'DOCUMENTED_CERT', 'TENURE', 'SELF_REPORT'
-    evidenceType = Column(String, nullable=False) 
-    
-    grantedValue = Column(Float, nullable=False) # 1.0 to 5.0
-    issueDate = Column(DateTime, nullable=True) # Drives the recency decay multiplier
-    
+
+    # FIX (Bug #9): userId stores the iGOT userId string (e.g. "usr_720465595"),
+    # NOT a FK to users.uuid (which is an internal UUID unrelated to iGOT IDs).
+    # BaselineAssembler.compute_for_user queries this table by iGOT userId.
+    # Removing the FK prevents constraint violations when evidence is written for
+    # iGOT users that do not yet have a row in the internal auth.db users table.
+    userId = Column(String, nullable=False, index=True)  # iGOT userId — canonical identity
+
+    compId = Column(String, ForeignKey("competencies.compId"), nullable=False, index=True)
+
+    # 'VERIFIED_IGOT', 'DOCUMENTED_CERT', 'TENURE', 'SELF_REPORT', 'PRACTICE_ASSESSMENT'
+    evidenceType = Column(String, nullable=False)
+
+    grantedValue = Column(Float, nullable=False)  # 1.0 to 5.0
+    issueDate = Column(DateTime, nullable=True)   # Drives recency decay multiplier
+
     # Stores LLM reasoning, issuing organization, or iGOT course IDs
-    metadata_payload = Column(JSON, nullable=True) 
+    metadata_payload = Column(JSON, nullable=True)
     createdAt = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("BaseUser")
     competency = relationship("Competency")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUIZ ATTEMPT — idempotency table for RAG quiz grading (Bug #10)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class QuizAttempt(Base):
+    """
+    Persists every MCQ-quiz submission BEFORE evidence is written.
+    UniqueConstraint on (userId, quizId) makes grading idempotent:
+      - First submission  → writes EvidenceLog row, sets evidenceWritten=True
+      - Later submissions → re-scored for UX, NO second EvidenceLog row written
+    userId here is the iGOT userId string from current_user.username (JWT auth).
+    """
+    __tablename__ = "quiz_attempts"
+    __table_args__ = (UniqueConstraint("userId", "quizId", name="uq_user_quiz_attempt"),)
+
+    attemptId       = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId          = Column(String, nullable=False, index=True)  # iGOT userId
+    quizId          = Column(String, nullable=False, index=True)
+    compId          = Column(String, nullable=True)   # competency targeted by this quiz
+    answers         = Column(JSON, nullable=False)
+    score           = Column(Float, nullable=False)   # 0–100
+    passed          = Column(Boolean, nullable=False)
+    evidenceWritten = Column(Boolean, default=False)  # True once EvidenceLog row created
+    gradedAt        = Column(DateTime, default=datetime.utcnow)
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # KARMA / GAMIFICATION MODELS — iGOT Karmayogi Points Layer
