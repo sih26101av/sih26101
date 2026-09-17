@@ -1,27 +1,26 @@
 """
 FILE: ai/semantic_engine.py
 ─────────────────────────────────────────────────────────────────────────────
-Gyan — Semantic Intent Engine (Render-Deployable)
+Gyan — Semantic Intent Engine (Render-Deployable, Multilingual)
 MoSPI Skill Intelligence Platform | SIH 2026
 
-Replaces the Ollama hot-path with a fully self-contained, CPU-friendly
-intent classifier + profile vectorizer.
+Uses the shared singleton from ai/embedder.py — the model is loaded ONCE
+for the entire backend (chatbot + recommendation engine).
 
 Architecture:
   1. SemanticEngine.classify(query) → (intent_name, confidence_0_to_1)
-     • Encodes query with sentence-transformers all-MiniLM-L6-v2 (~80 MB)
+     • Typo correction via difflib on each token
+     • Encodes query with get_embedder() (paraphrase-multilingual-MiniLM-L12-v2)
      • Cosine-similarity match against pre-encoded prototype phrases
-     • Falls back to difflib fuzzy matching for low-confidence results
+     • Prototypes are lazily encoded on first call (no startup cost)
 
   2. vectorize_profile(skill_gaps) → dict of numeric profile features
-     • Converts the list of SkillGapContext dicts into stat numbers
-     • Used by chatbot.py to answer profile analysis queries instantly
+     • Pure Python arithmetic — no embedding model required
 
-Design decisions:
-  • Model is loaded ONCE at module import (singleton) — no per-request cost.
-  • all-MiniLM-L6-v2: 80 MB, ~384-dim vectors, <50 ms CPU inference.
-  • Render free tier: 512 MB RAM → model fits with room to spare.
-  • Ollama/ChromaDB are NOT used here — this file is standalone.
+Multilingual support:
+  • Native Devanagari (Hindi, Marathi) and Hinglish prototypes in INTENT_CORPUS
+  • Cross-lingual matching: "कौन सा कोर्स" → recommend intent
+    without any translation API
 ─────────────────────────────────────────────────────────────────────────────
 """
 
@@ -32,10 +31,12 @@ from collections import Counter
 from difflib import get_close_matches
 from typing import Optional
 
+import numpy as np
+
+from ai.embedder import get_embedder, is_embedder_ready
+
 logger = logging.getLogger(__name__)
 
-# ── Fuzzy correction vocabulary ───────────────────────────────────────────────
-# All navigable keywords on the platform that users might mistype
 _NAV_VOCAB = [
     "dashboard", "skill", "gap", "gaps", "competency", "competencies",
     "course", "courses", "enroll", "enrollment", "my courses", "active",
@@ -90,6 +91,9 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "sup", "what's up", "kaise ho", "sab theek",
         "nice to meet you", "pleasure to meet you", "greetings",
         "good afternoon", "hey gyan", "hello gyan", "hi gyan",
+        # Devanagari / Hindi
+        "नमस्ते", "हेलो", "हाय", "सुप्रभात", "शुभ संध्या", "नमस्कार",
+        "हेलो ज्ञान", "नमस्ते ज्ञान", "सुप्रभात ज्ञान",
     ],
 
     # -- How are you (casual well-being) ---------------------------------------
@@ -173,6 +177,11 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "mandatory gap", "which skills are mandatory", "domain gap",
         "Statistical gap", "Technical gap", "Governance gap", "Leadership gap",
         "skill deficiency", "current level target level", "gap analysis",
+        # Devanagari / Hindi
+        "मेरे कौशल अंतराल क्या हैं", "मुझे कहाँ सुधार करना है",
+        "कौन से कौशल कमज़ोर हैं", "मेरी कमज़ोरियाँ दिखाओ",
+        "मेरा कौशल विश्लेषण", "कम्पेटेंसी गैप दिखाओ",
+        "कहाँ कमज़ोर हूँ", "क्या गैप है",
     ],
 
     # ── Course Recommendations ────────────────────────────────────────────────
@@ -187,6 +196,10 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "which course to enroll in", "course for my gap",
         "top course recommendation", "priority course",
         "AI recommended", "start learning",
+        # Devanagari / Hindi
+        "कौन सा कोर्स करूँ", "कोर्स सुझाओ", "आगे क्या सीखूँ",
+        "मेरे लिए सबसे अच्छा कोर्स", "सीखने का रास्ता दिखाओ",
+        "की पड़हाई करूँ", "आरंभिक कोर्स बताओ",
     ],
 
     # ── My Progress ───────────────────────────────────────────────────────────
@@ -199,6 +212,9 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "kitna seekha", "kitna progress hua", "meri progress dikhao",
         "am I on track", "progress percentage", "completion percentage",
         "how complete am I", "percent done", "how much left",
+        # Devanagari / Hindi
+        "मेरी प्रगति दिखाओ", "कितना सीखा", "मैं सही रास्ते पर हूँ",
+        "खैल सतर कितना पूरा", "मेरी शिक्षा प्रगति",
     ],
 
     # ── Achievements ──────────────────────────────────────────────────────────
@@ -334,6 +350,8 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "that helped", "got it", "understood", "ok got it", "clear",
         "shukriya", "dhanyavad", "bahut shukriya", "bahut dhanyavad",
         "gr8", "thx", "ty", "thnx", "tysm", "thank u",
+        # Devanagari / Hindi
+        "धन्यवाद", "शुक्रिया", "बहुत अच्छा", "वाह शानदार", "बहुत बढ़िया",
     ],
 
     # ── Farewells ─────────────────────────────────────────────────────────────
@@ -342,6 +360,8 @@ INTENT_CORPUS: dict[str, list[str]] = {
         "ok bye", "see you", "tataa", "that's all",
         "good night", "shubh ratri", "good bye", "see ya",
         "thanks bye", "thank you bye", "ok thank you", "ok thanks",
+        # Devanagari / Hindi
+        "अलविदा", "शुभ रात्रि", "फिर मिलेंगे", "नमस्ते अलविदा",
     ],
 
     # ── UI Action Requests (things we can guide but not do directly) ──────────
@@ -444,54 +464,38 @@ for _intent, _phrases in INTENT_CORPUS.items():
         _PROTOTYPE_SENTENCES.append(_phrase)
 
 
-# ── Singleton model ───────────────────────────────────────────────────────────
 
-_model = None          # SentenceTransformer (loaded once)
-_prototype_vecs = None  # numpy array shape (N, 384)
-_engine_ready = False
+# ── Prototype vectors (lazy-initialised on first classify_intent call) ────────
+
+_prototype_vecs: Optional[np.ndarray] = None
 
 
-def _load_model() -> None:
-    """
-    Load sentence-transformers model once at startup.
-    Model: all-MiniLM-L6-v2 (~80 MB, CPU-safe, Render-compatible).
-    """
-    global _model, _prototype_vecs, _engine_ready
+def _ensure_prototypes() -> None:
+    """Encode all intent prototype phrases once, via the shared singleton embedder."""
+    global _prototype_vecs
+    if _prototype_vecs is not None:
+        return
     try:
-        from sentence_transformers import SentenceTransformer
-        import numpy as np
-
-        logger.info("[SemanticEngine] Loading all-MiniLM-L6-v2 model...")
-        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
-        # Encode all prototype phrases once (bulk — very fast)
-        _prototype_vecs = _model.encode(
-            _PROTOTYPE_SENTENCES,
-            normalize_embeddings=True,   # L2-normalized → dot product == cosine
-            show_progress_bar=False,
-            batch_size=64,
-        )  # shape: (N, 384)
-
-        _engine_ready = True
+        embedder = get_embedder()
         logger.info(
-            "[SemanticEngine] Ready — %d intent prototypes across %d intents.",
-            len(_PROTOTYPE_SENTENCES),
-            len(INTENT_CORPUS),
+            "[SemanticEngine] Encoding %d intent prototypes (%d intents)…",
+            len(_PROTOTYPE_SENTENCES), len(INTENT_CORPUS),
         )
+        _prototype_vecs = embedder.encode(
+            _PROTOTYPE_SENTENCES,
+            normalize_embeddings=True,
+            batch_size=64,
+            show_progress_bar=False,
+        )  # shape: (N, 384)
+        logger.info("[SemanticEngine] Intent prototypes ready.")
     except Exception as exc:
-        logger.warning(
-            "[SemanticEngine] Failed to load model — will use keyword fallback: %s", exc
-        )
-        _engine_ready = False
-
-
-# Load immediately when module is imported (async-safe — called from startup)
-_load_model()
+        logger.warning("[SemanticEngine] Could not encode prototypes: %s", exc)
+        _prototype_vecs = None
 
 
 def is_semantic_engine_ready() -> bool:
-    """Returns True if the sentence-transformer model is loaded and ready."""
-    return _engine_ready
+    """True if the shared embedder is loaded AND prototypes are encoded."""
+    return is_embedder_ready() and _prototype_vecs is not None
 
 
 # ── Core Classifier ───────────────────────────────────────────────────────────
@@ -502,32 +506,37 @@ def classify_intent(query: str) -> tuple[str, float]:
 
     Steps:
       1. Fuzzy-correct any typos in the query.
-      2. Encode via sentence-transformers.
-      3. Cosine similarity vs prototype vectors (dot product after L2 norm).
-      4. Return best-matching intent and its confidence score (0–1).
+      2. Lazily encode prototype phrases on first call.
+      3. Encode the (corrected) query via get_embedder().
+      4. Cosine similarity = dot product (L2-normalised vectors).
+      5. Return (best_intent, confidence 0–1).
 
-    Falls back to ("general", 0.0) if model is not loaded.
+    Falls back to ("general", 0.0) if the embedder is unavailable.
     """
-    if not _engine_ready or _model is None or _prototype_vecs is None:
-        return "general", 0.0
-
-    import numpy as np
-
     # Step 1: typo correction
     corrected = _correct_tokens(query)
 
-    # Step 2: encode the query (single sentence)
-    query_vec = _model.encode(
-        corrected,
-        normalize_embeddings=True,
-        show_progress_bar=False,
-    )  # shape: (384,)
+    # Step 2: ensure prototypes (lazy, first-call only)
+    _ensure_prototypes()
+    if _prototype_vecs is None:
+        return "general", 0.0
 
-    # Step 3: cosine similarity = dot product (vectors are L2-normalized)
+    # Step 3: encode the corrected query
+    try:
+        query_vec = get_embedder().encode(
+            corrected,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )  # shape: (384,)
+    except Exception as exc:
+        logger.warning("[SemanticEngine] encode failed: %s", exc)
+        return "general", 0.0
+
+    # Step 4: cosine similarity = dot product (vectors are L2-normalised)
     sims = _prototype_vecs @ query_vec  # shape: (N,)
 
-    best_idx = int(np.argmax(sims))
-    best_sim = float(sims[best_idx])
+    best_idx    = int(np.argmax(sims))
+    best_sim    = float(sims[best_idx])
     best_intent = _INTENT_LABELS[best_idx]
 
     logger.debug(
