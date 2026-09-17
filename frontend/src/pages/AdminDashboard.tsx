@@ -1,29 +1,39 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, LineChart, Line 
+/**
+ * FILE: src/pages/AdminDashboard.tsx
+ *
+ * Ministry-side dashboard at /admin (role `admin` only).
+ *
+ * Sections: overview · officials · competencies · analytics · reports.
+ * Every figure comes from `useAdminData` (roster → KPIs + shortage heatmap) and
+ * `useSkillsData` (FRAC dictionary). The previous version fell back to invented
+ * numbers (151 officials, 87% compliance, a static bar chart and a "25k" donut)
+ * whenever the API was empty — those are gone; empty data now reads as empty.
+ */
+
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Bell, ChevronDown, CheckCircle, Search, SlidersHorizontal, 
-  User, AlertTriangle, Sun, Moon, RefreshCcw, Home, LogOut,
-  LayoutDashboard, Users, BookOpen, FileText, Settings, ChevronLeft, ChevronRight
+import {
+  AlertTriangle, BarChart3, BookOpen, CheckCircle2, ChevronLeft, ChevronRight,
+  Database, Download, FileText, LayoutDashboard, RefreshCcw, ShieldCheck,
+  SlidersHorizontal, TrendingUp, Users,
 } from 'lucide-react';
+
 import { useTheme } from '../hooks/useTheme';
-import { useAuth } from '../context/AuthContext';
 import { useAdminData } from '../hooks/useAdminData';
 import type { AdminRosterRow } from '../hooks/useAdminData';
 import { useSkillsData } from '../hooks/useSkillsData';
 import type { SkillRow } from '../hooks/useSkillsData';
 
-// ─── Static constants ─────────────────────────────────────────────────────────
-const SPARKLINE_DATA = [
-  { value: 110 }, { value: 112 }, { value: 108 }, { value: 116 }, { value: 115 }, { value: 120 }, { value: 124 }
-];
-const PIE_DATA = [
-  { name: 'Core Skills',     value: 32, color: '#60a5fa' },
-  { name: 'Advanced Skills', value: 68, color: '#94a3b8'  }
-];
+import AppShell, { type ShellNavGroup } from '../components/shell/AppShell';
+import PageHeader from '../components/shell/PageHeader';
+import SectionCard, { SectionAction } from '../components/shell/SectionCard';
+import StatCard from '../components/shell/StatCard';
+import { AshokaChakra } from '../components/gov/GovUI';
+
+type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'reports';
+
 const ITEMS_PER_PAGE = 10;
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -33,596 +43,696 @@ function enrollmentLabel(status: number | undefined): string {
   return 'Training Required';
 }
 
-// ─── Subcomponents ────────────────────────────────────────────────────────────
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 animate-pulse">
-    <div className="flex items-center gap-4">
-      <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
-        <div className="h-7 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-      </div>
-    </div>
-  </div>
-);
+const STATUS_CHIP: Record<string, string> = {
+  'Compliant':        'bg-accent-green-soft text-accent-green dark:bg-emerald-500/15 dark:text-emerald-300',
+  'In Progress':      'bg-accent-orange-soft text-accent-orange dark:bg-orange-500/15 dark:text-orange-300',
+  'Training Required':'bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300',
+};
 
+/** Download rows as a CSV file, quoting every cell. */
+function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
+  const esc = (v: string | number) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((r) => r.map(esc).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Shared bits ──────────────────────────────────────────────────────────────
 const ErrorBanner: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
-  <div className="flex items-center gap-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-2xl p-5 text-sm">
-    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+  <div className="mb-5 flex items-center gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm dark:border-red-700/50 dark:bg-red-900/20">
+    <AlertTriangle className="h-5 w-5 flex-shrink-0 text-accent-rose" aria-hidden="true" />
     <div className="flex-1">
       <p className="font-semibold text-red-700 dark:text-red-400">Failed to load data</p>
-      <p className="text-red-600 dark:text-red-500 text-xs mt-0.5">{message}</p>
+      <p className="mt-0.5 text-xs text-red-600 dark:text-red-500">{message}</p>
     </div>
     <button
       onClick={onRetry}
-      className="flex items-center gap-1.5 px-4 py-2 bg-red-100 dark:bg-red-800/50 text-red-700 dark:text-red-300 rounded-lg font-medium text-xs hover:bg-red-200 dark:hover:bg-red-700/50 transition-colors"
+      className="flex items-center gap-1.5 rounded-lg bg-red-100 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-800/50 dark:text-red-300 dark:hover:bg-red-700/50"
     >
-      <RefreshCcw className="w-3.5 h-3.5" /> Retry
+      <RefreshCcw className="h-3.5 w-3.5" /> Retry
     </button>
   </div>
 );
 
-// ─── Roster Row ───────────────────────────────────────────────────────────────
+const Pagination: React.FC<{
+  page: number; totalPages: number; totalItems: number; noun: string;
+  onChange: (page: number) => void;
+}> = ({ page, totalPages, totalItems, noun, onChange }) => (
+  <div className="flex flex-col items-center justify-between gap-3 border-t border-gov-line px-5 py-3.5 sm:flex-row dark:border-slate-800">
+    <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+      Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{(page - 1) * ITEMS_PER_PAGE + 1}</span>
+      {' '}to <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.min(page * ITEMS_PER_PAGE, totalItems)}</span>
+      {' '}of <span className="font-semibold text-slate-700 dark:text-slate-200">{totalItems}</span> {noun}
+    </p>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="flex items-center gap-1 rounded-lg border border-gov-line px-3 py-1.5 text-[12.5px] font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+      >
+        <ChevronLeft className="h-4 w-4" /> Previous
+      </button>
+      <span className="px-2 text-[12.5px] font-medium text-slate-600 dark:text-slate-400">
+        Page {page} of {totalPages}
+      </span>
+      <button
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        className="flex items-center gap-1 rounded-lg border border-gov-line px-3 py-1.5 text-[12.5px] font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+      >
+        Next <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+);
+
+const TableSkeleton: React.FC<{ cols: number }> = ({ cols }) => (
+  <>
+    {Array.from({ length: 5 }, (_, i) => (
+      <tr key={i} className="animate-pulse">
+        {Array.from({ length: cols }, (_, j) => (
+          <td key={j} className="px-4 py-4"><div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-700" /></td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
 const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
-  const label  = enrollmentLabel(employee.enrollmentStatus);
-  const isGood = label === 'Compliant';
-  const isWarn = label === 'In Progress';
+  const label = enrollmentLabel(employee.enrollmentStatus);
+  const name = `${employee.firstName} ${employee.lastName}`.trim() || employee.govId;
   return (
-    <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-200">
-        {employee.firstName} {employee.lastName}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-        {employee.govId ?? employee.userId}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-        {employee.designation}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-200 font-medium">
-        {employee.missingSkill ?? '—'}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">
-        <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold ${
-          isGood
-            ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-            : isWarn
-            ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-            : 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-        }`}>
-          {label}
+    <tr>
+      <td>
+        <span className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gov-navy/10 text-[11px] font-bold text-gov-navy dark:bg-sky-500/15 dark:text-sky-300">
+            {name.charAt(0).toUpperCase()}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-gov-ink dark:text-white">{name}</span>
+            <span className="block truncate text-[11px] text-slate-400">{employee.email || employee.userId}</span>
+          </span>
         </span>
       </td>
+      <td className="whitespace-nowrap text-slate-500 dark:text-slate-400">{employee.govId ?? employee.userId}</td>
+      <td className="text-slate-500 dark:text-slate-400">{employee.designation}</td>
+      <td className="text-slate-500 dark:text-slate-400">{employee.department}</td>
+      <td className="font-medium">{employee.missingSkill ?? '—'}</td>
+      <td><span className={`chip ${STATUS_CHIP[label]}`}>{label}</span></td>
     </tr>
   );
 };
 
-// ─── Skill Row ───────────────────────────────────────────────────────────────
-const SkillTableRow: React.FC<{ skill: SkillRow }> = ({ skill }) => {
+const SkillTableRow: React.FC<{ skill: SkillRow }> = ({ skill }) => (
+  <tr>
+    <td className="whitespace-nowrap font-mono text-[12px] font-semibold text-gov-ink dark:text-white">{skill.competency_id}</td>
+    <td className="font-semibold text-gov-ink dark:text-white">{skill.name}</td>
+    <td><span className="chip bg-accent-blue-soft text-accent-blue dark:bg-blue-500/15 dark:text-blue-300">{skill.category}</span></td>
+    <td className="max-w-md truncate text-slate-500 dark:text-slate-400">{skill.description}</td>
+  </tr>
+);
+
+/** Live status of one data feed — reflects the actual hook state, nothing simulated. */
+const FeedStatus: React.FC<{ label: string; endpoint: string; loading: boolean; error: string | null; count: number }> = ({
+  label, endpoint, loading, error, count,
+}) => {
+  const tone = error ? 'rose' : loading ? 'orange' : 'green';
+  const text = error ? 'Unavailable' : loading ? 'Loading…' : `${count} records`;
   return (
-    <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-200">
-        {skill.competency_id}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-200">
-        {skill.name}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">
-        <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-          {skill.category}
-        </span>
-      </td>
-      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">
-        {skill.description}
-      </td>
-    </tr>
+    <li className="flex items-center gap-3">
+      <span
+        className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
+          tone === 'green' ? 'bg-accent-green' : tone === 'orange' ? 'animate-pulse bg-accent-orange' : 'bg-accent-rose'
+        }`}
+        aria-hidden="true"
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-semibold text-gov-ink dark:text-white">{label}</span>
+        <span className="block truncate font-mono text-[10.5px] text-slate-400">{endpoint}</span>
+      </span>
+      <span className={`chip ${tone === 'green' ? STATUS_CHIP['Compliant'] : tone === 'orange' ? STATUS_CHIP['In Progress'] : STATUS_CHIP['Training Required']}`}>
+        {text}
+      </span>
+    </li>
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 const AdminDashboard: React.FC = () => {
-  const { theme, toggleTheme }                = useTheme();
-  const navigate                              = useNavigate();
-  const { logout }                            = useAuth();
-  
-  // Data Hooks
-  const { roster, kpis, isLoading, error, refetch } = useAdminData();
+  const { theme } = useTheme();
+  const { roster, kpis, heatmap, isLoading, error, refetch } = useAdminData();
   const { skills, isLoading: isSkillsLoading, error: skillsError, refetch: refetchSkills } = useSkillsData();
-  
-  // State for Navigation and Search/Pagination
-  const [activeTab, setActiveTab]             = useState<'dashboard' | 'officials' | 'skills'>('dashboard');
-  const [searchTerm, setSearchTerm]           = useState('');
-  const [currentPage, setCurrentPage]         = useState(1);
 
-  const handleSignOut = async () => {
-    await logout();
-    navigate('/login', { replace: true });
-  };
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'all' | 0 | 1 | 2>('all');
 
-  // Reset to first page when search term or active tab changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, activeTab]);
-
-  // ─── Roster Logic ───
-  const filteredRoster = useMemo(
-    () =>
-      roster.filter(emp => {
-        const q = searchTerm.toLowerCase();
-        return (
-          `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(q) ||
-          (emp.govId ?? emp.userId).toLowerCase().includes(q) ||
-          emp.department?.toLowerCase().includes(q)
-        );
-      }),
-    [roster, searchTerm]
-  );
-
-  const totalPagesRoster = Math.ceil(filteredRoster.length / ITEMS_PER_PAGE);
-  const currentRoster = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredRoster.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredRoster, currentPage]);
-
-  // ─── Skills Logic ───
-  const filteredSkills = useMemo(
-    () =>
-      skills.filter(s => {
-        const q = searchTerm.toLowerCase();
-        return (
-          s.name.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q) ||
-          s.competency_id.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q)
-        );
-      }),
-    [skills, searchTerm]
-  );
-
-  const totalPagesSkills = Math.ceil(filteredSkills.length / ITEMS_PER_PAGE);
-  const currentSkills = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredSkills.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredSkills, currentPage]);
-
-
-  // Match the chart data to the image
-  const chartData = [
-    { competency: 'Adv. Analysis', gap: 26, color: '#1e3a8a' },
-    { competency: 'Strategic',     gap: 22, color: '#0f766e' },
-    { competency: 'Data Privacy',  gap: 21, color: '#14b8a6' },
-    { competency: 'Leadership',    gap: 21, color: '#eab308' },
-    { competency: 'Python',        gap: 18, color: '#ea580c' },
-  ];
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, activeTab, statusFilter]);
 
   const isDark = theme === 'dark';
-  const axisColor   = isDark ? '#94a3b8' : '#64748b';
-  const gridColor   = isDark ? '#334155' : '#e2e8f0';
+  const axisColor = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+  // ── Roster filtering / pagination ──────────────────────────────────────────
+  const filteredRoster = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return roster.filter((emp) => {
+      const matchesStatus = statusFilter === 'all' || emp.enrollmentStatus === statusFilter;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      return (
+        `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(q) ||
+        (emp.govId ?? emp.userId).toLowerCase().includes(q) ||
+        (emp.department ?? '').toLowerCase().includes(q) ||
+        (emp.designation ?? '').toLowerCase().includes(q)
+      );
+    });
+  }, [roster, searchTerm, statusFilter]);
+
+  const totalPagesRoster = Math.max(1, Math.ceil(filteredRoster.length / ITEMS_PER_PAGE));
+  const currentRoster = useMemo(
+    () => filteredRoster.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filteredRoster, currentPage],
+  );
+
+  // ── FRAC filtering / pagination ────────────────────────────────────────────
+  const filteredSkills = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return skills;
+    return skills.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q) ||
+        s.competency_id.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q),
+    );
+  }, [skills, searchTerm]);
+
+  const totalPagesSkills = Math.max(1, Math.ceil(filteredSkills.length / ITEMS_PER_PAGE));
+  const currentSkills = useMemo(
+    () => filteredSkills.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filteredSkills, currentPage],
+  );
+
+  // ── Derived analytics (all from the live roster) ───────────────────────────
+  const statusCounts = useMemo(() => {
+    const counts = { compliant: 0, inProgress: 0, required: 0 };
+    roster.forEach((r) => {
+      if (r.enrollmentStatus === 2) counts.compliant += 1;
+      else if (r.enrollmentStatus === 1) counts.inProgress += 1;
+      else counts.required += 1;
+    });
+    return counts;
+  }, [roster]);
+
+  /** Completion rate per department, biggest departments first. */
+  const deptCompliance = useMemo(() => {
+    const byDept = new Map<string, { total: number; done: number }>();
+    roster.forEach((r) => {
+      const key = r.department || 'Unspecified';
+      const cur = byDept.get(key) ?? { total: 0, done: 0 };
+      cur.total += 1;
+      if (r.enrollmentStatus === 2) cur.done += 1;
+      byDept.set(key, cur);
+    });
+    return [...byDept.entries()]
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 5)
+      .map(([dept, v], i) => ({
+        dept: dept.length > 18 ? `${dept.slice(0, 18)}…` : dept,
+        pct: Math.round((v.done / v.total) * 100),
+        headcount: v.total,
+        color: ['#0b2a55', '#f97316', '#10b981', '#8b5cf6', '#60a5fa'][i % 5],
+      }));
+  }, [roster]);
+
+  const needsTraining = useMemo(
+    () => roster.filter((r) => r.enrollmentStatus === 0).slice(0, 5),
+    [roster],
+  );
+
+  // ── Exports ────────────────────────────────────────────────────────────────
+  const exportRoster = () =>
+    downloadCsv(
+      `nso-officials-roster-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Gov ID', 'User ID', 'First Name', 'Last Name', 'Email', 'Designation', 'Department', 'Top Missing Skill', 'Status'],
+      filteredRoster.map((r) => [
+        r.govId, r.userId, r.firstName, r.lastName, r.email,
+        r.designation, r.department, r.missingSkill ?? '', enrollmentLabel(r.enrollmentStatus),
+      ]),
+    );
+
+  const exportCompetencies = () =>
+    downloadCsv(
+      `frac-competencies-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Competency ID', 'Name', 'Category', 'Description'],
+      filteredSkills.map((s) => [s.competency_id, s.name, s.category, s.description]),
+    );
+
+  const exportShortages = () =>
+    downloadCsv(
+      `competency-shortage-index-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Competency', 'Shortage Index'],
+      heatmap.map((h) => [h.competency, h.gap]),
+    );
+
+  // ── Nav ────────────────────────────────────────────────────────────────────
+  const navGroups: ShellNavGroup[] = [
+    {
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'officials', label: 'Officials', icon: Users, badge: roster.length || undefined },
+        { id: 'competencies', label: 'Competencies', icon: BookOpen, badge: skills.length || undefined },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'reports', label: 'Reports', icon: FileText },
+      ],
+    },
+  ];
+
+  const META: Record<AdminTab, { title: string; subtitle: string }> = {
+    dashboard:    { title: 'Admin Dashboard',  subtitle: 'Monitor platform usage, track training progress and drive capability development.' },
+    officials:    { title: 'Officials',        subtitle: 'The full NSO roster with competency status from iGOT Karmayogi.' },
+    competencies: { title: 'FRAC Competencies',subtitle: 'The competency dictionary that every skill gap is measured against.' },
+    analytics:    { title: 'Analytics',        subtitle: 'Shortage concentration and departmental training compliance.' },
+    reports:      { title: 'Reports',          subtitle: 'Export the current view as CSV for offline analysis.' },
+  };
+
+  // ── Shortage bar chart (real heatmap from useAdminData) ────────────────────
+  const shortageChart = (height = 300) => (
+    heatmap.length === 0 ? (
+      <p className="py-14 text-center text-[13px] text-slate-400">
+        {isLoading ? 'Loading shortage data…' : 'No competency shortages recorded in the roster.'}
+      </p>
+    ) : (
+      <div style={{ height }} className="w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={heatmap} margin={{ top: 10, right: 10, left: -18, bottom: 16 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+            <XAxis dataKey="competency" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} />
+            <Tooltip
+              cursor={{ fill: 'transparent' }}
+              formatter={(v) => [String(v), 'Shortage index'] as [string, string]}
+              contentStyle={{ borderRadius: 10, fontSize: 12, border: `1px solid ${gridColor}`, background: isDark ? '#0f172a' : '#fff' }}
+            />
+            <Bar dataKey="gap" radius={[6, 6, 0, 0]} barSize={42}>
+              {heatmap.map((entry, i) => <Cell key={i} fill={entry.color[0]} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  );
+
+  const deptChart = (height = 300) => (
+    deptCompliance.length === 0 ? (
+      <p className="py-14 text-center text-[13px] text-slate-400">
+        {isLoading ? 'Loading roster…' : 'No departmental data available.'}
+      </p>
+    ) : (
+      <div style={{ height }} className="w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={deptCompliance} margin={{ top: 18, right: 10, left: -18, bottom: 16 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+            <XAxis dataKey="dept" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} domain={[0, 100]} unit="%" />
+            <Tooltip
+              cursor={{ fill: 'transparent' }}
+              formatter={(v, _n, item: any) => [`${v}% of ${item?.payload?.headcount} officials`, 'Compliant'] as [string, string]}
+              contentStyle={{ borderRadius: 10, fontSize: 12, border: `1px solid ${gridColor}`, background: isDark ? '#0f172a' : '#fff' }}
+            />
+            <Bar dataKey="pct" radius={[6, 6, 0, 0]} barSize={42}>
+              {deptCompliance.map((d, i) => <Cell key={i} fill={d.color} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  );
 
   return (
-    <div className="flex h-screen bg-[#F2F0EF] dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 overflow-hidden">
-      
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#1e293b] text-slate-300 hidden md:flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 text-2xl font-black text-white">
-          <span className="text-green-500 mr-1">:</span>MoSPI
+    <AppShell
+      groups={navGroups}
+      activeId={activeTab}
+      onNavigate={(id) => setActiveTab(id as AdminTab)}
+      userName="Admin"
+      userRole="System Administrator"
+      notificationCount={statusCounts.required}
+      onNotificationsClick={() => { setStatusFilter(0); setActiveTab('officials'); }}
+      searchValue={searchTerm}
+      onSearchChange={(v) => {
+        setSearchTerm(v);
+        if (v && activeTab !== 'officials' && activeTab !== 'competencies') setActiveTab('officials');
+      }}
+      searchPlaceholder="Search officials, competencies…"
+      sidebarFooter={
+        <div className="rounded-xl border border-gov-line bg-gov-paper p-4 text-center dark:border-slate-700/60 dark:bg-slate-800/50">
+          <p className="text-[12.5px] font-semibold text-gov-ink dark:text-white">Data for a Better India</p>
+          <p className="mt-1 text-[10.5px] uppercase tracking-[0.12em] text-slate-400">Empower · Train · Transform</p>
         </div>
-        <nav className="flex-1 px-4 py-4 space-y-2 mt-4">
-          <a 
-            href="#" 
-            onClick={(e) => { e.preventDefault(); setActiveTab('dashboard'); }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
+      }
+    >
+      <PageHeader
+        title={META[activeTab].title}
+        subtitle={META[activeTab].subtitle}
+        breadcrumb={['Home', 'Admin', META[activeTab].title]}
+        actions={
+          <button
+            type="button"
+            onClick={() => { refetch(); refetchSkills(); }}
+            className="panel flex items-center gap-2 px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:text-gov-navy dark:text-slate-300 dark:hover:text-white"
           >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </a>
-          <a 
-            href="#" 
-            onClick={(e) => { e.preventDefault(); setActiveTab('officials'); }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'officials' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
-          >
-            <Users className="w-5 h-5" /> Officials
-          </a>
-          <a 
-            href="#" 
-            onClick={(e) => { e.preventDefault(); setActiveTab('skills'); }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'skills' ? 'bg-white/10 text-white' : 'hover:bg-white/5'}`}
-          >
-            <BookOpen className="w-5 h-5" /> Skills
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-lg transition-colors text-slate-400">
-            <FileText className="w-5 h-5" /> Reports
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-lg transition-colors text-slate-400">
-            <Settings className="w-5 h-5" /> Settings
-          </a>
-        </nav>
-      </aside>
+            <RefreshCcw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh
+          </button>
+        }
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        
-        {/* Top Navbar */}
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-10">
-          <div className="flex-1">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search" 
-                className="w-full pl-9 pr-4 py-2 bg-[#F2F0EF] dark:bg-slate-700 border border-transparent dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              />
-            </div>
+      {/* ── Overview ──────────────────────────────────────────────────────── */}
+      {activeTab === 'dashboard' && (
+        <div className="animate-fade-up space-y-5">
+          {error && <ErrorBanner message={error} onRetry={refetch} />}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              index={0} icon={Users} tone="blue" label="Total Officials" value={kpis.totalOfficials}
+              caption="Tracked via iGOT Karmayogi" onClick={() => setActiveTab('officials')}
+            />
+            <StatCard
+              index={1} icon={BookOpen} tone="orange" label="FRAC Competencies" value={skills.length}
+              caption="In the competency dictionary" onClick={() => setActiveTab('competencies')}
+            />
+            <StatCard
+              index={2} icon={ShieldCheck} tone="green" label="Training Compliance"
+              value={`${kpis.trainingCompliancePct}%`} progress={kpis.trainingCompliancePct}
+              caption={`${statusCounts.compliant} of ${roster.length || 0} officials compliant`}
+            />
+            <StatCard
+              index={3} icon={AlertTriangle} tone="purple" label="Avg Missing Skills"
+              value={kpis.avgMissingSkills} caption="Per official, planned or in progress"
+              onClick={() => setActiveTab('analytics')}
+            />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700">
-              <div className="w-7 h-7 bg-slate-200 rounded-full overflow-hidden flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-500" />
-              </div>
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            </div>
-            <button onClick={() => navigate("/")} title="Go to Home" className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"><Home className="w-5 h-5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" /></button>
-            <Bell className="w-5 h-5 text-slate-500 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300" />
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+
+          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+            <SectionCard
+              title="Competency Shortage Index"
+              subtitle="Weighted by deficiency level across the whole roster"
+              action={<SectionAction label="Analytics" onClick={() => setActiveTab('analytics')} />}
             >
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-            <button onClick={toggleTheme} className="p-2 text-slate-500 hover:text-slate-700">
-               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
+              {shortageChart(268)}
+            </SectionCard>
+
+            <SectionCard
+              title="Compliance by Department"
+              subtitle="Share of officials with at least one completed course"
+              action={<SectionAction label="Officials" onClick={() => setActiveTab('officials')} />}
+            >
+              {deptChart(268)}
+            </SectionCard>
           </div>
-        </header>
 
-        {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 relative">
-          
-          {/* DASHBOARD TAB */}
-          {activeTab === 'dashboard' && (
-            <>
-              {error && <ErrorBanner message={error} onRetry={refetch} />}
-              {/* Operational Summary Section */}
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Operational Summary</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {isLoading ? (
-                    <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>
-                  ) : (
-                    <>
-                      {/* KPI 1 */}
-                      <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-blue-800 p-6 flex items-center justify-between shadow-sm">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
-                            <Users className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Total Officials Tracked</p>
-                            <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-                              {kpis.totalOfficials > 0 ? kpis.totalOfficials : 151}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="w-24 h-12">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={SPARKLINE_DATA}>
-                              <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* KPI 2 */}
-                      <div className="bg-white dark:bg-slate-800 rounded-xl border border-orange-200 dark:border-orange-800 p-6 flex items-center gap-4 shadow-sm bg-orange-50/10">
-                        <div className="p-3 bg-orange-100/50 dark:bg-orange-900/30 text-orange-500 rounded-xl">
-                          <AlertTriangle className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Avg Missing Skills / User</p>
-                          <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-                            {kpis.avgMissingSkills > 0 ? kpis.avgMissingSkills : 2.4} <span className="text-sm font-medium text-slate-500 normal-case ml-1">skills</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* KPI 3 */}
-                      <div className="bg-white dark:bg-slate-800 rounded-xl border border-green-200 dark:border-green-800 p-6 flex items-center gap-4 shadow-sm bg-green-50/10">
-                        <div className="w-16 h-16 relative flex-shrink-0">
-                          <svg className="w-full h-full transform -rotate-90">
-                            <circle cx="32" cy="32" r="26" stroke={isDark ? '#334155' : '#f1f5f9'} strokeWidth="6" fill="transparent" />
-                            <circle 
-                              cx="32" cy="32" r="26" 
-                              stroke="#22c55e" strokeWidth="6" fill="transparent" 
-                              strokeDasharray="163.36" strokeDashoffset={163.36 * (1 - (kpis.trainingCompliancePct > 0 ? kpis.trainingCompliancePct : 87) / 100)} 
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          <CheckCircle className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-green-500" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Training Compliance</p>
-                          <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-                            {kpis.trainingCompliancePct > 0 ? kpis.trainingCompliancePct : 87}%
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Live Status Row */}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : isLoading ? 'bg-yellow-400 animate-pulse' : 'bg-green-500'}`} />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                      {error ? 'Server offline' : isLoading ? 'Loading live data…' : `Live - ${roster.length > 0 ? roster.length : 151} officials loaded`}
+          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+            <SectionCard
+              title="Officials Needing Training"
+              subtitle="No course started yet"
+              action={<SectionAction label="View all" onClick={() => { setStatusFilter(0); setActiveTab('officials'); }} />}
+            >
+              <ul className="space-y-3">
+                {needsTraining.map((r) => (
+                  <li key={r.userId} className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent-rose-soft text-[11px] font-bold text-accent-rose dark:bg-rose-500/15 dark:text-rose-300">
+                      {(r.firstName || r.govId).charAt(0).toUpperCase()}
                     </span>
-                  </div>
-                  <button onClick={refetch} className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
-                    <RefreshCcw className="w-4 h-4" /> Refresh
-                  </button>
-                </div>
-              </div>
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block truncate text-[12.5px] font-semibold text-gov-ink dark:text-white">
+                        {`${r.firstName} ${r.lastName}`.trim() || r.govId}
+                      </span>
+                      <span className="block truncate text-[11px] text-slate-400">{r.designation} · {r.department}</span>
+                    </span>
+                    {r.missingSkill && (
+                      <span className="chip hidden bg-slate-100 text-slate-600 sm:inline-flex dark:bg-slate-700 dark:text-slate-300">
+                        {r.missingSkill}
+                      </span>
+                    )}
+                  </li>
+                ))}
+                {needsTraining.length === 0 && (
+                  <li className="py-8 text-center text-[13px] text-slate-400">
+                    {isLoading ? 'Loading roster…' : 'Every official has started at least one course.'}
+                  </li>
+                )}
+              </ul>
+            </SectionCard>
 
-              {/* Performance & Insights */}
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 mt-2">Performance & Insights</h2>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Bar Chart */}
-                  <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                    <h3 className="text-md font-bold text-slate-800 dark:text-white mb-6">Skill Shortage by Department (Bar Chart)</h3>
-                    <div className="h-[300px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                          <XAxis dataKey="competency" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 12 }} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 12 }} ticks={[0, 7, 14, 21, 28]} domain={[0, 28]} label={{ value: 'Number of Shortages', angle: -90, position: 'insideLeft', offset: 25, fill: axisColor, fontSize: 12 }} />
-                          <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
-                          <Bar dataKey="gap" radius={[4, 4, 0, 0]} barSize={40}>
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  {/* Donut Chart */}
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
-                    <h3 className="text-md font-bold text-slate-800 dark:text-white mb-6">Skill Distribution (Donut Chart)</h3>
-                    <div className="flex-1 relative flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie 
-                            data={PIE_DATA} 
-                            cx="50%" 
-                            cy="50%" 
-                            innerRadius={70} 
-                            outerRadius={95} 
-                            paddingAngle={2} 
-                            dataKey="value" 
-                            stroke="none"
-                          >
-                            {PIE_DATA.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip contentStyle={{ borderRadius: '8px' }} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-center">
-                        <p className="text-xs font-semibold text-slate-500">Total:</p>
-                        <p className="text-sm font-bold text-slate-800 dark:text-white">25k</p>
-                      </div>
-                      
-                      {/* Custom Labels to match image */}
-                      <div className="absolute top-[35%] left-[5%] text-xs font-semibold text-slate-600 dark:text-slate-400 text-center bg-white/80 dark:bg-slate-800/80 p-1 rounded">
-                        Core<br/>Skills<br/><span className="text-slate-900 dark:text-white">32%</span>
-                      </div>
-                      <div className="absolute bottom-[20%] right-[5%] text-xs font-semibold text-slate-600 dark:text-slate-400 text-center bg-white/80 dark:bg-slate-800/80 p-1 rounded">
-                        Advanced Skills<br/><span className="text-slate-900 dark:text-white">68%</span>
-                      </div>
-                    </div>
-                    
-                    {/* Legend */}
-                    <div className="flex justify-center space-x-6 mt-6 pb-2">
-                      <div className="flex items-center space-x-2 text-xs font-medium text-slate-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span><span>Core Skills</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs font-medium text-slate-500">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8]"></span><span>Advanced Skills</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <SectionCard title="Data Sources" subtitle="Live status of the feeds behind this dashboard">
+              <ul className="space-y-3.5">
+                <FeedStatus label="Officials roster" endpoint="/api/v1/admin/users" loading={isLoading} error={error} count={roster.length} />
+                <FeedStatus label="FRAC competencies" endpoint="/api/v1/admin/frac/competencies" loading={isSkillsLoading} error={skillsError} count={skills.length} />
+              </ul>
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-gov-line bg-gov-paper px-3.5 py-2.5 text-[11.5px] text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
+                <Database size={14} className="flex-shrink-0 text-gov-blue dark:text-sky-400" aria-hidden="true" />
+                Both feeds are proxied through the LMS backend on port 8000 with admin role enforcement.
               </div>
-            </>
-          )}
+            </SectionCard>
+          </div>
 
-          {/* OFFICIALS TAB */}
-          {activeTab === 'officials' && (
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col min-h-[500px]">
-              {error && <ErrorBanner message={error} onRetry={refetch} />}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Official Roster</h2>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{filteredRoster.length} of {roster.length} officials</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search by name, ID or dept…"
-                      className="block w-72 pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <button className="flex items-center space-x-2 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700">
-                    <SlidersHorizontal className="w-4 h-4" /><span>Filters</span>
-                  </button>
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto flex-1">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-                  <thead className="bg-white dark:bg-slate-800/50">
-                    <tr>
-                      {['Employee Name', 'Gov ID', 'Designation', 'Top Missing Skill', 'Status'].map(h => (
-                        <th key={h} className="px-6 py-4 text-left text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-50 dark:divide-slate-700/60">
-                    {isLoading
-                      ? Array.from({ length: 5 }).map((_, i) => (
-                          <tr key={i} className="animate-pulse">
-                            {Array.from({ length: 5 }).map((_, j) => (
-                              <td key={j} className="px-6 py-4"><div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-full" /></td>
-                            ))}
-                          </tr>
-                        ))
-                      : currentRoster.length > 0
-                      ? currentRoster.map(emp => <RosterRow key={emp.userId} employee={emp} />)
-                      : (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-500">
-                            {roster.length === 0 ? 'No officials loaded.' : 'No officials match your search.'}
-                          </td>
-                        </tr>
-                      )
-                    }
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              {!isLoading && filteredRoster.length > 0 && (
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                  <div className="text-sm text-slate-500">
-                    Showing <span className="font-medium text-slate-700 dark:text-slate-300">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="font-medium text-slate-700 dark:text-slate-300">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRoster.length)}</span> of <span className="font-medium text-slate-700 dark:text-slate-300">{filteredRoster.length}</span> officials
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" /> Previous
-                    </button>
-                    <div className="text-sm text-slate-600 dark:text-slate-400 font-medium px-2">
-                      Page {currentPage} of {totalPagesRoster}
-                    </div>
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.min(totalPagesRoster, p + 1))}
-                      disabled={currentPage === totalPagesRoster}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* CTA banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue p-6 text-white shadow-gov-lg">
+            <div className="pointer-events-none absolute -right-8 -bottom-16 text-white/10">
+              <AshokaChakra size={180} className="animate-spin-slow" />
             </div>
-          )}
-
-          {/* SKILLS TAB */}
-          {activeTab === 'skills' && (
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col min-h-[500px]">
-              {skillsError && <ErrorBanner message={skillsError} onRetry={refetchSkills} />}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="relative flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex items-start gap-4">
+                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+                  <TrendingUp size={22} className="text-gov-saffron" aria-hidden="true" />
+                </span>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">FRAC Competencies</h2>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{filteredSkills.length} of {skills.length} competencies loaded</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-slate-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Search skills by name, ID..."
-                      className="block w-72 pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <button onClick={refetchSkills} className="flex items-center space-x-2 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                    <RefreshCcw className="w-4 h-4" /><span>Refresh</span>
-                  </button>
+                  <h3 className="mb-1 text-[15.5px] font-semibold">Empower a Data-Ready Workforce</h3>
+                  <p className="max-w-xl text-[12.5px] leading-relaxed text-white/70">
+                    Track progress, identify gaps and enable continuous learning across government.
+                  </p>
                 </div>
               </div>
-              
-              <div className="overflow-x-auto flex-1">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
-                  <thead className="bg-white dark:bg-slate-800/50">
-                    <tr>
-                      {['Competency ID', 'Name', 'Category', 'Description'].map(h => (
-                        <th key={h} className="px-6 py-4 text-left text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-50 dark:divide-slate-700/60">
-                    {isSkillsLoading
-                      ? Array.from({ length: 5 }).map((_, i) => (
-                          <tr key={i} className="animate-pulse">
-                            {Array.from({ length: 4 }).map((_, j) => (
-                              <td key={j} className="px-6 py-4"><div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-full" /></td>
-                            ))}
-                          </tr>
-                        ))
-                      : currentSkills.length > 0
-                      ? currentSkills.map(skill => <SkillTableRow key={skill.competency_id} skill={skill} />)
-                      : (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-10 text-center text-sm text-slate-500">
-                            {skills.length === 0 ? 'No skills loaded. Check mock server.' : 'No skills match your search.'}
-                          </td>
-                        </tr>
-                      )
-                    }
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              {!isSkillsLoading && filteredSkills.length > 0 && (
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                  <div className="text-sm text-slate-500">
-                    Showing <span className="font-medium text-slate-700 dark:text-slate-300">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="font-medium text-slate-700 dark:text-slate-300">{Math.min(currentPage * ITEMS_PER_PAGE, filteredSkills.length)}</span> of <span className="font-medium text-slate-700 dark:text-slate-300">{filteredSkills.length}</span> competencies
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" /> Previous
-                    </button>
-                    <div className="text-sm text-slate-600 dark:text-slate-400 font-medium px-2">
-                      Page {currentPage} of {totalPagesSkills}
-                    </div>
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.min(totalPagesSkills, p + 1))}
-                      disabled={currentPage === totalPagesSkills}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button type="button" onClick={() => setActiveTab('reports')} className="gov-btn-saffron flex-shrink-0">
+                Generate Report <Download size={15} />
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-        </main>
-      </div>
-    </div>
+      {/* ── Officials ─────────────────────────────────────────────────────── */}
+      {activeTab === 'officials' && (
+        <div className="animate-fade-up">
+          {error && <ErrorBanner message={error} onRetry={refetch} />}
+          <SectionCard
+            title="Official Roster"
+            subtitle={`${filteredRoster.length} of ${roster.length} officials`}
+            padded={false}
+            action={
+              <button
+                type="button"
+                onClick={exportRoster}
+                disabled={filteredRoster.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-gov-line px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:border-gov-blue/40 hover:text-gov-navy disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:text-white"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            }
+          >
+            {/* Status filters — replaces the old dead "Filters" button */}
+            <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
+              <SlidersHorizontal size={14} className="text-slate-400" aria-hidden="true" />
+              {([['all', 'All'], [2, 'Compliant'], [1, 'In Progress'], [0, 'Training Required']] as const).map(([value, label]) => (
+                <button
+                  key={String(value)}
+                  type="button"
+                  aria-pressed={statusFilter === value}
+                  onClick={() => setStatusFilter(value as typeof statusFilter)}
+                  className="chip-filter"
+                >
+                  {label}
+                  {value !== 'all' && (
+                    <span className="text-slate-400">
+                      ({value === 2 ? statusCounts.compliant : value === 1 ? statusCounts.inProgress : statusCounts.required})
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="gov-table min-w-[860px]">
+                <thead>
+                  <tr>
+                    <th scope="col">Official</th>
+                    <th scope="col">Gov ID</th>
+                    <th scope="col">Designation</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Top Missing Skill</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <TableSkeleton cols={6} />
+                  ) : currentRoster.length > 0 ? (
+                    currentRoster.map((emp) => <RosterRow key={emp.userId} employee={emp} />)
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        {roster.length === 0 ? 'No officials loaded.' : 'No officials match the current search and filters.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {!isLoading && filteredRoster.length > 0 && (
+              <Pagination
+                page={currentPage} totalPages={totalPagesRoster} totalItems={filteredRoster.length}
+                noun="officials" onChange={setCurrentPage}
+              />
+            )}
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── Competencies ──────────────────────────────────────────────────── */}
+      {activeTab === 'competencies' && (
+        <div className="animate-fade-up">
+          {skillsError && <ErrorBanner message={skillsError} onRetry={refetchSkills} />}
+          <SectionCard
+            title="FRAC Competencies"
+            subtitle={`${filteredSkills.length} of ${skills.length} competencies loaded`}
+            padded={false}
+            action={
+              <button
+                type="button"
+                onClick={exportCompetencies}
+                disabled={filteredSkills.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-gov-line px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:border-gov-blue/40 hover:text-gov-navy disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:text-white"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            }
+          >
+            <div className="overflow-x-auto">
+              <table className="gov-table min-w-[720px]">
+                <thead>
+                  <tr>
+                    <th scope="col">Competency ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isSkillsLoading ? (
+                    <TableSkeleton cols={4} />
+                  ) : currentSkills.length > 0 ? (
+                    currentSkills.map((skill) => <SkillTableRow key={skill.competency_id} skill={skill} />)
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-12 text-center text-slate-400">
+                        {skills.length === 0 ? 'No competencies loaded — check the mock iGOT server.' : 'No competencies match your search.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {!isSkillsLoading && filteredSkills.length > 0 && (
+              <Pagination
+                page={currentPage} totalPages={totalPagesSkills} totalItems={filteredSkills.length}
+                noun="competencies" onChange={setCurrentPage}
+              />
+            )}
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── Analytics ─────────────────────────────────────────────────────── */}
+      {activeTab === 'analytics' && (
+        <div className="animate-fade-up space-y-5">
+          {error && <ErrorBanner message={error} onRetry={refetch} />}
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard index={0} icon={CheckCircle2} tone="green" label="Compliant" value={statusCounts.compliant} />
+            <StatCard index={1} icon={TrendingUp} tone="orange" label="In Progress" value={statusCounts.inProgress} />
+            <StatCard index={2} icon={AlertTriangle} tone="rose" label="Training Required" value={statusCounts.required} />
+          </div>
+
+          <SectionCard
+            title="Competency Shortage Index"
+            subtitle="Top deficiencies weighted by status (planned ×1.5) and current level"
+            action={
+              <button
+                type="button"
+                onClick={exportShortages}
+                disabled={heatmap.length === 0}
+                className="flex items-center gap-2 rounded-lg border border-gov-line px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:border-gov-blue/40 hover:text-gov-navy disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:text-white"
+              >
+                <Download size={14} /> Export
+              </button>
+            }
+          >
+            {shortageChart(330)}
+          </SectionCard>
+
+          <SectionCard title="Compliance by Department" subtitle="Five largest departments by headcount">
+            {deptChart(330)}
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── Reports ───────────────────────────────────────────────────────── */}
+      {activeTab === 'reports' && (
+        <div className="animate-fade-up grid grid-cols-1 gap-5 md:grid-cols-3">
+          {[
+            {
+              title: 'Officials Roster', icon: Users, tone: 'bg-accent-blue-soft text-accent-blue dark:bg-blue-500/15 dark:text-blue-300',
+              desc: 'Every official with designation, department, top missing skill and training status. Respects the filters set on the Officials page.',
+              count: filteredRoster.length, noun: 'rows', onExport: exportRoster,
+            },
+            {
+              title: 'FRAC Competencies', icon: BookOpen, tone: 'bg-accent-orange-soft text-accent-orange dark:bg-orange-500/15 dark:text-orange-300',
+              desc: 'The full competency dictionary with identifiers, categories and descriptions as served by the mock iGOT server.',
+              count: filteredSkills.length, noun: 'rows', onExport: exportCompetencies,
+            },
+            {
+              title: 'Shortage Index', icon: BarChart3, tone: 'bg-accent-purple-soft text-accent-purple dark:bg-violet-500/15 dark:text-violet-300',
+              desc: 'Aggregate competency shortage scores computed across the roster — the data behind the analytics bar chart.',
+              count: heatmap.length, noun: 'competencies', onExport: exportShortages,
+            },
+          ].map(({ title, icon: Icon, tone, desc, count, noun, onExport }, i) => (
+            <div key={title} className="panel animate-fade-up flex flex-col p-5" style={{ animationDelay: `${i * 70}ms` }}>
+              <span className={`mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <h3 className="mb-1.5 text-[14.5px] font-semibold text-gov-ink dark:text-white">{title}</h3>
+              <p className="mb-4 flex-1 text-[12.5px] leading-relaxed text-slate-500 dark:text-slate-400">{desc}</p>
+              <p className="mb-3 text-[11.5px] font-medium text-slate-400">{count} {noun} ready</p>
+              <button
+                type="button"
+                onClick={onExport}
+                disabled={count === 0}
+                className="gov-btn-primary w-full disabled:opacity-50"
+              >
+                <Download size={15} /> Download CSV
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </AppShell>
   );
 };
 

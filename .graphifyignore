@@ -1,0 +1,17 @@
+# Vendored Node runtime
+node/
+node-v20.17.0-win-x64/
+node.zip
+
+# Large mock data dumps
+mock-igot-server/data/
+mock.json
+
+# Generated runtime data
+chroma_db/
+temp_uploads/
+*.db
+
+# JS deps / build output
+node_modules/
+dist/

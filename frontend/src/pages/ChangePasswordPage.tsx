@@ -16,6 +16,7 @@ import { Eye, EyeOff, KeyRound, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { changePassword } from '../services/authApi';
 import { DashboardFactory } from '../patterns/DashboardFactory';
+import { AshokaChakra, GovEmblem } from '../components/gov/GovUI';
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -70,39 +71,32 @@ const ChangePasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300">
-      {/* Subtle background */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.15] dark:opacity-10 dark:invert"
-        style={{
-          backgroundImage: `url('/bg-new-topo.png')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10">
+      {/* Government header band */}
+      <div className="absolute inset-x-0 top-0 h-[42vh] bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue" />
+      <div className="absolute inset-x-0 top-[42vh] tricolor-strip" />
+      <div className="absolute -right-32 -top-32 text-white/[0.06] pointer-events-none">
+        <AshokaChakra size={560} strokeWidth={0.8} className="animate-spin-slow" />
+      </div>
 
-      <div className="relative z-10 w-full max-w-md px-4">
+      <div className="relative z-10 w-full max-w-md px-4 animate-scale-in">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-1.5">
-            <div className="flex flex-col gap-[3px] justify-center mt-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#0f172a] dark:bg-white" />
-              <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-            </div>
-            <span className="font-bold text-[22px] text-[#0f172a] dark:text-white tracking-tight leading-none">
-              MoSPI
-            </span>
+        <div className="flex items-center justify-center gap-3 mb-6 text-white">
+          <GovEmblem size={48} />
+          <div className="leading-tight">
+            <div className="text-[11px] font-semibold text-gov-saffron" lang="hi">सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय</div>
+            <div className="font-serif font-bold text-[15px]">Ministry of Statistics &amp; PI</div>
+            <div className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-white/60">Skill Intelligence Platform</div>
           </div>
-          <span className="text-[8px] text-slate-400 font-semibold tracking-wide uppercase mt-1">
-            Skill Intelligence Platform
-          </span>
         </div>
 
         {/* Card */}
-        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-gov-lg border border-gov-line dark:border-slate-700/60 overflow-hidden">
+          <div className="tricolor-strip" />
+          <div className="p-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#2b4c7e]/10 flex items-center justify-center">
-              <KeyRound className="w-5 h-5 text-[#2b4c7e]" />
+            <div className="w-10 h-10 rounded-xl bg-gov-navy flex items-center justify-center shadow-gov">
+              <KeyRound className="w-5 h-5 text-gov-saffron" />
             </div>
             <div>
               <h2 className="text-[18px] font-bold text-[#0f172a] dark:text-white leading-tight">
@@ -216,8 +210,7 @@ const ChangePasswordPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-b from-[#2b4c7e] to-[#0d1b2a] text-white text-[13px] font-bold rounded-lg shadow-[0_8px_20px_-6px_rgba(13,27,42,0.7)] hover:from-[#3a5d91] hover:to-[#162a42] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
+                className="gov-btn-primary w-full mt-2 !py-3"
               >
                 {loading ? (
                   <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -230,6 +223,7 @@ const ChangePasswordPage: React.FC = () => {
               </button>
             </form>
           )}
+          </div>
         </div>
       </div>
     </div>

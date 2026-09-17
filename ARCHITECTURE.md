@@ -1,87 +1,204 @@
-# System Architecture: AI-Enabled Skill Intelligence & LMS (MoSPI)
+# Architecture — MoSPI AI Skill Intelligence Platform (SIH 2026)
 
-## 1. Project Context & Objectives
-This project is a high-fidelity prototype for the Smart India Hackathon (SIH), built for the Ministry of Statistics and Programme Implementation (MoSPI). 
+AI-driven LMS layer over iGOT Karmayogi: computes evidence-based competency
+baselines for government statistical officials, derives skill gaps against FRAC
+role requirements, recommends courses, generates quizzes from training documents,
+and answers questions through a bilingual assistant.
 
-**The Problem:** Government officials require continuous upskilling in Official Statistics (e.g., Survey Design, National Accounts) and modern tech (AI/ML, Python). While the "iGOT Karmayogi" platform hosts courses, there is no intelligent mechanism to perform skill-gap assessments and recommend personalized learning pathways.
-
-**The Solution:** An AI-driven Learning Management System (LMS) that maps an official's current competencies against their Job Role benchmark, calculates explicit skill gaps, and uses AI (Semantic Search & RAG) to recommend courses and generate dynamic assessments from MoSPI training documents.
-
----
-
-## 2. Technology Stack
-*   **Frontend:** React (Functional components, Hooks), Tailwind CSS, Lucide React (Icons).
-*   **Backend API:** Python FastAPI (RESTful JSON APIs).
-*   **Database:** MySQL (Relational) via SQLAlchemy ORM.
-*   **AI/ML Layer:** Python-based GenAI workflows (LangChain, vector embeddings, LLM integrations for RAG).
+> This file describes the **actual code**. Section 7 lists where the code
+> diverges from `mospi-competency-platform.mermaid` (the intended design).
 
 ---
 
-## 3. Core Domain Model (Strict Constraints)
-The entire database schema, class structures, and object relationships **MUST strictly adhere** to the UML class diagram defined in the accompanying file:
-👉 **`mospi-competency-platform.mermaid`**
+## 1. Runtime topology
 
-### Key Structural Rules (Derived from Mermaid):
-*   **Composition vs. Aggregation:** 
-    *   An `Official` *owns* a `CompetencyProfile` (Strict Composition). 
-    *   An `Official` *holds* a `JobRole` (Aggregation).
-*   **Dictionary Independence:** The `Competency` table acts as a master dictionary. `UserCompetency`, `RoleRequirement`, and `CourseSkillMapping` all act as junction tables pointing back to `Competency`.
-*   **Data Models:** The backend SQLAlchemy models and frontend TypeScript interfaces must map exactly to the entities in the Mermaid file.
+Three processes, started independently:
 
----
+| # | Service | Path | Port | Role |
+|---|---------|------|------|------|
+| 1 | Mock iGOT Karmayogi API | `mock-igot-server/mock_igot_server.py` | 8001 | Sunbird-shaped external system of record (users, enrollments, catalog, FRAC dictionary) |
+| 2 | LMS backend (orchestrator) | `main-lms-backend/main.py` | 8000 | Owns auth/RBAC + all AI engines; the only service the browser is meant to talk to |
+| 3 | React frontend | `frontend/` (Vite) | 5173 | Learner + Admin dashboards, chat widgets, quiz UI |
 
-## 4. Software Design Patterns & SOLID Principles
-The system must be highly decoupled and modular. The codebase must implement the following design patterns:
+```
+Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token──► :8001 Mock iGOT
+   │                  │
+   │                  ├─ FAISS + BM25 (in-process, built at startup)
+   │                  ├─ ONNX INT8 multilingual embedder (singleton)
+   │                  ├─ auth.db (SQLite: auth, evidence, quiz attempts, karma)
+   │                  └─ Google Gemini (cloud, quiz MCQ generation)
+   └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
+```
 
-### A. The Adapter Pattern (External Integrations)
-To comply with the **Dependency Inversion Principle (DIP)**, the system must not hardcode API calls to iGOT Karmayogi.
-*   Implement interfaces: `ICatalogSync` (Read) and `IScorePublisher` (Write) following the **Interface Segregation Principle (ISP)**.
-*   Implement concrete classes: `MockIgotPlatformAdapter` (for SIH execution) and `LiveSunbirdAdapter` (for future production).
-
-### B. The Strategy Pattern (AI Algorithms)
-AI Recommendation logic must be pluggable.
-*   Implement an `IRecommendationStrategy` interface.
-*   Implement concrete strategies: `VectorSearchStrategy` (Semantic embedding matching) and a fallback `SkillGapRuleStrategy` (Tag/Rule-based matching).
-
-### C. Factory & Builder Patterns (GenAI RAG Engine)
-For the Document-to-Assessment feature:
-*   Use a `DocumentParserFactory` to dynamically instantiate `PdfParser`, `PptParser`, or `TextParser` based on the uploaded file type.
-*   Use an `AssessmentBuilder` to safely construct the complex, nested JSON objects (Assessments containing Questions with AI Explanations) returned by the Large Language Model.
-
-### D. Transactional Outbox & Observer Pattern (Event Syncing)
-To ensure system resilience when syncing data to government servers:
-*   When a user passes an assessment, emit an `AssessmentPassedEvent`.
-*   Use synchronous listeners for local DB updates (e.g., `LocalProfileUpdater`).
-*   Use a Transactional Outbox table (`OutboxEntry`) for external syncing. An async worker will safely push the updated score to the external iGOT adapter, ensuring a failed external API call does not crash the local grading transaction.
+The backend reads `mock-igot-server/data/course_catalog.json` **directly from
+disk** at startup for the recommendation index, and calls port 8001 over HTTP for
+everything user-specific.
 
 ---
 
-## 5. Core System Workflows
+## 2. Folder map
 
-### Flow 1: Skill Gap Calculation Engine
-1.  System retrieves the user's `CompetencyProfile`.
-2.  System retrieves the `RoleRequirement` for the user's assigned `JobRole`.
-3.  The `SkillGapEngine` compares `UserCompetency.currentLevel` against `RoleRequirement.requiredLevel`.
-4.  Outputs a normalized JSON `SkillGapReport` to the frontend dashboard.
+### `main-lms-backend/` — FastAPI orchestrator
+| Path | Responsibility |
+|------|----------------|
+| `main.py` | App bootstrap, CORS, router registration, startup singletons (`_rec_engine`, `_assembler`), learner endpoints (profile, skill-gaps, enrollments, recommendations, achievements), admin proxies |
+| `auth/` | JWT access tokens + httpOnly refresh cookie, bcrypt hashing, `users_auth` table, RBAC dependencies, `seed.py` (one-shot user seeding from the mock server) |
+| `adapters/` | `ILearningPlatformAdapter` port + `MockIgotAdapter` HTTP adapter to port 8001 |
+| `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (Ollama certificate parsing) |
+| `ai/` | `embedder.py` (shared ONNX/sentence-transformers singleton), `semantic_engine.py` (chatbot intent classifier), `rag_engine.py` + `vector_store.py` + `seed_knowledge.py` (Ollama/ChromaDB — **disconnected**, Tier 3) |
+| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `competency.py` (certificate upload, baseline calc), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload) |
+| `models/` | `models.py` (SQLAlchemy domain + evidence/quiz/karma tables), `domain.py` (Pydantic response schemas) |
+| `scripts/` | `download_model.py`, `quantize_model.py` — produce `ai/.cache/model_int8.onnx` |
 
-### Flow 2: AI Course Recommendation
-1.  The system identifies the user's skill gaps.
-2.  The `RecommendationEngine` utilizes the `HybridRecommendationStrategy`.
-3.  Queries the `VectorStore` matching the gap text against `Course.syllabusVectorEmbedding`.
-4.  Returns a personalized learning pathway ranked by relevance.
+### `mock-igot-server/` — external-system simulator
+`mock_igot_server.py` (v4, Sunbird envelopes, in-memory stores loaded in `lifespan`)
+is the server actually used. `main.py` is an older simple mock kept alongside.
+Data: `courses.json`, `courses_1.json`, `competencies.json`, `jobprofiles.json`
+(root) and `data/{userdata,enrollments,content_states,course_catalog,frac_competencies}.json`.
 
-### Flow 3: RAG Document-to-Assessment
-1.  MoSPI Administrator uploads a PDF training manual via the UI.
-2.  `DocumentParserFactory` extracts the text.
-3.  The text is chunked and passed to the LLM via an engineered prompt to generate Objective Type Questions (MCQs).
-4.  `AssessmentBuilder` structures the output and saves it to the database, making the quiz instantly available to learners.
+### `frontend/src/`
+| Path | Responsibility |
+|------|----------------|
+| `App.tsx` | Routes + guards (`/`, `/login`, `/change-password`, `/dashboard/:officialId`, `/admin`, `/trainer`, `/assessment`) |
+| `context/AuthContext.tsx` | Token state, silent refresh on mount, role mapping (`learner` → `official`) |
+| `services/` | `api.ts` (`lmsFetch` with JWT + 401-retry interceptor), `authApi.ts`, `chatApi.ts` (with offline client-side reply fallback) |
+| `hooks/` | `useLearnerDashboard`, `useAdminData`, `useSkillsData`, `useChatEngine`, `useTheme` |
+| `pages/` | `LandingPage`, `LoginPage`, `ChangePasswordPage`, `LearnerDashboard`, `AdminDashboard`, `AssessmentPage` |
+| `components/dashboard/` | `SkillGapCard`, `CourseCard`, `MyCoursesView`, `ProgressView`, `ProfileHeader`, `RightSidebar` (karma), `AssessmentUploadZone`, `ChatWidget` |
+| `patterns/DashboardFactory.ts` | Role → dashboard/route resolution |
+
+`node/`, `node-v20.17.0-win-x64/`, `node.zip` are a vendored Node runtime, not app code.
 
 ---
 
-## 6. Execution Guidelines for AI Agents
-When generating code for this project, follow this order of operations:
-1.  **Read `mospi-competency-platform.mermaid`** completely to understand the domain.
-2.  **Scaffold the Database:** Generate SQLAlchemy models (`models.py`) mapping strictly to the domain.
-3.  **Scaffold the API:** Build FastAPI routes utilizing dummy JSON data that reflects the relationships.
-4.  **Scaffold the UI:** Build the React frontend using Tailwind, creating the Learner and Admin dashboards to consume the API.
-5.  **Implement Logic:** Build out the design pattern interfaces (Adapters, Strategies) and connect the AI logic.
+## 3. Core data flow
+
+**Skill gaps** (`GET /api/v1/learner/{id}/skill-gaps`)
+1. `MockIgotAdapter.fetch_user_by_id` + `fetch_user_enrollments` → :8001
+2. `EvidenceLog` rows for that iGOT userId → `auth.db`
+3. `BaselineAssembler.compute_for_user` gathers 6 evidence channels and calls
+   `CompetencyCalculator.calculate_baseline` →
+   `core_k = 0.45·Verified + 0.15·Documented + 0.20·Tenure + 0.10·SelfReport + 0.05·Education + 0.05·Seniority`,
+   plus adjacency synergy, recency decay, confidence-derived ceilings
+   (verified → 5.0/HIGH, documented → 3.5/MEDIUM, else 2.5/LOW, all-zero → UNASSESSED)
+4. `main.py` merges the formula result with the iGOT self-reported level and emits
+   `{currentLevel, targetLevel, gapScore, confidence, rawScore, evidence{}}`
+
+**Recommendations** (`GET /api/v1/learner/{id}/recommendations`)
+Same baselines → `calculate_gaps` (Stage 0 priority `gap·target/5`) →
+`get_recommendations`: FRAC-tag filter (Stage 1) → FAISS dense + BM25 sparse + RRF
+fusion + TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3), results
+concatenated in gap-priority order.
+
+**Document → quiz → evidence** (`POST /api/v1/rag/upload`, `/grade`)
+Upload → pdfplumber/pypdf/python-pptx extraction → LangChain chunking → Gemini
+JSON MCQs → in-memory `QUIZ_STORE`. Grade (JWT required) → `QuizAttempt`
+(unique on userId+quizId) → on first pass writes an `EvidenceLog`
+`PRACTICE_ASSESSMENT` row → feeds straight back into the baseline formula → also
+POSTs to the mock server's `/competencies/update`.
+
+**Chat** (`POST /api/v1/chat`) — frontend posts profile context (gaps, recs, role);
+backend runs regex intercepts → semantic intent classification → templated reply,
+optionally returning `navigate_action(s)` the frontend executes (tab switch,
+scroll, theme, language, login modal).
+
+---
+
+## 4. Persistence
+
+Single SQLite file `main-lms-backend/auth.db` (gitignored, auto-created at startup):
+- `users_auth` — `AuthBase` (auth/models.py)
+- Everything else — `Base` (models/models.py): domain tables from the UML,
+  plus `evidence_log`, `quiz_attempts`, `karma_events`, `karma_monthly_usage`
+
+Identity note: `EvidenceLog.userId` and `QuizAttempt.userId` intentionally store
+the **iGOT userId** (`usr_…`), not `users.uuid`. Auth usernames are also iGOT
+userIds, so the JWT subject is the canonical identity across the platform.
+
+---
+
+## 5. Tech stack
+
+**Backend** — FastAPI, SQLAlchemy 2, Pydantic v2, httpx, python-jose + bcrypt,
+faiss-cpu, rank-bm25, numpy, onnxruntime-cpu + transformers (or
+sentence-transformers fallback), google-generativeai, langchain-text-splitters,
+pdfplumber/pypdf/python-pptx, chromadb + langchain-ollama (disconnected path).
+
+**Frontend** — React 18, TypeScript, Vite 5, React Router 6, Tailwind, Recharts,
+lucide-react. No state library; hooks + context only.
+
+**Models** — `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, ONNX INT8 preferred)
+for both chat intents and course search; Gemini (`GEMINI_MODEL`) for MCQs;
+`llama3.2:3b` via local Ollama for certificate parsing.
+
+**Env vars** (`main-lms-backend/.env`, see `.env.example`): `IGOT_MOCK_BASE_URL`,
+`IGOT_MOCK_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `IGOT_COMPETENCIES_UPDATE_URL`,
+`OLLAMA_*`, `CHROMA_DB_DIR`, `CHUNK_SIZE`, `CHUNK_OVERLAP`.
+
+---
+
+## 6. Design patterns actually implemented
+
+| Pattern | Where |
+|---------|-------|
+| Adapter / Port | `adapters/igot_adapter.py` (`ILearningPlatformAdapter` → `MockIgotAdapter`) |
+| Strategy | `services/karma_engine.py` (`IKarmaStrategy` + 6 concrete strategies) |
+| Factory | `frontend/src/patterns/DashboardFactory.ts` |
+| Singleton | `ai/embedder.py`, startup `_rec_engine` / `_assembler` |
+| Layered fallback | Chat Tier 1 semantic → Tier 2 template → (Tier 3 Ollama, disconnected); embedder ONNX → PyTorch; PDF pdfplumber → pypdf; PPTX python-pptx → raw XML |
+
+---
+
+## 7. Mismatches between the mermaid diagram and the code
+
+Called out explicitly — the diagram is the intended design, not a description of
+what runs today.
+
+1. **ISP split adapters missing.** The diagram specifies `ICatalogSync` and
+   `IScorePublisher` as separate interfaces with `IgotPlatformAdapter`,
+   `NsstaPlatformAdapter`, `InMemoryLearningPlatformAdapter`. The code has one
+   fat interface `ILearningPlatformAdapter` (5 read methods, no score-push
+   method) and one implementation, `MockIgotAdapter`. Score push happens inline
+   via `httpx` in `routers/rag.py`.
+2. **Observer / EventBus / Transactional Outbox not implemented.** `OutboxEntry`
+   exists as a table in `models/models.py` but is never written or read. There is
+   no `EventBus`, `IEventListener`, `LocalProfileUpdater`, `AdminAuditLogger`,
+   `IGotSyncOutboxPublisher` or `OutboxWorker`. iGOT sync is a synchronous,
+   best-effort HTTP call inside the grading request; a failure is swallowed and
+   reported as `synced_to_igot: false`.
+3. **Recommendation Strategy interface not implemented.** No
+   `IRecommendationStrategy` / `VectorSearchStrategy` / `SkillGapRuleStrategy` /
+   `HybridRecommendationStrategy` / `RecommendationEngine.setStrategy`. Instead a
+   single concrete `HybridRecommendationEngine` hardcodes the dense+sparse+RRF
+   pipeline. `IVectorStore` is likewise absent — FAISS is used directly.
+4. **Factory/Builder for documents not implemented.** No `IDocumentParser`,
+   `PdfParser`, `PptParser`, `TextParser`, `DocumentParserFactory`, or
+   `AssessmentBuilder`. `routers/rag.py` dispatches on file extension with
+   `if/elif` and builds Pydantic `QuizQuestion` objects inline.
+5. **`SkillGapEngine` / `SkillGapReport` don't exist as named classes.** That role
+   is played by `BaselineAssembler` + `CompetencyCalculator` + inline logic in
+   `main.py`, which produce a JSON payload rather than a `SkillGapReport` type.
+6. **Repository layer absent.** No `IUserCompetencyRepository`,
+   `IAssessmentRepository`, `ICourseRepository`. Routers query SQLAlchemy
+   sessions directly; the course catalog is a JSON file read at startup, not a
+   repository.
+7. **Course vectors are not persisted.** The diagram has
+   `Course.syllabusVectorEmbedding` / `embeddingModelVersion`; the columns exist
+   in `models.py` but are never populated. Embeddings are recomputed in memory at
+   every startup from the catalog JSON.
+8. **The UML domain tables are largely dormant.** `Official`, `JobRole`,
+   `RoleRequirement`, `UserCompetency`, `CourseSkillMapping`,
+   `AssessmentSkillMapping` are created but barely written. Live user, role and
+   competency data comes from the mock iGOT server, not from these tables. Only
+   the RAG grading path writes `CompetencyProfile`/`UserCompetency`, and it
+   overloads `CompetencyProfile.profileId` to hold an iGOT userId.
+9. **The evidence model is richer than the diagram.** `EvidenceLog`,
+   `QuizAttempt`, `KarmaEvent`, `KarmaMonthlyUsage` and the whole 6-term baseline
+   formula have no counterpart in the mermaid file; the diagram's
+   `UserCompetency.verificationSource` is the only nod to evidence provenance.
+10. **Roles diverge.** The diagram has `BaseUser → Official | Admin | Trainer`.
+    Auth seeds only `learner` and `admin` (`auth/seed.py`), and the frontend maps
+    `learner → official`. `/trainer` renders the learner dashboard.
+
+Known integration bugs (not diagram-related) are recorded in the relevant
+`docs/features/*.md` files.

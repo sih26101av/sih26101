@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Hash, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { AshokaChakra, GovEmblem } from '../components/gov/GovUI';
 
 interface LoginPageProps {
   isModal?: boolean;
@@ -67,48 +68,47 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
   };
 
   return (
-    <div className={isModal ? "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm font-sans transition-colors duration-300" : "min-h-screen flex items-center justify-center relative overflow-hidden bg-[#f8fafc] dark:bg-slate-900 font-sans transition-colors duration-300"}>
+    <div className={isModal ? "fixed inset-0 z-[60] flex items-center justify-center bg-gov-ink/60 backdrop-blur-md font-sans animate-fade-in overflow-y-auto py-10" : "min-h-screen flex items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10"}>
       {/* Background */}
       {!isModal && (
-        <div
-          className="absolute inset-0 z-0 pointer-events-none opacity-[0.20] dark:opacity-10 dark:invert"
-          style={{
-            backgroundImage: `url('/bg-new-topo.png')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            transform: 'scale(1.2) translateX(-5%)',
-          }}
-        />
+        <>
+          <div className="absolute inset-x-0 top-0 h-[42vh] bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue" />
+          <div className="absolute inset-x-0 top-[42vh] tricolor-strip" />
+          <div className="absolute -right-32 -top-32 text-white/[0.06] pointer-events-none">
+            <AshokaChakra size={560} strokeWidth={0.8} className="animate-spin-slow" />
+          </div>
+        </>
       )}
 
-      <div className="relative z-10 w-full max-w-md px-4">
+      {isModal && <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />}
+
+      <div className="relative z-10 w-full max-w-md px-4 animate-scale-in">
         {isModal && (
-          <button 
+          <button
             onClick={onClose}
-            className="absolute -top-12 left-4 flex items-center gap-2 text-white/90 hover:text-white bg-slate-800/50 hover:bg-slate-800 px-3 py-1.5 rounded-full text-[12px] font-bold backdrop-blur-md transition-all shadow-md"
+            className="mb-4 inline-flex items-center gap-2 text-white/90 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 rounded-full text-[12px] font-bold backdrop-blur-md transition-all"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Home
           </button>
         )}
-        
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8 cursor-default">
-          <div className="flex items-center gap-1.5">
-            <div className="flex flex-col gap-[3px] justify-center mt-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#0f172a] dark:bg-white" />
-              <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-            </div>
-            <span className="font-bold text-[22px] text-[#0f172a] dark:text-white tracking-tight leading-none">MoSPI</span>
-          </div>
-          <span className="text-[8px] text-slate-400 font-semibold tracking-wide uppercase mt-1">
-            Skill Intelligence Platform
-          </span>
-        </div>
 
         {/* Card */}
-        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-200/80 dark:border-slate-700/60 p-8 transition-colors duration-300">
-          <h2 className="text-[20px] font-bold text-[#0f172a] dark:text-white mb-1">Welcome back</h2>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">Sign in to access your MoSPI dashboard.</p>
+        <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-gov-lg border border-gov-line dark:border-slate-700/60 overflow-hidden transition-colors duration-300">
+          <div className="tricolor-strip" />
+
+          {/* Ministry block */}
+          <div className="flex items-center gap-3.5 px-8 pt-7 pb-5 border-b border-gov-line dark:border-slate-800">
+            <GovEmblem size={52} />
+            <div className="leading-tight">
+              <div className="text-[11px] font-semibold text-gov-saffron-deep" lang="hi">सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय</div>
+              <div className="font-serif font-bold text-[14px] text-gov-ink dark:text-white">Ministry of Statistics &amp; PI</div>
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-0.5">Skill Intelligence Platform</div>
+            </div>
+          </div>
+
+          <div className="p-8 pt-6">
+          <h2 className="font-serif text-[22px] font-bold text-gov-ink dark:text-white mb-1">Official Sign-In <span className="text-[14px] font-sans font-semibold text-slate-400" lang="hi">· अधिकारी लॉगिन</span></h2>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">Use your iGOT Karmayogi user ID to access your dashboard.</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Username */}
@@ -121,8 +121,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
+                autoFocus={isModal}
                 placeholder="Enter your iGOT User ID or admin"
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all"
+                className="gov-input"
               />
             </div>
 
@@ -138,7 +139,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
                   onChange={e => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#2b4c7e]/30 focus:border-[#2b4c7e] transition-all pr-10"
+                  className="gov-input pr-10"
                 />
                 <button
                   type="button"
@@ -153,7 +154,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
 
             {/* Error */}
             {error && (
-              <p className="text-[12px] text-red-500 font-medium bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-lg px-3 py-2">
+              <p className="text-[12px] text-red-600 font-medium bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-md px-3 py-2 animate-fade-in">
                 {error}
               </p>
             )}
@@ -162,8 +163,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-b from-[#2b4c7e] to-[#0d1b2a] text-white text-[13px] font-bold rounded-lg shadow-[0_8px_20px_-6px_rgba(13,27,42,0.7)] hover:from-[#3a5d91] hover:to-[#162a42] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
+              className="gov-btn-primary w-full mt-2 !py-3"
             >
               {loading ? (
                 <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -176,13 +176,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
             </button>
           </form>
 
-          <div className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-400">
-            <Hash className="w-3 h-3" />
-            JWT auth via MoSPI LMS Backend · Role-based routing via DashboardFactory
+          <div className="mt-5 flex items-center gap-1.5 text-[11px] text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-gov-green" />
+            Secured session · Role-based access for officials and administrators
+          </div>
           </div>
         </div>
 
-        <p className="text-center mt-6 text-[11px] text-slate-400">
+        <p className={`text-center mt-6 text-[11px] ${isModal ? 'text-white/60' : 'text-slate-500'}`}>
           © {new Date().getFullYear()} Ministry of Statistics and Programme Implementation
         </p>
       </div>

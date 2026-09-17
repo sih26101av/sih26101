@@ -203,7 +203,7 @@ const KarmaCard: React.FC<{ karma: KarmaLedger | null; userId: string }> = ({ ka
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 transition-colors duration-300">
+    <div className="gov-card gov-card-hover p-6">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -401,7 +401,7 @@ const CareerCard: React.FC = () => {
   const chartData = [{ name: "Match", value: CAREER_MATCH_PCT, fill: "url(#careerGrad)" }];
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 transition-colors duration-300">
+    <div className="gov-card gov-card-hover p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

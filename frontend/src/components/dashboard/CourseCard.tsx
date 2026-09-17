@@ -95,12 +95,13 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
   const sourceStyle = getSourceStyle(course.source);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-800 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-600 dark:hover:border-blue-500 transition-all duration-200 flex flex-col h-full">
+    <div className="group relative bg-white dark:bg-slate-900 rounded-xl border border-gov-line dark:border-slate-700/70 shadow-gov hover:shadow-gov-lg hover:-translate-y-1 hover:border-gov-blue/40 dark:hover:border-sky-500/50 transition-all duration-300 flex flex-col h-full overflow-hidden">
+      <div className="h-1 w-full bg-gradient-to-r from-gov-saffron via-gov-gold to-gov-green origin-left scale-x-[0.25] group-hover:scale-x-100 transition-transform duration-500" />
 
       {/* ── Header: rank + source badge + TPAC badge + duration ── */}
       <div className="px-4 pt-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="w-7 h-7 rounded-full bg-blue-900 dark:bg-blue-800 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 shadow">
+          <span className="w-7 h-7 rounded-lg bg-gov-navy dark:bg-sky-700 text-white text-xs font-black flex items-center justify-center flex-shrink-0 shadow-gov transition-transform duration-300 group-hover:scale-110">
             {priorityRank}
           </span>
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${sourceStyle.badge}`}>
@@ -121,7 +122,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
 
       {/* ── Body: title + score bar + competency gap ── */}
       <div className="px-4 py-3 flex-1">
-        <h3 className="text-slate-800 dark:text-slate-100 font-bold text-sm leading-snug mb-3">
+        <h3 className="text-gov-ink dark:text-slate-100 font-bold text-sm leading-snug mb-3 group-hover:text-gov-blue dark:group-hover:text-sky-300 transition-colors">
           {course.title}
         </h3>
 
@@ -153,8 +154,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
 
       {/* ── Match reason + reason chips ── */}
       <div className="mx-4 mb-3">
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-lg px-3 py-2">
-          <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+        <div className="bg-gov-paper dark:bg-slate-800/60 border-l-[3px] border-gov-saffron rounded-md px-3 py-2">
+          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
             <span className="font-semibold">Why this course? </span>
             {aiMatchTag || matchReasons?.[0] || 'Matched by FRAC competency tag.'}
           </p>
@@ -176,7 +177,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
 
       {/* ── CTA ── */}
       <div className="px-4 pb-4">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-800 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition-colors duration-150 group shadow-sm">
+        <button className="gov-btn-primary w-full">
           <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
           {course.source === 'iGOT Karmayogi' ? 'Enroll on iGOT' : 'Enroll Now'}
         </button>

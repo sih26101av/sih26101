@@ -1,200 +1,153 @@
 /**
  * FILE: src/pages/LearnerDashboard.tsx
+ *
+ * The official's home screen at /dashboard/:officialId.
+ *
+ * Layout: AppShell (navy topbar + section sidebar) wrapping one section at a
+ * time. Every section is backed by the single `useLearnerDashboard` fetch — the
+ * sidebar only switches which slice of that state is on screen, so navigating
+ * never refetches.
+ *
+ * Sections: dashboard · my-courses · skill-gap · recommendations · assessments
+ *           certificates · progress · karma
  */
 
-import React, { useState, useRef } from "react";
-import {
-  LogOut, AlertTriangle,
-  Sparkles, RefreshCcw, Moon, Sun, Lock, Search, Briefcase, Home, Bot,
-  Award, Upload, FileText
-} from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertTriangle, ArrowRight, Award, BarChart3, Bot, Briefcase, BookOpen,
+  FileText, LayoutDashboard, LifeBuoy, Lock, RefreshCcw, Search, Sparkles,
+  Target, TrendingUp, Trophy, Upload,
+} from "lucide-react";
+
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
-import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../context/AuthContext";
+
+import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
+import PageHeader from "../components/shell/PageHeader";
+import SectionCard, { SectionAction } from "../components/shell/SectionCard";
+import StatCard from "../components/shell/StatCard";
+
 import ProfileHeader from "../components/dashboard/ProfileHeader";
 import SkillGapCard from "../components/dashboard/SkillGapCard";
-import CourseCard from "../components/dashboard/CourseCard";
 import MyCoursesView from "../components/dashboard/MyCoursesView";
 import ProgressView from "../components/dashboard/ProgressView";
 import ChatWidget from "../components/dashboard/ChatWidget";
 import RightSidebar from "../components/dashboard/RightSidebar";
+import AssessmentUploadZone from "../components/dashboard/AssessmentUploadZone";
+import CompetencyOverviewTable from "../components/dashboard/CompetencyOverviewTable";
+import LearningSnapshot from "../components/dashboard/LearningSnapshot";
+import RecentActivityList from "../components/dashboard/RecentActivityList";
+import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
+import { AshokaChakra } from "../components/gov/GovUI";
 
-// â”€â”€â”€ Loading Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sections ─────────────────────────────────────────────────────────────────
+export type TabType =
+  | "dashboard" | "my-courses" | "skill-gap" | "recommendations"
+  | "assessments" | "certificates" | "progress" | "karma";
+
+const SECTION_META: Record<TabType, { title: string; subtitle: string; crumb: string }> = {
+  dashboard:       { title: "Dashboard",        subtitle: "Your learning journey towards a stronger statistical ecosystem", crumb: "Dashboard" },
+  "my-courses":    { title: "My Courses",       subtitle: "Active enrolments from the iGOT Karmayogi catalogue",            crumb: "My Courses" },
+  "skill-gap":     { title: "Skill-Gap Centre", subtitle: "Evidence-weighted competency baselines against your role requirements", crumb: "Skill-Gap Centre" },
+  recommendations: { title: "Recommendations",  subtitle: "AI-matched courses that close your active competency gaps",      crumb: "Recommendations" },
+  assessments:     { title: "Assessment Studio",subtitle: "Generate assessments from MoSPI training documents and log verified evidence", crumb: "Assessment Studio" },
+  certificates:    { title: "Certificates",     subtitle: "Submit external certificates for FRAC competency verification",  crumb: "Certificates" },
+  progress:        { title: "Progress Reports", subtitle: "Competency trajectory and your verified achievement record",     crumb: "Progress Reports" },
+  karma:           { title: "Karma & Rewards",  subtitle: "Your iGOT Karmayogi karma points, streak and monthly cap",       crumb: "Karma" },
+};
+
+// ─── Loading / error ──────────────────────────────────────────────────────────
 const LoadingSkeleton: React.FC = () => (
-  <div className="animate-pulse space-y-5 p-6">
-    <div className="h-28 bg-white/60 rounded-2xl shadow-sm" />
-    <div className="grid grid-cols-3 gap-5">
-      <div className="col-span-2 h-96 bg-white/60 rounded-2xl shadow-sm" />
-      <div className="space-y-4">
-        <div className="h-48 bg-white/60 rounded-2xl shadow-sm" />
-        <div className="h-44 bg-white/60 rounded-2xl shadow-sm" />
+  <div className="space-y-5" aria-busy="true" aria-label="Loading dashboard">
+    <div className="skeleton h-36" />
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      {Array.from({ length: 5 }, (_, i) => <div key={i} className="skeleton h-28" />)}
+    </div>
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="skeleton h-96 lg:col-span-2" />
+      <div className="space-y-5">
+        <div className="skeleton h-44" />
+        <div className="skeleton h-44" />
       </div>
     </div>
   </div>
 );
 
-// â”€â”€â”€ Error State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ErrorState: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6">
-    <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shadow-sm">
-      <AlertTriangle size={30} className="text-red-500" />
+  <div className="flex min-h-[55vh] animate-fade-up flex-col items-center justify-center gap-4 p-6">
+    <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red-100 bg-red-50 shadow-gov dark:border-red-800/50 dark:bg-red-900/20">
+      <AlertTriangle size={30} className="text-accent-rose" />
     </div>
-    <h2 className="text-slate-800 font-bold text-lg">Failed to Load Dashboard</h2>
-    <p className="text-slate-500 text-sm max-w-sm text-center">{message}</p>
-    <button
-      onClick={onRetry}
-      className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl text-sm shadow-md hover:bg-blue-700 transition-colors"
-    >
+    <h2 className="text-xl font-semibold text-gov-ink dark:text-white">Failed to load dashboard</h2>
+    <p className="max-w-sm text-center text-sm text-slate-500 dark:text-slate-400">{message}</p>
+    <button onClick={onRetry} className="gov-btn-primary">
       <RefreshCcw size={14} /> Retry
     </button>
   </div>
 );
 
-// â”€â”€â”€ Learning Snapshot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const StatsSummary: React.FC<{
-  totalCompetencies: number;
-  activeGaps: number;
-  mandatoryGaps: number;
-  recommendedCourses: number;
-}> = ({ totalCompetencies, activeGaps, mandatoryGaps, recommendedCourses }) => {
-  const stats = [
-    {
-      label: "Competencies",
-      value: totalCompetencies,
-      valueColor: "text-slate-900 dark:text-white",
-      iconBg: "bg-[#eff6ff] dark:bg-blue-900/30",
-      icon: <Briefcase size={20} className="text-slate-700 dark:text-blue-400" />,
-    },
-    {
-      label: "Active Gaps",
-      value: activeGaps,
-      valueColor: "text-[#7f1d1d] dark:text-red-400",
-      iconBg: "bg-[#fee2e2] dark:bg-red-900/30",
-      icon: <AlertTriangle size={20} className="text-[#991b1b] dark:text-red-400" />,
-    },
-    {
-      label: "Mandatory Gaps",
-      value: mandatoryGaps,
-      valueColor: "text-[#d97706] dark:text-orange-400",
-      iconBg: "bg-[#f1f5f9] dark:bg-slate-700/50",
-      icon: <Lock size={20} className="text-slate-600 dark:text-orange-400" />,
-    },
-    {
-      label: "Recommendations",
-      value: recommendedCourses,
-      valueColor: "text-[#2563eb] dark:text-blue-400",
-      iconBg: "bg-[#eff6ff] dark:bg-blue-900/30",
-      icon: <Search size={20} className="text-slate-700 dark:text-blue-400" />,
-    },
-  ];
+// ─── Sidebar help card ────────────────────────────────────────────────────────
+const SidebarHelp: React.FC = () => (
+  <div className="rounded-xl border border-gov-line bg-gov-paper p-4 dark:border-slate-700/60 dark:bg-slate-800/50">
+    <div className="mb-1.5 flex items-center gap-2">
+      <LifeBuoy size={16} className="text-gov-blue dark:text-sky-400" aria-hidden="true" />
+      <span className="text-[12.5px] font-semibold text-gov-ink dark:text-white">Need help?</span>
+    </div>
+    <p className="mb-3 text-[11.5px] leading-relaxed text-slate-500 dark:text-slate-400">
+      Reach out to the NSO training support desk.
+    </p>
+    <a
+      href="mailto:support-nsota@mospi.gov.in?subject=Skill%20Intelligence%20Platform%20support"
+      className="block w-full rounded-lg border border-gov-navy px-3 py-2 text-center text-[12px] font-semibold text-gov-navy transition-colors hover:bg-gov-navy hover:text-white dark:border-slate-500 dark:text-slate-200 dark:hover:bg-white dark:hover:text-gov-ink"
+    >
+      Contact Support
+    </a>
+  </div>
+);
 
-  return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 transition-colors duration-300">
-      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-5 transition-colors duration-300">
-        Learning Snapshot
-      </p>
-      <div className="grid grid-cols-2 gap-4">
-        {stats.map(({ label, value, valueColor, iconBg, icon }) => (
-          <div
-            key={label}
-            className="bg-white dark:bg-slate-800/60 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/50 p-5 flex flex-col items-center justify-center hover:-translate-y-0.5 transition-all duration-300"
-          >
-            <div className="flex items-center gap-4 w-full justify-center mb-2">
-              <div className={`w-[42px] h-[42px] rounded-[12px] flex items-center justify-center transition-colors duration-300 ${iconBg}`}>
-                {icon}
-              </div>
-              <span className={`text-[32px] font-black leading-none transition-colors duration-300 ${valueColor}`}>{value}</span>
-            </div>
-            <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-300 transition-colors duration-300">{label}</span>
-          </div>
-        ))}
+// ─── Assessment Studio promo (links into the Assessment Studio section) ───────
+const StudioPromo: React.FC<{ onOpenStudio: () => void; onOpenQuizPage: () => void }> = ({
+  onOpenStudio, onOpenQuizPage,
+}) => (
+  <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gov-navy to-gov-blue p-6 text-white shadow-gov-lg">
+    <div className="pointer-events-none absolute -right-10 -bottom-12 text-white/10 transition-transform duration-700 group-hover:rotate-45">
+      <AshokaChakra size={160} />
+    </div>
+    <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-start gap-4">
+        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+          <Bot size={22} className="text-gov-saffron" aria-hidden="true" />
+        </span>
+        <div>
+          <h3 className="mb-1 text-[15.5px] font-semibold">AI Assessment Studio</h3>
+          <p className="max-w-lg text-[12.5px] leading-relaxed text-white/70">
+            Upload an NSO training document and the RAG engine generates a competency-tagged
+            assessment. Passing it writes verified evidence straight into your baseline.
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-shrink-0 flex-wrap gap-2.5">
+        <button type="button" onClick={onOpenStudio} className="gov-btn-saffron group/btn">
+          Open Studio
+          <ArrowRight size={15} className="transition-transform group-hover/btn:translate-x-0.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenQuizPage}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border-[1.5px] border-white/40 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-white hover:text-gov-ink"
+        >
+          Take an Assessment
+        </button>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// â”€â”€â”€ Topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-type TabType = "dashboard" | "my-courses" | "progress";
-
-const Topbar: React.FC<{
-  userName?: string;
-  activeTab?: TabType;
-  onTabChange: (tab: TabType) => void;
-}> = ({ userName, onTabChange }) => {
-  const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  return (
-    <nav className="bg-[#1e293b] px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
-      {/* Logo and Title */}
-      <div
-        className="flex items-center gap-3 cursor-pointer select-none"
-        onClick={() => onTabChange("dashboard")}
-      >
-        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
-          {/* Placeholder for the emblem */}
-          <div className="w-6 h-6 border-[1.5px] border-slate-400 rounded-full flex flex-col items-center justify-center">
-             <div className="w-1 h-1 bg-slate-400 rounded-full mb-[1px]"></div>
-             <div className="w-3 h-1.5 border border-slate-400 rounded-t-full"></div>
-          </div>
-        </div>
-        <div className="text-white font-semibold text-lg tracking-wide">
-          National Statistical Office (NSO) Training Portal
-        </div>
-      </div>
-
-      {/* Right Actions */}
-      <div className="flex items-center gap-3 text-white">
-        {userName && (
-          <span className="text-xs font-semibold px-2.5 py-1 bg-white/10 rounded-full hidden sm:inline-block">
-            {userName}
-          </span>
-        )}
-        <button
-          onClick={() => navigate("/")}
-          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-          title="Go to Home"
-        >
-          <Home size={18} />
-        </button>
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
-          title="Toggle Theme"
-        >
-          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <button className="p-1.5 hover:bg-white/10 rounded-full transition-colors" title="Search">
-          <Search size={18} />
-        </button>
-        <TopbarSignOut />
-      </div>
-    </nav>
-  );
-};
-
-// Sign Out button reads its own auth context instance
-const TopbarSignOut: React.FC = () => {
-  const { logout } = useAuth();
-  const navigate   = useNavigate();
-  const handleSignOut = async () => {
-    await logout();
-    navigate("/login", { replace: true });
-  };
-  return (
-    <button
-      onClick={handleSignOut}
-      className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-    >
-      <LogOut size={13} /> Sign Out
-    </button>
-  );
-};
-
-// ——— Certificate Upload Zone —————————————————————————————————————————————————————————————
+// ─── Certificate upload ───────────────────────────────────────────────────────
 const CertificateUploadZone: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = () => {
     if (file) {
@@ -206,270 +159,406 @@ const CertificateUploadZone: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 flex flex-col gap-5 transition-colors duration-300">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="w-[44px] h-[44px] rounded-[14px] bg-[#fdf4ff] dark:bg-fuchsia-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-          <Award size={22} className="text-fuchsia-600 dark:text-fuchsia-400 transition-colors duration-300" />
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent-green-soft dark:bg-emerald-500/15">
+          <Award size={22} className="text-accent-green dark:text-emerald-300" aria-hidden="true" />
+        </span>
         <div>
-          <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">External Certificates</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload non-iGOT certificates (PDF/Image) for skill verification.</p>
+          <h3 className="mb-0.5 text-[14.5px] font-semibold leading-tight text-gov-ink dark:text-white">External Certificates</h3>
+          <p className="text-[12px] text-slate-500 dark:text-slate-400">
+            Upload non-iGOT certificates (PDF/Image) for FRAC skill verification.
+          </p>
         </div>
       </div>
-      
-      <input 
-        type="file" 
-        className="hidden" 
-        ref={fileInputRef} 
-        accept=".pdf,image/*" 
+
+      <input
+        type="file"
+        className="hidden"
+        ref={fileInputRef}
+        accept=".pdf,image/*"
+        aria-label="Choose a certificate file"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
       />
 
-      <div className="flex flex-col gap-3">
-        {file && (
-          <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/50 text-sm">
-            <FileText size={16} className="text-fuchsia-500 flex-shrink-0" />
-            <span className="truncate flex-1 text-slate-700 dark:text-slate-300 font-medium">{file.name}</span>
-            <button onClick={() => setFile(null)} className="text-slate-400 hover:text-red-500 font-bold">&times;</button>
-          </div>
-        )}
-        
-        <button
-          onClick={handleUpload}
-          className={`relative w-full border-2 font-bold text-[14px] py-2.5 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 ${
-            file 
-              ? "bg-fuchsia-600 text-white border-fuchsia-600 hover:bg-fuchsia-700"
-              : "bg-white dark:bg-slate-800 text-fuchsia-700 dark:text-white border-fuchsia-700 dark:border-fuchsia-600 hover:bg-fuchsia-50 dark:hover:bg-slate-700"
-          }`}
-        >
-          <Upload size={18} className={`${file ? 'text-white' : 'text-fuchsia-700 dark:text-fuchsia-300'} relative z-10 transition-colors duration-300`} />
-          <span className="relative z-10">{file ? "Submit for Verification" : "Upload Certificate"}</span>
-        </button>
-      </div>
+      {file && (
+        <div className="flex animate-fade-in items-center gap-2 rounded-xl border border-gov-line bg-gov-paper p-3 text-sm dark:border-slate-700/50 dark:bg-slate-800/60">
+          <FileText size={16} className="flex-shrink-0 text-accent-green" aria-hidden="true" />
+          <span className="flex-1 truncate font-medium text-slate-700 dark:text-slate-300">{file.name}</span>
+          <button
+            type="button"
+            onClick={() => setFile(null)}
+            className="font-bold text-slate-400 hover:text-accent-rose"
+            aria-label={`Remove ${file.name}`}
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleUpload}
+        className={`flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed py-2.5 text-[13.5px] font-semibold transition-all duration-300 ${
+          file
+            ? "border-solid border-accent-green bg-accent-green text-white hover:bg-emerald-600"
+            : "border-accent-green/50 bg-accent-green/[0.05] text-accent-green hover:border-accent-green hover:bg-accent-green/10 dark:text-emerald-300"
+        }`}
+      >
+        <Upload size={17} aria-hidden="true" />
+        {file ? "Submit for Verification" : "Upload Certificate"}
+      </button>
     </div>
   );
 };
 
-// ——— Main Dashboard ————————————————————————————————————————————————————————————————————————
+// ─── Main ─────────────────────────────────────────────────────────────────────
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
 
   // Priority: AuthContext user → prop → first real user from mock server
-  const userId = authUser?.username ?? officialId ?? 'usr_720465595';
+  const userId = authUser?.username ?? officialId ?? "usr_720465595";
 
+  const {
+    profile, skillGaps, recommendations, enrollments, achievements, karma,
+    isLoading, error, refetch,
+  } = useLearnerDashboard(userId);
 
-  const { profile, skillGaps, recommendations, enrollments, achievements, karma, isLoading, error } =
-    useLearnerDashboard(userId);
   const [retryKey, setRetryKey] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [courseFilter, setCourseFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  const activeGaps = skillGaps.filter((g) => g.gap > 0);
-  const mandatoryGaps = activeGaps.filter((g) => g.isMandatory);
+  const activeGaps = useMemo(() => skillGaps.filter((g) => g.gap > 0), [skillGaps]);
+  const mandatoryGaps = useMemo(() => activeGaps.filter((g) => g.isMandatory), [activeGaps]);
   const totalAssessed = profile?.competencyProfile.userCompetencies.length ?? 0;
-  const sortedRecs = [...recommendations].sort((a, b) => a.priorityRank - b.priorityRank);
 
-  // Course filter: driven by "Find Courses" click in SkillGapCard
-  const [courseFilter, setCourseFilter] = useState<string>('');
-  const recsSectionRef = useRef<HTMLElement>(null);
+  /** Mean of currentLevel/requiredLevel across assessed competencies. */
+  const proficiency = useMemo(() => {
+    if (skillGaps.length === 0) return 0;
+    const sum = skillGaps.reduce(
+      (acc, g) => acc + (g.requiredLevel > 0 ? Math.min(1, g.currentLevel / g.requiredLevel) : 1),
+      0,
+    );
+    return Math.round((sum / skillGaps.length) * 100);
+  }, [skillGaps]);
 
+  /** Topbar search filters the competency set the Skill-Gap Centre shows. */
+  const searchedGaps = useMemo(() => {
+    if (!search.trim()) return skillGaps;
+    const t = search.trim().toLowerCase();
+    return skillGaps.filter(
+      (g) => g.competency.skillName.toLowerCase().includes(t) || g.competency.domain.toLowerCase().includes(t),
+    );
+  }, [skillGaps, search]);
+
+  // "Find courses" from the gap table / SkillGapCard → filtered recommendations
+  const recsRef = useRef<HTMLDivElement>(null);
   const handleFindCourses = (skillName: string) => {
     setCourseFilter(skillName);
-    setActiveTab('dashboard');
-    setTimeout(() => {
-      recsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
+    setActiveTab("recommendations");
+    setTimeout(() => recsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
+  const navGroups: ShellNavGroup[] = [
+    {
+      items: [
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { id: "my-courses", label: "My Courses", icon: BookOpen, badge: enrollments.length || undefined },
+        { id: "skill-gap", label: "Skill-Gap Centre", icon: Target, badge: activeGaps.length || undefined },
+        { id: "recommendations", label: "Recommendations", icon: Sparkles },
+        { id: "assessments", label: "Assessment Studio", icon: Bot },
+        { id: "certificates", label: "Certificates", icon: Award },
+        { id: "progress", label: "Progress Reports", icon: TrendingUp },
+        { id: "karma", label: "Karma & Rewards", icon: Trophy },
+      ],
+    },
+  ];
+
+  const meta = SECTION_META[activeTab];
+
+  // ── Error ───────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="min-h-screen bg-[#eef2f7] relative" key={retryKey}>
-        <div className="absolute inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'url("/bg-mesh.png")', backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", opacity: 0.6 }} />
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <Topbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div key={retryKey}>
+        <AppShell
+          groups={navGroups}
+          activeId={activeTab}
+          onNavigate={(id) => setActiveTab(id as TabType)}
+          userName={profile?.govId ?? authUser?.username}
+          userRole="Official"
+        >
           <ErrorState message={error} onRetry={() => setRetryKey((k) => k + 1)} />
-        </div>
+        </AppShell>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F0EF] dark:bg-slate-950 relative transition-colors duration-300" key={retryKey}>
-      {/* Network Mesh Background */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: 'url("/bg-mesh.png")',
-          backgroundSize: "cover",
-          backgroundPosition: "top right",
-          backgroundRepeat: "no-repeat",
-          opacity: 0.5,
-        }}
-      />
-
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <Topbar userName={profile?.govId} activeTab={activeTab} onTabChange={setActiveTab} />
-
-
+    <div key={retryKey}>
+      <AppShell
+        groups={navGroups}
+        activeId={activeTab}
+        onNavigate={(id) => setActiveTab(id as TabType)}
+        userName={profile?.fullName ?? profile?.govId ?? authUser?.username}
+        userRole="Official"
+        notificationCount={mandatoryGaps.length}
+        onNotificationsClick={() => setActiveTab("skill-gap")}
+        searchValue={search}
+        onSearchChange={(v) => { setSearch(v); if (v) setActiveTab("skill-gap"); }}
+        searchPlaceholder="Search your competencies…"
+        sidebarFooter={<SidebarHelp />}
+      >
         {isLoading || !profile ? (
           <LoadingSkeleton />
         ) : (
-          <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 py-6 space-y-6">
-            <ProfileHeader profile={profile} totalAssessed={totalAssessed} />
+          <>
+            <PageHeader
+              title={meta.title}
+              subtitle={meta.subtitle}
+              breadcrumb={["Home", "Learner", meta.crumb]}
+              dateCaption="Keep learning, keep growing!"
+            />
 
+            {/* ── Overview ──────────────────────────────────────────────── */}
             {activeTab === "dashboard" && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Main grid: SkillGap (2) | Right sidebar stack (1) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
-                  {/* Left: Skill Gap — 2 cols */}
-                  <div className="lg:col-span-2">
-                    <SkillGapCard skillGaps={skillGaps} onFindCourses={handleFindCourses} />
+              <div className="animate-fade-up space-y-5">
+                <ProfileHeader profile={profile} totalAssessed={totalAssessed} />
+
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+                  <StatCard index={0} icon={Briefcase} tone="blue" label="Competencies Assessed" value={totalAssessed} />
+                  <StatCard index={1} icon={AlertTriangle} tone="rose" label="Active Gaps" value={activeGaps.length} onClick={() => setActiveTab("skill-gap")} />
+                  <StatCard index={2} icon={Lock} tone="orange" label="Mandatory Gaps" value={mandatoryGaps.length} onClick={() => setActiveTab("skill-gap")} />
+                  <StatCard index={3} icon={Search} tone="green" label="Recommendations" value={recommendations.length} onClick={() => setActiveTab("recommendations")} />
+                  <StatCard index={4} icon={BarChart3} tone="purple" label="Overall Proficiency" value={`${proficiency}%`} progress={proficiency} />
+                </div>
+
+                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-3">
+                  <div className="space-y-5 xl:col-span-2">
+                    <CompetencyOverviewTable
+                      skillGaps={skillGaps}
+                      onFindCourses={handleFindCourses}
+                      onViewDetailed={() => setActiveTab("skill-gap")}
+                    />
+                    <StudioPromo
+                      onOpenStudio={() => setActiveTab("assessments")}
+                      onOpenQuizPage={() => navigate("/assessment")}
+                    />
                   </div>
 
-                  {/* Right column: Stats → AI Studio → Certs → Karma → Career */}
-                  <div className="flex flex-col gap-5 lg:col-span-1">
-                    <StatsSummary
-                      totalCompetencies={totalAssessed}
-                      activeGaps={activeGaps.length}
-                      mandatoryGaps={mandatoryGaps.length}
-                      recommendedCourses={recommendations.length}
-                    />
-                    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-7 flex flex-col gap-5 transition-colors duration-300">
-                      <div className="flex items-center gap-4">
-                        <div className="w-[44px] h-[44px] rounded-[14px] bg-[#eef2ff] dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-                          <Bot size={22} className="text-blue-800 dark:text-blue-400 transition-colors duration-300" />
-                        </div>
-                        <div>
-                          <h3 className="text-slate-900 dark:text-white font-extrabold text-[15px] leading-tight tracking-tight mb-0.5 transition-colors duration-300">AI Assessment Studio</h3>
-                          <p className="text-slate-500 dark:text-slate-400 text-[12px] transition-colors duration-300">Upload MoSPI training documents to auto-generate custom assessments.</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => navigate("/assessment")}
-                        className="relative w-full bg-white dark:bg-slate-800 text-blue-900 dark:text-white border-2 border-blue-900 dark:border-blue-700 font-bold text-[14px] py-3 rounded-[12px] flex items-center justify-center gap-2 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-slate-700"
-                      >
-                        <Bot size={18} className="text-blue-900 dark:text-blue-200 relative z-10 transition-colors duration-300" />
-                        <span className="relative z-10">Open Assessment Studio</span>
-                      </button>
-                    </div>
+                  <div className="space-y-5">
+                    <SectionCard
+                      title="Your Learning Snapshot"
+                      action={<SectionAction label="My Courses" onClick={() => setActiveTab("my-courses")} />}
+                    >
+                      <LearningSnapshot enrollments={enrollments} />
+                    </SectionCard>
 
-                    {/* External Certificate Upload */}
-                    <CertificateUploadZone />
-
-                    {/* Karma + Career */}
-                    <RightSidebar karma={karma} userId={userId} />
+                    <SectionCard
+                      title="Recent Activity"
+                      action={<SectionAction label="View all" onClick={() => setActiveTab("progress")} />}
+                    >
+                      <RecentActivityList achievements={achievements} />
+                    </SectionCard>
                   </div>
                 </div>
 
-                {/* Recommended Courses section */}
-                <section
-                  ref={recsSectionRef as React.RefObject<HTMLElement>}
-                  className="bg-[#F2F0EF] dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/80 dark:border-slate-700/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.05)] transition-colors duration-300"
+                <SectionCard
+                  title="Recommended for You"
+                  subtitle="AI-matched against your active competency gaps"
+                  action={<SectionAction label="View all" onClick={() => setActiveTab("recommendations")} />}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
-                    <div>
-                      <h2 className="text-slate-900 dark:text-white font-extrabold text-lg flex items-center gap-2">
-                        <Sparkles size={18} className="text-blue-500 dark:text-blue-400" />
-                        AI Recommended Learning Pathway
-                      </h2>
-                      <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
-                        Directly addresses your active competency gaps
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      {courseFilter && (
-                        <span className="flex items-center gap-1.5 text-xs font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 px-3 py-1.5 rounded-full">
-                          Filtered: {courseFilter}
-                          <button
-                            onClick={() => setCourseFilter('')}
-                            className="ml-1 text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 font-black leading-none"
-                            title="Clear filter"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )}
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600/50 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap">
-                        {courseFilter
-                          ? `${sortedRecs.filter(r => r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) || (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase())).length} Matching`
-                          : `${sortedRecs.length} Courses Found`}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(courseFilter
-                      ? sortedRecs.filter(r =>
-                          r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) ||
-                          (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase()) ||
-                          (r as any).matchReasons?.some((m: string) => m.toLowerCase().includes(courseFilter.toLowerCase()))
-                        )
-                      : sortedRecs
-                    ).map((rec) => (
-                      <CourseCard key={rec.course.courseId} recommendation={rec} />
-                    ))}
-                    {sortedRecs.length === 0 && (
-                      <p className="col-span-4 text-center text-slate-400 dark:text-slate-500 text-sm py-8">
-                        No recommendations available — all competencies are met!
-                      </p>
-                    )}
-                    {courseFilter && sortedRecs.filter(r =>
-                      r.course.title.toLowerCase().includes(courseFilter.toLowerCase()) ||
-                      (r as any).competencyName?.toLowerCase().includes(courseFilter.toLowerCase()) ||
-                      (r as any).matchReasons?.some((m: string) => m.toLowerCase().includes(courseFilter.toLowerCase()))
-                    ).length === 0 && sortedRecs.length > 0 && (
-                      <div className="col-span-4 text-center py-8">
-                        <p className="text-slate-400 dark:text-slate-500 text-sm mb-3">No courses matched "{courseFilter}".</p>
-                        <p className="text-slate-400 dark:text-slate-500 text-xs">Showing all recommended courses instead:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                          {sortedRecs.map((rec) => (
-                            <CourseCard key={rec.course.courseId} recommendation={rec} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
+                  <RecommendationsPanel
+                    recommendations={recommendations}
+                    filter=""
+                    onClearFilter={() => setCourseFilter("")}
+                    limit={3}
+                  />
+                </SectionCard>
               </div>
             )}
 
-            {activeTab === "my-courses" && <MyCoursesView enrollments={enrollments} />}
-            {activeTab === "progress" && <ProgressView achievements={achievements} skillGaps={skillGaps} />}
+            {/* ── My Courses ────────────────────────────────────────────── */}
+            {activeTab === "my-courses" && (
+              <div className="animate-fade-up">
+                <MyCoursesView enrollments={enrollments} />
+              </div>
+            )}
 
-            <footer className="text-center py-6 mt-4">
-              <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                MoSPI Skill Intelligence Platform &middot; Powered by iGOT Karmayogi
-              </p>
-            </footer>
-          </main>
-        )}
+            {/* ── Skill-Gap Centre ──────────────────────────────────────── */}
+            {activeTab === "skill-gap" && (
+              <div className="animate-fade-up space-y-5">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                  <StatCard index={0} icon={Briefcase} tone="blue" label="Competencies Assessed" value={totalAssessed} />
+                  <StatCard index={1} icon={AlertTriangle} tone="rose" label="Active Gaps" value={activeGaps.length} />
+                  <StatCard index={2} icon={Lock} tone="orange" label="Mandatory Gaps" value={mandatoryGaps.length} />
+                  <StatCard index={3} icon={BarChart3} tone="purple" label="Overall Proficiency" value={`${proficiency}%`} progress={proficiency} />
+                </div>
 
-        {/* ── Gyan AI Chat Widget ──────────────────────────────────────────── */}
-        {profile && (
-          <ChatWidget
-            officialId={userId}
-            fullName={profile.fullName}
-            govId={profile.govId}
-            jobRole={profile.jobRole.title}
-            department={profile.department}
-            skillGaps={skillGaps}
-            recommendations={recommendations}
-            onNavigate={(action) => {
-              if (action.type === 'tab') {
-                const tabMap: Record<string, string> = {
-                  'dashboard': 'dashboard',
-                  'my-courses': 'my-courses',
-                  'progress': 'progress',
-                };
-                const target = tabMap[action.target];
-                if (target) setActiveTab(target as TabType);
-              } else if (action.type === 'redirect') {
-                // navigate() from react-router-dom — goes to landing page
-                navigate(action.target);
-              }
-            }}
-          />
+                {search.trim() && (
+                  <p className="text-[12.5px] text-slate-500 dark:text-slate-400">
+                    Showing {searchedGaps.length} of {skillGaps.length} competencies matching “{search}”.{" "}
+                    <button type="button" onClick={() => setSearch("")} className="font-semibold text-gov-blue hover:underline dark:text-sky-400">
+                      Clear
+                    </button>
+                  </p>
+                )}
+
+                <SkillGapCard skillGaps={searchedGaps} onFindCourses={handleFindCourses} />
+              </div>
+            )}
+
+            {/* ── Recommendations ───────────────────────────────────────── */}
+            {activeTab === "recommendations" && (
+              <div ref={recsRef} className="animate-fade-up">
+                <SectionCard
+                  title="Recommended Learning Pathway"
+                  subtitle="Hybrid FAISS + BM25 retrieval, re-ranked against your evidence-weighted gaps"
+                  action={
+                    <span className="chip bg-gov-navy text-white dark:bg-sky-700">
+                      {recommendations.length} course{recommendations.length === 1 ? "" : "s"}
+                    </span>
+                  }
+                >
+                  <RecommendationsPanel
+                    recommendations={recommendations}
+                    filter={courseFilter}
+                    onClearFilter={() => setCourseFilter("")}
+                    gridClassName="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                  />
+                </SectionCard>
+              </div>
+            )}
+
+            {/* ── Assessment Studio ─────────────────────────────────────── */}
+            {activeTab === "assessments" && (
+              <div className="animate-fade-up space-y-5">
+                <StudioPromo
+                  onOpenStudio={() => navigate("/assessment")}
+                  onOpenQuizPage={() => navigate("/assessment")}
+                />
+
+                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-3">
+                  <div className="xl:col-span-2">
+                    <SectionCard
+                      title="Generate an Assessment"
+                      subtitle="Upload a training document — questions are generated and graded against FRAC competencies"
+                    >
+                      <AssessmentUploadZone
+                        userId={userId}
+                        onQuizPassed={refetch}
+                        onViewProgress={() => setActiveTab("progress")}
+                      />
+                    </SectionCard>
+                  </div>
+
+                  <SectionCard
+                    title="Skill-Gap Centre"
+                    subtitle="The gaps your next assessment should target"
+                    action={<SectionAction label="Open" onClick={() => setActiveTab("skill-gap")} />}
+                  >
+                    <ul className="space-y-2.5">
+                      {activeGaps
+                        .slice()
+                        .sort((a, b) => b.gap - a.gap)
+                        .slice(0, 5)
+                        .map((g) => (
+                          <li key={g.competency.compId} className="flex items-center gap-3">
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[12.5px] font-semibold text-gov-ink dark:text-white">
+                                {g.competency.skillName}
+                              </span>
+                              <span className="text-[11px] text-slate-400">{g.competency.domain}</span>
+                            </span>
+                            <span className="chip bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300">
+                              gap {g.gap}
+                            </span>
+                          </li>
+                        ))}
+                      {activeGaps.length === 0 && (
+                        <li className="py-6 text-center text-[13px] text-slate-400">
+                          No active gaps — every role requirement is currently met.
+                        </li>
+                      )}
+                    </ul>
+                  </SectionCard>
+                </div>
+              </div>
+            )}
+
+            {/* ── Certificates ──────────────────────────────────────────── */}
+            {activeTab === "certificates" && (
+              <div className="animate-fade-up grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+                <SectionCard title="Upload a Certificate" subtitle="Extracted skills are matched to FRAC competencies and logged as documented evidence">
+                  <CertificateUploadZone />
+                </SectionCard>
+                <SectionCard title="Verified Achievements" subtitle="Quiz passes and accepted certificates on your record">
+                  <RecentActivityList achievements={achievements} limit={8} />
+                </SectionCard>
+              </div>
+            )}
+
+            {/* ── Progress Reports ──────────────────────────────────────── */}
+            {activeTab === "progress" && (
+              <div className="animate-fade-up space-y-5">
+                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-3">
+                  <div className="xl:col-span-2">
+                    <ProgressView achievements={achievements} skillGaps={skillGaps} />
+                  </div>
+                  <SectionCard title="Your Learning Snapshot">
+                    <LearningSnapshot enrollments={enrollments} />
+                  </SectionCard>
+                </div>
+              </div>
+            )}
+
+            {/* ── Karma ─────────────────────────────────────────────────── */}
+            {activeTab === "karma" && (
+              <div className="animate-fade-up">
+                <div className="max-w-lg">
+                  <RightSidebar karma={karma} userId={userId} />
+                </div>
+              </div>
+            )}
+          </>
         )}
-      </div>
+      </AppShell>
+
+      {/* ── Gyan AI Chat Widget ─────────────────────────────────────────── */}
+      {profile && (
+        <ChatWidget
+          officialId={userId}
+          fullName={profile.fullName}
+          govId={profile.govId}
+          jobRole={profile.jobRole.title}
+          department={profile.department}
+          skillGaps={skillGaps}
+          recommendations={recommendations}
+          onNavigate={(action) => {
+            if (action.type === "tab") {
+              // Legacy targets plus the sections introduced by the sidebar.
+              const tabMap: Record<string, TabType> = {
+                dashboard: "dashboard",
+                "my-courses": "my-courses",
+                progress: "progress",
+                "skill-gap": "skill-gap",
+                "skill-gaps": "skill-gap",
+                recommendations: "recommendations",
+                courses: "recommendations",
+                assessments: "assessments",
+                assessment: "assessments",
+                certificates: "certificates",
+                karma: "karma",
+              };
+              const target = tabMap[action.target];
+              if (target) setActiveTab(target);
+            } else if (action.type === "redirect") {
+              navigate(action.target);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

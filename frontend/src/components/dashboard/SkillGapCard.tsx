@@ -114,7 +114,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
   const [showEvidence, setShowEvidence] = React.useState(false);
 
   return (
-    <div className="relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-slate-800 dark:border-slate-700/50 shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
+    <div className={`relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-gov-line dark:border-slate-700/50 border-l-4 ${hasGap ? (isMandatory ? 'border-l-gov-saffron' : 'border-l-red-500') : 'border-l-gov-green'} shadow-sm hover:shadow-gov hover:-translate-y-0.5 overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-all duration-300`}>
 
       <div className="flex-1 relative z-10 w-full">
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -217,13 +217,13 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses })
   const met = skillGaps.filter(e => e.gap === 0);
 
   return (
-    <div className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm p-6 transition-colors duration-300">
+    <div className="gov-card p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-slate-900 dark:text-white font-bold text-lg tracking-tight transition-colors duration-300">
+          <h2 className="gov-heading text-[20px]">
             Competency &amp; Skill-Gap Analysis
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 transition-colors duration-300">
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 pl-4">
             6-term formula: Verified · Documented · Tenure · Education · Seniority · Self-Report
           </p>
         </div>

@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { Search, Settings, User, BookOpen, Activity, Award, Cpu, TabletSmartphone, Route, Moon, Sun, BrainCircuit, BookOpenCheck, FileQuestion, RefreshCw, Shield, LayoutDashboard } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  User, Users, BookOpen, Activity, Award, Route, Moon, Sun, BrainCircuit, BookOpenCheck,
+  FileQuestion, RefreshCw, Shield, LayoutDashboard, ArrowRight, Megaphone, MapPin, Mail, Phone,
+  ExternalLink, ChevronRight, BarChart3, Menu, X, Accessibility,
+} from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import LoginPage from './LoginPage';
 import HomeChatWidget from '../components/home/HomeChatWidget';
+import { AshokaChakra, GovEmblem, Reveal, CountUp } from '../components/gov/GovUI';
 
 
 const translations: Record<string, React.ReactNode> = {
   "MoSPI": <>सांख्यिकी और कार्यक्रम कार्यान्वयन<br />मंत्रालय (MoSPI)</>,
   "SIP": "कौशल बुद्धिमत्ता मंच",
+  "GoI": "भारत सरकार",
+  "Skip": "मुख्य सामग्री पर जाएं",
   "Home": "होम",
   "About": "के बारे में",
   "Features": "विशेषताएँ",
@@ -15,17 +22,25 @@ const translations: Record<string, React.ReactNode> = {
   "Eng_Hi": "Eng | हिंदी",
   "OFFICIAL_LOGIN": "अधिकारी लॉगिन",
   "ADMIN_PORTAL": "एडमिन पोर्टल",
+  "Whats_New": "नया क्या है",
   "Powered": "MoSPI एआई इंजन द्वारा संचालित",
   "Empowering": <>भारत की आधिकारिक सांख्यिकीय<br/>प्रणाली को सशक्त बनाना</>,
   "Hero_Desc": "एक अगली पीढ़ी का क्षमता ट्रैकिंग मंच। हम एआई-संचालित कौशल-अंतर विश्लेषण को व्यक्तिगत iGOT सीखने के मार्गों के साथ जोड़ते हैं।",
   "LOGIN_AS": "अधिकारी के रूप में लॉगिन करें",
+  "Building": <>एक अधिक सक्षम<br /><span className="text-white/85">सांख्यिकीय कार्यबल का निर्माण</span></>,
+  "Assess_Gaps": "कौशल अंतर का आकलन",
+  "Assess_Gaps_Desc": "लक्षित शिक्षण के लिए डेटा-संचालित विश्लेषण",
+  "Personalised": "व्यक्तिगत शिक्षण",
+  "Personalised_Desc": "भूमिका-आधारित पाठ्यक्रम अनुशंसाएँ",
+  "Governance": "सुदृढ़ अभिशासन",
+  "Governance_Desc": "एक भविष्य-तैयार सांख्यिकीय पारिस्थितिकी तंत्र",
   "Capabilities": "प्लेटफ़ॉर्म क्षमताएं",
   "Skill_Analysis": "कौशल विश्लेषण",
-  "Skill_Analysis_Desc": <>सुसंगत विश्लेषण की<br/>गणना करें।</>,
+  "Skill_Analysis_Desc": "साक्ष्य-आधारित दक्षता आधाररेखा की गणना।",
   "iGOT_Learning": "iGOT लर्निंग",
-  "iGOT_Learning_Desc": <>लिंक किए गए<br/>पाठ्यक्रम पुस्तकें।</>,
+  "iGOT_Learning_Desc": "अंतराल से जुड़े iGOT पाठ्यक्रम।",
   "Career_Pathways": "करियर पाथवे",
-  "Career_Pathways_Desc": <>एकीकृत रोडमैप और<br/>करियर पाथवे।</>,
+  "Career_Pathways_Desc": "भूमिका-आधारित करियर रोडमैप।",
   "Active_Users": "सक्रिय उपयोगकर्ता",
   "Courses_Matched": "कोर्स मिलान",
   "Skill_Gaps_Resolved": "कौशल अंतर हल",
@@ -63,19 +78,37 @@ const translations: Record<string, React.ReactNode> = {
   "iGOT_Desc": "राष्ट्रीय iGOT सनबर्ड रजिस्ट्री के साथ गहराई से एकीकृत करके, हम पहचाने गए अंतराल को पाटने के लिए आवश्यक सटीक पाठ्यक्रमों की सिफारिश करने के लिए 8,000 से अधिक आधिकारिक प्रशिक्षण मॉड्यूल के माध्यम से छानते हैं, जबकि स्वचालित रूप से नई उपलब्धियों को केंद्र सरकार के डेटाबेस में सिंक करते हैं।",
   "Dynamic_AI": "गतिशील एआई मूल्यांकन",
   "Dynamic_AI_Desc": "हमारे मालिकाना RAG पाइपलाइन के माध्यम से, प्लेटफ़ॉर्म विभागों को आंतरिक नीति दस्तावेजों, प्रस्तुतियों और मैनुअल से तुरंत कस्टम मूल्यांकन उत्पन्न करने की अनुमति देता है, यह सुनिश्चित करता है कि अधिकारियों को सबसे प्रासंगिक विभागीय ज्ञान पर परीक्षण किया जाए।",
+  "Quick_Links": "त्वरित लिंक",
+  "Related_Portals": "संबंधित पोर्टल",
+  "Contact_Us": "संपर्क करें",
   "Footer_1": "सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय (MoSPI) | भारत सरकार",
   "Privacy": "गोपनीयता नीति",
   "Terms": "नियम",
   "Help": "मदद और अक्सर पूछे जाने वाले प्रश्न"
 };
 
+const NEWS_ITEMS = [
+  'AI-generated assessments now available for NSO training documents',
+  'FRAC competency baselines refreshed with evidence-weighted scoring',
+  'New iGOT Karmayogi courses mapped for Official Statistics & Survey Methods',
+  'Gyan assistant now supports Hindi and English',
+];
+
 const LandingPage: React.FC = () => {
 
   const { theme, toggleTheme } = useTheme();
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 120);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const t = (key: string, enText: string | React.ReactNode) => {
     return lang === 'en' ? enText : translations[key] || enText;
   };
@@ -83,6 +116,7 @@ const LandingPage: React.FC = () => {
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
+    setMobileNavOpen(false);
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -91,358 +125,484 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="font-sans relative bg-[#fafaf9] dark:bg-[#0f172a] text-[#333] dark:text-[#e2e8f0] overflow-x-hidden transition-colors duration-300">
-      <div className="min-h-screen flex flex-col pb-[100px] md:pb-[42px]">
-      {/* Background Image Layer */}
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: `url(${theme === 'dark' ? '/hero-bg-dark.png' : '/hero-bg-topo.png'})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 1 // Match the first image exactly
-        }}
-      />
+  const navItems: { id: string; key: string; label: string }[] = [
+    { id: 'home', key: 'Home', label: 'Home' },
+    { id: 'about', key: 'About', label: 'About' },
+    { id: 'features', key: 'Features', label: 'Features' },
+    { id: 'contact', key: 'Contact', label: 'Contact' },
+  ];
 
-      {/* Top Navbar */}
-      <header className="relative z-10 w-full bg-[#fdfdfc] dark:bg-[#1e293b] py-[12px] px-6 md:px-12 flex items-center justify-between shadow-[0_1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.5)] transition-colors duration-300">
-        {/* Left: Logo Text */}
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col justify-center">
-            <div className="font-bold text-[#1f2d4d] dark:text-white text-[15.5px] leading-[1.2]">
-              {t('MoSPI', <>Ministry of Statistics & <br /> Programme Implementation (MoSPI)</>)}
+  const capabilities = [
+    { icon: BrainCircuit, key: 'Skill_Analysis', title: 'Skill Analysis', dKey: 'Skill_Analysis_Desc', desc: 'Evidence-based competency baselines.' },
+    { icon: BookOpen, key: 'iGOT_Learning', title: 'iGOT Learning', dKey: 'iGOT_Learning_Desc', desc: 'Gap-linked iGOT courses.' },
+    { icon: Route, key: 'Career_Pathways', title: 'Career Pathways', dKey: 'Career_Pathways_Desc', desc: 'Role-based career roadmaps.' },
+  ];
+
+  const stats = [
+    { icon: User, end: 12.4, decimals: 1, suffix: 'k', key: 'Active_Users', label: 'Active Users' },
+    { icon: BookOpen, end: 458, decimals: 0, suffix: '', key: 'Courses_Matched', label: 'Courses Matched' },
+    { icon: Activity, end: 89, decimals: 0, suffix: 'k', key: 'Skill_Gaps_Resolved', label: 'Skill Gaps Resolved' },
+    { icon: Award, end: 1240, decimals: 0, suffix: '', key: 'Certifications', label: 'Certifications' },
+  ];
+
+  const features = [
+    { icon: BrainCircuit, key: 'AI_Driven', title: <>AI-Driven Skill<br/>Gap Analysis</>, points: [
+      ['AI_Driven_1', 'Calculates precise mathematical gaps between an official\'s current knowledge and the target proficiency required for their National Classification of Occupations (NCO-2015) designation.'],
+      ['AI_Driven_2', 'Cross-references user profiles against the 338 official Framework of Roles, Activities, and Competencies (FRAC) standards.'],
+    ] },
+    { icon: BookOpenCheck, key: 'Intelligent_iGOT', title: <>Intelligent iGOT<br/>Course Mapping</>, points: [
+      ['Intelligent_iGOT_1', 'Eliminates manual catalog searching by programmatically recommending the exact iGOT Sunbird courses needed to bridge identified competency gaps.'],
+      ['Intelligent_iGOT_2', 'Filters over 8,000 authentic government training modules based on the official\'s specific career trajectory and missing skills.'],
+    ] },
+    { icon: FileQuestion, key: 'Auto_RAG', title: <>Automated RAG<br/>Document-to-Quiz</>, points: [
+      ['Auto_RAG_1', 'Allows officials to upload standard government documents (PDF, PPTX, DOCX) to instantly generate custom multiple-choice assessments.'],
+      ['Auto_RAG_2', 'Evaluates domain knowledge dynamically without requiring pre-authored tests from administrators.'],
+    ] },
+    { icon: RefreshCw, key: 'Real_Time', title: <>Real-Time Karmayogi<br/>Synchronization</>, points: [
+      ['Real_Time_1', 'Automatically communicates with the iGOT portal backend to log achievements.'],
+      ['Real_Time_2', 'Upgrades an official\'s FRAC competency level on the national registry the moment they score 70% or higher on an assessment.'],
+    ] },
+    { icon: Shield, key: 'Air_Gapped', title: <>Air-Gapped NLP<br/>Assistant</>, points: [
+      ['Air_Gapped_1', 'Provides an interactive, zero-latency chat interface for navigating courses, analyzing gaps, and triggering assessments.'],
+      ['Air_Gapped_2', 'Utilizes a secure, embedded deterministic intent-routing engine (no external API keys) to guarantee 100% data sovereignty for sensitive MoSPI environments.'],
+    ] },
+    { icon: LayoutDashboard, key: 'Dashboard', title: <>Ministry-Wide Analytics<br/>Dashboard</>, points: [
+      ['Dashboard_1', 'Aggregates training telemetry to give administrators a macro-view of capacity building across different MoSPI wings (NSO, CSO).'],
+      ['Dashboard_2', 'Visualizes resolved skill gaps, active certifications, and departmental readiness in real-time.'],
+    ] },
+  ] as const;
+
+  const pillars = [
+    { key: 'FRAC', title: 'FRAC-Aligned Framework', dKey: 'FRAC_Desc', desc: 'We map authentic National Classification of Occupations (NCO-2015) job profiles directly to the 338 standardized competencies defined by FRAC. This ensures every learning recommendation is mathematically targeted to an official\'s actual career trajectory.' },
+    { key: 'iGOT', title: 'Intelligent iGOT Integration', dKey: 'iGOT_Desc', desc: 'By deeply integrating with the national iGOT Sunbird registry, we sift through over 8,000 official training modules to recommend precise courses needed to bridge identified gaps, while automatically syncing new achievements back to the central government database.' },
+    { key: 'Dynamic_AI', title: 'Dynamic AI Evaluation', dKey: 'Dynamic_AI_Desc', desc: 'Through our proprietary Retrieval-Augmented Generation (RAG) pipeline, the platform allows departments to instantly generate custom assessments from internal policy documents, presentations, and manuals, ensuring officials are tested on the most relevant departmental knowledge.' },
+  ];
+
+  // Hero outcome rail — what the platform delivers, not simulated metrics
+  const outcomes = [
+    {
+      icon: Users, key: 'Assess_Gaps', title: 'Assess Skill Gaps',
+      dKey: 'Assess_Gaps_Desc', desc: 'Data-driven analysis for targeted learning',
+      ring: 'border-gov-saffron', tint: 'bg-gov-saffron-deep',
+    },
+    {
+      icon: BookOpen, key: 'Personalised', title: 'Personalized Learning',
+      dKey: 'Personalised_Desc', desc: 'Role-based course recommendations',
+      ring: 'border-[#60a5fa]', tint: 'bg-[#2563eb]',
+    },
+    {
+      icon: BarChart3, key: 'Governance', title: 'Stronger Governance',
+      dKey: 'Governance_Desc', desc: 'A future-ready statistical ecosystem',
+      ring: 'border-[#4ade80]', tint: 'bg-gov-green',
+    },
+  ];
+
+  return (
+    <div className="font-sans relative bg-gov-paper dark:bg-[#07111f] text-slate-700 dark:text-slate-200 overflow-x-hidden transition-colors duration-300">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-gov-navy focus:px-3 focus:py-2 focus:rounded-md focus:shadow-gov">
+        {t('Skip', 'Skip to main content')}
+      </a>
+
+      {/* ── GoI utility bar ─────────────────────────────────────────────── */}
+      <div className="relative z-30 bg-gov-ink text-white/80 text-[11.5px]">
+        <div className="max-w-[1320px] mx-auto px-4 md:px-8 h-9 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 font-semibold">
+            <span className="font-[600]" lang="hi">भारत सरकार</span>
+            <span className="w-px h-3.5 bg-white/25" />
+            <span className="tracking-wide">GOVERNMENT OF INDIA</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#main" className="hidden sm:inline hover:text-white transition-colors">{t('Skip', 'Skip to main content')}</a>
+            <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
+            <span className="hidden sm:flex items-center gap-1.5"><Accessibility size={13} /> Screen Reader</span>
+            <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
+            <div className="flex items-center rounded-full bg-white/10 p-0.5">
+              <button onClick={() => setLang('en')} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'en' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>EN</button>
+              <button onClick={() => setLang('hi')} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'hi' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>हिंदी</button>
             </div>
-            <div className="text-[9px] text-[#6b7280] dark:text-[#94a3b8] font-bold tracking-[0.15em] uppercase mt-0.5">
-              {t('SIP', 'Skill Intelligence Platform')}
-            </div>
+            <button aria-label="Toggle Theme" onClick={toggleTheme} className="p-1 rounded-full hover:bg-white/10 hover:text-white transition-colors">
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
           </div>
         </div>
+      </div>
+      <div className="tricolor-strip" />
 
-        {/* Center Nav & Right Actions */}
-        <div className="flex items-center gap-9">
-          <nav className="hidden lg:flex items-center gap-6 text-[11px] font-bold text-[#555] dark:text-[#cbd5e1] tracking-wide uppercase">
-            <a href="#" onClick={(e) => scrollToSection(e, 'home')} className="hover:text-[#1f2d4d] dark:hover:text-white transition-colors">{t('Home', 'Home')}</a>
-            <a href="#about" onClick={(e) => scrollToSection(e, 'about')} className="hover:text-[#1f2d4d] dark:hover:text-white transition-colors">{t('About', 'About')}</a>
-            <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-[#1f2d4d] dark:hover:text-white transition-colors">{t('Features', 'Features')}</a>
-            <a href="#contact" className="hover:text-[#1f2d4d] dark:hover:text-white transition-colors">{t('Contact', 'Contact')}</a>
-          </nav>
-          
-          <div className="hidden lg:flex items-center gap-4 text-[#555] dark:text-[#cbd5e1]">
-            <button aria-label="Search"><Search size={16} strokeWidth={2.5} /></button>
-            <span className="text-[12px] font-bold px-1.5 border-r border-[#d1d5db] dark:border-[#475569] flex gap-1.5">
-              <button onClick={() => setLang('en')} className={lang === 'en' ? 'text-[#1f2d4d] dark:text-white' : 'hover:text-[#1f2d4d] dark:hover:text-white transition-colors'}>Eng</button>
-              <span>|</span>
-              <button onClick={() => setLang('hi')} className={lang === 'hi' ? 'text-[#1f2d4d] dark:text-white' : 'hover:text-[#1f2d4d] dark:hover:text-white transition-colors'}>हिंदी</button>
-            </span>
-            <button aria-label="Toggle Theme" onClick={toggleTheme} className="hover:text-[#1f2d4d] dark:hover:text-white transition-colors">
-              {theme === 'dark' ? <Sun size={16} strokeWidth={2.5} /> : <Moon size={16} strokeWidth={2.5} />}
+      {/* ── Ministry header ─────────────────────────────────────────────── */}
+      <header className="relative z-20 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
+        <div className="max-w-[1320px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-6">
+          <a href="#" onClick={(e) => scrollToSection(e, 'home')} className="flex items-center gap-4 group">
+            <GovEmblem size={58} className="transition-transform duration-500 group-hover:scale-105" />
+            <div className="flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-gov-blue dark:text-sky-300 leading-tight">
+                Ministry of Statistics &amp; Programme Implementation
+              </span>
+              <span className="font-serif font-bold text-gov-ink dark:text-white text-[19px] md:text-[24px] leading-tight">
+                {t('SIP', 'Skill Intelligence Platform')}
+              </span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase mt-0.5">
+                {t('GoI', 'Government of India')}
+              </span>
+            </div>
+          </a>
+
+          <div className="hidden lg:flex items-center gap-5">
+            <div className="flex items-center gap-3 pr-5 border-r border-gov-line dark:border-slate-700">
+              <div className="text-right leading-tight">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">In partnership with</div>
+                <div className="font-serif font-bold text-gov-navy dark:text-sky-300 text-[14px]">iGOT Karmayogi</div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gov-saffron via-white to-gov-green p-[2px]">
+                <div className="w-full h-full rounded-full bg-white dark:bg-[#0b1628] flex items-center justify-center font-black text-[11px] text-gov-navy dark:text-white">MK</div>
+              </div>
+            </div>
+            <button onClick={() => setIsLoginModalOpen(true)} className="gov-btn-primary">
+              <User size={15} /> {t('OFFICIAL_LOGIN', 'Official Login')}
             </button>
-            <button aria-label="Settings"><Settings size={16} strokeWidth={2.5} /></button>
+            <button onClick={() => setIsLoginModalOpen(true)} className="gov-btn-outline">
+              <Shield size={15} /> {t('ADMIN_PORTAL', 'Admin Portal')}
+            </button>
           </div>
 
-          <div className="flex items-center gap-3 ml-2">
-            <button onClick={() => setIsLoginModalOpen(true)} className="px-5 py-[9px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[11px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-sm">
-              OFFICIAL LOGIN
-            </button>
-            <button onClick={() => setIsLoginModalOpen(true)} className="px-5 py-[8px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[11px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none">
-              ADMIN PORTAL
-            </button>
-          </div>
+          <button className="lg:hidden p-2 rounded-lg text-gov-navy dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setMobileNavOpen(v => !v)} aria-label="Menu">
+            {mobileNavOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="relative z-10 flex-1 w-full max-w-[1400px] mx-auto px-6 md:px-[60px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] items-center gap-6 py-6 md:py-[30px]">
-        
-        {/* Left Column */}
-        <div className="flex flex-col items-start z-10">
-          <div className="inline-flex items-center px-[14px] py-[6px] rounded-full bg-[#eef0f3] dark:bg-[#1e293b] text-[#555] dark:text-[#cbd5e1] text-[11px] font-bold mb-4 tracking-wide shadow-sm transition-colors duration-300">
-            <span className="text-[#666] dark:text-[#94a3b8] mr-1.5 text-[14px] font-black leading-none">#</span> {t('Powered', 'Powered by MoSPI AI Engine')}
-          </div>
-          
-          <h1 className="text-[44px] md:text-[56px] leading-[1.08] font-[800] tracking-tight text-[#1a1a1a] dark:text-white mb-4 w-[110%] uppercase transition-colors duration-300">
-            {t('Empowering', <>EMPOWERING INDIA'S <br/>OFFICIAL STATISTICAL <br/>SYSTEM</>)}
-          </h1>
-          
-          <p className="text-[15.5px] text-[#444] dark:text-[#cbd5e1] max-w-[520px] leading-[1.6] font-medium mb-6 transition-colors duration-300">
-            A next-generation competency tracking platform. We combine AI-driven skill-gap analysis with personalized iGOT learning pathways.
-          </p>
-          
-          <div className="flex gap-[16px] mb-8">
-            <button onClick={() => setIsLoginModalOpen(true)} className="px-[30px] py-[13px] bg-[#1f2d4d] dark:bg-[#3b82f6] text-white text-[13px] font-bold rounded-[6px] hover:bg-[#2c3d63] dark:hover:bg-[#2563eb] transition-colors tracking-wide leading-none shadow-md">
-              LOGIN AS OFFICIAL
+      {/* ── Primary navigation (sticky) ─────────────────────────────────── */}
+      <nav className={`sticky top-0 z-40 bg-gov-navy text-white transition-shadow duration-300 ${scrolled ? 'shadow-gov-lg' : ''}`}>
+        <div className="max-w-[1320px] mx-auto px-4 md:px-8 flex items-center justify-between">
+          <ul className={`${mobileNavOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row w-full lg:w-auto py-2 lg:py-0`}>
+            {navItems.map(item => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  onClick={(e) => scrollToSection(e, item.id)}
+                  className="block px-4 lg:px-5 py-3 text-[13px] font-semibold tracking-wide text-white/85 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <span className="nav-link">{t(item.key, item.label)}</span>
+                </a>
+              </li>
+            ))}
+            <li className="lg:hidden flex gap-2 px-4 py-3">
+              <button onClick={() => setIsLoginModalOpen(true)} className="gov-btn-saffron flex-1">{t('OFFICIAL_LOGIN', 'Official Login')}</button>
+              <button onClick={() => setIsLoginModalOpen(true)} className="flex-1 rounded-lg border border-white/60 text-[13px] font-bold">{t('ADMIN_PORTAL', 'Admin Portal')}</button>
+            </li>
+          </ul>
+          <div className={`hidden lg:flex items-center gap-3 transition-all duration-500 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'}`}>
+            <button onClick={() => setIsLoginModalOpen(true)} className="gov-btn-saffron !py-1.5 !text-[12px]">
+              {t('OFFICIAL_LOGIN', 'Official Login')} <ArrowRight size={13} />
             </button>
-            <button onClick={() => setIsLoginModalOpen(true)} className="px-[30px] py-[11.5px] bg-white dark:bg-transparent border-[1.5px] border-[#1f2d4d] dark:border-white text-[#1f2d4d] dark:text-white text-[13px] font-bold rounded-[6px] hover:bg-[#f8fafc] dark:hover:bg-white/10 transition-colors tracking-wide leading-none shadow-sm">
-              ADMIN PORTAL
-            </button>
           </div>
+        </div>
+      </nav>
 
-          {/* Capabilities */}
-          <div className="w-full">
-            <h4 className="text-[12px] font-bold text-[#222] dark:text-[#e2e8f0] tracking-[0.03em] mb-4 uppercase transition-colors duration-300">{t('Capabilities', 'Platform Capabilities')}</h4>
-            <div className="flex items-start gap-9">
-              
-              <div className="flex gap-2.5">
-                <div className="font-medium text-[15px] text-[#555] dark:text-[#94a3b8] pt-[1px] transition-colors duration-300">1.</div>
-                <div className="relative w-8 h-8 flex items-center justify-center text-[#1f2d4d] dark:text-[#60a5fa] transition-colors duration-300">
-                  <Cpu className="w-8 h-8 absolute inset-0 stroke-[1.2]" />
-                  <span className="text-[9px] font-bold mt-[2px]">AI</span>
-                </div>
-                <div className="flex flex-col justify-start mt-[2px]">
-                  <h5 className="font-bold text-[13.5px] text-[#111] dark:text-white mb-0.5 leading-none transition-colors duration-300">{t('Skill_Analysis', 'Skill Analysis')}</h5>
-                  <p className="text-[11.5px] text-[#666] dark:text-[#94a3b8] leading-[1.3] transition-colors duration-300">{t('Skill_Analysis_Desc', <>Compute answer of<br/>soillfstent analysis.</>)}</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2.5">
-                <div className="font-medium text-[15px] text-[#555] dark:text-[#94a3b8] pt-[1px] transition-colors duration-300">2.</div>
-                <div className="relative w-8 h-8 flex items-center justify-center text-[#1f2d4d] dark:text-[#60a5fa] transition-colors duration-300">
-                  <BookOpen className="w-8 h-8 absolute inset-0 stroke-[1.2]" />
-                  <TabletSmartphone className="w-4 h-4 absolute bottom-[-2px] right-[-4px] bg-[#fafaf9] dark:bg-[#0f172a] rounded-[2px] stroke-[1.5] transition-colors duration-300" />
-                </div>
-                <div className="flex flex-col justify-start mt-[2px]">
-                  <h5 className="font-bold text-[13.5px] text-[#111] dark:text-white mb-0.5 leading-none transition-colors duration-300">{t('iGOT_Learning', 'iGOT Learning')}</h5>
-                  <p className="text-[11.5px] text-[#666] dark:text-[#94a3b8] leading-[1.3] transition-colors duration-300">{t('iGOT_Learning_Desc', <>Linked control-linked<br/>course books.</>)}</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2.5">
-                <div className="font-medium text-[15px] text-[#555] dark:text-[#94a3b8] pt-[1px] transition-colors duration-300">3.</div>
-                <Route className="w-8 h-8 text-[#1f2d4d] dark:text-[#60a5fa] stroke-[1.2] transition-colors duration-300" />
-                <div className="flex flex-col justify-start mt-[2px]">
-                  <h5 className="font-bold text-[13.5px] text-[#111] dark:text-white mb-0.5 leading-none transition-colors duration-300">{t('Career_Pathways', 'Career Pathways')}</h5>
-                  <p className="text-[11.5px] text-[#666] dark:text-[#94a3b8] leading-[1.3] transition-colors duration-300">{t('Career_Pathways_Desc', <>Integratat roadmap and<br/>careeer pathways.</>)}</p>
-                </div>
-              </div>
-
+      {/* ── What's New ticker ───────────────────────────────────────────── */}
+      <div className="relative z-10 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
+        <div className="max-w-[1320px] mx-auto flex items-stretch">
+          <div className="flex items-center gap-2 bg-gov-saffron text-gov-ink px-4 md:px-5 text-[12px] font-bold uppercase tracking-wider shrink-0 [clip-path:polygon(0_0,100%_0,calc(100%-10px)_100%,0_100%)] pr-6">
+            <Megaphone size={14} /> {t('Whats_New', "What's New")}
+          </div>
+          <div className="relative flex-1 overflow-hidden py-2.5 group [mask-image:linear-gradient(90deg,transparent,black_4%,black_96%,transparent)]">
+            <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused]">
+              {[...NEWS_ITEMS, ...NEWS_ITEMS].map((n, i) => (
+                <span key={i} className="flex items-center gap-2 px-8 text-[12.5px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gov-green" /> {n}
+                  {i % NEWS_ITEMS.length === 0 && <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-red-600 text-white animate-pulse">NEW</span>}
+                </span>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Right Column: (Map image removed as it is now baked into the background) */}
-        <div className="relative flex flex-col justify-center items-end h-full mt-[-20px]">
-        </div>
+      <main id="main">
+        {/* ── Hero ───────────────────────────────────────────────────────── */}
+        <section id="home" className="relative overflow-hidden bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue text-white">
+          {/* decorative layers */}
+          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+          <div className="absolute -right-40 -top-40 text-white/[0.06] pointer-events-none">
+            <AshokaChakra size={720} strokeWidth={0.8} className="animate-spin-slow" />
+          </div>
+          <div className="absolute -left-24 bottom-[-120px] w-[420px] h-[420px] rounded-full bg-gov-saffron/20 blur-[110px]" />
+          <div className="absolute right-[20%] top-[30%] w-[320px] h-[320px] rounded-full bg-gov-green/20 blur-[110px]" />
+
+          <div className="relative max-w-[1320px] mx-auto px-4 md:px-8 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur text-[11.5px] font-semibold mb-6 animate-fade-up">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-gov-saffron opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-gov-saffron" />
+                </span>
+                {t('Powered', 'Powered by MoSPI AI Engine')} · Mission Karmayogi
+              </div>
+
+              <h1 className="font-serif text-[36px] sm:text-[46px] md:text-[56px] leading-[1.1] font-black tracking-tight mb-6 animate-fade-up [animation-delay:120ms]">
+                {lang === 'en' ? (
+                  <>Empowering India&apos;s <span className="bg-gradient-to-r from-gov-saffron via-[#ffd08a] to-[#86efac] bg-clip-text text-transparent">Official Statistical</span> System</>
+                ) : translations['Empowering']}
+              </h1>
+
+              <p className="text-[16px] md:text-[17px] text-white/80 max-w-[560px] leading-[1.7] mb-8 animate-fade-up [animation-delay:240ms]">
+                {t('Hero_Desc', 'A next-generation competency tracking platform. We combine AI-driven skill-gap analysis with personalized iGOT learning pathways.')}
+              </p>
+
+              <div className="flex flex-wrap gap-3 mb-12 animate-fade-up [animation-delay:360ms]">
+                <button onClick={() => setIsLoginModalOpen(true)} className="gov-btn-saffron !px-7 !py-3.5 !text-[14px] group">
+                  {t('LOGIN_AS', 'Login as Official')} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                </button>
+                <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg border-[1.5px] border-white/60 text-white text-[14px] font-bold hover:bg-white hover:text-gov-ink transition-all duration-300">
+                  <Shield size={16} /> {t('ADMIN_PORTAL', 'Admin Portal')}
+                </button>
+              </div>
+
+              <div className="animate-fade-up [animation-delay:480ms]">
+                <h4 className="text-[11px] font-bold text-white/60 tracking-[0.2em] mb-4 uppercase">{t('Capabilities', 'Platform Capabilities')}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {capabilities.map(({ icon: Icon, key, title, dKey, desc }) => (
+                    <a
+                      key={key}
+                      href="#features"
+                      onClick={(e) => scrollToSection(e, 'features')}
+                      className="group/cap relative flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4 pb-9 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.12]"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-gov-saffron transition-colors duration-300 group-hover/cap:bg-gov-saffron group-hover/cap:text-gov-ink">
+                        <Icon size={19} aria-hidden="true" />
+                      </span>
+                      <span>
+                        <span className="block text-[14px] font-bold leading-tight">{t(key, title)}</span>
+                        <span className="mt-1 block text-[11.5px] leading-snug text-white/65">{t(dKey, desc)}</span>
+                      </span>
+                      <ArrowRight
+                        size={15}
+                        aria-hidden="true"
+                        className="absolute bottom-3.5 right-4 text-white/40 transition-all duration-300 group-hover/cap:translate-x-0.5 group-hover/cap:text-gov-saffron"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Outcome rail — what the platform is for */}
+            <div className="relative hidden lg:block animate-fade-in [animation-delay:400ms]">
+              <h4 className="text-[12.5px] font-bold uppercase tracking-[0.18em] text-white/55 leading-relaxed mb-7">
+                {t('Building', <>Building a more<br /><span className="text-white/85">competent statistical workforce</span></>)}
+              </h4>
+
+              <ol className="relative space-y-5 pl-2">
+                {/* Connector rail behind the markers */}
+                <span
+                  aria-hidden="true"
+                  className="absolute left-[29px] top-8 bottom-8 w-px bg-gradient-to-b from-gov-saffron/60 via-white/30 to-gov-green/60"
+                />
+                {outcomes.map(({ icon: Icon, key, title, dKey, desc, ring, tint }, i) => (
+                  <li
+                    key={key}
+                    className="relative flex items-center gap-4 animate-fade-up"
+                    style={{ animationDelay: `${520 + i * 140}ms` }}
+                  >
+                    <span className={`relative z-10 flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border-[3px] ${ring} ${tint} shadow-gov-lg`}>
+                      <Icon size={25} className="text-white" strokeWidth={1.9} aria-hidden="true" />
+                    </span>
+                    <span className="flex-1 rounded-xl border border-white/10 bg-white/[0.07] px-5 py-3.5 backdrop-blur transition-all duration-300 hover:border-white/25 hover:bg-white/[0.12]">
+                      <span className="block text-[14.5px] font-bold leading-tight">{t(key, title)}</span>
+                      <span className="mt-1 block text-[12px] leading-snug text-white/65">{t(dKey, desc)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+          <div className="tricolor-strip opacity-90" />
+        </section>
+
+        {/* ── Metrics ────────────────────────────────────────────────────── */}
+        <section className="relative z-10 -mt-px bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
+          <div className="max-w-[1320px] mx-auto grid grid-cols-2 md:grid-cols-4">
+            {stats.map(({ icon: Icon, end, decimals, suffix, key, label }, i) => (
+              <Reveal key={key} delay={i * 90} className={`group flex items-center justify-center gap-4 py-8 px-4 ${i > 0 ? 'md:border-l' : ''} ${i % 2 === 1 ? 'border-l md:border-l' : ''} ${i > 1 ? 'border-t md:border-t-0' : ''} border-gov-line dark:border-slate-800`}>
+                <div className="w-12 h-12 rounded-xl bg-gov-navy/5 dark:bg-sky-400/10 text-gov-navy dark:text-sky-300 flex items-center justify-center transition-all duration-300 group-hover:bg-gov-navy group-hover:text-white group-hover:-rotate-6">
+                  <Icon size={22} />
+                </div>
+                <div>
+                  <CountUp end={end} decimals={decimals} suffix={suffix} className="block font-serif text-[28px] md:text-[32px] font-black text-gov-ink dark:text-white leading-none" />
+                  <p className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 tracking-[0.15em] uppercase mt-1.5">{t(key, label)}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Features ───────────────────────────────────────────────────── */}
+        <section id="features" className="relative gov-page-bg py-20 md:py-28 scroll-mt-12 transition-colors duration-300">
+          <div className="max-w-[1320px] mx-auto px-4 md:px-8">
+            <Reveal className="text-center max-w-3xl mx-auto mb-14">
+              <span className="gov-eyebrow justify-center"><span className="w-6 h-px bg-current" /> {t('Features', 'Features')} <span className="w-6 h-px bg-current" /></span>
+              <h2 className="font-serif text-[28px] md:text-[40px] font-black text-gov-ink dark:text-white mt-3 leading-tight tracking-tight">
+                {t('Key_Features', 'Key Features of MoSPI Skill Enhancement')}
+              </h2>
+              <div className="mx-auto mt-5 w-24 h-1 rounded-full bg-gradient-to-r from-gov-saffron via-white to-gov-green shadow-sm" />
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map(({ icon: Icon, key, title, points }, i) => (
+                <Reveal key={key} delay={(i % 3) * 110}>
+                  <div className="gov-card gov-card-hover group h-full p-7 overflow-hidden">
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gov-saffron via-gov-gold to-gov-green origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+                    <div className="absolute -right-10 -bottom-10 text-gov-navy/[0.04] dark:text-white/[0.04] transition-transform duration-700 group-hover:rotate-45">
+                      <AshokaChakra size={160} />
+                    </div>
+                    <div className="flex items-center gap-4 mb-5">
+                      <div className="w-14 h-14 shrink-0 rounded-xl bg-gov-navy text-white flex items-center justify-center shadow-gov transition-all duration-300 group-hover:bg-gov-saffron group-hover:text-gov-ink group-hover:scale-105">
+                        <Icon size={26} strokeWidth={1.7} />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-slate-400 tracking-widest">0{i + 1}</div>
+                        <h3 className="text-[16.5px] font-bold text-gov-ink dark:text-white leading-snug">{t(key, title)}</h3>
+                      </div>
+                    </div>
+                    <ul className="relative space-y-3 text-[13.5px] text-slate-600 dark:text-slate-300 leading-[1.65]">
+                      {points.map(([pk, pt]) => (
+                        <li key={pk} className="flex gap-2.5">
+                          <ChevronRight size={16} className="mt-[3px] shrink-0 text-gov-saffron-deep" />
+                          <span>{t(pk, pt)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── About ──────────────────────────────────────────────────────── */}
+        <section id="about" className="relative bg-white dark:bg-[#0b1628] py-20 md:py-28 border-t border-gov-line dark:border-slate-800 scroll-mt-12 transition-colors duration-300">
+          <div className="max-w-[1320px] mx-auto px-4 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+            <Reveal>
+              <span className="gov-eyebrow"><span className="w-6 h-px bg-current" /> {t('About_Platform', 'About The Platform')}</span>
+              <h2 className="font-serif text-[30px] md:text-[42px] font-black text-gov-ink dark:text-white mt-3 mb-6 leading-[1.12] tracking-tight">
+                {t('Transforming', <>Transforming India&apos;s Statistical Workforce</>)}
+              </h2>
+              <p className="text-[15.5px] text-slate-600 dark:text-slate-300 leading-[1.8] mb-8">
+                {t('Rooted', 'Rooted in the mandate of Mission Karmayogi, the MoSPI Skill Intelligence Platform is a next-generation capacity-building ecosystem. It transitions civil servants from a rule-based to a role-based framework by aligning specific operational duties with standardized national competencies.')}
+              </p>
+
+              <div className="relative rounded-2xl bg-gradient-to-br from-gov-navy to-gov-blue text-white p-7 overflow-hidden shadow-gov-lg">
+                <div className="absolute -right-12 -top-12 text-white/10"><AshokaChakra size={180} className="animate-spin-slow" /></div>
+                <h4 className="relative text-[12px] font-bold uppercase tracking-[0.2em] text-gov-saffron mb-3">{t('Our_Mission', 'Our Mission')}</h4>
+                <p className="relative text-[15px] leading-[1.75] text-white/90">
+                  {t('Our_Mission_Desc', 'To modernize the Ministry of Statistics and Programme Implementation (MoSPI) by providing an intelligent, data-sovereign infrastructure that autonomously identifies skill gaps, curates personalized learning pathways, and evaluates domain mastery in real-time.')}
+                </p>
+              </div>
+
+              <div className="mt-8 flex gap-4 p-5 rounded-2xl border border-gov-green/25 bg-gov-green/[0.05]">
+                <div className="w-11 h-11 shrink-0 rounded-xl bg-gov-green text-white flex items-center justify-center"><Shield size={20} /></div>
+                <div>
+                  <h4 className="text-[15px] font-bold text-gov-ink dark:text-white mb-1.5">{t('Built_For', 'Built for Sovereignty & Security')}</h4>
+                  <p className="text-[14px] text-slate-600 dark:text-slate-400 leading-[1.7]">
+                    {t('Built_For_Desc', 'Operating within the sensitive environment of the national statistical system requires uncompromising data security. Our completely air-gapped, deterministic intent-routing NLP engine ensures all interactions, evaluations, and telemetry remain strictly within the government intranet without reliance on external commercial API keys.')}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            <div className="lg:pt-14">
+              <Reveal>
+                <h3 className="gov-heading text-[20px] mb-8">{t('Arch', 'Architecture of Continuous Learning')}</h3>
+              </Reveal>
+              <ol className="relative space-y-6 before:absolute before:left-[23px] before:top-3 before:bottom-3 before:w-[2px] before:bg-gradient-to-b before:from-gov-saffron before:via-gov-gold before:to-gov-green">
+                {pillars.map(({ key, title, dKey, desc }, i) => (
+                  <Reveal as="li" key={key} delay={i * 140} className="relative flex gap-5">
+                    <div className="relative z-10 w-12 h-12 shrink-0 rounded-full bg-white dark:bg-[#0b1628] border-2 border-gov-navy dark:border-sky-400 text-gov-navy dark:text-sky-300 flex items-center justify-center font-serif font-black text-[18px] shadow-gov">
+                      {i + 1}
+                    </div>
+                    <div className="gov-card gov-card-hover flex-1 p-6">
+                      <h4 className="text-[15.5px] font-bold text-gov-ink dark:text-white mb-2">{t(key, title)}</h4>
+                      <p className="text-[13.5px] text-slate-600 dark:text-slate-300 leading-[1.7]">{t(dKey, desc)}</p>
+                    </div>
+                  </Reveal>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Metrics Bar */}
-      <section className="relative z-20 w-full bg-[#f1f2f4] dark:bg-[#1e293b] border-t border-[#e2e4e8] dark:border-[#334155] transition-colors duration-300">
-        <div className="w-full max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-[#dce0e6] dark:divide-[#334155] py-[16px] transition-colors duration-300">
-          <div className="flex flex-col items-center justify-center text-center">
-            <User className="w-6 h-6 text-[#1f2d4d] dark:text-[#60a5fa] mb-1.5 stroke-[1.5] transition-colors duration-300" />
-            <h3 className="text-[28px] font-[800] text-[#111] dark:text-white leading-none mb-1 transition-colors duration-300">12.4k</h3>
-            <p className="text-[10px] font-bold text-[#666] dark:text-[#94a3b8] tracking-widest uppercase transition-colors duration-300">{t('Active_Users', 'Active Users')}</p>
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer id="contact" className="relative bg-gov-ink text-white/75 scroll-mt-12">
+        <div className="tricolor-strip" />
+        <div className="absolute right-0 bottom-0 text-white/[0.03] pointer-events-none overflow-hidden"><AshokaChakra size={380} /></div>
+        <div className="relative max-w-[1320px] mx-auto px-4 md:px-8 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] gap-10">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <GovEmblem size={46} />
+              <div>
+                <div className="text-[11.5px] text-gov-saffron font-semibold" lang="hi">सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय</div>
+                <div className="font-serif font-bold text-white text-[14px] leading-tight">Ministry of Statistics &amp; Programme Implementation</div>
+              </div>
+            </div>
+            <p className="text-[13px] leading-[1.7] text-white/60 max-w-sm">
+              {t('SIP', 'Skill Intelligence Platform')} — evidence-based competency baselines, skill-gap analysis and iGOT learning pathways for officials of the National Statistical System.
+            </p>
           </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <BookOpen className="w-6 h-6 text-[#1f2d4d] dark:text-[#60a5fa] mb-1.5 stroke-[1.5] transition-colors duration-300" />
-            <h3 className="text-[28px] font-[800] text-[#111] dark:text-white leading-none mb-1 transition-colors duration-300">458</h3>
-            <p className="text-[10px] font-bold text-[#666] dark:text-[#94a3b8] tracking-widest uppercase transition-colors duration-300">{t('Courses_Matched', 'Courses Matched')}</p>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <Activity className="w-6 h-6 text-[#1f2d4d] dark:text-[#60a5fa] mb-1.5 stroke-[1.5] transition-colors duration-300" />
-            <h3 className="text-[28px] font-[800] text-[#111] dark:text-white leading-none mb-1 transition-colors duration-300">89k</h3>
-            <p className="text-[10px] font-bold text-[#666] dark:text-[#94a3b8] tracking-widest uppercase transition-colors duration-300">{t('Skill_Gaps_Resolved', 'Skill Gaps Resolved')}</p>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <Award className="w-6 h-6 text-[#1f2d4d] dark:text-[#60a5fa] mb-1.5 stroke-[1.5] transition-colors duration-300" />
-            <h3 className="text-[28px] font-[800] text-[#111] dark:text-white leading-none mb-1 transition-colors duration-300">1,240</h3>
-            <p className="text-[10px] font-bold text-[#666] dark:text-[#94a3b8] tracking-widest uppercase transition-colors duration-300">{t('Certifications', 'Certifications')}</p>
-          </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 w-full bg-[#1f2d4d] dark:bg-[#0f172a] py-[12px] px-6 md:px-12 flex flex-col md:flex-row items-center justify-between text-white/90 text-[11.5px] font-medium tracking-wide transition-colors duration-300 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <div>
-          {t('Footer_1', 'Ministry of Statistics and Programme Implementation (MoSPI) | Government of India')}
+          <div>
+            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Quick_Links', 'Quick Links')}</h5>
+            <ul className="space-y-2.5 text-[13px]">
+              {navItems.slice(0, 3).map(item => (
+                <li key={item.id}>
+                  <a href={`#${item.id}`} onClick={(e) => scrollToSection(e, item.id)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:translate-x-1 transition-all">
+                    <ChevronRight size={13} /> {t(item.key, item.label)}
+                  </a>
+                </li>
+              ))}
+              <li><button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:translate-x-1 transition-all"><ChevronRight size={13} /> {t('OFFICIAL_LOGIN', 'Official Login')}</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Related_Portals', 'Related Portals')}</h5>
+            <ul className="space-y-2.5 text-[13px]">
+              {[
+                ['iGOT Karmayogi', 'https://igotkarmayogi.gov.in'],
+                ['MoSPI', 'https://www.mospi.gov.in'],
+                ['National Portal of India', 'https://www.india.gov.in'],
+                ['DARPG', 'https://darpg.gov.in'],
+              ].map(([label, href]) => (
+                <li key={label}>
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-gov-saffron transition-colors">
+                    {label} <ExternalLink size={11} className="opacity-60" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Contact_Us', 'Contact Us')}</h5>
+            <ul className="space-y-3 text-[13px]">
+              <li className="flex gap-2.5"><MapPin size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Ministry of Statistics &amp; PI, New Delhi</li>
+              <li className="flex gap-2.5"><Mail size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Reach your division&apos;s training nodal officer</li>
+              <li className="flex gap-2.5"><Phone size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Ask Gyan, the in-portal assistant, any time</li>
+            </ul>
+          </div>
         </div>
-        <div className="flex items-center gap-7 mt-4 md:mt-0">
-          <a href="#" className="hover:text-white transition-colors">{t('Privacy', 'Privacy Policy')}</a>
-          <a href="#" className="hover:text-white transition-colors">{t('Terms', 'Terms')}</a>
-          <a href="#" className="hover:text-white transition-colors">{t('Help', 'Help & FAQ')}</a>
-          <div className="flex items-center gap-2 border-l border-white/30 pl-5 ml-1">
-            <div className="font-black text-[22px] text-white tracking-widest leading-none">NIC</div>
-            <div className="flex flex-col leading-[0.85] text-[6px] text-white/80 uppercase">
-              <span>National</span>
-              <span>Informatics</span>
-              <span>Centre</span>
+
+        <div className="relative border-t border-white/10">
+          <div className="max-w-[1320px] mx-auto px-4 md:px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-white/55">
+            <div>© {new Date().getFullYear()} {t('Footer_1', 'Ministry of Statistics and Programme Implementation (MoSPI) | Government of India')}</div>
+            <div className="flex items-center gap-5">
+              <a href="#" className="hover:text-white transition-colors">{t('Privacy', 'Privacy Policy')}</a>
+              <a href="#" className="hover:text-white transition-colors">{t('Terms', 'Terms')}</a>
+              <a href="#" className="hover:text-white transition-colors">{t('Help', 'Help & FAQ')}</a>
+              <span className="hidden md:inline text-white/35">Prototype · Smart India Hackathon 2026</span>
             </div>
           </div>
         </div>
       </footer>
-      </div>
-
-      {/* Features Section */}
-      <section id="features" className="relative z-20 w-full bg-[#F2F0EF]/85 dark:bg-[#0f172a]/90 backdrop-blur-md py-16 md:py-24 transition-colors duration-300">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-[60px]">
-          <h2 className="text-[28px] md:text-[36px] font-[800] text-center text-[#1a1a1a] dark:text-white mb-12 md:mb-16 tracking-tight transition-colors duration-300 uppercase drop-shadow-sm">
-            {t('Key_Features', 'Key Features of MoSPI Skill Enhancement')}
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
-            {/* Feature 1 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <BrainCircuit size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('AI_Driven', <>AI-Driven Skill<br/>Gap Analysis</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('AI_Driven_1', 'Calculates precise mathematical gaps between an official\'s current knowledge and the target proficiency required for their National Classification of Occupations (NCO-2015) designation.')}</li>
-                <li>{t('AI_Driven_2', 'Cross-references user profiles against the 338 official Framework of Roles, Activities, and Competencies (FRAC) standards.')}</li>
-              </ul>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <BookOpenCheck size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('Intelligent_iGOT', <>Intelligent iGOT<br/>Course Mapping</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('Intelligent_iGOT_1', 'Eliminates manual catalog searching by programmatically recommending the exact iGOT Sunbird courses needed to bridge identified competency gaps.')}</li>
-                <li>{t('Intelligent_iGOT_2', 'Filters over 8,000 authentic government training modules based on the official\'s specific career trajectory and missing skills.')}</li>
-              </ul>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <FileQuestion size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('Auto_RAG', <>Automated RAG<br/>Document-to-Quiz</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('Auto_RAG_1', 'Allows officials to upload standard government documents (PDF, PPTX, DOCX) to instantly generate custom multiple-choice assessments.')}</li>
-                <li>{t('Auto_RAG_2', 'Evaluates domain knowledge dynamically without requiring pre-authored tests from administrators.')}</li>
-              </ul>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <RefreshCw size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('Real_Time', <>Real-Time Karmayogi<br/>Synchronization</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('Real_Time_1', 'Automatically communicates with the iGOT portal backend to log achievements.')}</li>
-                <li>{t('Real_Time_2', 'Upgrades an official\'s FRAC competency level on the national registry the moment they score 70% or higher on an assessment.')}</li>
-              </ul>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <Shield size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('Air_Gapped', <>Air-Gapped NLP<br/>Assistant</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('Air_Gapped_1', 'Provides an interactive, zero-latency chat interface for navigating courses, analyzing gaps, and triggering assessments.')}</li>
-                <li>{t('Air_Gapped_2', 'Utilizes a secure, embedded deterministic intent-routing engine (no external API keys) to guarantee 100% data sovereignty for sensitive MoSPI environments.')}</li>
-              </ul>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="bg-white/95 dark:bg-[#1e293b]/90 backdrop-blur-sm rounded-xl p-8 shadow-md border border-[#e2e8f0]/80 dark:border-[#334155]/80 transition-colors duration-300">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-[#e0e7ff] dark:bg-[#312e81] text-[#3730a3] dark:text-[#a5b4fc] rounded-full flex items-center justify-center mb-4 transition-colors duration-300 shadow-sm">
-                  <LayoutDashboard size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[17px] font-bold text-[#111] dark:text-white uppercase leading-tight transition-colors duration-300">{t('Dashboard', <>Ministry-Wide Analytics<br/>Dashboard</>)}</h3>
-              </div>
-              <ul className="text-[13.5px] text-[#444] dark:text-[#cbd5e1] space-y-3 leading-[1.5] transition-colors duration-300 list-disc pl-4 text-left">
-                <li>{t('Dashboard_1', 'Aggregates training telemetry to give administrators a macro-view of capacity building across different MoSPI wings (NSO, CSO).')}</li>
-                <li>{t('Dashboard_2', 'Visualizes resolved skill gaps, active certifications, and departmental readiness in real-time.')}</li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="relative z-20 w-full bg-[#F2F0EF]/85 dark:bg-[#0f172a]/90 backdrop-blur-md pt-16 pb-28 md:pt-24 md:pb-32 border-t border-[#e2e4e8]/60 dark:border-[#334155]/60 transition-colors duration-300">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-[60px]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-            
-            {/* Left: Mission & Vision */}
-            <div className="flex flex-col">
-              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#e0e7ff] dark:bg-[#1e293b] text-[#3730a3] dark:text-[#a5b4fc] text-[11px] font-bold mb-6 tracking-widest uppercase shadow-sm transition-colors duration-300 w-max">
-                {t('About_Platform', 'About The Platform')}
-              </div>
-              <h2 className="text-[32px] md:text-[42px] font-[800] text-[#1a1a1a] dark:text-white mb-6 leading-[1.1] tracking-tight transition-colors duration-300 uppercase">
-                {t('Transforming', <>Transforming India's <br/> Statistical Workforce</>)}
-              </h2>
-              <p className="text-[15.5px] text-[#444] dark:text-[#cbd5e1] leading-[1.7] font-medium mb-6 transition-colors duration-300">
-                Rooted in the mandate of Mission Karmayogi, the MoSPI {t('SIP', 'Skill Intelligence Platform')} is a next-generation capacity-building ecosystem. It transitions civil servants from a rule-based to a role-based framework by aligning specific operational duties with standardized national competencies.
-              </p>
-              
-              <div className="bg-[#f4f5f7] dark:bg-[#1e293b] p-6 rounded-xl border border-[#e2e8f0] dark:border-[#334155] transition-colors duration-300">
-                <h4 className="text-[14px] font-bold text-[#111] dark:text-white uppercase mb-3 transition-colors duration-300">{t('Our_Mission', 'Our Mission')}</h4>
-                <p className="text-[14px] text-[#555] dark:text-[#94a3b8] leading-[1.6] transition-colors duration-300">
-                  To modernize the Ministry of Statistics and Programme Implementation (MoSPI) by providing an intelligent, data-sovereign infrastructure that autonomously identifies skill gaps, curates personalized learning pathways, and evaluates domain mastery in real-time.
-                </p>
-              </div>
-
-              <div className="mt-8 px-2">
-                <h4 className="text-[14px] font-bold text-[#111] dark:text-white uppercase mb-3 transition-colors duration-300 flex items-center gap-2">
-                  <Shield size={16} className="text-[#1f2d4d] dark:text-[#60a5fa]" strokeWidth={2.5} /> {t('Built_For', 'Built for Sovereignty & Security')}
-                </h4>
-                <p className="text-[14.5px] text-[#555] dark:text-[#94a3b8] leading-[1.6] transition-colors duration-300">
-                  Operating within the sensitive environment of the national statistical system requires uncompromising data security. Our completely air-gapped, deterministic intent-routing NLP engine ensures all interactions, evaluations, and telemetry remain strictly within the government intranet without reliance on external commercial API keys.
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Architecture Pillars */}
-            <div className="flex flex-col gap-5 lg:mt-[72px]">
-              <h3 className="text-[18px] font-bold text-[#111] dark:text-white uppercase mb-2 transition-colors duration-300 px-1">
-                {t('Arch', 'Architecture of Continuous Learning')}
-              </h3>
-              
-              <div className="flex gap-5 items-start bg-white dark:bg-[#1e293b]/50 p-6 rounded-xl border border-[#e2e8f0] dark:border-[#334155] shadow-sm transition-colors duration-300">
-                <div className="w-12 h-12 shrink-0 bg-[#f8fafc] dark:bg-[#0f172a] text-[#1f2d4d] dark:text-[#60a5fa] rounded-full flex items-center justify-center font-black text-[18px] border border-[#e2e8f0] dark:border-[#334155] transition-colors duration-300 shadow-inner">1</div>
-                <div>
-                  <h4 className="text-[15px] font-bold text-[#111] dark:text-white uppercase mb-2 transition-colors duration-300">{t('FRAC', 'FRAC-Aligned Framework')}</h4>
-                  <p className="text-[13.5px] text-[#555] dark:text-[#cbd5e1] leading-[1.6] transition-colors duration-300">
-                    We map authentic National Classification of Occupations (NCO-2015) job profiles directly to the 338 standardized competencies defined by FRAC. This ensures every learning recommendation is mathematically targeted to an official's actual career trajectory.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-5 items-start bg-white dark:bg-[#1e293b]/50 p-6 rounded-xl border border-[#e2e8f0] dark:border-[#334155] shadow-sm transition-colors duration-300">
-                <div className="w-12 h-12 shrink-0 bg-[#f8fafc] dark:bg-[#0f172a] text-[#1f2d4d] dark:text-[#60a5fa] rounded-full flex items-center justify-center font-black text-[18px] border border-[#e2e8f0] dark:border-[#334155] transition-colors duration-300 shadow-inner">2</div>
-                <div>
-                  <h4 className="text-[15px] font-bold text-[#111] dark:text-white uppercase mb-2 transition-colors duration-300">{t('iGOT', 'Intelligent iGOT Integration')}</h4>
-                  <p className="text-[13.5px] text-[#555] dark:text-[#cbd5e1] leading-[1.6] transition-colors duration-300">
-                    By deeply integrating with the national iGOT Sunbird registry, we sift through over 8,000 official training modules to recommend precise courses needed to bridge identified gaps, while automatically syncing new achievements back to the central government database.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-5 items-start bg-white dark:bg-[#1e293b]/50 p-6 rounded-xl border border-[#e2e8f0] dark:border-[#334155] shadow-sm transition-colors duration-300">
-                <div className="w-12 h-12 shrink-0 bg-[#f8fafc] dark:bg-[#0f172a] text-[#1f2d4d] dark:text-[#60a5fa] rounded-full flex items-center justify-center font-black text-[18px] border border-[#e2e8f0] dark:border-[#334155] transition-colors duration-300 shadow-inner">3</div>
-                <div>
-                  <h4 className="text-[15px] font-bold text-[#111] dark:text-white uppercase mb-2 transition-colors duration-300">{t('Dynamic_AI', 'Dynamic AI Evaluation')}</h4>
-                  <p className="text-[13.5px] text-[#555] dark:text-[#cbd5e1] leading-[1.6] transition-colors duration-300">
-                    Through our proprietary Retrieval-Augmented Generation (RAG) pipeline, the platform allows departments to instantly generate custom assessments from internal policy documents, presentations, and manuals, ensuring officials are tested on the most relevant departmental knowledge.
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Login Modal Overlay */}
       {isLoginModalOpen && (

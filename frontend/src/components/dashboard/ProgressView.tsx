@@ -23,7 +23,7 @@ const AchievementRow: React.FC<{ achievement: Achievement; isLast: boolean }> = 
         ${isQuiz ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
         {isQuiz ? <Target size={16} /> : <Trophy size={16} />}
       </div>
-      <div className="flex-1 bg-[#F2F0EF] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm group-hover:border-blue-200 dark:group-hover:border-blue-800 transition-all">
+      <div className="flex-1 bg-gov-paper/70 dark:bg-slate-800/50 border border-gov-line dark:border-slate-700/60 rounded-xl p-4 group-hover:border-gov-saffron/60 group-hover:translate-x-1 transition-all duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
           <h4 className="text-slate-800 dark:text-slate-200 font-bold text-sm">Passed {achievement.category}: {achievement.title}</h4>
           <span className="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg whitespace-nowrap">
@@ -75,14 +75,14 @@ const ProgressView: React.FC<ProgressViewProps> = ({ achievements, skillGaps }) 
   const gridColor = theme === 'dark' ? '#334155' : '#e2e8f0';
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+    <div className="animate-fade-up space-y-6">
       <div className="mb-2">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Learning Progress & Analytics</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">All data sourced live from the FastAPI backend.</p>
+        <h2 className="gov-heading text-[22px]">Learning Progress &amp; Analytics</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 pl-4">All data sourced live from the FastAPI backend.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#F2F0EF] dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
-          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+        <div className="gov-card overflow-hidden flex flex-col h-[400px] animate-fade-up [animation-delay:80ms]">
+          <div className="px-5 py-4 border-b border-gov-line dark:border-slate-800 bg-gov-paper/60 dark:bg-slate-900/50 flex items-center justify-between">
             <h3 className="text-slate-800 dark:text-slate-200 font-bold text-sm flex items-center gap-2">
               <Activity size={16} className="text-blue-600 dark:text-blue-500" />Competency Radar
             </h3>
@@ -97,8 +97,8 @@ const ProgressView: React.FC<ProgressViewProps> = ({ achievements, skillGaps }) 
                   <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: textColor, fontSize: 10 }} tickCount={6} stroke={gridColor} />
                   <Tooltip content={<CustomTooltip theme={theme} />} />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
-                  <Radar name="Target Level"  dataKey="Target"  stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.15} strokeDasharray="4 4" />
-                  <Radar name="Current Level" dataKey="Current" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                  <Radar name="Target Level"  dataKey="Target"  stroke="#e67e14" fill="#ff9933" fillOpacity={0.12} strokeDasharray="4 4" />
+                  <Radar name="Current Level" dataKey="Current" stroke={theme === 'dark' ? '#38bdf8' : '#12407f'} fill={theme === 'dark' ? '#38bdf8' : '#12407f'} fillOpacity={0.35} animationDuration={900} />
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
@@ -107,8 +107,8 @@ const ProgressView: React.FC<ProgressViewProps> = ({ achievements, skillGaps }) 
           </div>
         </div>
 
-        <div className="bg-[#F2F0EF] dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[400px]">
-          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between sticky top-0 z-10">
+        <div className="gov-card overflow-hidden flex flex-col h-[400px] animate-fade-up [animation-delay:180ms]">
+          <div className="px-5 py-4 border-b border-gov-line dark:border-slate-800 bg-gov-paper/60 dark:bg-slate-900/50 flex items-center justify-between sticky top-0 z-10">
             <h3 className="text-slate-800 dark:text-slate-200 font-bold text-sm flex items-center gap-2"><Trophy size={16} className="text-amber-500" />Recent Achievements</h3>
             <button className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center">View All <ChevronRight size={14} /></button>
           </div>

@@ -1,72 +1,114 @@
-import React, { useRef, useState } from "react";
+/**
+ * FILE: src/pages/AssessmentPage.tsx
+ *
+ * Assessment Studio at /assessment: upload a document → RAG generates an MCQ
+ * assessment → grade it → evidence is written back to the competency baseline.
+ *
+ * Sections: new_quiz · history · settings, inside the shared AppShell.
+ *
+ * History and the "last assessment" card read the learner's real achievement
+ * record (`fetchAchievements`), replacing the hardcoded sample rows the page
+ * previously displayed.
+ */
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Bot, CheckCircle, XCircle, ArrowRight, 
-  ArrowLeft, FileText, Timer,
-  Search, User, ChevronDown, X,
-  LayoutDashboard, FilePlus, History, Settings, Video, Mic, File, Link as LinkIcon, Sun, Moon
+import {
+  ArrowRight, Bot, CheckCircle, FilePlus, File, FileText, History,
+  LayoutDashboard, Link as LinkIcon, Mic, Settings, Timer, Video, X, XCircle,
 } from "lucide-react";
+
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../hooks/useTheme";
+import { fetchAchievements } from "../services/api";
+import type { Achievement } from "../types/domain";
+
+import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
+import PageHeader from "../components/shell/PageHeader";
+import SectionCard from "../components/shell/SectionCard";
+
+type StudioTab = "new_quiz" | "history" | "settings";
+type Difficulty = "Easy" | "Medium" | "Hard";
+
+const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+
+const formatDate = (iso: string): string => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+};
 
 const AssessmentPage: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
   const { user } = useAuth();
   const navigate = useNavigate();
-  const userId = user?.username ?? 'usr_720465595';
+  const userId = user?.username ?? "usr_720465595";
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "quiz" | "grading" | "result">("idle");
   const [loadingText, setLoadingText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const [quizData, setQuizData] = useState<any>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [scoreInfo, setScoreInfo] = useState<any>(null);
 
-  const [activeTab, setActiveTab] = useState('new_quiz');
-  const [selectedFormat, setSelectedFormat] = useState('pdf');
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const [historyData] = useState([
-    { id: 1, date: 'Aug 26, 2026', title: 'National_Accounts_and_GDP_Estimation.mp4', type: 'Video', score: '90%', action: 'Review' },
-    { id: 2, date: 'Aug 24, 2026', title: 'Survey_Sampling_Methodology_NSSO.pdf', type: 'PDF', score: '75%', action: 'Retake' },
-    { id: 3, date: 'Aug 20, 2026', title: 'Consumer_Price_Index_Compilation_Guide.pdf', type: 'PDF', score: '85%', action: 'Review' },
-    { id: 4, date: 'Aug 15, 2026', title: 'Official_Statistics_Governance_and_FRAC.pdf', type: 'PDF', score: '92%', action: 'Review' }
-  ]);
+  const [activeTab, setActiveTab] = useState<StudioTab>("new_quiz");
+  const [selectedFormat, setSelectedFormat] = useState("pdf");
+  const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
+  const [searchTerm, setSearchTerm] = useState("");
 
+  // ── Real assessment history ────────────────────────────────────────────────
+  const [history, setHistory] = useState<Achievement[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const all = await fetchAchievements(userId);
+      setHistory(
+        all
+          .filter((a) => a.category === "RAG Quiz")
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      );
+    } catch (err) {
+      console.error("[AssessmentPage] history", err);
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  const filteredHistory = history.filter((item) =>
+    item.title.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  const lastAttempt = history[0] ?? null;
+
+  // ── Handlers (unchanged API contracts) ─────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      setErrorMsg("");
-    }
+    if (f) { setFile(f); setErrorMsg(""); }
   };
 
-  const triggerFileInput = () => {
-    if (inputRef.current) inputRef.current.click();
-  };
+  const triggerFileInput = () => inputRef.current?.click();
 
   const handleGenerate = async () => {
-    if (!file) { 
-      setErrorMsg("Please upload a document to proceed."); 
-      return; 
-    }
+    if (!file) { setErrorMsg("Please upload a document to proceed."); return; }
     setErrorMsg("");
     setStatus("loading");
     setLoadingText("Extracting knowledge base...");
 
-    setTimeout(() => { setLoadingText("Generating Q&A pairs..."); }, 2000);
-    setTimeout(() => { setLoadingText("Finalizing assessment..."); }, 4000);
+    setTimeout(() => setLoadingText("Generating Q&A pairs..."), 2000);
+    setTimeout(() => setLoadingText("Finalizing assessment..."), 4000);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("user_id", userId);
-      formData.append("difficulty", "Medium");
-      
+      formData.append("difficulty", difficulty);
+
       const res = await fetch("http://localhost:8000/api/v1/rag/upload", {
         method: "POST",
         body: formData,
@@ -81,7 +123,6 @@ const AssessmentPage: React.FC = () => {
       setQuizData(data);
       setAnswers(new Array(data.questions.length).fill(-1));
       setStatus("quiz");
-      
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "An error occurred");
@@ -102,16 +143,12 @@ const AssessmentPage: React.FC = () => {
     }
     setErrorMsg("");
     setStatus("grading");
-    
+
     try {
       const res = await fetch("http://localhost:8000/api/v1/rag/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          quiz_id: quizData.quiz_id,
-          answers: answers
-        })
+        body: JSON.stringify({ user_id: userId, quiz_id: quizData.quiz_id, answers }),
       });
 
       if (!res.ok) {
@@ -122,7 +159,7 @@ const AssessmentPage: React.FC = () => {
       const data = await res.json();
       setScoreInfo(data);
       setStatus("result");
-      
+      loadHistory(); // a pass writes a new achievement — refresh the record
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "An error occurred during grading");
@@ -141,403 +178,411 @@ const AssessmentPage: React.FC = () => {
   };
 
   const uploadOptions = [
-    { id: 'video', label: 'Upload Video', icon: <Video className="w-8 h-8 text-blue-600 mb-2" /> },
-    { id: 'audio', label: 'Upload Audio', icon: <Mic className="w-8 h-8 text-blue-600 mb-2" /> },
-    { id: 'pdf',   label: 'Upload PDF',   icon: <FileText className="w-8 h-8 text-blue-600 mb-2" /> },
-    { id: 'word',  label: 'Upload Word Doc', icon: <File className="w-8 h-8 text-blue-600 mb-2" /> },
-    { id: 'text',  label: 'Paste Text/URL', icon: <LinkIcon className="w-8 h-8 text-blue-600 mb-2" /> },
+    { id: "video", label: "Upload Video", icon: Video },
+    { id: "audio", label: "Upload Audio", icon: Mic },
+    { id: "pdf", label: "Upload PDF", icon: FileText },
+    { id: "word", label: "Upload Word Doc", icon: File },
+    { id: "text", label: "Paste Text/URL", icon: LinkIcon },
   ];
 
-  const filteredHistory = historyData.filter(item => 
-    item.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const navGroups: ShellNavGroup[] = [
+    {
+      items: [
+        { id: "dashboard", label: "Back to Dashboard", icon: LayoutDashboard },
+        { id: "new_quiz", label: "New Assessment", icon: FilePlus },
+        { id: "history", label: "History", icon: History, badge: history.length || undefined },
+        { id: "settings", label: "Settings", icon: Settings },
+      ],
+    },
+  ];
+
+  const META: Record<StudioTab, { title: string; subtitle: string }> = {
+    new_quiz: { title: "Assessment Studio", subtitle: "Generate a competency-tagged assessment from any NSO training document." },
+    history:  { title: "Assessment History", subtitle: "Every RAG assessment on your verified achievement record." },
+    settings: { title: "Studio Settings", subtitle: "Preferences for assessment generation." },
+  };
 
   return (
-    <div className="flex h-screen bg-[#F2F0EF] dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 overflow-hidden relative z-0">
-      
-      {/* Network Mesh Background */}
-      <div
-        className="absolute inset-0 z-[-1] pointer-events-none"
-        style={{
-          backgroundImage: 'url("/bg-mesh.png")',
-          backgroundSize: "cover",
-          backgroundPosition: "top right",
-          backgroundRepeat: "no-repeat",
-          opacity: 0.5,
-        }}
+    <AppShell
+      groups={navGroups}
+      activeId={activeTab}
+      onNavigate={(id) => {
+        if (id === "dashboard") navigate("/dashboard-redirect");
+        else setActiveTab(id as StudioTab);
+      }}
+      userName={user?.username}
+      userRole="Official"
+      searchValue={searchTerm}
+      onSearchChange={(v) => { setSearchTerm(v); if (v) setActiveTab("history"); }}
+      searchPlaceholder="Search assessment history…"
+    >
+      <PageHeader
+        title={META[activeTab].title}
+        subtitle={META[activeTab].subtitle}
+        breadcrumb={["Home", "Learner", "Assessment Studio"]}
       />
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#F2F0EF] dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 text-xl font-bold border-b border-slate-200 dark:border-slate-800">
-          Assessment Studio
-        </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <button 
-            onClick={() => navigate("/dashboard-redirect")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </button>
-          <button 
-            onClick={() => setActiveTab('new_quiz')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'new_quiz' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-          >
-            <FilePlus className="w-5 h-5" /> New Quiz
-          </button>
-          <button 
-            onClick={() => setActiveTab('history')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'history' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-          >
-            <History className="w-5 h-5" /> History
-          </button>
-          <button 
-            onClick={() => setActiveTab('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-colors ${activeTab === 'settings' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-          >
-            <Settings className="w-5 h-5" /> Settings
-          </button>
-        </nav>
-      </aside>
+      {/* ── Idle: studio surfaces ──────────────────────────────────────────── */}
+      {status === "idle" && (
+        <div className="animate-fade-up space-y-5">
+          {activeTab === "new_quiz" && (
+            <>
+              <SectionCard
+                title="Generate New Assessment"
+                subtitle="Supported: PDF, DOCX, PPTX, TXT, MP4, MP3"
+              >
+                <input
+                  ref={inputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.txt,.docx,.pptx,.mp4,.mp3"
+                  aria-label="Choose a document to generate an assessment from"
+                  onChange={handleFileChange}
+                />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        
-        {/* Top Navbar */}
-        <header className="h-16 bg-[#F2F0EF]/80 backdrop-blur-md dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-10">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-500" />
-            </button>
-            <h1 className="font-bold text-lg">Dashboard</h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="relative w-64 hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search history..." 
-                className="w-full pl-9 pr-4 py-2 bg-[#F2F0EF] dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              />
-            </div>
-            <button onClick={toggleTheme} className="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800">
-              <div className="w-6 h-6 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-              </div>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">User profile</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
-            </div>
-          </div>
-        </header>
-
-        {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 relative">
-          
-          {status === "idle" && (
-            <div className="max-w-6xl mx-auto space-y-6">
-              
-              {activeTab === 'new_quiz' && (
-                <>
-                  {/* Card 1: Generate New Assessment */}
-                  <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Generate New Assessment</h2>
-                    
-                    <input ref={inputRef} type="file" className="hidden" accept=".pdf,.txt,.docx,.pptx,.mp4,.mp3" onChange={handleFileChange} />
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                      {uploadOptions.map((opt) => {
-                        const isSelected = selectedFormat === opt.id;
-                        return (
-                          <div 
-                            key={opt.id} 
-                            onClick={() => { setSelectedFormat(opt.id); triggerFileInput(); }}
-                            className={`border rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center ${
-                              isSelected 
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
-                                : 'border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:shadow-md'
-                            }`}
-                          >
-                            {opt.icon}
-                            <span className={`text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
-                              {opt.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {file && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-lg mb-6 flex items-center justify-between border border-blue-100 dark:border-blue-800/50">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-5 h-5" />
-                          <span className="font-medium">{file.name}</span>
-                        </div>
-                        <button onClick={() => setFile(null)} className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-md">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-
-                    {errorMsg && (
-                      <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-6 border border-red-200 dark:border-red-800/50 text-sm font-medium">
-                        {errorMsg}
-                      </div>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <button 
-                        onClick={handleGenerate}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+                <div className="mb-5 grid grid-cols-2 gap-3.5 md:grid-cols-5">
+                  {uploadOptions.map(({ id, label, icon: Icon }) => {
+                    const isSelected = selectedFormat === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => { setSelectedFormat(id); triggerFileInput(); }}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-5 text-center transition-all duration-300 hover:-translate-y-0.5 ${
+                          isSelected
+                            ? "border-gov-blue bg-accent-blue-soft shadow-gov dark:border-sky-500 dark:bg-sky-500/10"
+                            : "border-gov-line hover:border-gov-blue/40 hover:shadow-gov dark:border-slate-700"
+                        }`}
                       >
-                        Generate Quiz
+                        <Icon className={`h-7 w-7 ${isSelected ? "text-accent-blue dark:text-sky-300" : "text-slate-400"}`} aria-hidden="true" />
+                        <span className={`text-[12.5px] font-semibold ${isSelected ? "text-gov-navy dark:text-sky-300" : "text-slate-600 dark:text-slate-300"}`}>
+                          {label}
+                        </span>
                       </button>
-                      
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Difficulty Level (Easy/Medium/Hard)</span>
-                        <div className="w-12 h-6 bg-blue-600 rounded-full relative cursor-pointer">
-                          <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
-                        </div>
-                      </div>
+                    );
+                  })}
+                </div>
+
+                {file && (
+                  <div className="mb-5 flex items-center justify-between rounded-xl border border-accent-blue/25 bg-accent-blue-soft px-4 py-3 text-accent-blue dark:border-sky-800/50 dark:bg-sky-900/20 dark:text-sky-300">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <FileText className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+                      <span className="truncate font-medium">{file.name}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setFile(null)}
+                      className="rounded-md p-1 hover:bg-white/60 dark:hover:bg-sky-800/50"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {errorMsg && (
+                  <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-accent-rose dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400">
+                    {errorMsg}
+                  </div>
+                )}
+
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                  <button type="button" onClick={handleGenerate} className="gov-btn-primary !px-6 !py-3">
+                    <Bot size={16} /> Generate Assessment
+                  </button>
+
+                  {/* Difficulty is sent to /api/v1/rag/upload */}
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Difficulty</span>
+                    <div role="group" aria-label="Assessment difficulty" className="flex gap-1.5">
+                      {DIFFICULTIES.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          aria-pressed={difficulty === d}
+                          onClick={() => setDifficulty(d)}
+                          className="chip-filter"
+                        >
+                          {d}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                </div>
+              </SectionCard>
 
-                  {/* Card 2: Recent Assessment Results */}
-                  <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col md:flex-row items-center gap-8">
-                    {/* Circle Chart */}
-                    <div className="relative w-32 h-32 shrink-0">
-                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              {/* Last assessment — real achievement, or an honest empty state */}
+              <SectionCard title="Your Last Assessment" subtitle="From your verified achievement record">
+                {historyLoading ? (
+                  <div className="skeleton h-28" />
+                ) : lastAttempt ? (
+                  <div className="flex flex-col items-center gap-7 md:flex-row">
+                    <div className="relative h-32 w-32 flex-shrink-0">
+                      <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
                         <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="12" fill="none" className="text-slate-100 dark:text-slate-700" />
-                        <circle cx="50" cy="50" r="40" stroke="#2563eb" strokeWidth="12" fill="none" strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - 0.85)} strokeLinecap="round" />
+                        <circle
+                          cx="50" cy="50" r="40"
+                          stroke={lastAttempt.score >= 70 ? "#10b981" : "#e11d48"}
+                          strokeWidth="12" fill="none" strokeLinecap="round"
+                          strokeDasharray="251.2"
+                          strokeDashoffset={251.2 * (1 - Math.min(100, lastAttempt.score) / 100)}
+                        />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-black text-slate-800 dark:text-white">85%</span>
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">(17/20)</span>
+                        <span className="text-[26px] font-bold text-gov-ink dark:text-white">{lastAttempt.score}%</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                          {lastAttempt.score >= 70 ? "Passed" : "Not passed"}
+                        </span>
                       </div>
                     </div>
-                    
-                    {/* Details */}
-                    <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Source:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">National_Accounts_and_GDP_Estimation.mp4</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Date:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Aug 26, 2026</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 w-16">Topic:</span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">National Accounts & GDP Aggregates</span>
-                        </div>
+
+                    <dl className="flex-1 space-y-2.5">
+                      <div className="flex gap-2">
+                        <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Source</dt>
+                        <dd className="text-[13px] text-slate-600 dark:text-slate-400">{lastAttempt.title}</dd>
                       </div>
-                      
-                      <div className="space-y-4">
-                        <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
-                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">Which indicator measures total economic output in National Accounts?</p>
-                          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
-                            <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500"/> Correct</div>
-                            <div className="flex items-center gap-1"><div className="w-4 h-4 rounded-full border border-slate-300" /> Incorrect</div>
-                            <div className="flex items-center gap-1"><XCircle className="w-4 h-4 text-red-500"/> Incorrect</div>
-                          </div>
-                        </div>
-                        <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
-                          <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">In Gross Value Added (GVA) estimation at basic prices, net product taxes are _______.</p>
-                          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
-                            <div className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500"/> Correct</div>
-                            <div className="flex items-center gap-1"><div className="w-4 h-4 rounded-full border border-slate-300" /> Incorrect</div>
-                            <div className="flex items-center gap-1"><XCircle className="w-4 h-4 text-red-500"/> Incorrect</div>
-                          </div>
-                        </div>
+                      <div className="flex gap-2">
+                        <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Date</dt>
+                        <dd className="text-[13px] text-slate-600 dark:text-slate-400">{formatDate(lastAttempt.date)}</dd>
                       </div>
-                    </div>
+                      <div className="flex gap-2">
+                        <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Outcome</dt>
+                        <dd className="flex items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-400">
+                          {lastAttempt.score >= 70 ? (
+                            <><CheckCircle className="h-4 w-4 text-accent-green" aria-hidden="true" /> Evidence logged to your competency baseline</>
+                          ) : (
+                            <><XCircle className="h-4 w-4 text-accent-rose" aria-hidden="true" /> 70% required to log verified evidence</>
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                </>
-              )}
-
-              {(activeTab === 'new_quiz' || activeTab === 'history') && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                  <div className="p-5 border-b border-slate-200 dark:border-slate-700">
-                    <h3 className="font-bold text-slate-800 dark:text-white">Assessment History</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-[#F2F0EF] dark:bg-slate-800/50 text-slate-500 dark:text-slate-400">
-                        <tr>
-                          <th className="px-6 py-3 font-semibold">Date</th>
-                          <th className="px-6 py-3 font-semibold">Quiz Title/Source</th>
-                          <th className="px-6 py-3 font-semibold">Content Type</th>
-                          <th className="px-6 py-3 font-semibold">Score</th>
-                          <th className="px-6 py-3 font-semibold">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {filteredHistory.map(row => (
-                          <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                            <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{row.date}</td>
-                            <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{row.title}</td>
-                            <td className="px-6 py-4 text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                              {row.type === 'Video' ? <Video className="w-4 h-4"/> : <FileText className="w-4 h-4"/>} {row.type}
-                            </td>
-                            <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">{row.score}</td>
-                            <td className="px-6 py-4">
-                              <button className="px-4 py-1.5 border border-blue-600 text-blue-600 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium">
-                                {row.action}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                        {filteredHistory.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No history found for "{searchTerm}"</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'settings' && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-12 text-center">
-                  <Settings className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Settings</h2>
-                  <p className="text-slate-500 dark:text-slate-400">Preferences and configuration options will appear here.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* LOADING & GRADING STATES */}
-          {(status === "loading" || status === "grading") && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative w-16 h-16">
-                  <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-900/50 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <Bot className="absolute inset-0 m-auto w-6 h-6 text-blue-600" />
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">AI Agent Working</h3>
-                  <p className="text-sm font-medium text-blue-600 animate-pulse">{loadingText}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* QUIZ VIEW */}
-          {status === "quiz" && quizData && (
-            <div className="max-w-4xl mx-auto pb-20">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Assessment Ready</h2>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">{quizData.questions.length} questions • Medium Difficulty</p>
-                </div>
-                <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-4 py-2 rounded-lg font-bold">
-                  <Timer size={18} />
-                  <span>20:00</span>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                {quizData.questions.map((q: any, i: number) => (
-                  <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">
-                      <span className="text-slate-400 dark:text-slate-500 mr-3">{i + 1}.</span>
-                      {q.question}
-                    </h3>
-                    <div className="space-y-3">
-                      {q.options.map((opt: string, optIdx: number) => {
-                        const isSelected = answers[i] === optIdx;
-                        return (
-                          <label 
-                            key={optIdx} 
-                            className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
-                          >
-                            <input
-                              type="radio"
-                              name={`q-${i}`}
-                              className="hidden"
-                              checked={isSelected}
-                              onChange={() => handleOptionSelect(i, optIdx)}
-                            />
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-blue-600' : 'border-slate-300 dark:border-slate-600'}`}>
-                              {isSelected && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
-                            </div>
-                            <span className={`font-medium ${isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{opt}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex justify-center z-10">
-                <button
-                  onClick={handleSubmitQuiz}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
-                >
-                  Submit Assessment <ArrowRight size={20} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* RESULT VIEW */}
-          {status === "result" && scoreInfo && (
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-8 md:p-12 shadow-xl text-center">
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${scoreInfo.passed ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
-                  <CheckCircle className={`w-12 h-12 ${scoreInfo.passed ? 'text-green-500' : 'text-red-400'}`} />
-                </div>
-                
-                <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">
-                  {scoreInfo.passed ? 'Assessment Passed! 🎉' : 'Assessment Complete'}
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">
-                  {scoreInfo.passed
-                    ? "Your competency profile has been updated on iGOT."
-                    : "You need 70% or more to pass. Review and try again!"}
-                </p>
-                {scoreInfo.message && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mb-8 px-4 leading-relaxed">{scoreInfo.message}</p>
+                ) : (
+                  <p className="py-8 text-center text-[13px] text-slate-400">
+                    No assessments yet — upload a document above to generate your first one.
+                  </p>
                 )}
-                
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Score</p>
-                    <p className={`text-4xl font-black ${scoreInfo.passed ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                      {scoreInfo.score}%
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Correct</p>
-                    <p className="text-4xl font-black text-slate-800 dark:text-white">
-                      {scoreInfo.correct_count}<span className="text-xl text-slate-400">/{scoreInfo.total_questions}</span>
-                    </p>
-                  </div>
-                </div>
+              </SectionCard>
+            </>
+          )}
 
-                <button
-                  onClick={reset}
-                  className="w-full bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 py-4 rounded-xl font-bold transition-all"
-                >
-                  Return to Dashboard
-                </button>
+          {(activeTab === "new_quiz" || activeTab === "history") && (
+            <SectionCard
+              title="Assessment History"
+              subtitle={`${filteredHistory.length} assessment${filteredHistory.length === 1 ? "" : "s"} on record`}
+              padded={false}
+            >
+              <div className="overflow-x-auto">
+                <table className="gov-table min-w-[620px]">
+                  <thead>
+                    <tr>
+                      <th scope="col">Date</th>
+                      <th scope="col">Assessment Source</th>
+                      <th scope="col">Score</th>
+                      <th scope="col">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyLoading ? (
+                      Array.from({ length: 3 }, (_, i) => (
+                        <tr key={i} className="animate-pulse">
+                          {Array.from({ length: 4 }, (_, j) => (
+                            <td key={j} className="px-4 py-4"><div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-700" /></td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : filteredHistory.length > 0 ? (
+                      filteredHistory.map((row) => (
+                        <tr key={row.id}>
+                          <td className="whitespace-nowrap text-slate-500 dark:text-slate-400">{formatDate(row.date)}</td>
+                          <td className="font-medium text-gov-ink dark:text-white">{row.title}</td>
+                          <td className="font-semibold tabular-nums">{row.score}%</td>
+                          <td>
+                            <span className={`chip ${
+                              row.score >= 70
+                                ? "bg-accent-green-soft text-accent-green dark:bg-emerald-500/15 dark:text-emerald-300"
+                                : "bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300"
+                            }`}>
+                              {row.score >= 70 ? "Passed" : "Not passed"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-slate-400">
+                          {searchTerm
+                            ? `No assessments match “${searchTerm}”.`
+                            : "No assessments on record yet."}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
+            </SectionCard>
+          )}
+
+          {activeTab === "settings" && (
+            <SectionCard title="Generation Preferences" subtitle="Applied to the next assessment you generate">
+              <div className="space-y-5">
+                <fieldset>
+                  <legend className="mb-2.5 text-[13px] font-semibold text-gov-ink dark:text-white">Default difficulty</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {DIFFICULTIES.map((d) => (
+                      <button key={d} type="button" aria-pressed={difficulty === d} onClick={() => setDifficulty(d)} className="chip-filter">
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <p className="rounded-xl border border-gov-line bg-gov-paper px-4 py-3 text-[12px] leading-relaxed text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
+                  A score of 70% or higher writes verified evidence against the competencies detected in
+                  your document and syncs the result to your iGOT Karmayogi record.
+                </p>
+              </div>
+            </SectionCard>
+          )}
+        </div>
+      )}
+
+      {/* ── Loading / grading ──────────────────────────────────────────────── */}
+      {(status === "loading" || status === "grading") && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-slate-900/85" role="status" aria-live="polite">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative h-16 w-16">
+              <div className="absolute inset-0 rounded-full border-4 border-accent-blue-soft dark:border-sky-900/50" />
+              <div className="absolute inset-0 animate-spin rounded-full border-4 border-gov-navy border-t-transparent dark:border-sky-400 dark:border-t-transparent" />
+              <Bot className="absolute inset-0 m-auto h-6 w-6 text-gov-navy dark:text-sky-400" aria-hidden="true" />
+            </div>
+            <div className="text-center">
+              <h3 className="mb-1 text-lg font-semibold text-gov-ink dark:text-white">AI agent working</h3>
+              <p className="animate-pulse text-sm font-medium text-gov-blue dark:text-sky-400">{loadingText}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quiz ───────────────────────────────────────────────────────────── */}
+      {status === "quiz" && quizData && (
+        <div className="mx-auto max-w-4xl animate-fade-up pb-24">
+          <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="mb-1 text-2xl font-bold text-gov-ink dark:text-white">Assessment ready</h2>
+              <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                {quizData.questions.length} questions · {difficulty} difficulty
+              </p>
+            </div>
+            <span className="flex items-center gap-2 rounded-lg bg-accent-blue-soft px-4 py-2 font-semibold text-accent-blue dark:bg-sky-900/30 dark:text-sky-300">
+              <Timer size={18} aria-hidden="true" /> 20:00
+            </span>
+          </div>
+
+          {errorMsg && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-accent-rose dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400">
+              {errorMsg}
             </div>
           )}
-          
-        </main>
-      </div>
-    </div>
+
+          <div className="space-y-5">
+            {quizData.questions.map((q: any, i: number) => (
+              <fieldset key={i} className="panel p-6 md:p-7">
+                <legend className="mb-5 text-[16.5px] font-semibold text-gov-ink dark:text-slate-100">
+                  <span className="mr-3 text-slate-400">{i + 1}.</span>
+                  {q.question}
+                </legend>
+                <div className="space-y-3">
+                  {q.options.map((opt: string, optIdx: number) => {
+                    const isSelected = answers[i] === optIdx;
+                    return (
+                      <label
+                        key={optIdx}
+                        className={`flex cursor-pointer items-center gap-4 rounded-xl border-2 p-4 transition-all ${
+                          isSelected
+                            ? "border-gov-navy bg-accent-blue-soft dark:border-sky-500 dark:bg-sky-900/20"
+                            : "border-gov-line hover:border-gov-blue/40 dark:border-slate-700 dark:hover:border-slate-600"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q-${i}`}
+                          className="sr-only"
+                          checked={isSelected}
+                          onChange={() => handleOptionSelect(i, optIdx)}
+                        />
+                        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${isSelected ? "border-gov-navy dark:border-sky-400" : "border-slate-300 dark:border-slate-600"}`}>
+                          {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-gov-navy dark:bg-sky-400" />}
+                        </span>
+                        <span className={`font-medium ${isSelected ? "text-gov-navy dark:text-sky-100" : "text-slate-700 dark:text-slate-300"}`}>
+                          {opt}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+
+          <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-center border-t border-gov-line bg-white/85 p-4 backdrop-blur-md md:p-5 dark:border-slate-800 dark:bg-slate-900/85">
+            <button onClick={handleSubmitQuiz} className="gov-btn-primary !px-12 !py-3.5 !text-[14px]">
+              Submit Assessment <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Result ─────────────────────────────────────────────────────────── */}
+      {status === "result" && scoreInfo && (
+        <div className="mx-auto max-w-2xl animate-fade-up">
+          <div className="panel p-8 text-center shadow-gov-lg md:p-12">
+            <span className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full ${scoreInfo.passed ? "bg-accent-green-soft dark:bg-emerald-900/30" : "bg-accent-rose-soft dark:bg-red-900/30"}`}>
+              {scoreInfo.passed
+                ? <CheckCircle className="h-12 w-12 text-accent-green" aria-hidden="true" />
+                : <XCircle className="h-12 w-12 text-accent-rose" aria-hidden="true" />}
+            </span>
+
+            <h2 className="mb-2 text-3xl font-bold text-gov-ink dark:text-white">
+              {scoreInfo.passed ? "Assessment passed" : "Assessment complete"}
+            </h2>
+            <p className="mb-2 font-medium text-slate-500 dark:text-slate-400">
+              {scoreInfo.passed
+                ? "Your competency profile has been updated on iGOT."
+                : "You need 70% or more to pass. Review and try again."}
+            </p>
+            {scoreInfo.message && (
+              <p className="mb-8 px-4 text-xs leading-relaxed text-slate-400 dark:text-slate-500">{scoreInfo.message}</p>
+            )}
+
+            <div className="mb-8 grid grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-gov-line bg-gov-paper p-6 dark:border-slate-700 dark:bg-slate-900/50">
+                <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Score</p>
+                <p className={`text-4xl font-bold ${scoreInfo.passed ? "text-accent-green" : "text-accent-rose"}`}>
+                  {scoreInfo.score}%
+                </p>
+              </div>
+              <div className="rounded-2xl border border-gov-line bg-gov-paper p-6 dark:border-slate-700 dark:bg-slate-900/50">
+                <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Correct</p>
+                <p className="text-4xl font-bold text-gov-ink dark:text-white">
+                  {scoreInfo.correct_count}
+                  <span className="text-xl text-slate-400">/{scoreInfo.total_questions}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button onClick={reset} className="gov-btn-outline flex-1 !py-3.5">
+                Generate another
+              </button>
+              <button onClick={() => navigate("/dashboard-redirect")} className="gov-btn-primary flex-1 !py-3.5">
+                Return to Dashboard <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AppShell>
   );
 };
 
