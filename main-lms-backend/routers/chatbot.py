@@ -6,7 +6,8 @@ MoSPI Skill Intelligence Platform | SIH 2026
 
 Request flow
 ─────────────────────────────────────────────────────────────────────────────
-  1. Language variant  services/language_service.detect_chat_variant
+  1. Language variant  services/language_service.resolve_chat_variant
+                       (message signal first, then the widget's preferred_language)
                        en | hi (Devanagari) | hi_latn (Hinglish) | mr | bn | gu | or | ta | te
   2. English command intercepts (regex): theme / language switches, section
      scrolling, login, celebrity questions. These execute UI actions directly.
@@ -35,7 +36,7 @@ from services.chat_messages import (
     render_theme_language_action,
 )
 from services.chat_messages.context import ReplyContext
-from services.language_service import detect_chat_variant, to_iso
+from services.language_service import resolve_chat_variant, to_iso
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -71,6 +72,9 @@ class ChatRequest(BaseModel):
     full_name: Optional[str] = None
     gov_id: Optional[str] = None
     context: Optional[str] = "dashboard"   # "dashboard" | "home"
+    # Language picked in the chat widget. Used only when the message itself
+    # carries no language signal — Devanagari input still gets Devanagari back.
+    preferred_language: Optional[str] = None
     skill_gaps: List[SkillGapContext] = []
     recommendations: List[RecommendationContext] = []
 
@@ -290,7 +294,7 @@ def _intercept(req: ChatRequest, variant: str, ctx: ReplyContext) -> Optional[Ch
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     """Multilingual AI Learning Assistant — Gyan (ज्ञान)."""
-    variant = detect_chat_variant(req.message)
+    variant = resolve_chat_variant(req.message, req.preferred_language)
     ctx = ReplyContext.from_request(req)
 
     intercepted = _intercept(req, variant, ctx)

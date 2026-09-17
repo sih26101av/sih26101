@@ -10,7 +10,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { SkillGapEntry, CourseRecommendation } from '../types/domain';
-import { sendChatMessage, type ChatMessage, type NavigateAction } from '../services/chatApi';
+import { sendChatMessage, type ChatLanguage, type ChatMessage, type NavigateAction } from '../services/chatApi';
+import { chatCopy } from '../i18n/chatLanguages';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,10 +29,10 @@ export interface UseChatEngineOptions {
   skillGaps?: SkillGapEntry[];
   recommendations?: CourseRecommendation[];
   context?: 'dashboard' | 'home';
-  lang: 'en' | 'hi';
+  lang: ChatLanguage;
   onNavigate?: (action: NavigateAction) => void;
   onThemeToggle?: (target: 'dark' | 'light' | 'toggle') => void;
-  onLanguageChange?: (target: 'en' | 'hi') => void;
+  onLanguageChange?: (target: ChatLanguage) => void;
 }
 
 export interface UseChatEngineReturn {
@@ -89,6 +90,7 @@ export function useChatEngine({
         officialId, trimmed, messages,
         jobRole, department, skillGaps, recommendations,
         fullName, govId, context,
+        lang,   // widget language — used when the message itself gives no signal
       );
 
       await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
@@ -108,7 +110,7 @@ export function useChatEngine({
           if (action.type === 'theme') {
             onThemeToggle?.(action.target as 'dark' | 'light' | 'toggle');
           } else if (action.type === 'language') {
-            onLanguageChange?.(action.target as 'en' | 'hi');
+            onLanguageChange?.(action.target as ChatLanguage);
           } else if (action.type !== 'scroll' && action.type !== 'modal') {
             // Other non-confirmation actions: ignore for now
           }
@@ -119,7 +121,7 @@ export function useChatEngine({
       if (navigateAction?.type === 'theme') {
         onThemeToggle?.(navigateAction.target as 'dark' | 'light' | 'toggle');
       } else if (navigateAction?.type === 'language') {
-        onLanguageChange?.(navigateAction.target as 'en' | 'hi');
+        onLanguageChange?.(navigateAction.target as ChatLanguage);
       } else if (navigateAction) {
         // All other navigation actions → show confirmation dialog
         setPendingNav({ action: navigateAction, confirming: true });
@@ -128,9 +130,7 @@ export function useChatEngine({
       const errMsg: ChatMessage = {
         id: `msg-err-${Date.now()}`,
         role: 'model',
-        content: lang === 'hi'
-          ? 'Maafi chahta hoon, abhi kuch technical problem aa gayi. Thodi der baad try karein. 🙏'
-          : 'Sorry, I ran into a technical issue. Please try again in a moment. 🙏',
+        content: chatCopy(lang).error,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errMsg]);
