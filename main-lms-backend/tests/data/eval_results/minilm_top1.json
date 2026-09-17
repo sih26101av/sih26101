@@ -1,0 +1,235 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "top_k": 1,
+  "detect": false,
+  "languages": {
+    "bn": {
+      "accuracy": 0.5417,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "en": {
+      "accuracy": 0.8854,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "gu": {
+      "accuracy": 0.7292,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "hi": {
+      "accuracy": 0.8229,
+      "n": 96,
+      "detect_accuracy": 0.9375
+    },
+    "hi_latn": {
+      "accuracy": 0.5208,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "mr": {
+      "accuracy": 0.8125,
+      "n": 96,
+      "detect_accuracy": 0.8958
+    },
+    "or": {
+      "accuracy": 0.4896,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "ta": {
+      "accuracy": 0.4479,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "te": {
+      "accuracy": 0.6354,
+      "n": 96,
+      "detect_accuracy": 1.0
+    }
+  },
+  "macro_accuracy": 0.6539,
+  "top_confusions": [
+    [
+      "bn",
+      "recommend",
+      "navigation_ai_quiz",
+      2
+    ],
+    [
+      "gu",
+      "navigation_contact",
+      "bot_identity",
+      2
+    ],
+    [
+      "hi_latn",
+      "profile_stats",
+      "user_identity",
+      2
+    ],
+    [
+      "hi_latn",
+      "skill_gaps",
+      "recommend",
+      2
+    ],
+    [
+      "hi_latn",
+      "navigation_features",
+      "navigation_about",
+      2
+    ],
+    [
+      "hi_latn",
+      "navigation_about",
+      "navigation_features",
+      2
+    ],
+    [
+      "hi_latn",
+      "out_of_scope",
+      "bot_identity",
+      2
+    ],
+    [
+      "or",
+      "navigation_ai_quiz",
+      "statistics_sampling",
+      2
+    ],
+    [
+      "or",
+      "statistics_gdp",
+      "navigation_ai_quiz",
+      2
+    ],
+    [
+      "or",
+      "navigation_about",
+      "navigation_login",
+      2
+    ],
+    [
+      "ta",
+      "statistics_cpi",
+      "navigation_about",
+      2
+    ],
+    [
+      "ta",
+      "ui_action_request",
+      "navigation_about",
+      2
+    ],
+    [
+      "te",
+      "navigation_ai_quiz",
+      "statistics_sampling",
+      2
+    ],
+    [
+      "te",
+      "about_platform",
+      "navigation_features",
+      2
+    ],
+    [
+      "bn",
+      "greeting",
+      "profile_stats",
+      1
+    ],
+    [
+      "bn",
+      "user_identity",
+      "profile_stats",
+      1
+    ],
+    [
+      "bn",
+      "concept_skill_gap",
+      "statistics_gdp",
+      1
+    ],
+    [
+      "bn",
+      "concept_skill_gap",
+      "statistics_frac",
+      1
+    ],
+    [
+      "bn",
+      "profile_stats",
+      "skill_gaps",
+      1
+    ],
+    [
+      "bn",
+      "skill_gaps",
+      "concept_skill_gap",
+      1
+    ],
+    [
+      "bn",
+      "skill_gaps",
+      "profile_stats",
+      1
+    ],
+    [
+      "bn",
+      "recommend",
+      "about_platform",
+      1
+    ],
+    [
+      "bn",
+      "progress",
+      "how_are_you",
+      1
+    ],
+    [
+      "bn",
+      "progress",
+      "motivation",
+      1
+    ],
+    [
+      "bn",
+      "progress",
+      "navigation_progress",
+      1
+    ],
+    [
+      "bn",
+      "achievements",
+      "skill_gaps",
+      1
+    ],
+    [
+      "bn",
+      "navigation_my_courses",
+      "skill_gaps",
+      1
+    ],
+    [
+      "bn",
+      "navigation_my_courses",
+      "recommend",
+      1
+    ],
+    [
+      "bn",
+      "navigation_progress",
+      "navigation_home",
+      1
+    ],
+    [
+      "bn",
+      "navigation_ai_quiz",
+      "navigation_home",
+      1
+    ]
+  ]
+}

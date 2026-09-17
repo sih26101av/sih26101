@@ -1,0 +1,299 @@
+{
+  "greeting": [
+    "namaste",
+    "namaskar",
+    "pranam",
+    "kaise ho",
+    "sab theek",
+    "ka haal ba"
+  ],
+  "how_are_you": [
+    "kaisa hai",
+    "kaise hain aap",
+    "aap kaise hain",
+    "theek ho",
+    "sab theek hai",
+    "kya haal hai",
+    "kaise bani",
+    "kemon acho",
+    "ela unnaru",
+    "eppadi irukeenga",
+    "kase aahat"
+  ],
+  "bot_identity": [
+    "aap kon ho",
+    "tum kon ho",
+    "aap kya ho",
+    "apna parichay do",
+    "aapka naam kya hai",
+    "kitni bhasha jante ho"
+  ],
+  "user_identity": [
+    "mera naam kya hai",
+    "mera employee id kya hai",
+    "meri id kya hai",
+    "mera id batao",
+    "meri profile ID batao",
+    "mera verification status kya hai",
+    "mera role kya hai",
+    "meri posting kahan hai",
+    "kahan kaam karta hoon"
+  ],
+  "concept_skill_gap": [
+    "skill gap kya hota hai",
+    "skill gap ka matlab kya hai",
+    "competency kya hai",
+    "gap score kya hai",
+    "current level target level kya hai",
+    "level 1 ka matlab kya hai"
+  ],
+  "last_assessment": [
+    "kab assess kiya tha",
+    "last assess kab hua",
+    "mera last evaluation kab tha",
+    "assessment date kya hai",
+    "mera last assessment kab hua tha",
+    "aakhri evaluation ki date batao"
+  ],
+  "profile_stats": [
+    "mera profile dikhao",
+    "mujhe apna overview do",
+    "profile ID kya hai",
+    "mera status kya hai",
+    "mera summary do",
+    "meri kitni competencies hain"
+  ],
+  "skill_gaps": [
+    "kahan weak hoon",
+    "kya gap hai",
+    "mera skill gap batao",
+    "mere skill gaps kya hain",
+    "main kis skill mein kamzor hoon",
+    "mujhe kahan improve karna hai",
+    "meri kamzoriyan dikhao",
+    "target se kitna peeche hoon"
+  ],
+  "recommend": [
+    "kaunsa course lena chahiye",
+    "kya padhu",
+    "course suggest karo",
+    "mujhe kaunsa course karna chahiye",
+    "koi course batao",
+    "aage kya seekhun",
+    "mere liye best course kaunsa hai",
+    "agla course kaunsa lun"
+  ],
+  "progress": [
+    "kitna seekha",
+    "kitna progress hua",
+    "meri progress dikhao",
+    "meri progress kitni hai",
+    "main kaisa kar raha hoon",
+    "kitna bacha hai",
+    "kya main sahi track par hoon",
+    "kitne percent complete hua"
+  ],
+  "achievements": [
+    "meri achievements dikhao",
+    "kya kiya maine",
+    "score kya tha",
+    "mere certificates dikhao",
+    "mere quiz ke result dikhao",
+    "maine kya achieve kiya",
+    "purane quiz ke marks"
+  ],
+  "navigation_dashboard": [
+    "dashboard tab kahan hai",
+    "dashboard kaise dekhu",
+    "main section kahan hai",
+    "dashboard dikhao",
+    "dashboard kholo",
+    "dashboard par le chalo"
+  ],
+  "navigation_my_courses": [
+    "my courses tab kahan hai",
+    "active enrollments kahan dekhun",
+    "enrolled courses kaise dekhun",
+    "course progress bar kahan hai",
+    "resume course kaise karu",
+    "iGOT course status kahan hai",
+    "meri enrollments dikhao",
+    "maine kaunse courses enroll kiye hain",
+    "mere courses dikhao",
+    "course list kahan hai"
+  ],
+  "navigation_progress": [
+    "progress tab kahan hai",
+    "analytics kahan hai",
+    "competency radar kahan hai",
+    "achievement timeline kahan hai",
+    "trend graph kahan hai",
+    "learning analytics kaise dekhu",
+    "progress dikhao",
+    "meri progress kahan hai"
+  ],
+  "navigation_ai_quiz": [
+    "AI assessment generator kahan hai",
+    "PDF upload kaise karu",
+    "generate assessment button kahan hai",
+    "RAG quiz kaise banau",
+    "MCQ generate karna hai",
+    "document se quiz kaise banate hain",
+    "assessment upload zone kahan hai",
+    "quiz feature kahan hai",
+    "test generate karna hai",
+    "quiz banao"
+  ],
+  "navigation_profile": [
+    "password change kaise karu",
+    "account settings kahan hai",
+    "logout kaise karu",
+    "profile section kahan hai",
+    "my information kaise change karu",
+    "lock button kya hai"
+  ],
+  "statistics_gdp": [
+    "GDP kya hai",
+    "GDP kaise calculate hoti hai",
+    "GDP samjhao",
+    "gross domestic product kya hai",
+    "national accounts kya hote hain",
+    "GDP expenditure method kya hai",
+    "SNA 2008 kya hai"
+  ],
+  "statistics_cpi": [
+    "CPI kya hai",
+    "CPI kya hota hai",
+    "consumer price index samjhao",
+    "mehngai index kya hai",
+    "retail inflation kaise napte hain",
+    "Laspeyres formula kya hai",
+    "price index kya hota hai"
+  ],
+  "statistics_sampling": [
+    "sampling kya hai",
+    "sampling kya hoti hai",
+    "sampling methods samjhao",
+    "stratified sampling kya hai",
+    "cluster sampling kya hota hai",
+    "survey design kaise karte hain",
+    "NSSO sample kaise leta hai"
+  ],
+  "motivation": [
+    "mushkil lag raha hai",
+    "mann nahi lag raha",
+    "bahut mushkil hai yaar",
+    "haar maanne ka mann kar raha hai",
+    "padhai boring lag rahi hai",
+    "motivation nahi mil raha",
+    "dhyan nahi lag raha",
+    "kaam bahut zyada hai"
+  ],
+  "about_platform": [
+    "yeh website kya hai",
+    "yeh platform kya karta hai",
+    "platform ke baare mein batao",
+    "platform ki features kya hain",
+    "is app ke baare mein batao",
+    "yahan main kya kar sakta hoon"
+  ],
+  "about_mospi": [
+    "MoSPI kya hai",
+    "MoSPI ka kaam kya hai",
+    "iGOT kya hai",
+    "Karmayogi kya hai",
+    "NSO kya hai",
+    "Mission Karmayogi kya hai"
+  ],
+  "gratitude": [
+    "bahut acha",
+    "zabardast",
+    "wah",
+    "bhai wah",
+    "shukriya",
+    "dhanyavad",
+    "bahut shukriya",
+    "bahut dhanyavad"
+  ],
+  "farewell": [
+    "alvida",
+    "tataa",
+    "shubh ratri",
+    "chalo bye",
+    "phir milenge",
+    "ab chalta hoon",
+    "theek hai alvida"
+  ],
+  "ui_action_request": [
+    "hindi mein karo",
+    "bhasha badlo",
+    "website ka theme badlo",
+    "dark mode on karo",
+    "light mode on karo",
+    "theme badlo",
+    "language english mein karo"
+  ],
+  "navigation_home": [
+    "main page dikhao",
+    "home page dikhao",
+    "wapas home par jao",
+    "home par le jao",
+    "upar le chalo",
+    "page ke top par jao"
+  ],
+  "navigation_features": [
+    "platform features dikhao",
+    "features kahan hain",
+    "features section par le chalo",
+    "features dikhao",
+    "platform ki suvidhayein dikhao",
+    "features wala section kholo",
+    "features par scroll karo"
+  ],
+  "navigation_about": [
+    "about kahan hai",
+    "about section dikhao",
+    "about par le chalo",
+    "about page kahan hai",
+    "hamare baare mein wala section dikhao",
+    "about section par scroll karo",
+    "about wala hissa kholo"
+  ],
+  "navigation_contact": [
+    "contact kahan hai",
+    "contact dikhao",
+    "contact section par le chalo",
+    "sampark kaise karein",
+    "contact wala section kholo",
+    "madad ke liye kisse baat karun",
+    "contact par scroll karo"
+  ],
+  "navigation_login": [
+    "login karna hai",
+    "sign in karna hai",
+    "login kahan hai",
+    "login kaise karun",
+    "sign in kaise karein",
+    "admin login kholo",
+    "login page dikhao"
+  ],
+  "out_of_scope": [
+    "yaar kaisi hai zindagi",
+    "cricket khabar",
+    "aaj ka mausam",
+    "shahrukh khan kaun hai",
+    "koi joke sunao",
+    "IPL kisne jeeta",
+    "gaana gao",
+    "bitcoin ka rate kya hai",
+    "aaj ki taaza khabar"
+  ],
+  "statistics_frac": [
+    "FRAC kya hai",
+    "FRAC framework samjhao",
+    "competency framework kya hota hai",
+    "roles activities competencies kya hain",
+    "Karmayogi framework kya hai",
+    "FRAC dictionary kya hai"
+  ]
+}

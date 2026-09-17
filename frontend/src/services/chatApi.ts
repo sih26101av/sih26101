@@ -12,6 +12,8 @@
 
 import type { SkillGapEntry, CourseRecommendation } from '../types/domain';
 
+export type ChatLanguage = 'en' | 'hi' | 'bn' | 'mr' | 'gu' | 'or' | 'ta' | 'te';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
@@ -19,7 +21,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: Date;
-  detectedLanguage?: 'en' | 'hi';
+  detectedLanguage?: ChatLanguage;
 }
 
 export interface NavigateAction {
@@ -62,7 +64,12 @@ const HINGLISH_WORDS = new Set([
   'aaj', 'kal', 'namaste', 'namaskar',
 ]);
 
-function detectLanguage(text: string): 'en' | 'hi' {
+function detectLanguage(text: string): ChatLanguage {
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn';
+  if (/[\u0A80-\u0AFF]/.test(text)) return 'gu';
+  if (/[\u0B00-\u0B7F]/.test(text)) return 'or';
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta';
+  if (/[\u0C00-\u0C7F]/.test(text)) return 'te';
   if (/[\u0900-\u097F]/.test(text)) return 'hi';
   const words = new Set(text.toLowerCase().split(/\s+/));
   if ([...words].some(w => HINGLISH_WORDS.has(w))) return 'hi';
@@ -80,6 +87,7 @@ const INTENT_PATTERNS: Record<string, RegExp> = {
   platform_help: /\b(how\s*to|navigate|use|igot|platform|login|karmayogi|where\s*can\s*i|help|assist)\b/i,
   farewell:      /\b(bye|goodbye|alvida|shukriya|thanks|thank\s*you|dhanyavad|ok\s*bye)\b/i,
   motivation:    /\b(motivat|difficult|hard|tough|mushkil|give\s*up|hopeless|boring|struggle)\b/i,
+  bot_identity:  /\b(who\s*are\s*you|what\s*are\s*you|tell\s*me\s*about|introduce\s*yourself|who\s*is\s*gyan|languages?|bhasha|speak)\b/i,
 };
 
 function detectIntent(text: string): string {
@@ -148,6 +156,13 @@ function buildLocalReply(
           `Hello! 👋 I'm **Gyan**, your MoSPI AI Training Assistant.\n\nI can see you're a **${jobRole}** in ${department}. I'm here to guide your personalized learning journey.\n\nAsk me about:\n• Your skill gaps and how to close them\n• Which courses to take next\n• Statistical concepts (GDP, CPI, FRAC, Sampling)\n\nHow can I help you today?`,
           `Hi there! I'm Gyan 🎓 — your AI learning companion on the MoSPI platform.\n\nYou have **${activeGaps.length} active skill gap(s)** I can help you work through. What would you like to explore?`,
         ]);
+  }
+
+  // ── BOT IDENTITY ─────────────────────────────────────────────────────────────
+  if (intent === 'bot_identity') {
+    return lang === 'hi'
+      ? 'मैं **ज्ञान (Gyan)** हूँ — MoSPI का AI Training Assistant! 🎓\n\nमैं English, हिंदी, मराठी, বাংলা, ગુજરાતી, ଓଡ଼ିଆ, தமிழ் और తెలుగు समझता हूँ। अभी सर्वर से संपर्क नहीं हो पा रहा, इसलिए फ़िलहाल केवल English और हिंदी में सीमित जवाब दे पाऊँगा।\n\nआप मुझसे अपने skill gaps, recommended courses, या फिर GDP, CPI जैसे सांख्यिकी विषयों के बारे में पूछ सकते हैं!'
+      : "I am **Gyan** — your MoSPI AI Training Assistant! 🎓\n\nI understand English, हिंदी, मराठी, বাংলা, ગુજરાતી, ଓଡ଼ିଆ, தமிழ் and తెలుగు. I can't reach the server right now, so for the moment I can only give limited answers in English and Hindi.\n\nI'm here to help you identify your skill gaps, recommend courses, and answer questions about statistical concepts!";
   }
 
   // ── FAREWELL ─────────────────────────────────────────────────────────────────
@@ -256,7 +271,7 @@ export async function sendChatMessage(
   fullName?: string,
   govId?: string,
   context?: string,
-): Promise<{ reply: string; detectedLanguage: 'en' | 'hi'; navigateAction?: NavigateAction; navigateActions: NavigateAction[] }> {
+): Promise<{ reply: string; detectedLanguage: ChatLanguage; navigateAction?: NavigateAction; navigateActions: NavigateAction[] }> {
 
   const payload: ChatApiPayload = {
     user_id: officialId,
@@ -294,16 +309,20 @@ export async function sendChatMessage(
     const data = await res.json();
     return {
       reply: data.reply,
-      detectedLanguage: (data.detected_language as 'en' | 'hi') ?? 'en',
+      detectedLanguage: (data.detected_language as ChatLanguage) ?? 'en',
       navigateAction: data.navigate_action ?? undefined,
       navigateActions: (data.navigate_actions ?? []) as NavigateAction[],
     };
-  } catch {
+  } catch (err) {
     // ── Backend unavailable → use client-side engine ──────────────────────────
+    console.warn('[Gyan] Backend chat failed; using limited English/Hindi browser fallback.', err);
     const lang = detectLanguage(message);
     const intent = detectIntent(message);
+    // The browser fallback is intentionally small and only ships English/Hindi
+    // templates. The backend supplies the full regional-language catalogue.
+    const fallbackLanguage = lang === 'hi' ? 'hi' : 'en';
     const reply = buildLocalReply(
-      intent, lang, officialId, jobRole, department, skillGaps, recommendations, message
+      intent, fallbackLanguage, officialId, jobRole, department, skillGaps, recommendations, message
     );
     return { reply, detectedLanguage: lang, navigateAction: undefined, navigateActions: [] };
   }

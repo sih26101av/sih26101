@@ -1,0 +1,162 @@
+{
+  "greeting": [
+    "hello there gyan",
+    "good day to you",
+    "hiya"
+  ],
+  "how_are_you": [
+    "how have you been",
+    "hope you are doing well",
+    "how's your day going"
+  ],
+  "bot_identity": [
+    "what exactly are you",
+    "which languages can you understand",
+    "are you a chatbot or a person"
+  ],
+  "user_identity": [
+    "can you tell me my full name",
+    "which department do I work in",
+    "what is my government employee number"
+  ],
+  "concept_skill_gap": [
+    "what does a gap score actually mean",
+    "can you explain competency levels to me",
+    "what is the meaning of skill gap here"
+  ],
+  "last_assessment": [
+    "when did my most recent evaluation happen",
+    "on what date was I last assessed",
+    "tell me my previous assessment date"
+  ],
+  "profile_stats": [
+    "give me an overview of my profile",
+    "summarise my competency numbers",
+    "how many competencies are assessed for me"
+  ],
+  "skill_gaps": [
+    "which areas do I lack in",
+    "list the competencies where I fall short",
+    "what skills should I work on"
+  ],
+  "recommend": [
+    "what course would you suggest for me",
+    "which training should I do first",
+    "suggest something to study next"
+  ],
+  "progress": [
+    "how much have I completed so far",
+    "am I making good progress",
+    "what percentage of my targets have I met"
+  ],
+  "achievements": [
+    "what certificates have I earned",
+    "show the quizzes I have passed",
+    "list my accomplishments"
+  ],
+  "navigation_dashboard": [
+    "take me back to the dashboard",
+    "switch to the dashboard tab",
+    "I want to see the dashboard"
+  ],
+  "navigation_my_courses": [
+    "open the list of courses I am enrolled in",
+    "where can I continue my courses",
+    "show my ongoing enrollments"
+  ],
+  "navigation_progress": [
+    "open the progress tab please",
+    "where is the competency radar chart",
+    "take me to the progress section"
+  ],
+  "navigation_ai_quiz": [
+    "I want to create a quiz from a pdf",
+    "where do I upload a document to make questions",
+    "open the assessment generator"
+  ],
+  "navigation_profile": [
+    "how can I log out",
+    "I need to reset my password",
+    "where is the sign out option"
+  ],
+  "statistics_gdp": [
+    "how is gross domestic product measured in india",
+    "explain the production approach to gdp",
+    "what does gdp stand for"
+  ],
+  "statistics_cpi": [
+    "how is inflation measured using cpi",
+    "what does consumer price index track",
+    "explain cpi combined"
+  ],
+  "statistics_sampling": [
+    "how does multi stage sampling work",
+    "what sampling design does plfs use",
+    "explain probability sampling"
+  ],
+  "statistics_frac": [
+    "explain the frac competency model",
+    "what does frac stand for",
+    "how does the frac framework define roles"
+  ],
+  "motivation": [
+    "I am losing interest in learning",
+    "these courses are too tough for me",
+    "I don't feel like studying anymore"
+  ],
+  "about_platform": [
+    "what is the purpose of this website",
+    "what features does this platform offer",
+    "what is this application for"
+  ],
+  "about_mospi": [
+    "what does the ministry of statistics do",
+    "tell me about mission karmayogi",
+    "what is the national statistical office"
+  ],
+  "gratitude": [
+    "thanks a lot",
+    "that was really useful",
+    "cool, got it"
+  ],
+  "farewell": [
+    "see you later",
+    "bye for now",
+    "goodnight gyan"
+  ],
+  "ui_action_request": [
+    "please switch the site to dark theme",
+    "make the website hindi",
+    "can you change the colour theme"
+  ],
+  "navigation_home": [
+    "go back to the landing page",
+    "scroll up to the top",
+    "bring me to the homepage"
+  ],
+  "navigation_features": [
+    "let me see the features section",
+    "scroll down to features",
+    "what features are listed on this page"
+  ],
+  "navigation_about": [
+    "open the about us section",
+    "show me the about part of the page",
+    "jump down to the about area"
+  ],
+  "navigation_contact": [
+    "how do I get in touch",
+    "show the contact details section",
+    "take me to contact info"
+  ],
+  "navigation_login": [
+    "open the sign in dialog",
+    "I want to log into my account",
+    "where do officials log in"
+  ],
+  "out_of_scope": [
+    "who won the football world cup",
+    "what is the price of gold today",
+    "recommend a good movie"
+  ]
+}

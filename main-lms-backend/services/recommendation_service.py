@@ -13,7 +13,7 @@ Stage 1 — Mandatory FRAC-Tag Filtering
     Untagged courses cannot enter ranking (prevents semantic hallucinations).
 
 Stage 2 — Hybrid Search + RRF Fusion
-    Dense  : sentence-transformers/all-MiniLM-L6-v2 (384-dim) + FAISS IndexFlatIP
+    Dense  : ai.embedder "catalog" role (default all-MiniLM-L6-v2, 384-dim) + FAISS IndexFlatIP
     Sparse : rank_bm25.BM25Okapi over title+description corpus
     Query  : FRAC competency official name + description (never raw user text)
     Fusion : RRF(d) = 1/(60+rank_dense) + 1/(60+rank_sparse)
@@ -195,11 +195,11 @@ class HybridRecommendationEngine:
         # ── 4. Load sentence-transformer + build FAISS index ──────────────────
                 # Model loaded ONCE for whole backend via ai/embedder.py singleton.
         logger.info("[RecEngine] Acquiring shared multilingual embedder...")
-        embedder = get_embedder()
+        embedder = get_embedder("catalog")
 
         corpus_texts = [doc.corpus_text for doc in self._catalog]
         embeddings = embedder.encode(
-            corpus_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=False
+            corpus_texts, kind="passage", batch_size=64, normalize_embeddings=True, show_progress_bar=False
         )
         embeddings = np.array(embeddings, dtype="float32")
 
@@ -364,7 +364,7 @@ class HybridRecommendationEngine:
 
         # 2a. Dense search (FAISS cosine, L2-normalised)
         import faiss
-        q_emb = get_embedder().encode(
+        q_emb = get_embedder("catalog").encode(
             [query_text], normalize_embeddings=True, show_progress_bar=False
         ).astype("float32")
 

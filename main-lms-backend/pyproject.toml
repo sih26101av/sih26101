@@ -8,5 +8,5 @@ reportGeneralTypeIssues = "none"
 [tool.pylint.MASTER]
 extension-pkg-whitelist = ["pydantic"]
 
-[tool.pylint.MESSAGES CONTROL]
+[tool.pylint."MESSAGES CONTROL"]
 disable = ["import-error", "no-name-in-module", "c-extension-no-member"]

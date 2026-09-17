@@ -12,9 +12,8 @@
 # 2. Install dependencies:
 #      pip install -r requirements.txt
 #
-#    The sentence-transformers model (all-MiniLM-L6-v2, ~80 MB) is downloaded
-#    automatically from HuggingFace Hub on first run and cached locally.
-#    No API key required. Works on Render free tier (512 MB RAM).
+#    Two embedding models (~560 MB disk total) download from HuggingFace Hub
+#    on first run and are cached locally — see ai/embedder.py. No API key.
 #
 # 3. (OPTIONAL — local dev only) Install Ollama for Tier 3 RAG:
 #      Windows : winget install Ollama.Ollama
@@ -45,6 +44,10 @@ pydantic>=2.7.0
 # ── Environment & config ──────────────────────────────────────────────────────
 python-dotenv>=1.0.0
 
+# Compact offline language identification for deterministic multilingual chat
+# templates. It ships profiles with the package; no model download is needed.
+langdetect>=1.0.9
+
 # ── Authentication ────────────────────────────────────────────────────────────
 python-jose[cryptography]>=3.3.0
 bcrypt>=4.1.0
@@ -60,10 +63,9 @@ python-pptx>=1.0.0
 # ── AI: Gemini (cloud — for quiz MCQ generation) ─────────────────────────────
 google-generativeai>=0.8.0
 
-# ── AI: Shared Multilingual Embedding Model ───────────────────────────────────
-# Model:  paraphrase-multilingual-MiniLM-L12-v2  (384-dim, same API as before)
-# Supports 50+ languages: Hindi, Bengali, Marathi, Tamil, Telugu, …
-# sentence-transformers kept as fallback for local dev (if ONNX cache missing).
+# ── AI: Embedding models (ai/embedder.py) ─────────────────────────────────────
+# chat:    intfloat/multilingual-e5-small  — Gyan intent classification, 8 languages
+# catalog: sentence-transformers/all-MiniLM-L6-v2 — English course recommendations
 sentence-transformers>=3.0.0
 
 # ── AI: ONNX Runtime (production inference without PyTorch) ──────────────────
@@ -71,7 +73,7 @@ sentence-transformers>=3.0.0
 #   python scripts/quantize_model.py   (run locally — NOT on Render)
 # Downloaded to ai/.cache/ by:
 #   python scripts/download_model.py   (Render Build Command)
-onnxruntime-cpu>=1.17.0
+onnxruntime>=1.16.0
 huggingface_hub>=0.23.0        # used by scripts/download_model.py
 
 # ── AI: Hybrid Recommendation Engine (FAISS + BM25) ──────────────────────────

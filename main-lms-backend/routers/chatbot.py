@@ -2,51 +2,40 @@
 FILE: routers/chatbot.py
 
 Multilingual AI Learning Assistant — Gyan (ज्ञान)
-Archit Shukla | MoSPI Skill Intelligence Platform | SIH 2026
+MoSPI Skill Intelligence Platform | SIH 2026
 
-Three-tier response engine:
+Request flow
 ─────────────────────────────────────────────────────────────────────────────
-  TIER 1 (PRIMARY — Render-deployable)
-    → Semantic Intent Engine (sentence-transformers all-MiniLM-L6-v2)
-      • Classifies query via cosine similarity on pre-encoded intent prototypes
-      • Instant profile vectorization for profile stats queries
-      • Fuzzy typo correction via difflib
-      • Tab-specific navigation answers based on actual frontend structure
-      • Engine label: "semantic"
+  1. Language variant  services/language_service.detect_chat_variant
+                       en | hi (Devanagari) | hi_latn (Hinglish) | mr | bn | gu | or | ta | te
+  2. English command intercepts (regex): theme / language switches, section
+     scrolling, login, celebrity questions. These execute UI actions directly.
+  3. Semantic intent   ai/semantic_engine.classify_intent (engine "semantic")
+     Low confidence or unavailable model → keyword intents for Latin text,
+     otherwise the localized fallback reply (engine "template").
+  4. Reply text        services/chat_messages.render — every intent in every
+     variant; this module contains no reply strings.
 
-  TIER 2 (FALLBACK — always works, no dependencies)
-    → Keyword + regex template engine
-      • Original intent-matching templates
-      • Activates if semantic model is not loaded (cold start or import error)
-      • Engine label: "template"
-
-  TIER 3 (DISCONNECTED — available for local/dev use only)
-    → Ollama RAG pipeline (llama3.2:3b + ChromaDB nomic-embed-text)
-      • NOT called from this router in production
-      • Code kept in ai/rag_engine.py + ai/vector_store.py for easy revert
-      • To re-enable: swap TIER 1 priority order below (search REVERT_OLLAMA)
-─────────────────────────────────────────────────────────────────────────────
-
-Frontend structure (verified from LearnerDashboard.tsx):
-  Tabs  (Topbar):
-    • "dashboard"   → SkillGapCard + StatsSummary (Learning Snapshot)
-                      + AssessmentUploadZone + AI Recommended Pathway
-    • "my-courses"  → MyCoursesView (Active Enrollments, progress bars)
-    • "progress"    → ProgressView (Competency Radar chart + Achievements)
-  Persistent:
-    • ProfileHeader → top of every tab (name, role, dept, profile ID)
-    • ChatWidget    → floating bubble bottom-right (this chatbot)
-  Navbar icons:
-    • Home (→ landing), Moon/Sun (theme toggle),
-      Lock (→ /change-password), LogOut (sign out)
+Ollama RAG (ai/rag_engine.py) is not in the request path.
 """
 
 import logging
 import re
-import random
+from typing import List, Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Optional
+
+from services.chat_actions import detect_ui_actions
+from services.chat_messages import (
+    render,
+    render_language_action,
+    render_login_credentials,
+    render_theme_action,
+    render_theme_language_action,
+)
+from services.chat_messages.context import ReplyContext
+from services.language_service import detect_chat_variant, to_iso
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -87,42 +76,14 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    detected_language: str  # "hi" | "en"
+    detected_language: str  # ISO 639-1: en, hi, bn, mr, gu, or, ta, te
     engine: str = "template"  # "semantic" | "template"
     navigate_action: Optional[dict] = None   # single action {type, target, label}
     navigate_actions: List[dict] = []        # compound: multiple simultaneous actions
 
 
 # =============================================================================
-# LANGUAGE DETECTION
-# =============================================================================
-
-_HINDI_DEVANAGARI = re.compile(r'[\u0900-\u097F]')
-_HINGLISH_WORDS = {
-    'kya', 'kaun', 'kaise', 'mujhe', 'mera', 'meri', 'mein', 'hai', 'hain',
-    'nahi', 'batao', 'bolo', 'karo', 'lena', 'chahiye', 'acha',
-    'theek', 'samjhao', 'kab', 'kyun', 'kitna', 'kitne', 'sikho', 'padhna',
-    'seekhna', 'lagta', 'zyada', 'thoda', 'bahut', 'sir', 'madam',
-    'kuch', 'sab', 'jo', 'woh', 'abhi', 'aaj', 'kal', 'dikhao',
-    # Extended Hinglish
-    'aap', 'kon', 'hoon', 'naam', 'mere', 'apna', 'ho', 'hua', 'hui',
-    'raha', 'rahi', 'tha', 'thi', 'accha', 'bilkul', 'zaruri', 'milta',
-    'namaste', 'namaskar', 'pranam', 'alvida', 'shukriya', 'dhanyavad',
-    'tum', 'wah', 'zabardast', 'bahut', 'bahut', 'parichay',
-}
-
-
-def detect_language(text: str) -> str:
-    if _HINDI_DEVANAGARI.search(text):
-        return "hi"
-    words = set(text.lower().split())
-    if len(words & _HINGLISH_WORDS) >= 1:
-        return "hi"
-    return "en"
-
-
-# =============================================================================
-# KEYWORD FALLBACK — intent detection (regex, used for Tier 2 template engine)
+# KEYWORD FALLBACK — Latin-script intents when the semantic engine can't decide
 # =============================================================================
 
 _INTENTS = {
@@ -131,7 +92,6 @@ _INTENTS = {
     "recommend":           r'\b(recommend|suggest|course|courses|kya\s*padhu|kya\s*lu|kya\s*seekhu|pathway|next|start|begin|enroll|kaunsa)\b',
     "progress":            r'\b(progress|how\s*am\s*i|doing|achievement|score|result|kitna\s*seekha|kahan\s*tak)\b',
     "statistics":          r'\b(gdp|cpi|wpi|sampling|national\s*accounts|sna|frac|nsso|plfs|census|econometrics|regression|time\s*series|price\s*index)\b',
-    # Navigation — specific patterns first, before platform_help catches them
     "navigation_login":    r'\b(login|log\s*in|sign\s*in|signin|admin\s*portal|admin\s*login|kaise\s*login|login\s*karna)\b',
     "navigation_features": r'\b(feature|features|capabilities|feature\s*section|show\s*feature|scroll\s*to\s*feature)\b',
     "navigation_about":    r'\b(about\s*section|about\s*us|about\s*page|about\s*mospi|about\s*platform|scroll\s*to\s*about|take.*about)\b',
@@ -140,1068 +100,187 @@ _INTENTS = {
     "navigation_my_courses": r'\b(my\s*courses|enrolled\s*courses|course\s*list|course\s*tab)\b',
     "navigation_progress": r'\b(progress\s*tab|show.*progress|radar\s*chart|achievement\s*history)\b',
     "navigation_dashboard": r'\b(dashboard\s*tab|go\s*to\s*dashboard|open\s*dashboard)\b',
-    # UI actions (dark mode, language) — bot can't do these but should explain
     "ui_action_request":   r'\b(dark\s*mode|light\s*mode|theme|toggle\s*theme|change.*language|switch.*language|language.*hindi|hindi.*language|language.*english|font\s*size|accessibility)\b',
-    "platform_help":       r'\b(how\s*to|kaise\s*karu|navigate|use|igot|platform|karmayogi|where\s*can\s*i|help|assist|what\s*can)\b',
-    "hindi_greeting":      r'\b(namaste|namaskar|pranam|kaise\s*(ho|hain)|sab\s*(theek|thik))\b',
+    "about_platform":      r'\b(how\s*to|kaise\s*karu|navigate|use|igot|platform|karmayogi|where\s*can\s*i|help|assist|what\s*can)\b',
     "farewell":            r'\b(bye|goodbye|alvida|shukriya|thanks|thank\s*you|dhanyavad|dhanyabad|ok\s*bye|acha\s*bye)\b',
     "motivation":          r'\b(motivat|difficult|hard|tough|mushkil|give\s*up|hopeless|boring|struggle)\b',
 }
+
+_STATISTICS_TOPICS = (
+    ("statistics_gdp", r'\b(gdp|national\s*accounts|sna)\b'),
+    ("statistics_cpi", r'\b(cpi|wpi|price\s*index)\b'),
+    ("statistics_sampling", r'\b(sampling|nsso|plfs|census)\b'),
+    ("statistics_frac", r'\bfrac\b'),
+)
+
 
 def detect_intent_keyword(text: str) -> str:
     lower = text.lower()
     for intent, pattern in _INTENTS.items():
         if re.search(pattern, lower):
+            if intent == "statistics":
+                return next((topic for topic, rx in _STATISTICS_TOPICS if re.search(rx, lower)), "about_mospi")
             return intent
-    return "general"
+    return "fallback"
 
 
 # =============================================================================
-# PROFILE HELPERS (shared by both Tier 1 and Tier 2)
+# NAVIGATION / UI ACTIONS
 # =============================================================================
 
-def _fmt_gaps(gaps: List[SkillGapContext], lang: str) -> str:
-    active = [g for g in gaps if g.gapScore > 0]
-    if not active:
-        if lang == "hi":
-            return "Aapke sabhi competencies target level par hain! Badhai ho! 🎉"
-        return "All your competencies are at target level! 🎉"
-    lines = []
-    for g in sorted(active, key=lambda x: -x.gapScore):  # show ALL gaps, sorted by severity
-        if lang == "hi":
-            lines.append(f"• **{g.skillName}** ({g.domain}): Level {g.currentLevel} → {g.targetLevel} chahiye (Gap: {g.gapScore})")
+_HOME_NAV = {
+    "navigation_features": {"type": "scroll", "target": "#features", "label": "Features section"},
+    "navigation_about":    {"type": "scroll", "target": "#about",    "label": "About section"},
+    "navigation_contact":  {"type": "scroll", "target": "#contact",  "label": "Contact section"},
+    "navigation_login":    {"type": "modal",  "target": "login",     "label": "Login"},
+    "navigation_home":     {"type": "scroll", "target": "#home",     "label": "Home (top)"},
+}
+
+_DASHBOARD_NAV = {
+    "navigation_my_courses": {"type": "tab",      "target": "my-courses", "label": "My Courses tab"},
+    "navigation_progress":   {"type": "tab",      "target": "progress",   "label": "Progress tab"},
+    "navigation_dashboard":  {"type": "tab",      "target": "dashboard",  "label": "Dashboard tab"},
+    "navigation_ai_quiz":    {"type": "tab",      "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
+    "navigation_home":       {"type": "redirect", "target": "/",          "label": "Landing Page"},
+}
+
+# Intercept scroll keyword -> (intent whose reply describes it, #anchor)
+_SCROLL_SECTIONS = {
+    "contact": ("navigation_contact", "contact"),
+    "feature": ("navigation_features", "features"),
+    "about":   ("navigation_about", "about"),
+    "home":    ("navigation_home", "home"),
+    "top":     ("navigation_home", "home"),
+}
+_SCROLL_LABELS = {"contact": "Contact section", "features": "Features section", "about": "About section", "home": "Top of page"}
+
+_LANGUAGE_NAMES = {"hi": "Hindi", "en": "English"}
+
+
+def _theme_action(theme: str) -> dict:
+    return {"type": "theme", "target": theme, "label": f"{theme.capitalize()} Mode"}
+
+
+def _response(reply: str, variant: str, engine: str = "template", **actions) -> ChatResponse:
+    return ChatResponse(reply=reply, detected_language=to_iso(variant), engine=engine, **actions)
+
+
+def _ui_action_response(req: ChatRequest, variant: str, ctx: ReplyContext, engine: str) -> ChatResponse:
+    theme, language = detect_ui_actions(req.message)
+    if theme and language:
+        if theme == "toggle":
+            reply = f"{render_theme_action(variant, theme)}\n\n{render_language_action(variant, language)}"
         else:
-            lines.append(f"• **{g.skillName}** ({g.domain}): Level {g.currentLevel} → {g.targetLevel} needed (Gap: {g.gapScore})")
-    return "\n".join(lines)
-
-def _fmt_recs(recs: List[RecommendationContext], lang: str, n: int = 3) -> str:
-    if not recs:
-        if lang == "hi":
-            return "Abhi koi recommendations available nahi hain."
-        return "No recommendations available right now."
-    lines = []
-    for i, r in enumerate(recs[:n], 1):
-        hrs = f"{r.durationHours:.0f}h"
-        if lang == "hi":
-            lines.append(f"{i}. **{r.title}** ({r.provider}, {hrs})")
-        else:
-            lines.append(f"{i}. **{r.title}** — {r.provider} | {hrs}")
-    return "\n".join(lines)
-
-def _top_gap(gaps: List[SkillGapContext]) -> Optional[SkillGapContext]:
-    active = [g for g in gaps if g.gapScore > 0]
-    return sorted(active, key=lambda x: -x.gapScore)[0] if active else None
-
-
-# =============================================================================
-# TIER 1 — SEMANTIC RESPONSE HANDLERS
-# Keyed by intent name returned by semantic_engine.classify_intent()
-# Uses actual frontend section names from LearnerDashboard.tsx
-# =============================================================================
-
-def _handle_semantic(
-    intent: str,
-    req: ChatRequest,
-    lang: str,
-) -> str:
-    """
-    Dispatch to the correct response handler based on semantic intent.
-    Returns a formatted markdown string.
-    """
-    gaps = req.skill_gaps
-    recs = req.recommendations
-    role      = req.job_role   or "Statistical Official"
-    dept      = req.department or "MoSPI"
-    full_name = req.full_name  or None
-    gov_id    = req.gov_id     or None
-    ctx       = req.context    or "dashboard"
-    top = _top_gap(gaps)
-    active_gaps = [g for g in gaps if g.gapScore > 0]
-
-    # ── Greeting ────────────────────────────────────────────────────────────
-    if intent in ("greeting", "hindi_greeting"):
-        if ctx == "home":
-            # Anonymous visitor on homepage
-            if lang == "hi":
-                return (
-                    "Namaste! 🙏 Main **Gyan** hoon — MoSPI ka AI Assistant.\n\n"
-                    "Main aapko yeh platform samajhne mein madad kar sakta hoon:\n"
-                    "• Platform ke features aur sections ke baare mein\n"
-                    "• MoSPI aur iGOT Karmayogi ke baare mein\n"
-                    "• Login karne mein guide karna\n"
-                    "• Kisi bhi section par le jaana\n\n"
-                    "Aaj main aapki kya madad kar sakta hoon? 🎓"
-                )
-            return (
-                "Hello! 👋 I'm **Gyan**, the MoSPI AI Assistant.\n\n"
-                "I can help you explore this platform:\n"
-                "• Features & capabilities of the Skill Intelligence Platform\n"
-                "• About MoSPI and iGOT Karmayogi\n"
-                "• How to login as an official\n"
-                "• Navigate to any section\n\n"
-                "What would you like to know? 🎓"
-            )
-        # Logged-in dashboard user
-        if lang == "hi":
-            return (
-                f"Namaste! 🙏 Main **Gyan** hoon — aapka MoSPI AI Training Assistant.\n\n"
-                f"Main dekh sakta hoon ki aap **{role}** hain **{dept}** mein.\n"
-                f"Aapke paas **{len(active_gaps)} active skill gap(s)** hain.\n\n"
-                f"Aap mujhse pooch sakte hain:\n"
-                f"• Apne skill gaps ke baare mein\n"
-                f"• Recommended courses ke baare mein\n"
-                f"• Platform navigate karne mein madad\n"
-                f"• Statistics topics (GDP, CPI, Sampling, FRAC)\n\n"
-                f"Aaj main aapki kya madad kar sakta hoon? 🎓"
-            )
-        return (
-            f"Hello! 👋 I'm **Gyan**, your MoSPI AI Training Assistant.\n\n"
-            f"You're a **{role}** in {dept}. "
-            f"You currently have **{len(active_gaps)} active skill gap(s)**.\n\n"
-            f"Ask me about:\n"
-            f"• Your skill gaps and priority areas\n"
-            f"• Which courses to take next\n"
-            f"• How to navigate different parts of this platform\n"
-            f"• Statistical concepts (GDP, CPI, Sampling, FRAC)\n\n"
-            f"How can I help you today? 🎓"
-        )
-
-    # ── How Are You ──────────────────────────────────────────────────────────
-    if intent == "how_are_you":
-        if lang == "hi":
-            return random.choice([
-                "Main bilkul theek hoon! \U0001f916 Ek AI hoon — kabhi thakta nahi!\n\nAap batao, main aapki kya madad kar sakta hoon? \U0001f393",
-                "Bahut acha hoon, shukriya poochne ke liye! \U0001f604\nAapke skill gaps aur courses ke liye main hamesha taiyaar hoon.",
-            ])
-        return random.choice([
-            "I'm doing great, thanks for asking! \U0001f916 I'm an AI — I never get tired!\n\nHow can I help you today? \U0001f393",
-            "All systems running smoothly! \U0001f60a\nReady to help you with your skill gaps, courses, or anything else.",
+            reply = render_theme_language_action(variant, theme, language)
+        return _response(reply, variant, engine, navigate_actions=[
+            _theme_action(theme),
+            {"type": "language", "target": language, "label": _LANGUAGE_NAMES[language]},
         ])
-
-    # ── Concept: What IS a Skill Gap? ────────────────────────────────────────
-    if intent == "concept_skill_gap":
-        if lang == "hi":
-            return (
-                "**Skill Gap** ka matlab hai — aapke **current competency level** aur \n"
-                "aapki job role ke liye **required (target) level** ke beech ka antar.\n\n"
-                "**Example:**\n"
-                "Maan lijiye 'Strategic Thinking' competency mein:\n"
-                "• Aapka current level: **Level 1** (beginner)\n"
-                "• Aapki Deputy Director role ke liye zaruri: **Level 4** (expert)\n"
-                "• **Gap Score = 3** — matlab aapko 3 levels aur improve karna hai\n\n"
-                "**Competency Levels (FRAC framework):**\n"
-                "• Level 1 — Awareness (basic knowledge)\n"
-                "• Level 2 — Foundational (can apply with guidance)\n"
-                "• Level 3 — Practitioner (independent application)\n"
-                "• Level 4 — Expert (guides others, sets policy)\n\n"
-                "Aapke Dashboard par **Competency & Skill-Gap Analysis** card mein \n"
-                "har skill ka current level (pip dots) aur target level dikh ta hai. \U0001f4ca"
-            )
-        return (
-            "A **Skill Gap** is the difference between your **current competency level** \n"
-            "and the **required (target) level** for your job role.\n\n"
-            "**Example:**\n"
-            "For 'Strategic Thinking' competency:\n"
-            "• Your current level: **Level 1** (beginner)\n"
-            "• Required for Deputy Director: **Level 4** (expert)\n"
-            "• **Gap Score = 3** — you need to improve by 3 levels\n\n"
-            "**Competency Levels (FRAC framework):**\n"
-            "• Level 1 — Awareness (basic knowledge)\n"
-            "• Level 2 — Foundational (can apply with guidance)\n"
-            "• Level 3 — Practitioner (independent application)\n"
-            "• Level 4 — Expert (can guide others, shapes policy)\n\n"
-            "On your **Dashboard**, the **Competency & Skill-Gap Analysis** card shows \n"
-            "each skill's current level (pip dots) vs. target level visually. \U0001f4ca"
+    if theme:
+        return _response(render_theme_action(variant, theme), variant, engine, navigate_action=_theme_action(theme))
+    if language:
+        return _response(
+            render_language_action(variant, language), variant, engine,
+            navigate_action={"type": "language", "target": language, "label": f"{_LANGUAGE_NAMES[language]} Language"},
         )
+    return _response(render("ui_action_request", variant, ctx), variant, engine)
 
-    # ── Bot Identity (who is Gyan) ────────────────────────────────────────────
-    if intent == "bot_identity":
-        if lang == "hi":
-            return (
-                f"Main **Gyan (\u091c\u094d\u091e\u093e\u0928)** hoon \u2014 MoSPI ka AI-powered Learning Assistant. \U0001f916\n\n"
-                f"Main ek **semantic AI chatbot** hoon jo sentence-transformers model use karta hai "
-                f"aapke sawalon ko samajhne ke liye.\n\n"
-                f"Main aapki madad kar sakta hoon:\n"
-                f"\u2022 **Skill Gaps** \u2014 aapke current aur target levels\n"
-                f"\u2022 **Course Recommendations** \u2014 personalized learning pathway\n"
-                f"\u2022 **Platform Navigation** \u2014 Dashboard, My Courses, Progress tabs\n"
-                f"\u2022 **Statistics** \u2014 GDP, CPI, Sampling, FRAC framework\n\n"
-                f"Aap {role} hain {dept} mein. Aaj main aapki kya madad kar sakta hoon? \U0001f393"
-            )
-        return (
-            f"I'm **Gyan (\u091c\u094d\u091e\u093e\u0928)** \u2014 the AI-powered Learning Assistant for MoSPI. \U0001f916\n\n"
-            f"I'm a **semantic AI chatbot** powered by sentence-transformers, "
-            f"built to understand natural language \u2014 in English, Hindi, and Hinglish.\n\n"
-            f"I can help you with:\n"
-            f"\u2022 **Skill Gaps** \u2014 your current vs target competency levels\n"
-            f"\u2022 **Course Recommendations** \u2014 your personalized learning pathway\n"
-            f"\u2022 **Platform Navigation** \u2014 how to use Dashboard, My Courses, Progress tabs\n"
-            f"\u2022 **Statistics** \u2014 GDP, CPI, Sampling, FRAC framework\n\n"
-            f"You're a **{role}** in {dept}. What can I help you with today? \U0001f393"
-        )
 
-    # ── Gratitude (thanks/great without goodbye) ─────────────────────────────
-    if intent == "gratitude":
-        if lang == "hi":
-            return random.choice([
-                "Khushi hui madad karke! \U0001f604 Kya aur kuch poochna hai?",
-                "Bilkul! Agar aur koi sawaal ho toh zaroor poochein. \U0001f393",
-                "Main hamesha yahan hoon. Aur kuch chahiye? \U0001f916",
-            ])
-        return random.choice([
-            "Glad I could help! \U0001f604 Anything else you'd like to know?",
-            "You're welcome! Feel free to ask me anything else. \U0001f393",
-            "Happy to assist! Is there anything else I can help with? \U0001f916",
-        ])
-
-    # ── User Identity ─────────────────────────────────────────────────────────
-    if intent == "user_identity":
-        # On homepage: visitor is not logged in, redirect to login
-        if ctx == "home":
-            if lang == "hi":
-                return (
-                    "🔐 Aapka naam aur employee ID dekhne ke liye **login karna hoga**.\n\n"
-                    "Page ke top par **Official Login** button click karein — "
-                    "ya main aapke liye login dialog khol sakta hoon."
-                )
-            return (
-                "🔐 Your personal details (name, employee ID) are only visible **after you log in**.\n\n"
-                "Click the **Official Login** button at the top of the page, "
-                "or I can open the login dialog for you."
-            )
-        # Logged-in dashboard user
-        name_line = f"Full Name: {full_name}" if full_name else "Full Name: shown in Profile Header (top of every tab)"
-        id_line   = f"Gov ID / Employee ID: {gov_id}" if gov_id else "Gov ID / Employee ID: shown in Profile Header"
-        if lang == "hi":
-            return (
-                f"👤 **{name_line}**\n"
-                f"🪪 **{id_line}**\n"
-                f"🏢 **Department**: {dept}\n"
-                f"💼 **Job Role**: {role}\n"
-                f"✅ **Verified Official** badge aapke naam ke saath dikhta hai.\n\n"
-                f"📅 Last Assessment Date bhi Profile Header mein Clock icon ke paas dikhti hai."
-            )
-        return (
-            f"👤 **{name_line}**\n"
-            f"🪪 **{id_line}**\n"
-            f"🏢 **Department**: {dept}\n"
-            f"💼 **Job Role**: {role}\n"
-            f"✅ **Verified Official** - you have a verified government official badge.\n\n"
-            f"📅 Your last assessment date is also shown in the Profile Header next to the Clock icon."
-        )
-
-    # ── Last Assessment Date ─────────────────────────────────────────────────
-
-    if intent == "last_assessment":
-        if lang == "hi":
-            return (
-                f"Aapki **last assessment date** Profile Header mein dikhti hai — "
-                f"jo har tab ke top par hoti hai.\n\n"
-                f"📅 **Clock icon** ke paas, 'Last assessed: DD Mon YYYY' format mein date dikhti hai.\n\n"
-                f"Detailed assessment history aur quiz scores dekhne ke liye "
-                f"**Progress tab** par jayein (top navbar mein TrendingUp icon). "
-                f"Wahan aapki achievements timeline hoti hai jisme:\n"
-                f"• RAG Quiz results (score % ke saath)\n"
-                f"• External Certifications\n"
-                f"• Date aur title har achievement ka"
-            )
-        return (
-            f"Your **last assessment date** is shown in the **Profile Header** — "
-            f"at the top of every tab.\n\n"
-            f"📅 Look for the **Clock icon** — it shows 'Last assessed: DD Mon YYYY'.\n\n"
-            f"For detailed assessment history and quiz scores, go to the "
-            f"**Progress tab** (TrendingUp icon in the top navbar). There you'll find:\n"
-            f"• RAG Quiz results with scores (%)\n"
-            f"• External Certifications\n"
-            f"• Date and title for each achievement"
-        )
-
-    # ── Profile Stats ────────────────────────────────────────────────────────
-    # Uses vectorize_profile() to compute stats from live incoming data
-    if intent == "profile_stats":
-        # Homepage visitor is not logged in — no profile data exists
-        if ctx == "home":
-            return (
-                "🔐 Your profile stats are only available **after you log in**.\n\n"
-                "Click **Official Login** at the top of the page to access your "
-                "personalised competency dashboard."
-            ) if lang == "en" else (
-                "🔐 Aapki profile stats **login karne ke baad** hi dikhti hain.\n\n"
-                "Page ke top par **Official Login** button click karein."
-            )
-        from ai.semantic_engine import vectorize_profile
-        gaps_dicts = [
-            {"skillName": g.skillName, "domain": g.domain,
-             "currentLevel": g.currentLevel, "targetLevel": g.targetLevel,
-             "gapScore": g.gapScore}
-            for g in gaps
-        ]
-        stats = vectorize_profile(gaps_dicts)
-        tier_label = {
-            "on_track":    ("On Track 🟢", "Aap sahi raaste par hain 🟢"),
-            "needs_focus": ("Needs Focus 🟡", "Kuch aur mehnat zaruri hai 🟡"),
-            "critical":    ("Critical — Act Now 🔴", "Turant dhyan dena zaruri hai 🔴"),
-        }.get(stats["tier"], ("In Progress", "Jari hai"))
-
-        domain_lines = "\n".join(
-            f"  • {domain}: {count} gap(s)"
-            for domain, count in stats["domain_breakdown"].items()
-        ) or "  • No active gaps"
-
-        if lang == "hi":
-            return (
-                f"**Aapka Profile Overview** ({role}, {dept}):\n\n"
-                f"📊 **Learning Snapshot** (Dashboard → right panel mein dikhta hai)\n"
-                f"• Total Competencies Assessed: **{stats['total_competencies']}**\n"
-                f"• Competencies Met: **{stats['met_count']}**\n"
-                f"• Active Gaps: **{stats['gaps_count']}**\n"
-                f"• Completion: **{stats['completion_pct']}%** — {tier_label[1]}\n\n"
-                f"🎯 **Gap Detail:**\n"
-                f"• Sabse bada gap: **{top.skillName if top else 'None'} ({top.gapScore if top else 0} levels)**\n"
-                f"• Average gap score: {stats['avg_gap_score']}\n"
-                f"• Domain-wise gaps:\n{domain_lines}\n\n"
-                f"Apne skill gaps detail mein dekhne ke liye **Dashboard tab** par jayein. "
-                f"Progress chart ke liye **Progress tab** use karein. 📈"
-            )
-        return (
-            f"**Your Profile Overview** ({role}, {dept}):\n\n"
-            f"📊 **Learning Snapshot** (visible on Dashboard → right panel)\n"
-            f"• Total Competencies Assessed: **{stats['total_competencies']}**\n"
-            f"• Competencies Met: **{stats['met_count']}**\n"
-            f"• Active Gaps: **{stats['gaps_count']}**\n"
-            f"• Completion: **{stats['completion_pct']}%** — {tier_label[0]}\n\n"
-            f"🎯 **Gap Summary:**\n"
-            f"• Biggest gap: **{top.skillName if top else 'None'} ({top.gapScore if top else 0} level(s) behind)**\n"
-            f"• Average gap score: {stats['avg_gap_score']}\n"
-            f"• Gaps by domain:\n{domain_lines}\n\n"
-            f"Go to the **Dashboard tab** for detailed skill gap cards. "
-            f"Visit the **Progress tab** for your Competency Radar chart. 📈"
-        )
-
-    # ── Skill Gaps ───────────────────────────────────────────────────────────
-    if intent == "skill_gaps":
-        # Homepage visitor — no user data to display
-        if ctx == "home":
-            return (
-                "🔐 Your skill gaps are only visible **after you log in**.\n\n"
-                "Click **Official Login** at the top of the page — "
-                "your personalised competency analysis will then appear on the Dashboard."
-            ) if lang == "en" else (
-                "🔐 Aapke skill gaps **login karne ke baad** dikhenge.\n\n"
-                "Page ke top par **Official Login** button click karein."
-            )
-        gap_text = _fmt_gaps(gaps, lang)
-        if lang == "hi":
-            if not active_gaps:
-                return f"Mashallah! 🎉 Aapke **{len(gaps)} competencies** sab target level par hain.\n\nAap bahut accha kar rahe hain '{role}' role mein!"
-            return (
-                f"Aapke current skill gaps ({role} ke liye):\n\n"
-                f"{gap_text}\n\n"
-                f"Sabse bada gap **{top.skillName}** mein hai — {top.gapScore} level ka farq.\n\n"
-                f"💡 *Yeh gaps Dashboard tab ke **Competency & Skill-Gap Analysis** card mein dikhte hain, "
-                f"jahan har competency ki current level aur target level pip-strip ke saath show hoti hai.*\n\n"
-                f"Kya main courses suggest karun is gap ko close karne ke liye?"
-            )
-        if not active_gaps:
-            return f"Excellent! 🎉 All **{len(gaps)} competencies** are at or above target level for your role as {role}. Keep it up!"
-        return (
-            f"Here are your active skill gaps for **{role}**:\n\n"
-            f"{gap_text}\n\n"
-            f"Your biggest priority is **{top.skillName}** with a {top.gapScore}-level gap.\n\n"
-            f"💡 *You can see these visually on the **Dashboard tab** → "
-            f"'Competency & Skill-Gap Analysis' card (left panel). "
-            f"Each skill shows current level pips vs target level.*\n\n"
-            f"Want me to recommend courses to close this gap?"
-        )
-
-    # ── Recommendations ──────────────────────────────────────────────────────
-    if intent == "recommend":
-        rec_text = _fmt_recs(recs, lang)
-        if lang == "hi":
-            if not recs:
-                return "Abhi aapke liye recommendations generate nahi hui hain. Dashboard refresh karke dekhein."
-            priority_reason = f"**{top.skillName}** mein {top.gapScore}-level gap" if top else "aapke role requirements"
-            return (
-                f"Aapke liye personalized learning pathway, {priority_reason} ke basis par:\n\n"
-                f"{rec_text}\n\n"
-                f"**{recs[0].title}** se shuru karna best rahega — kyunki {recs[0].matchReason.lower()}\n\n"
-                f"💡 *Yeh courses **Dashboard tab** ke sabse neeche '**AI Recommended Learning Pathway**' "
-                f"section mein dikhte hain.*"
-            )
-        if not recs:
-            return "No recommendations found yet. Try refreshing your dashboard."
-        priority_reason = f"your {top.gapScore}-level gap in **{top.skillName}**" if top else "your role requirements"
-        return (
-            f"Based on {priority_reason}, here's your personalized learning pathway:\n\n"
-            f"{rec_text}\n\n"
-            f"Start with **{recs[0].title}** — {recs[0].matchReason.lower()}\n\n"
-            f"💡 *Find all these courses at the bottom of the **Dashboard tab**, "
-            f"in the '**AI Recommended Learning Pathway**' section.*"
-        )
-
-    # ── Progress ─────────────────────────────────────────────────────────────
-    if intent == "progress":
-        met = len(gaps) - len(active_gaps)
-        total = len(gaps)
-        pct = round((met / total * 100) if total else 0)
-        if lang == "hi":
-            return (
-                f"Aapki progress summary ({role}):\n\n"
-                f"✅ **{met}/{total}** competencies target level par hain ({pct}%)\n"
-                f"⚠️ **{len(active_gaps)}** gaps abhi bhi close karne hain\n\n"
-                f"{'Bahut badhiya! Aap sahi raaste par hain. 👏' if pct >= 60 else 'Abhi shuru karte hain — recommended courses follow karein!'}\n\n"
-                f"💡 *Detailed progress radar chart dekhne ke liye **Progress tab** par click karein. "
-                f"Wahan har skill ka Current vs Target level radar chart mein dikh ta hai, "
-                f"saath mein aapki recent achievements bhi.*"
-            )
-        return (
-            f"Your learning progress as **{role}**:\n\n"
-            f"✅ **{met}/{total}** competencies at target level ({pct}% complete)\n"
-            f"⚠️ **{len(active_gaps)}** gap(s) still to close\n\n"
-            f"{'Great progress! You are well on track. 👏' if pct >= 60 else 'Keep going — follow your recommended courses to close the remaining gaps!'}\n\n"
-            f"💡 *For a detailed radar chart of all your skills (Current vs Target), "
-            f"switch to the **Progress tab** (TrendingUp icon in the top navbar). "
-            f"You'll also see your quiz and certification achievements there.*"
-        )
-
-    # ── Achievements ─────────────────────────────────────────────────────────
-    if intent == "achievements":
-        if lang == "hi":
-            return (
-                f"Aapki achievements **Progress tab** par dekhne ko milti hain.\n\n"
-                f"**Progress tab** kaise open karein:\n"
-                f"1. Top navigation bar mein **TrendingUp icon** par click karein\n"
-                f"2. 'Progress' button choose karein (teen tabs mein se)\n\n"
-                f"Wahan aapko milega:\n"
-                f"📊 **Competency Radar Chart** — sab skills ka Current vs Target level\n"
-                f"🏆 **Recent Achievements** — RAG Quiz results aur External Certifications\n\n"
-                f"Har achievement mein date, title aur score (%) show hota hai."
-            )
-        return (
-            f"Your achievements are visible on the **Progress tab**.\n\n"
-            f"**How to get there:**\n"
-            f"1. Click the **TrendingUp icon** (📈) in the top navigation bar\n"
-            f"2. Select the **'Progress'** tab\n\n"
-            f"On the Progress tab you'll find:\n"
-            f"📊 **Competency Radar Chart** — all your skills plotted Current vs Target level\n"
-            f"🏆 **Recent Achievements** — RAG Quiz scores and External Certifications\n\n"
-            f"Each achievement shows the date, title, and your score (%)."
-        )
-
-    # ── Navigation: Dashboard ────────────────────────────────────────────────
-    if intent == "navigation_dashboard":
-        if lang == "hi":
-            return (
-                f"**Dashboard tab** kaise access karein:\n\n"
-                f"Top navigation bar mein **LayoutDashboard icon** ke saath **'Dashboard'** button par click karein.\n\n"
-                f"Dashboard tab par yeh sections milte hain:\n\n"
-                f"📋 **Competency & Skill-Gap Analysis** (main left panel)\n"
-                f"   Aapke har skill ka current level (pip-strip) aur target level,\n"
-                f"   domain badge (Statistical/Technical/Governance/Leadership),\n"
-                f"   aur gap score dikhta hai.\n\n"
-                f"📊 **Learning Snapshot** (right panel)\n"
-                f"   4 quick stats: Total Competencies, Active Gaps, Mandatory Gaps, Recommendations.\n\n"
-                f"🤖 **AI Assessment Generator** (right panel, neeche)\n"
-                f"   PDF ya text upload karke quiz generate karein.\n\n"
-                f"✨ **AI Recommended Learning Pathway** (sabse neeche)\n"
-                f"   Aapke gaps ke basis par personalized course cards."
-            )
-        return (
-            f"**How to access the Dashboard tab:**\n\n"
-            f"Click the **'Dashboard'** button (LayoutDashboard icon) in the top navigation bar.\n\n"
-            f"The Dashboard tab contains:\n\n"
-            f"📋 **Competency & Skill-Gap Analysis** (main left panel)\n"
-            f"   Every skill with current level pip-strip, target level, domain badge\n"
-            f"   (Statistical / Technical / Governance / Leadership), and gap score.\n\n"
-            f"📊 **Learning Snapshot** (right panel)\n"
-            f"   4 quick stats: Total Competencies, Active Gaps, Mandatory Gaps, Recommendations.\n\n"
-            f"🤖 **AI Assessment Generator** (right panel, bottom)\n"
-            f"   Upload a PDF/PPTX/TXT and generate an MCQ quiz.\n\n"
-            f"✨ **AI Recommended Learning Pathway** (bottom of page)\n"
-            f"   Personalized course cards ranked by your skill gap priority."
-        )
-
-    # ── Navigation: My Courses ───────────────────────────────────────────────
-    if intent == "navigation_my_courses":
-        if lang == "hi":
-            return (
-                f"**My Courses tab** kahan hai aur kaise access karein:\n\n"
-                f"Top navigation bar mein **BookOpen icon** ke saath **'My Courses'** button par click karein.\n\n"
-                f"My Courses tab mein dikhta hai:\n\n"
-                f"📚 **Active Enrollments** — aapke enrolled sabhi courses\n"
-                f"   Har course card mein:\n"
-                f"   • Course naam aur source (iGOT Karmayogi / Other)\n"
-                f"   • **Course Progress bar** (% complete)\n"
-                f"   • Remaining hours\n"
-                f"   • Last accessed date\n"
-                f"   • **'Continue'** button (course resume karne ke liye)\n\n"
-                f"Agar koi enrolled course nahi hai, toh **Dashboard tab** par jayein\n"
-                f"aur 'AI Recommended Learning Pathway' se course select karein."
-            )
-        return (
-            f"**How to access the My Courses tab:**\n\n"
-            f"Click the **'My Courses'** button (BookOpen icon) in the top navigation bar.\n\n"
-            f"On this tab you'll see:\n\n"
-            f"📚 **Active Enrollments** — all your currently enrolled courses\n"
-            f"   Each course card shows:\n"
-            f"   • Course title and source (iGOT Karmayogi / Other)\n"
-            f"   • **Course Progress bar** (% complete)\n"
-            f"   • Remaining hours\n"
-            f"   • Last accessed date\n"
-            f"   • **'Continue'** button to resume the course\n\n"
-            f"If you have no active enrollments, go to the **Dashboard tab** "
-            f"and pick a course from the 'AI Recommended Learning Pathway' section."
-        )
-
-    # ── Navigation: Progress ─────────────────────────────────────────────────
-    if intent == "navigation_progress":
-        if lang == "hi":
-            return (
-                f"**Progress tab** kahan hai aur kya dikhta hai:\n\n"
-                f"Top navigation bar mein **TrendingUp icon** ke saath **'Progress'** button par click karein.\n\n"
-                f"Progress tab mein do sections hain:\n\n"
-                f"📊 **Competency Radar Chart** (left side)\n"
-                f"   Aapke sabhi skills ka radar/spider chart — blue fill = Current level,\n"
-                f"   dashed line = Target level. Kisi bhi skill par hover karein\n"
-                f"   toh Current/Target values aur gap tooltip mein dikh ta hai.\n\n"
-                f"🏆 **Recent Achievements** (right side)\n"
-                f"   Timeline format mein — RAG Quiz results (score %) aur\n"
-                f"   External Certifications, date ke saath."
-            )
-        return (
-            f"**How to access the Progress tab:**\n\n"
-            f"Click the **'Progress'** button (TrendingUp icon) in the top navigation bar.\n\n"
-            f"The Progress tab has two sections:\n\n"
-            f"📊 **Competency Radar Chart** (left panel)\n"
-            f"   A spider chart of all your skills — blue fill = Current level, "
-            f"   dashed = Target level. Hover over any skill to see Current/Target values and gap.\n\n"
-            f"🏆 **Recent Achievements** (right panel)\n"
-            f"   A timeline of your RAG Quiz results (with scores) and External Certifications."
-        )
-
-    # ── Navigation: AI Quiz Generator ───────────────────────────────────────
-    if intent == "navigation_quiz":
-        if lang == "hi":
-            return (
-                f"**AI Assessment Generator** kaise use karein:\n\n"
-                f"Yeh feature **Dashboard tab** par right panel mein neeche dikhta hai.\n\n"
-                f"Steps:\n"
-                f"1. **Dashboard tab** par jayein (top navbar → Dashboard icon)\n"
-                f"2. Right side pe **'AI Assessment Generator'** card dhundhein\n"
-                f"   (Bot icon ke saath, subtitle: 'RAG Document-to-Quiz Pipeline')\n"
-                f"3. Text box mein apna query/topic type karein\n"
-                f"4. (Optional) **'Attach document'** par click karke\n"
-                f"   .pdf / .pptx / .txt file attach karein\n"
-                f"5. **'Generate Assessment'** button click karein\n\n"
-                f"💡 File upload se zyada accurate MCQs milte hain kyunki\n"
-                f"AI document ke content se questions banata hai."
-            )
-        return (
-            f"**How to use the AI Assessment Generator:**\n\n"
-            f"This feature is on the **Dashboard tab**, in the right panel (bottom card).\n\n"
-            f"Steps:\n"
-            f"1. Go to the **Dashboard tab** (click Dashboard icon in top navbar)\n"
-            f"2. Find the **'AI Assessment Generator'** card on the right side\n"
-            f"   (Bot icon, subtitle: 'RAG Document-to-Quiz Pipeline')\n"
-            f"3. Type your topic or query in the text box\n"
-            f"4. (Optional) Click **'Attach document'** to upload a .pdf / .pptx / .txt file\n"
-            f"5. Click the **'Generate Assessment'** button\n\n"
-            f"💡 Attaching a document produces more accurate MCQs as the AI "
-            f"generates questions directly from your document's content."
-        )
-
-    # ── Navigation: Profile / Password / Logout ──────────────────────────────
-    if intent == "navigation_profile":
-        if lang == "hi":
-            return (
-                f"**Profile, Password aur Logout** kaise karein:\n\n"
-                f"Top navigation bar mein **right side** par yeh options hain:\n\n"
-                f"🔒 **Change Password** — Lock icon par click karein\n"
-                f"   → '/change-password' page par le jaata hai\n\n"
-                f"🚪 **Sign Out** — 'Sign Out' button par click karein\n"
-                f"   → aap login page par wapas aa jayenge\n\n"
-                f"🌙/☀️ **Dark/Light Mode** — Moon ya Sun icon par click karein\n\n"
-                f"🏠 **Landing Page** — Home icon par click karein\n\n"
-                f"📋 **Aapka Profile** (read-only) har tab ke top par dikhta hai:\n"
-                f"   Name, role, department, Profile ID, aur last assessment date."
-            )
-        return (
-            f"**Profile, Password & Navigation options:**\n\n"
-            f"All these are in the **top-right of the navigation bar**:\n\n"
-            f"🔒 **Change Password** — click the Lock icon\n"
-            f"   → Takes you to the Change Password page\n\n"
-            f"🚪 **Sign Out** — click the 'Sign Out' button\n"
-            f"   → Logs you out and redirects to the login page\n\n"
-            f"🌙/☀️ **Dark / Light Mode** — click the Moon or Sun icon to toggle theme\n\n"
-            f"🏠 **Landing Page** — click the Home icon to go back to the landing page\n\n"
-            f"📋 **Your Profile** (read-only) is always visible at the top of each tab:\n"
-            f"   Shows your name, job role, department, Profile ID, and last assessment date."
-        )
-
-    # ── About the Platform ───────────────────────────────────────────────────
-    if intent == "about_platform":
-        if lang == "hi":
-            return (
-                f"**MoSPI Skill Intelligence Platform** — aapka AI-powered learning tool hai "
-                f"MoSPI ke government officials ke liye.\n\n"
-                f"🎯 **Yeh platform kya karta hai:**\n"
-                f"• Aapki **skill gaps** identify karta hai — job role ke liye kaunsi competencies target se kam hain\n"
-                f"• **Personalized courses** recommend karta hai jo aapke gaps close karein\n"
-                f"• **AI Assessment Generator** — PDF/PPTX upload karein, automatic MCQ quiz banega\n"
-                f"• **Gyan AI Chatbot** (main hoon!) — training, statistics, platform navigation ke sawal ka jawab\n\n"
-                f"📌 **Tabs:**\n"
-                f"• **Dashboard** — skill gaps + recommended courses + quiz generator\n"
-                f"• **My Courses** — active enrollments aur course progress\n"
-                f"• **Progress** — competency radar chart aur achievements\n\n"
-                f"Yeh platform iGOT Karmayogi ke FRAC framework se aligned hai — Mission Karmayogi ka hissa. 🇮🇳"
-            )
-        return (
-            f"**MoSPI Skill Intelligence Platform** is an AI-powered learning tool "
-            f"for government statistical officials.\n\n"
-            f"🎯 **What this platform does:**\n"
-            f"• Identifies your **skill gaps** — which competencies are below target for your job role\n"
-            f"• Recommends **personalized courses** from iGOT Karmayogi to close those gaps\n"
-            f"• **AI Assessment Generator** — upload any PDF/PPTX and get instant MCQ quizzes\n"
-            f"• **Gyan AI Chatbot** (that's me!) — answers questions about training, statistics, and navigation\n\n"
-            f"📌 **Three tabs:**\n"
-            f"• **Dashboard** — skill gaps + AI-recommended courses + quiz generator\n"
-            f"• **My Courses** — active enrollments and progress tracking\n"
-            f"• **Progress** — competency radar chart and achievement history\n\n"
-            f"Built for **Mission Karmayogi**, aligned with the iGOT FRAC competency framework. 🇮🇳"
-        )
-
-    # ── About MoSPI ──────────────────────────────────────────────────────────
-    if intent == "about_mospi":
-        if lang == "hi":
-            return (
-                f"**MoSPI (Ministry of Statistics and Programme Implementation)** "
-                f"— Bharat Sarkar ka apex statistical body hai.\n\n"
-                f"📊 **MoSPI ke kaam:**\n"
-                f"• **GDP, CPI, IIP, WPI** jaise national statistics compile karna\n"
-                f"• **NSO** (National Statistical Office) ko supervise karna\n"
-                f"• Large surveys: **PLFS** (Labour Force), **HCES** (Household Consumer Expenditure)\n"
-                f"• **SDG India Index** — UN Sustainable Development Goals ka tracking\n\n"
-                f"🎓 **iGOT Karmayogi** — Mission Karmayogi ke under training platform:\n"
-                f"• Government officials ki capacity building\n"
-                f"• **FRAC framework** (Roles, Activities, Competencies) par based\n"
-                f"• Yeh platform us training journey ka AI-powered hissa hai 🇮🇳"
-            )
-        return (
-            f"**MoSPI (Ministry of Statistics and Programme Implementation)** "
-            f"is India's apex body for the national statistical system.\n\n"
-            f"📊 **What MoSPI does:**\n"
-            f"• Compiles national statistics: **GDP, CPI, IIP, WPI**\n"
-            f"• Oversees the **NSO** (National Statistical Office)\n"
-            f"• Conducts large-scale surveys: **PLFS** (Labour Force), **HCES** (Consumer Expenditure)\n"
-            f"• Tracks India's progress on the **SDG India Index**\n\n"
-            f"🎓 **iGOT Karmayogi** — the learning platform under **Mission Karmayogi**:\n"
-            f"• National capacity building for civil servants\n"
-            f"• Based on the **FRAC framework** (Roles, Activities, Competencies)\n"
-            f"• This platform is an AI-powered extension of that journey 🇮🇳"
-        )
-
-    # ── Statistics ───────────────────────────────────────────────────────────
-    if intent == "statistics_gdp":
-        return (
-            "**GDP (Gross Domestic Product)** in India is compiled by the National "
-            "Statistical Office (NSO) following the **System of National Accounts 2008 (SNA 2008)**.\n\n"
-            "Three approaches:\n"
-            "• **Expenditure method**: C + I + G + (X−M)\n"
-            "• **Production method**: Sum of GVA across industries + taxes − subsidies\n"
-            "• **Income method**: Compensation of employees + gross operating surplus\n\n"
-            "India releases GDP quarterly, with two advance estimates. Base year: **2011-12**.\n\n"
-            "Key agency: NSO under MoSPI. 🇮🇳"
-        ) if lang == "en" else (
-            "**GDP (सकल घरेलू उत्पाद)** — NSO dwara SNA 2008 ke anusar compute ki jati hai.\n\n"
-            "Teen methods:\n"
-            "• **Vyay Vidhi**: C + I + G + (X−M)\n"
-            "• **Utpadan Vidhi**: GVA across industries + taxes − subsidies\n"
-            "• **Aay Vidhi**: Shramik parishram + operating surplus\n\n"
-            "Base year: **2011-12**. Quarterly estimates aati hain. NSO MoSPI ke under hai. 🇮🇳"
-        )
-
-    if intent == "statistics_cpi":
-        return (
-            "**CPI (Consumer Price Index)** measures average price changes for a basket of "
-            "goods and services bought by households.\n\n"
-            "In India:\n"
-            "• **CPI-Combined**: Released monthly by MoSPI/NSO (base year 2012)\n"
-            "• **Laspeyres formula** (fixed base-period weights)\n"
-            "• Covers **299 items** across 6 groups: Food, Fuel, Housing, Clothing, Miscellaneous\n"
-            "• Used by RBI as the **inflation targeting benchmark** (target: 4% ± 2%)"
-        ) if lang == "en" else (
-            "**CPI (उपभोक्ता मूल्य सूचकांक)** — households dwara kharide goods/services ki average price change.\n\n"
-            "• Monthly NSO release, base year 2012\n"
-            "• **Laspeyres formula** use hoti hai\n"
-            "• 299 items, 6 groups: Food, Fuel, Housing, etc.\n"
-            "• RBI inflation target: **4% ± 2%**"
-        )
-
-    if intent == "statistics_sampling":
-        return (
-            "**Sampling in official statistics** — selecting a subset to estimate population parameters.\n\n"
-            "Key types used in NSSO surveys:\n"
-            "• **Stratified Sampling**: Population divided into strata (urban/rural, states)\n"
-            "• **Cluster Sampling**: Groups (villages/blocks) selected first\n"
-            "• **Multi-stage Sampling**: Used in PLFS, HCES — districts → blocks → households\n\n"
-            "NSSO uses a **rotating panel design** for many surveys to track changes over time."
-        ) if lang == "en" else (
-            "**Sampling (प्रतिदर्श)** — puri population ka chota hissa chunke anuman lagana.\n\n"
-            "NSSO mein upyog hone wale types:\n"
-            "• **Stratified**: Urban/rural, state ke hisab se\n"
-            "• **Cluster**: Pehle groups chunte hain (gaon/blocks)\n"
-            "• **Multi-stage**: PLFS, HCES mein — district → block → ghar\n\n"
-            "NSSO **rotating panel design** use karta hai time-series tracking ke liye."
-        )
-
-    if intent == "statistics_frac":
-        return (
-            "**FRAC (Framework for Roles, Activities and Competencies)** is the Government "
-            "of India's competency architecture for civil servants on iGOT Karmayogi.\n\n"
-            "FRAC defines:\n"
-            "• **Roles**: Job positions (Deputy Director, Field Investigator, etc.)\n"
-            "• **Activities**: Key functions performed in a role\n"
-            "• **Competencies**: Skills grouped as Behavioural (B), Domain (D), Functional (F)\n\n"
-            "Your skill gap assessment here is **fully aligned with the FRAC dictionary**. 📋"
-        ) if lang == "en" else (
-            "**FRAC** — GoI ka civil servants ke liye competency framework, iGOT Karmayogi par.\n\n"
-            "• **Roles**: Job positions\n"
-            "• **Activities**: Role mein key functions\n"
-            "• **Competencies**: Behavioural (B), Domain (D), Functional (F)\n\n"
-            "Is platform ka skill gap assessment FRAC dictionary se aligned hai. 📋"
-        )
-
-    # ── Motivation ───────────────────────────────────────────────────────────
-    if intent == "motivation":
-        first_rec = recs[0].title if recs else "your first recommended course"
-        if lang == "hi":
-            return (
-                f"Main samajhta hoon — upskilling aur kaam saath mein karna mushkil lagta hai. 💪\n\n"
-                f"Lekin yaad rakhein: **India ke statistical system ko aap jaise dedicated officials ki zarurat hai.** "
-                f"Aapka kaam GDP estimates se lekar poverty measurement tak — lakho logon ki lives affect karta hai.\n\n"
-                f"Ek step ek time: **sirf 30 minutes roz** — kuch hafte mein results aane lagte hain.\n"
-                f"Abhi start karein **{first_rec}** se! 🚀\n\n"
-                f"Course **Dashboard tab → AI Recommended Learning Pathway** mein milega."
-            )
-        return (
-            f"I understand — balancing work and upskilling is genuinely challenging. 💪\n\n"
-            f"Remember: **India's statistical system depends on dedicated officials like you.** "
-            f"Your data — from GDP estimates to poverty measurement — impacts millions of lives.\n\n"
-                f"Just **30 minutes a day** will show results within weeks. "
-                f"Start with **{first_rec}**! 🚀\n\n"
-                f"Find it on the **Dashboard tab → AI Recommended Learning Pathway** section."
-            )
-
-    # ── Out-of-scope / Off-topic ────────────────────────────────────────
-    if intent == "out_of_scope":
-        if lang == "hi":
-            return (
-                "Yeh sawaal meri knowledge ke bahar hai. 🙏\n\n"
-                "Main ek **MoSPI training assistant** hoon — "
-                "main sirf government statistical training, skill gaps, "
-                "courses, aur platform navigation ke baare mein baat kar sakta hoon.\n\n"
-                "Kya aap apne training se related kuch poochna chahte hain?"
-            )
-        return (
-            "That's outside my area of knowledge. 🤔\n\n"
-            "I'm a **MoSPI training assistant** — I can only help with "
-            "government statistical training, skill gaps, courses, "
-            "and platform navigation.\n\n"
-            "Is there something training-related I can help you with?"
-        )
-
-    # ── UI Action Request (dark mode / language / theme) ──────────────────────
+def _intent_response(intent: str, req: ChatRequest, variant: str, ctx: ReplyContext, engine: str) -> ChatResponse:
     if intent == "ui_action_request":
-        msg_l = req.message.lower()
-        if "dark" in msg_l or "light" in msg_l or "theme" in msg_l:
-            if lang == "hi":
-                return (
-                    "Dark/Light mode toggle ke liye — top navigation bar mein right side par "
-                    "🌙 / ☀️ **moon/sun icon** par click karein.\n\n"
-                    "Main directly theme nahi badal sakta, "
-                    "lekin woh button aapke page ko instantly switch karta hai!"
-                )
-            return (
-                "To toggle **Dark / Light mode** — click the 🌙 / ☀️ **moon/sun icon** "
-                "in the top-right of the navigation bar.\n\n"
-                "I can't change the theme directly, but that button switches it instantly!"
-            )
-        # Language toggle
-        if lang == "hi":
-            return (
-                "Website ki **language change** karne ke liye — navbar mein "
-                "**Eng | हिंदी** toggle button par click karein.\n\n"
-                "Main directly language nahi badal sakta, "
-                "lekin woh button page ko instantly switch karta hai."
-            )
-        return (
-            "To **change the website language** — click the **Eng | हिंदी** toggle "
-            "in the top navigation bar.\n\n"
-            "I can't change it directly, but that button switches it instantly!"
-        )
-
-    # ── Farewell ─────────────────────────────────────────────────────────────
-    if intent == "farewell":
-        if lang == "hi":
-            return "Alvida! 🙏 Aapki learning mein safalta ki shubhkamanayein. **Jai Hind!** 🇮🇳"
-        return "Goodbye! 👋 Best of luck with your learning journey. **Jai Hind!** 🇮🇳"
-
-    # ── Unknown / Out-of-scope (Semantic fallback) ────────────────────────────
-    if ctx == "home":
-        if lang == "hi":
-            return (
-                "Maafi chahta hoon, main is sawaal ka jawab nahi de sakta. 🙏\n\n"
-                "Main madad kar sakta hoon:\n"
-                "• Platform features ke baare mein\n"
-                "• MoSPI / iGOT ke baare mein\n"
-                "• Login karne mein\n"
-                "• Kisi section par scroll karne mein\n\n"
-                "Kuch aur poochna chahte hain?"
-            )
-        return (
-            "I'm not sure I have an answer for that. 🤔\n\n"
-            "On this page I can help with:\n"
-            "• Platform features and capabilities\n"
-            "• About MoSPI and iGOT Karmayogi\n"
-            "• How to login as an official\n"
-            "• Scrolling to any section\n\n"
-            "Try: *\"show me features\"* or *\"how do I login?\"*"
-        )
-    if lang == "hi":
-        return (
-            "Main is sawaal ka jawab nahi de sakta. 🙏\n\n"
-            "Main madad kar sakta hoon:\n"
-            "• Skill gaps aur competency analysis\n"
-            "• Course recommendations\n"
-            "• Platform navigation (Dashboard, My Courses, Progress)\n"
-            "• Statistics topics (GDP, CPI, FRAC, Sampling)\n\n"
-            "Kya aap inmein se kuch poochhna chahte hain?"
-        )
-    return (
-        "I'm not sure I understand that. 🤔\n\n"
-        "I can help with:\n"
-        "• Your skill gaps and competency levels\n"
-        "• Course recommendations and learning pathway\n"
-        "• Platform navigation (Dashboard, My Courses, Progress)\n"
-        "• Statistics concepts (GDP, CPI, FRAC, Sampling)\n\n"
-        "Try: *\"What are my skill gaps?\"* or *\"take me to My Courses\"*"
-    )
+        return _ui_action_response(req, variant, ctx, engine)
+    nav_map = _HOME_NAV if ctx.page == "home" else _DASHBOARD_NAV
+    return _response(render(intent, variant, ctx), variant, engine, navigate_action=nav_map.get(intent))
 
 
 # =============================================================================
-# TIER 2 — KEYWORD TEMPLATE FALLBACK (no dependencies)
+# ENGLISH COMMAND INTERCEPTS
 # =============================================================================
 
-def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str:
-    """Original keyword/template engine — used when semantic model not loaded."""
-    uid       = req.user_id
-    role      = req.job_role or "Statistical Official"
-    dept      = req.department or "MoSPI"
-    gaps      = req.skill_gaps
-    recs      = req.recommendations
-    top_gap   = _top_gap(gaps)
-    active_gaps = [g for g in gaps if g.gapScore > 0]
-    msg_lower = req.message.lower()
+_SCROLL_RE = re.compile(
+    r'\b(scroll|take\s+me|go|jump|show|navigate|open)\b.{0,25}\b(contact|features?|about|home|top)\b'
+    r'|\b(contact|features?|about)\b.{0,15}\b(section|page|area)\b',
+    re.IGNORECASE,
+)
+_LANGUAGE_CHANGE_RE = re.compile(
+    r'\b(change|switch|set|turn|make).{0,20}\b(language|lang|website|site|ui|interface).{0,15}\b(hindi|english|en|hi)\b'
+    r'|\b(switch|change)\s+(to\s+)?(hindi|english|en|hi)\b'
+    r'|\b(website|site|ui)\s+(language|lang)\s+(to\s+)?(hindi|english)\b',
+    re.IGNORECASE,
+)
+_THEME_WORD_RE = re.compile(
+    r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
+    r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light)|toggle.*?(dark|light)|light|dark)\b',
+    re.IGNORECASE,
+)
+_LANGUAGE_WORD_RE = re.compile(r'\b(hindi|english|change.*lang|switch.*lang|lang.*hindi|website.*hindi)\b', re.IGNORECASE)
+_THEME_COMMAND_RE = re.compile(
+    r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
+    r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light))\b',
+    re.IGNORECASE,
+)
+_LOGIN_RE = re.compile(r'\b(login|log\s*in|sign\s*in|signin)\b', re.IGNORECASE)
+_CREDENTIALS_RE = re.compile(r'\b(username|password|credentials|details|user\s*id|pass|userid)\b', re.IGNORECASE)
+_OUT_OF_SCOPE_RE = re.compile(
+    r'\b(when\s+was|when\s+is|who\s+is|who\s+was|tell\s+me\s+about|'
+    r'what\s+is\s+photosynthesis|circular\s+convolution|'
+    r'released|born|died|movie|film|actor|actress|singer|'
+    r'cricketer|footballer|celebrity)\b',
+    re.IGNORECASE,
+)
+_MOSPI_RE = re.compile(
+    r'\b(mospi|igot|karmayogi|frac|gdp|cpi|census|plfs|nso|sna|'
+    r'skill|course|dashboard|competency|training|platform)\b',
+    re.IGNORECASE,
+)
 
-    if intent in ("greeting", "hindi_greeting"):
-        is_home = (req.context or "dashboard") == "home"
-        if is_home:
-            if lang == "hi":
-                return (
-                    "Namaste! 🙏 Main **Gyan** hoon — MoSPI ka AI Assistant.\n\n"
-                    "Main aapko in topics mein madad kar sakta hoon:\n"
-                    "• Platform ke features aur sections\n"
-                    "• MoSPI aur iGOT Karmayogi ke baare mein\n"
-                    "• Login mein guide karna\n"
-                    "• Kisi bhi section par le jaana\n\n"
-                    "Aaj main aapki kya madad kar sakta hoon? 🎓"
+
+def _intercept(req: ChatRequest, variant: str, ctx: ReplyContext) -> Optional[ChatResponse]:
+    """Deterministic handling of English commands the classifier has historically confused."""
+    message = req.message
+
+    if re.search(r'\bwho\s+am\s+i\b', message, re.IGNORECASE):
+        return _response(render("user_identity", variant, ctx), variant)
+
+    if ctx.page == "home" and _SCROLL_RE.search(message):
+        lowered = message.lower()
+        for keyword, (intent, anchor) in _SCROLL_SECTIONS.items():
+            if keyword in lowered:
+                return _response(
+                    render(intent, variant, ctx), variant,
+                    navigate_action={"type": "scroll", "target": f"#{anchor}", "label": _SCROLL_LABELS[anchor]},
                 )
-            return (
-                "Hello! 👋 I'm **Gyan**, MoSPI's AI Assistant.\n\n"
-                "I can help you with:\n"
-                "• Features & capabilities of the Skill Intelligence Platform\n"
-                "• About MoSPI and iGOT Karmayogi\n"
-                "• How to login as an official\n"
-                "• Navigate to any section on this page\n\n"
-                "What would you like to know? 🎓"
-            )
-        if lang == "hi":
-            return (
-                f"Namaste! 🙏 Main Gyan hoon — aapka MoSPI AI Training Assistant.\n\n"
-                f"Aap {role} hain {dept} mein. Aaj main aapki kya madad kar sakta hoon?"
-            )
-        return (
-            f"Hello! 👋 I'm **Gyan**, your MoSPI AI Training Assistant.\n\n"
-            f"You're a **{role}** in {dept}. How can I help you today?"
+
+    # Compound theme + language must be checked before either single command.
+    if _THEME_WORD_RE.search(message) and _LANGUAGE_WORD_RE.search(message):
+        theme = "light" if re.search(r'\blight\b', message, re.IGNORECASE) else "dark"
+        language = "hi" if re.search(r'\bhindi\b', message, re.IGNORECASE) else "en"
+        return _response(
+            render_theme_language_action(variant, theme, language), variant,
+            navigate_actions=[_theme_action(theme), {"type": "language", "target": language, "label": _LANGUAGE_NAMES[language]}],
         )
 
-    if intent == "farewell":
-        if lang == "hi":
-            return "Alvida! 🙏 **Jai Hind!** 🇮🇳"
-        return "Goodbye! 👋 **Jai Hind!** 🇮🇳"
-
-    if intent == "skill_gaps":
-        gap_text = _fmt_gaps(gaps, lang)
-        if lang == "hi":
-            return (
-                f"Aapke skill gaps:\n\n{gap_text}\n\n"
-                + (f"Sabse bada gap: **{top_gap.skillName}**" if top_gap else "")
-            )
-        return (
-            f"Your skill gaps:\n\n{gap_text}\n\n"
-            + (f"Biggest gap: **{top_gap.skillName}**" if top_gap else "")
+    if _LANGUAGE_CHANGE_RE.search(message):
+        language = "hi" if re.search(r'\b(hindi|hi)\b', message, re.IGNORECASE) else "en"
+        return _response(
+            render_language_action(variant, language), variant,
+            navigate_action={"type": "language", "target": language, "label": f"{_LANGUAGE_NAMES[language]} Language"},
         )
 
-    if intent == "recommend":
-        rec_text = _fmt_recs(recs, lang)
-        return (
-            f"Recommended courses:\n\n{rec_text}"
-            if lang == "en" else
-            f"Recommended courses:\n\n{rec_text}"
-        )
+    if _THEME_COMMAND_RE.search(message):
+        theme = "light" if re.search(r'\blight\b', message, re.IGNORECASE) else "dark"
+        return _response(render_theme_action(variant, theme), variant, navigate_action=_theme_action(theme))
 
-    if intent == "progress":
-        met = len(gaps) - len(active_gaps)
-        total = len(gaps)
-        pct = round((met / total * 100) if total else 0)
-        if lang == "hi":
-            return f"Progress: ✅ {met}/{total} competencies target par ({pct}%)."
-        return f"Progress: ✅ {met}/{total} competencies at target ({pct}%)."
+    if _LOGIN_RE.search(message):
+        if ctx.page != "home":
+            return _response(render("navigation_login", variant, ctx), variant)
+        reply = render_login_credentials(variant) if _CREDENTIALS_RE.search(message) else render("navigation_login", variant, ctx)
+        return _response(reply, variant, navigate_action=_HOME_NAV["navigation_login"])
 
-    # -- Navigation intents (Tier 2 template) ----------------------------------
-    if intent in ("navigation_login", "navigation_features", "navigation_about",
-                  "navigation_contact", "navigation_home", "navigation_my_courses",
-                  "navigation_progress", "navigation_dashboard", "navigation_ai_quiz"):
-        # Reuse the semantic handlers (they don’t rely on profile data)
-        return _handle_semantic(intent, req, lang)
+    if _OUT_OF_SCOPE_RE.search(message) and not _MOSPI_RE.search(message):
+        return _response(render("out_of_scope", variant, ctx), variant)
 
-    # -- UI action (dark mode / language) -------------------------------------
-    if intent == "ui_action_request":
-        return _handle_semantic(intent, req, lang)
-
-    # -- Navigation: Dashboard Tabs (legacy — kept for template engine direct) --
-    if intent == "navigation_dashboard":
-        return "Taking you to the **Dashboard** tab! 📊" if lang == "en" else "Dashboard tab par le ja raha hoon! 📊"
-
-    if intent == "navigation_my_courses":
-        return "Opening your **My Courses** tab — all your enrolled courses are there! 📚" if lang == "en" else "My Courses tab khol raha hoon — sare enrolled courses wahan hain! 📚"
-
-    if intent == "navigation_progress":
-        return "Taking you to **Progress** — your radar chart, quiz results and achievements await! 📈" if lang == "en" else "Progress tab par le ja raha hoon — radar chart aur achievements wahan hain! 📈"
-
-    if intent == "navigation_ai_quiz":
-        return "Taking you to the **AI Quiz Generator** on the Dashboard! Upload a PDF to generate your custom quiz. 🤖" if lang == "en" else "AI Quiz Generator par le ja raha hoon! PDF upload karein apna quiz banane ke liye. 🤖"
-
-    # -- Navigation: Homepage Sections / Landing page --------------------------
-    if intent == "navigation_home":
-        if (req.context or "dashboard") == "dashboard":
-            # On the dashboard, "go to home page" means navigate to landing page
-            return (
-                "Taking you back to the **Landing Page**! 🏠"
-                if lang == "en" else
-                "Aapko **Landing Page** par wapas le ja raha hoon! 🏠"
-            )
-        return "Scrolling back to the **top** of the page! 🏠" if lang == "en" else "Page ke top par le ja raha hoon! 🏠"
-
-    if intent == "navigation_features":
-        return (
-            "The **Features** section covers all 6 capabilities:\n"
-            "AI Skill Gap Analysis, iGOT Course Mapping, RAG Document-to-Quiz, "
-            "Real-Time Karmayogi Sync, Air-Gapped NLP, and Ministry Analytics Dashboard.\n\n"
-            "Shall I scroll you there?"
-        ) if lang == "en" else (
-            "**Features** section mein 6 capabilities hain:\n"
-            "AI Skill Gap Analysis, iGOT Course Mapping, RAG Quiz, Karmayogi Sync, NLP Assistant aur Analytics Dashboard.\n\n"
-            "Kya main aapko wahan le chaloon?"
-        )
-
-    if intent == "navigation_about":
-        return (
-            "The **About** section describes MoSPI's mission, the FRAC framework, "
-            "iGOT integration, and our security-first approach.\n\nShall I scroll you there?"
-        ) if lang == "en" else (
-            "**About** section mein MoSPI ka mission, FRAC framework aur iGOT integration describe hai.\n\nKya le chaloon?"
-        )
-
-    if intent == "navigation_contact":
-        return (
-            "The **Contact** section has links to Privacy Policy, Terms, and Help & FAQ.\n\nShall I scroll you there?"
-        ) if lang == "en" else (
-            "**Contact** section mein Privacy Policy, Terms aur Help & FAQ ke links hain.\n\nKya le chaloon?"
-        )
-
-    if intent == "navigation_login":
-        return (
-            "You can login as an **Official** or access the **Admin Portal** using the buttons at the top of the page.\n\n"
-            "Shall I open the **Login** dialog for you?"
-        ) if lang == "en" else (
-            "Page ke top par **Official Login** aur **Admin Portal** buttons hain.\n\n"
-            "Kya main **Login** dialog kholoon?"
-        )
-
-    if intent == "platform_help":
-        if lang == "hi":
-            return (
-                "**Platform tabs:**\n\n"
-                "📊 **Dashboard** → Skill gaps + AI Recommendations + Quiz Generator\n"
-                "📚 **My Courses** → Active enrollments\n"
-                "📈 **Progress** → Radar chart + Achievements\n"
-            )
-        return (
-            "**Platform tabs:**\n\n"
-            "📊 **Dashboard** → Skill gaps + AI Recommendations + Quiz Generator\n"
-            "📚 **My Courses** → Active enrollments\n"
-            "📈 **Progress** → Radar chart + Achievements\n"
-        )
-
-    # Statistics quick-hit
-    stat_kw = {"gdp": "GDP", "cpi": "CPI", "sampling": "Sampling", "frac": "FRAC"}
-    for kw, label in stat_kw.items():
-        if kw in msg_lower:
-            return f"You asked about **{label}**. Please ask Gyan via the AI-powered tier for a detailed answer."
-
-    # ── Unknown / Out-of-scope query ──────────────────────────────────────────
-    if (req.context or "dashboard") == "home":
-        if lang == "hi":
-            return (
-                "Maafi chahta hoon, main is sawaal ka jawab dene mein asmarth hoon. 🙏\n\n"
-                "Main aapki madad kar sakta hoon:\n"
-                "• Platform ke features smjhne mein\n"
-                "• MoSPI / iGOT ke baare mein\n"
-                "• Login karne mein\n"
-                "• Kisi section par scroll karne mein\n\n"
-                "Kuch aur poochna chahte hain?"
-            )
-        return (
-            "I'm not sure I have an answer for that. 🤔\n\n"
-            "As a public assistant, I can help with:\n"
-            "• Platform features and capabilities\n"
-            "• About MoSPI and iGOT Karmayogi\n"
-            "• How to login as an official\n"
-            "• Scrolling to any section on this page\n\n"
-            "Try asking: *\"What are the features?\"* or *\"take me to About\"*"
-        )
-    # Dashboard fallback
-    if lang == "hi":
-        return (
-            "Main is sawaal ka jawab nahi de sakta. 🙏\n\n"
-            "Main aapki madad kar sakta hoon inn topics mein:\n"
-            "• Skill gaps aur competency analysis\n"
-            "• Course recommendations\n"
-            "• Platform navigation (Dashboard, My Courses, Progress)\n"
-            "• Statistics topics (GDP, CPI, FRAC, Sampling)\n\n"
-            "Kya aap inmein se kuch poochhna chahte hain?"
-        )
-    return (
-        "I'm not sure I understand that query. 🤔\n\n"
-        "I can help you with:\n"
-        "• Your skill gaps and competency levels\n"
-        "• Course recommendations and learning pathway\n"
-        "• Platform navigation (Dashboard, My Courses, Progress tabs)\n"
-        "• Statistics concepts (GDP, CPI, FRAC framework, Sampling)\n\n"
-        "Try asking: *\"What are my skill gaps?\"* or *\"Which course should I take first?\"*"
-    )
-
+    return None
 
 
 # =============================================================================
@@ -1210,296 +289,43 @@ def _generate_template_response(req: ChatRequest, lang: str, intent: str) -> str
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
-    """
-    Multilingual AI Learning Assistant — Gyan (ज्ञान).
+    """Multilingual AI Learning Assistant — Gyan (ज्ञान)."""
+    variant = detect_chat_variant(req.message)
+    ctx = ReplyContext.from_request(req)
 
-    Tier 1: Semantic engine (sentence-transformers — Render-deployable).
-      - Classifies intent via cosine similarity
-      - Answers profile stats, navigation, skill gaps, recommendations directly
-      - Engine label: "semantic"
+    intercepted = _intercept(req, variant, ctx)
+    if intercepted is not None:
+        return intercepted
 
-    Tier 2: Keyword template fallback (zero dependencies).
-      - Activates if semantic model is not loaded
-      - Engine label: "template"
+    from ai.semantic_engine import LATIN_LANGUAGES, classify_intent, low_confidence_threshold
 
-    Tier 3 (DISCONNECTED): Ollama RAG — available in ai/rag_engine.py
-      - NOT called from here in production
-      - Search REVERT_OLLAMA to re-enable
-    """
-    lang = detect_language(req.message)
-    ctx  = req.context or "dashboard"   # "home" | "dashboard"
+    intent, confidence = classify_intent(req.message, variant)
+    logger.info("[Gyan/semantic] lang=%s intent=%s confidence=%.3f query=%r", variant, intent, confidence, req.message)
 
-    # ── Pre-semantic priority intercept: bypass Tier-1 for high-signal queries ─
-    # The semantic engine occasionally mismaps these with high confidence.
+    if intent != "general" and confidence >= low_confidence_threshold():
+        return _intent_response(intent, req, variant, ctx, engine="semantic")
 
-    # 1. "who am i" → user_identity  (semantic keeps matching it to bot_identity)
-    if re.search(r'\bwho\s+am\s+i\b', req.message, re.IGNORECASE):
-        _reply = _handle_semantic("user_identity", req, lang)
-        return ChatResponse(reply=_reply, detected_language=lang, engine="template")
-
-    # 1b. Scroll-to-section on homepage (only for ctx == "home")
-    # e.g. "scroll to contact", "take me to features", "show about section"
-    if ctx == "home":
-        _SECTION_MAP = {
-            "contact":  ("contact",  "Contact section", "Aapko **Contact** section par scroll kar raha hoon!" if lang == "hi" else "Scrolling to the **Contact** section! 📬"),
-            "feature":  ("features", "Features section", "Aapko **Features** section par le ja raha hoon!" if lang == "hi" else "Taking you to the **Features** section! 🚀"),
-            "about":    ("about",    "About section",    "Aapko **About** section par scroll kar raha hoon!" if lang == "hi" else "Scrolling to the **About** section! 📖"),
-            "home":     ("home",     "Top of page",      "Page ke top par wapas ja raha hoon!" if lang == "hi" else "Scrolling back to the **top** of the page! 🏠"),
-        }
-        _scroll_trigger = re.search(
-            r'\b(scroll|take\s+me|go|jump|show|navigate|open)\b.{0,25}\b(contact|feature|about|home|top)\b'
-            r'|\b(contact|feature|about)\b.{0,15}\b(section|page|area)\b',
-            req.message, re.IGNORECASE
-        )
-        if _scroll_trigger:
-            _msg_l = req.message.lower()
-            for _kw, (_target, _label, _reply_text) in _SECTION_MAP.items():
-                if _kw in _msg_l:
-                    return ChatResponse(
-                        reply=_reply_text,
-                        detected_language=lang,
-                        engine="template",
-                        navigate_action={"type": "scroll", "target": f"#{_target}", "label": _label},
-                    )
-
-    # 1c. Website language change → navigate_action type="language"
-    _lang_change = re.search(
-        r'\b(change|switch|set|turn|make).{0,20}\b(language|lang|website|site|ui|interface).{0,15}\b(hindi|english|hindi|en|hi)\b'
-        r'|\b(switch|change)\s+(to\s+)?(hindi|english|en|hi)\b'
-        r'|\b(website|site|ui)\s+(language|lang)\s+(to\s+)?(hindi|english)\b',
-        req.message, re.IGNORECASE
-    )
-    if _lang_change:
-        _want_hindi = bool(re.search(r'\b(hindi|hi)\b', req.message, re.IGNORECASE))
-        _lang_target = "hi" if _want_hindi else "en"
-        _lang_name   = "Hindi" if _want_hindi else "English"
-        _lang_reply  = (
-            f"Ho gaya! Main ne website ko **{_lang_name}** mein switch kar diya. 🇮🇳"
-            if lang == "hi" else
-            f"Done! I've switched the website to **{_lang_name}**. 🌐"
-        )
-        return ChatResponse(
-            reply=_lang_reply,
-            detected_language=lang,
-            engine="template",
-            navigate_action={"type": "language", "target": _lang_target, "label": f"{_lang_name} Language"},
-        )
-
-    # 2a. COMPOUND COMMAND: theme + language change in one message
-    # e.g. "toggle to light mode and change language to hindi"
-    _has_theme_kw = re.search(
-        r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
-        r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light)|toggle.*?(dark|light)|light|dark)\b',
-        req.message, re.IGNORECASE
-    )
-    _has_lang_kw  = re.search(
-        r'\b(hindi|english|change.*lang|switch.*lang|lang.*hindi|website.*hindi)\b',
-        req.message, re.IGNORECASE
-    )
-    if _has_theme_kw and _has_lang_kw:
-        _c_theme  = "light" if re.search(r'\blight\b', req.message, re.IGNORECASE) else "dark"
-        _c_lang   = "hi" if re.search(r'\bhindi\b', req.message, re.IGNORECASE) else "en"
-        _c_reply  = (
-            f"Done! ✅ I've switched to **{'Light' if _c_theme == 'light' else 'Dark'} Mode** "
-            f"and changed the website to **{'Hindi' if _c_lang == 'hi' else 'English'}**."
-            if lang == "en" else
-            f"Ho gaya! ✅ **{'Light' if _c_theme == 'light' else 'Dark'} Mode** aur "
-            f"**{'Hindi' if _c_lang == 'hi' else 'English'}** language — dono switch kar diye."
-        )
-        return ChatResponse(
-            reply=_c_reply,
-            detected_language=lang,
-            engine="template",
-            navigate_actions=[
-                {"type": "theme",    "target": _c_theme, "label": f"{_c_theme.capitalize()} Mode"},
-                {"type": "language", "target": _c_lang,  "label": "Hindi" if _c_lang == "hi" else "English"},
-            ],
-        )
-
-    # 2. "dark mode / light mode / turn on dark" → execute theme toggle via navigate_action
-    if re.search(
-        r'\b(dark\s*mode|light\s*mode|turn\s*(on|off)\s*(dark|light)|'
-        r'switch\s*(to\s*)?(dark|light)|enable\s*(dark|light))\b',
-        req.message, re.IGNORECASE
-    ):
-        _theme_target = "light" if re.search(r'\blight\b', req.message, re.IGNORECASE) else "dark"
-        _theme_reply_en = (
-            "Done! ☀️ I've switched to **Light Mode** for you."
-            if _theme_target == "light" else
-            "Done! 🌙 I've switched to **Dark Mode** for you."
-        )
-        _theme_reply_hi = (
-            "Ho gaya! ☀️ Main ne aapke liye **Light Mode** switch kar diya."
-            if _theme_target == "light" else
-            "Ho gaya! 🌙 Main ne aapke liye **Dark Mode** switch kar diya."
-        )
-        return ChatResponse(
-            reply=_theme_reply_hi if lang == "hi" else _theme_reply_en,
-            detected_language=lang,
-            engine="template",
-            navigate_action={"type": "theme", "target": _theme_target, "label": f"{_theme_target.capitalize()} Mode"},
-        )
-
-    # 3. login / sign-in → navigation_login (reply hardcoded here to avoid delegation fallthrough)
-    if re.search(r'\b(login|log\s*in|sign\s*in|signin)\b', req.message, re.IGNORECASE):
-        _has_creds = re.search(
-            r'\b(username|password|credentials|details|user\s*id|pass|userid)\b',
-            req.message, re.IGNORECASE
-        )
-        if _has_creds:
-            # User wants bot to fill in credentials — explain why we can't, but open the modal
-            _p_reply = (
-                "I can open the **Official Login** dialog for you right away! 🔑\n\n"
-                "However, for your **security**, I won't enter credentials through the chat window — "
-                "your username and password should only be typed directly into the secure login form.\n\n"
-                "The login dialog is opening now — please type your details there directly. 🛡️"
-            ) if lang == "en" else (
-                "Main aapke liye **Official Login** dialog abhi khol raha hoon! 🔑\n\n"
-                "Lekin **suraksha ke liye**, main chat ke zariye credentials enter nahi kar sakta — "
-                "aapka username aur password seedha secure login form mein hi type karein.\n\n"
-                "Login dialog khul raha hai — wahan seedha details type karein. 🛡️"
-            )
-        else:
-            _p_reply = (
-                "Opening the **Official Login** dialog for you! 🔑\n\n"
-                "You can login as a **Statistical Official** or access the **Admin Portal** "
-                "using the form that's about to open."
-            ) if lang == "en" else (
-                "**Official Login** dialog khol raha hoon! 🔑\n\n"
-                "Aap **Statistical Official** ke roop mein login kar sakte hain ya "
-                "**Admin Portal** access kar sakte hain."
-            )
-        _p_nav = {"type": "modal", "target": "login", "label": "Login"} if ctx == "home" else None
-        return ChatResponse(
-            reply=_p_reply, detected_language=lang,
-            engine="template", navigate_action=_p_nav,
-        )
-
-    # 4. Entertainment / celebrity / movie queries → out_of_scope
-    # Prevents semantic engine from mismatching these to 'gratitude' or 'greeting'.
-    _oos_re = re.compile(
-        r'\b(when\s+was|when\s+is|who\s+is|who\s+was|tell\s+me\s+about|'  
-        r'what\s+is\s+photosynthesis|circular\s+convolution|'             
-        r'released|born|died|movie|film|actor|actress|singer|'             
-        r'cricketer|footballer|celebrity)\b',
-        re.IGNORECASE
-    )
-    _mospi_re = re.compile(
-        r'\b(mospi|igot|karmayogi|frac|gdp|cpi|census|plfs|nso|sna|'     
-        r'skill|course|dashboard|competency|training|platform)\b',
-        re.IGNORECASE
-    )
-    if _oos_re.search(req.message) and not _mospi_re.search(req.message):
-        _reply = _handle_semantic("out_of_scope", req, lang)
-        return ChatResponse(reply=_reply, detected_language=lang, engine="template")
-
-    # ── TIER 1: Semantic Engine ───────────────────────────────────────────────
-    try:
-        from ai.semantic_engine import classify_intent, is_semantic_engine_ready
-
-        if is_semantic_engine_ready():
-            intent, confidence = classify_intent(req.message)
-            logger.info(
-                "[Gyan/semantic] intent=%s confidence=%.3f query=%r",
-                intent, confidence, req.message
-            )
-
-            # ── Confidence threshold: reject low-confidence semantic matches ───
-            # Raised to 0.50 to reduce false-positive misclassification on
-            # slang / entertainment queries (e.g. 'noice', 'when was X sleeping').
-            # Greeting / farewell / bot_identity always trusted (genuine patterns).
-            # 'gratitude' and 'how_are_you' deliberately removed — movie-release
-            # queries were scoring >= 0.45 against those corpora.
-            CONFIDENT_ALWAYS = {"greeting", "hindi_greeting", "farewell",
-                                 "bot_identity", "navigation_login", "out_of_scope"}
-            if confidence < 0.50 and intent not in CONFIDENT_ALWAYS:
-                logger.info("[Gyan] Low confidence %.3f for '%s' → Tier-2 keyword",
-                            confidence, intent)
-                raise ValueError("low_confidence")   # jumps to Tier-2
-
-            reply = _handle_semantic(intent, req, lang)
-
-            # Build navigate_action for navigation intents
-            nav_action = None
-            if ctx == "home":
-                # Homepage scroll targets
-                _home_nav_map = {
-                    "navigation_features":       {"type": "scroll", "target": "#features", "label": "Features section"},
-                    "navigation_about":          {"type": "scroll", "target": "#about",    "label": "About section"},
-                    "navigation_contact":        {"type": "scroll", "target": "#contact",  "label": "Contact section"},
-                    "navigation_login":          {"type": "modal",  "target": "login",     "label": "Login"},
-                    "navigation_home":           {"type": "scroll", "target": "#home",     "label": "Home (top)"},
-                }
-                nav_action = _home_nav_map.get(intent)
-            else:
-                # Dashboard tab targets (navigation_home goes back to landing page)
-                _dash_nav_map = {
-                    "navigation_my_courses":  {"type": "tab",      "target": "my-courses", "label": "My Courses tab"},
-                    "navigation_progress":    {"type": "tab",      "target": "progress",   "label": "Progress tab"},
-                    "navigation_dashboard":   {"type": "tab",      "target": "dashboard",  "label": "Dashboard tab"},
-                    "navigation_ai_quiz":     {"type": "tab",      "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
-                    "navigation_home":        {"type": "redirect", "target": "/",          "label": "Landing Page"},
-                }
-                nav_action = _dash_nav_map.get(intent)
-
-            return ChatResponse(
-                reply=reply,
-                detected_language=lang,
-                engine="semantic",
-                navigate_action=nav_action,
-            )
-        else:
-            logger.info("[Gyan] Semantic engine not ready → falling back to templates")
-
-    except Exception as exc:
-        logger.warning("[Gyan] Semantic engine error, using template fallback: %s", exc)
-
-    # ── TIER 2: Keyword Template Fallback ────────────────────────────────────
-    intent = detect_intent_keyword(req.message)
-    reply  = _generate_template_response(req, lang, intent)
-    return ChatResponse(reply=reply, detected_language=lang, engine="template")
-
-    # ── TIER 3: Ollama RAG (DISCONNECTED — REVERT_OLLAMA) ───────────────────
-    # To re-enable Ollama as Tier 1, uncomment the block below and comment out
-    # the "TIER 1: Semantic Engine" block above.
-    #
-    # try:
-    #     from ai.rag_engine import generate_chat_response, is_ollama_available
-    #     if is_ollama_available():
-    #         gaps_dicts = [{...} for g in req.skill_gaps]
-    #         recs_dicts = [{...} for r in req.recommendations]
-    #         history_dicts = [{"role": h.role, "content": h.content} for h in req.history]
-    #         ai_reply = await generate_chat_response(
-    #             query=req.message, history=history_dicts,
-    #             job_role=req.job_role or "Statistical Official",
-    #             department=req.department or "MoSPI",
-    #             skill_gaps=gaps_dicts, recommendations=recs_dicts,
-    #             language_hint=lang,
-    #         )
-    #         return ChatResponse(reply=ai_reply, detected_language=lang, engine="rag_ollama")
-    # except Exception as exc:
-    #     logger.warning("[Gyan] Ollama RAG error: %s", exc)
+    logger.info("[Gyan] No confident semantic intent (%.3f) — keyword fallback.", confidence)
+    fallback_intent = detect_intent_keyword(req.message) if variant in LATIN_LANGUAGES else "fallback"
+    return _intent_response(fallback_intent, req, variant, ctx, engine="template")
 
 
 @router.get("/chat/mode")
 async def chat_mode():
-    """
-    Returns which response engine is currently active.
-    Frontend can use this to show 'AI Powered' / 'Standard Mode' badge.
-    """
-    try:
-        from ai.semantic_engine import is_semantic_engine_ready
-        semantic_ok = is_semantic_engine_ready()
-        return {
-            "engine":          "semantic" if semantic_ok else "template",
-            "semantic_status": "ready" if semantic_ok else "not_loaded",
-            "model":           "all-MiniLM-L6-v2",
-            "ollama_status":   "disconnected (Tier 3 — not in hot path)",
-            "description": (
-                "Gyan is running in Semantic AI mode (sentence-transformers intent classifier)"
-                if semantic_ok else
-                "Gyan is running in Standard mode (keyword template engine)"
-            ),
-        }
-    except Exception:
-        return {"engine": "template", "semantic_status": "error"}
+    """Which response engine is active; the frontend shows it as a badge."""
+    from ai.embedder import model_name
+    from ai.semantic_engine import is_semantic_engine_ready
+
+    semantic_ok = is_semantic_engine_ready()
+    return {
+        "engine":          "semantic" if semantic_ok else "template",
+        "semantic_status": "ready" if semantic_ok else "not_loaded",
+        "model":           model_name("chat"),
+        "languages":       ["en", "hi", "mr", "bn", "gu", "or", "ta", "te"],
+        "ollama_status":   "disconnected (not in request path)",
+        "description": (
+            "Gyan is running in Semantic AI mode (multilingual intent classifier)"
+            if semantic_ok else
+            "Gyan is running in Standard mode (keyword template engine)"
+        ),
+    }

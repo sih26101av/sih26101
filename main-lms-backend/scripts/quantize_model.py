@@ -85,11 +85,8 @@ def main() -> None:
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-    # Temporarily point the embedder at the freshly quantized file
     import ai.embedder as _emb_mod
-    _emb_mod._embedder = None  # reset singleton for test
-    _emb_mod._ONNX_PATH = ONNX_INT8
-    embedder = _emb_mod.get_embedder()
+    embedder = _emb_mod._OnnxEmbedder(ONNX_INT8)
 
     test_pairs = [
         ("Show my skill gaps", "what are my skill gaps"),

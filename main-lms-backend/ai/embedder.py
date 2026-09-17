@@ -1,32 +1,29 @@
 """
 FILE: ai/embedder.py
 ─────────────────────────────────────────────────────────────────────────────
-Shared Singleton Embedder — MoSPI Skill Intelligence Platform (SIH 2026)
+Embedding models for the backend, one per role. Each role loads lazily and
+roles configured with the same model share a single instance.
 
-Loads ONE embedding model for the ENTIRE backend.
-  • ai/semantic_engine.py (chatbot intent classification)
-  • services/recommendation_service.py (FAISS course search)
+  role "chat"    — Gyan intent classification (ai/semantic_engine.py)
+                   default: intfloat/multilingual-e5-small
+                   Short user queries in 8 Indian languages + English.
+  role "catalog" — course recommendation dense search (services/recommendation_service.py)
+                   default: sentence-transformers/all-MiniLM-L6-v2
+                   English competency text vs the English course catalogue.
 
-Previously both files loaded 'all-MiniLM-L6-v2' independently (~80 MB × 2).
-This singleton fixes that waste and upgrades to a multilingual model.
+Why two models (see scripts/eval_intents.py and the recommendation A/B):
+  • paraphrase-multilingual-MiniLM-L12-v2 scored 45–54% intent accuracy for
+    ta/or/bn; multilingual-e5-small scored 79–92% in every language.
+  • e5-small ranked English courses noticeably worse than the MiniLM models
+    (e.g. "Financial Planning" -> time-series courses), while all-MiniLM-L6-v2
+    matched or beat the multilingual MiniLM. Measured cost of the split:
+    ~+85 MB RAM over the previous single multilingual model.
 
-Model: paraphrase-multilingual-MiniLM-L12-v2
-  • 50+ languages: Hindi, Bengali, Marathi, Tamil, Telugu, Gujarati, …
-  • Same 384-dim output as all-MiniLM-L6-v2 → zero FAISS index changes
-  • Maps Devanagari queries and English catalog into the SAME vector space
-    → "साइबर सुरक्षा" matches "Cyber Security" without a translation API
-
-Runtime modes (auto-detected, priority order):
-  1. ONNX INT8 (production):  ai/.cache/model_int8.onnx
-     • ~115 MB, 2–3× faster CPU inference, NO PyTorch at runtime
-     • Generate with:  python scripts/quantize_model.py
-     • Download with:  python scripts/download_model.py
-  2. sentence-transformers / PyTorch (dev fallback):
-     • ~470 MB, requires torch — used when ONNX cache is absent
+Override with CHAT_EMBEDDER_MODEL / CATALOG_EMBEDDER_MODEL.
 
 Usage:
     from ai.embedder import get_embedder
-    vecs = get_embedder().encode(["text1", "text2"], normalize_embeddings=True)
+    vecs = get_embedder("chat").encode(["text1", "text2"], normalize_embeddings=True)
 ─────────────────────────────────────────────────────────────────────────────
 """
 
@@ -34,33 +31,55 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-_CACHE_DIR  = os.path.join(os.path.dirname(__file__), ".cache")
-_ONNX_PATH  = os.path.join(_CACHE_DIR, "model_int8.onnx")
+DEFAULT_MODELS = {
+    "chat": "intfloat/multilingual-e5-small",
+    "catalog": "sentence-transformers/all-MiniLM-L6-v2",
+}
+_ENV_VARS = {"chat": "CHAT_EMBEDDER_MODEL", "catalog": "CATALOG_EMBEDDER_MODEL"}
 
-# ── Singleton ──────────────────────────────────────────────────────────────────
-_embedder: Optional[object] = None
+# scripts/quantize_model.py exports this model only; the ONNX file is used
+# solely when a role is explicitly configured to it.
+ONNX_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+_CACHE_DIR = os.path.join(os.path.dirname(__file__), ".cache")
+_ONNX_PATH = os.path.join(_CACHE_DIR, "model_int8.onnx")
+
+# E5 models are trained with these input prefixes and degrade without them.
+_E5_PREFIXES = {"query": "query: ", "passage": "passage: "}
+
+_instances: dict[str, "_Embedder"] = {}
+
+
+def model_name(role: str = "chat") -> str:
+    return os.getenv(_ENV_VARS[role], DEFAULT_MODELS[role])
+
+
+class _Embedder:
+    """Adds `kind` ("query" for short user/intent text, "passage" for catalogue documents)."""
+
+    def __init__(self, model, name: str) -> None:
+        self._model = model
+        self.name = name
+        self._prefixed = "e5" in name.lower()
+
+    def encode(self, sentences, kind: str = "query", **kwargs) -> np.ndarray:
+        if self._prefixed:
+            prefix = _E5_PREFIXES[kind]
+            sentences = prefix + sentences if isinstance(sentences, str) else [prefix + s for s in sentences]
+        return self._model.encode(sentences, **kwargs)
 
 
 # ── ONNX Inference Wrapper ────────────────────────────────────────────────────
 
 class _OnnxEmbedder:
     """
-    Lightweight ONNX runtime embedder — no PyTorch needed at inference time.
-
-    Implements:
-      1. HuggingFace AutoTokenizer (sentencepiece, ~few MB download once)
-      2. onnxruntime.InferenceSession (CPU, INT8 weights)
-      3. Mean pooling + L2 normalization (same as sentence-transformers)
-
-    Output is a float32 np.ndarray, identical contract to SentenceTransformer.encode().
+    Lightweight ONNX runtime embedder for ONNX_MODEL — no PyTorch at inference.
+    Tokenizer + INT8 onnxruntime session + mean pooling + L2 normalisation.
     """
 
     def __init__(self, onnx_path: str) -> None:
@@ -68,8 +87,8 @@ class _OnnxEmbedder:
         from transformers import AutoTokenizer
 
         opts = ort.SessionOptions()
-        opts.inter_op_num_threads  = 2
-        opts.intra_op_num_threads  = 2
+        opts.inter_op_num_threads = 2
+        opts.intra_op_num_threads = 2
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
         logger.info("[Embedder] Starting ONNX session from %s", onnx_path)
@@ -78,56 +97,42 @@ class _OnnxEmbedder:
             sess_options=opts,
             providers=["CPUExecutionProvider"],
         )
-        # Store input names to avoid passing unsupported keys
         self._input_names: set[str] = {inp.name for inp in self._session.get_inputs()}
-
-        logger.info("[Embedder] Loading multilingual tokenizer (%s)…", MODEL_NAME)
-        self._tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        logger.info("[Embedder] ONNX embedder ready (inputs: %s).", self._input_names)
+        self._tokenizer = AutoTokenizer.from_pretrained(ONNX_MODEL)
 
     def encode(
         self,
         sentences,
         normalize_embeddings: bool = True,
         batch_size: int = 64,
-        show_progress_bar: bool = False,  # ignored (compatibility shim)
+        show_progress_bar: bool = False,  # compatibility shim
         **kwargs,
     ) -> np.ndarray:
-        """
-        Encode sentences into L2-normalised float32 embeddings.
-        API-compatible with SentenceTransformer.encode().
-        """
         if isinstance(sentences, str):
             sentences = [sentences]
 
         all_embs: list[np.ndarray] = []
-
         for i in range(0, len(sentences), batch_size):
-            batch = sentences[i : i + batch_size]
             encoded = self._tokenizer(
-                batch,
+                sentences[i : i + batch_size],
                 padding=True,
                 truncation=True,
                 max_length=128,
                 return_tensors="np",
             )
-
-            # Build inputs — only pass what the ONNX graph expects
             inputs: dict[str, np.ndarray] = {
-                "input_ids":      encoded["input_ids"].astype(np.int64),
+                "input_ids": encoded["input_ids"].astype(np.int64),
                 "attention_mask": encoded["attention_mask"].astype(np.int64),
             }
             if "token_type_ids" in self._input_names and "token_type_ids" in encoded:
                 inputs["token_type_ids"] = encoded["token_type_ids"].astype(np.int64)
 
-            # ONNX forward pass → last_hidden_state (batch, seq_len, hidden_dim)
             token_embeddings: np.ndarray = self._session.run(None, inputs)[0]
 
-            # Mean pooling weighted by attention mask
-            attn   = encoded["attention_mask"].astype(np.float32)[:, :, np.newaxis]
+            attn = encoded["attention_mask"].astype(np.float32)[:, :, np.newaxis]
             summed = (token_embeddings * attn).sum(axis=1)
             counts = np.clip(attn.sum(axis=1), a_min=1e-9, a_max=None)
-            mean_pooled = summed / counts   # (batch, hidden_dim)
+            mean_pooled = summed / counts
 
             if normalize_embeddings:
                 norms = np.linalg.norm(mean_pooled, axis=1, keepdims=True)
@@ -140,51 +145,32 @@ class _OnnxEmbedder:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def get_embedder() -> _OnnxEmbedder:
-    """
-    Returns the singleton embedder, loading it on the first call.
-
-    • Thread-safe for concurrent encode() calls after initialization.
-    • Automatically chooses ONNX INT8 if cache exists, PyTorch otherwise.
-    """
-    global _embedder
-
-    if _embedder is not None:
-        return _embedder  # type: ignore[return-value]
-
-    # ── Mode 1: ONNX INT8 (production) ────────────────────────────────────
-    if os.path.exists(_ONNX_PATH):
+def _load(name: str) -> _Embedder:
+    if name == ONNX_MODEL and os.path.exists(_ONNX_PATH):
         try:
-            _embedder = _OnnxEmbedder(_ONNX_PATH)
-            logger.info(
-                "[Embedder] ✅ ONNX INT8 active (~115 MB). "
-                "Single instance shared by chatbot + recommendation engine."
-            )
-            return _embedder  # type: ignore[return-value]
+            embedder = _Embedder(_OnnxEmbedder(_ONNX_PATH), name)
+            logger.info("[Embedder] ONNX INT8 active for %s.", name)
+            return embedder
         except Exception as exc:
             logger.warning("[Embedder] ONNX init failed (%s) — falling back to PyTorch.", exc)
 
-    # ── Mode 2: sentence-transformers / PyTorch (dev fallback) ────────────
     try:
         from sentence_transformers import SentenceTransformer
-        logger.warning(
-            "[Embedder] ONNX cache not found at %s. "
-            "Loading full multilingual model via sentence-transformers (~470 MB). "
-            "Run `python scripts/quantize_model.py` to generate the ONNX cache "
-            "for a 4× smaller, faster deployment.",
-            _ONNX_PATH,
-        )
-        _embedder = SentenceTransformer(MODEL_NAME)
-        return _embedder  # type: ignore[return-value]
+        logger.info("[Embedder] Loading %s via sentence-transformers.", name)
+        return _Embedder(SentenceTransformer(name), name)
     except Exception as exc:
-        logger.error("[Embedder] Could not load any embedding model: %s", exc)
-        raise RuntimeError(
-            f"No embedding model available. "
-            f"Either run 'python scripts/download_model.py' or install sentence-transformers. "
-            f"Original error: {exc}"
-        ) from exc
+        logger.error("[Embedder] Could not load %s: %s", name, exc)
+        raise RuntimeError(f"No embedding model available for {name}: {exc}") from exc
 
 
-def is_embedder_ready() -> bool:
-    """Non-blocking check — True only if the singleton is already loaded."""
-    return _embedder is not None
+def get_embedder(role: str = "chat") -> _Embedder:
+    """Lazily loaded embedder for `role` ("chat" | "catalog"); thread-safe for encode() once loaded."""
+    name = model_name(role)
+    if name not in _instances:
+        _instances[name] = _load(name)
+    return _instances[name]
+
+
+def is_embedder_ready(role: str = "chat") -> bool:
+    """Non-blocking check — True only if the role's model is already loaded."""
+    return model_name(role) in _instances

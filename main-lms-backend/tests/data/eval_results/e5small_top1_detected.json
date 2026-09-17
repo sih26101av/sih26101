@@ -1,0 +1,235 @@
+{
+  "model": "intfloat/multilingual-e5-small",
+  "top_k": 1,
+  "detect": true,
+  "languages": {
+    "bn": {
+      "accuracy": 0.7917,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "en": {
+      "accuracy": 0.8854,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "gu": {
+      "accuracy": 0.875,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "hi": {
+      "accuracy": 0.8333,
+      "n": 96,
+      "detect_accuracy": 0.9375
+    },
+    "hi_latn": {
+      "accuracy": 0.6979,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "mr": {
+      "accuracy": 0.9167,
+      "n": 96,
+      "detect_accuracy": 0.8958
+    },
+    "or": {
+      "accuracy": 0.8229,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "ta": {
+      "accuracy": 0.9167,
+      "n": 96,
+      "detect_accuracy": 1.0
+    },
+    "te": {
+      "accuracy": 0.8646,
+      "n": 96,
+      "detect_accuracy": 1.0
+    }
+  },
+  "macro_accuracy": 0.8449,
+  "top_confusions": [
+    [
+      "bn",
+      "concept_skill_gap",
+      "statistics_frac",
+      2
+    ],
+    [
+      "bn",
+      "skill_gaps",
+      "user_identity",
+      2
+    ],
+    [
+      "bn",
+      "achievements",
+      "navigation_my_courses",
+      2
+    ],
+    [
+      "hi_latn",
+      "achievements",
+      "navigation_my_courses",
+      2
+    ],
+    [
+      "hi_latn",
+      "navigation_profile",
+      "navigation_login",
+      2
+    ],
+    [
+      "bn",
+      "user_identity",
+      "profile_stats",
+      1
+    ],
+    [
+      "bn",
+      "profile_stats",
+      "skill_gaps",
+      1
+    ],
+    [
+      "bn",
+      "progress",
+      "navigation_my_courses",
+      1
+    ],
+    [
+      "bn",
+      "navigation_progress",
+      "navigation_features",
+      1
+    ],
+    [
+      "bn",
+      "navigation_ai_quiz",
+      "navigation_progress",
+      1
+    ],
+    [
+      "bn",
+      "navigation_profile",
+      "navigation_about",
+      1
+    ],
+    [
+      "bn",
+      "statistics_cpi",
+      "navigation_contact",
+      1
+    ],
+    [
+      "bn",
+      "about_mospi",
+      "statistics_gdp",
+      1
+    ],
+    [
+      "bn",
+      "ui_action_request",
+      "navigation_home",
+      1
+    ],
+    [
+      "bn",
+      "navigation_features",
+      "navigation_home",
+      1
+    ],
+    [
+      "bn",
+      "navigation_features",
+      "navigation_about",
+      1
+    ],
+    [
+      "bn",
+      "navigation_about",
+      "navigation_home",
+      1
+    ],
+    [
+      "bn",
+      "navigation_login",
+      "navigation_dashboard",
+      1
+    ],
+    [
+      "bn",
+      "out_of_scope",
+      "statistics_frac",
+      1
+    ],
+    [
+      "en",
+      "concept_skill_gap",
+      "skill_gaps",
+      1
+    ],
+    [
+      "en",
+      "skill_gaps",
+      "profile_stats",
+      1
+    ],
+    [
+      "en",
+      "progress",
+      "skill_gaps",
+      1
+    ],
+    [
+      "en",
+      "navigation_progress",
+      "navigation_home",
+      1
+    ],
+    [
+      "en",
+      "navigation_profile",
+      "navigation_login",
+      1
+    ],
+    [
+      "en",
+      "statistics_frac",
+      "concept_skill_gap",
+      1
+    ],
+    [
+      "en",
+      "gratitude",
+      "navigation_progress",
+      1
+    ],
+    [
+      "en",
+      "farewell",
+      "greeting",
+      1
+    ],
+    [
+      "en",
+      "navigation_features",
+      "about_platform",
+      1
+    ],
+    [
+      "en",
+      "navigation_contact",
+      "navigation_login",
+      1
+    ],
+    [
+      "en",
+      "out_of_scope",
+      "recommend",
+      1
+    ]
+  ]
+}

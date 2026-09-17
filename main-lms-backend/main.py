@@ -88,6 +88,11 @@ async def _startup():
     from models.models import Base as DomainBase
     DomainBase.metadata.create_all(bind=engine)
 
+    # Load the chat embedder and encode intent prototypes now; done lazily this
+    # takes ~30s and the first chat request would outlast the frontend's patience.
+    from ai.semantic_engine import _ensure_prototypes
+    _ensure_prototypes()
+
     try:
         _rec_engine = HybridRecommendationEngine()
         import logging
