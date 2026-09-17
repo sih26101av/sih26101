@@ -76,16 +76,29 @@ sections, all fed by the single `useLearnerDashboard` fetch.
   `prefers-reduced-motion` disables motion.
 - `src/components/gov/GovUI.tsx` — `AshokaChakra` (SVG), `GovEmblem`, `Reveal`
   (IntersectionObserver fade-in), `CountUp` (animated numbers).
-- `LandingPage.tsx` — GoI utility bar (EN/हिंदी, theme), ministry header (Skill
-  Intelligence Platform is the primary line, ministry the eyebrow), sticky nav,
+- **Product name: KarmaSkill.** The landing header, hero badge and footer lead with
+  it; "Skill Intelligence Platform" is now the descriptor beneath. `index.html`
+  `<title>` follows. The dashboard shells still carry the NSO Training Portal wording.
+- `LandingPage.tsx` — GoI utility bar (EN/हिंदी, working screen reader, theme),
+  ministry header (KarmaSkill is the primary line, ministry the eyebrow), sticky nav,
   "What's New" marquee (`NEWS_ITEMS`, static), hero with the `outcomes` rail
   (Assess Skill Gaps → Personalized Learning → Stronger Governance), clickable
   `capabilities` cards, count-up metrics, features, about timeline, footer
   (`id="contact"`). Section ids `home`/`features`/`about`/`contact` are used by
   `HomeChatWidget` scrolling.
+- The hero uses `public/hero-bg-blue.png` (chakra + growth bars + orbit arc) as a
+  `bg-cover` layer over the navy gradient, with a left-to-right scrim for legibility.
+  The gradient stays behind it, so the section degrades gracefully if the image 404s.
+- `src/hooks/useScreenReader.ts` — GIGW "Screen Reader Access" via SpeechSynthesis.
+  `useScreenReader(lang)` returns `{supported, speaking, read, stop, toggle}`; the
+  utility-bar button calls `toggle('#main')`. Prose is collected from headings /
+  paragraphs / list items (skipping `aria-hidden` and `sr-only`), split into ≤220-char
+  sentence chunks because engines truncate long utterances, and spoken as `hi-IN` or
+  `en-IN`. The control hides itself when the browser lacks support; changing language
+  stops playback. No external service — it works air-gapped.
 - The old `animate-in fade-in slide-in-*` classes were no-ops (no plugin); replaced by
-  `animate-fade-up`. Background images (`bg-mesh.png`, `hero-bg-*.png`,
-  `bg-new-topo.png`) are no longer referenced by any page.
+  `animate-fade-up`. `bg-mesh.png`, `hero-bg-dark.png`, `hero-bg-topo.png` and
+  `bg-mesh1.png` are leftover unused assets in `public/`.
 - All pages now share the system. Chat widgets keep their own styling.
 
 ## In / out

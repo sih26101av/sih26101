@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/ProfileHeader.tsx": {
-    "mtime": 1789659605.5019424,
-    "seen": 1789660066.155644,
-    "ast_hash": "152f10ab4a4296f81ace5d81f0b14c45",
+    "mtime": 1789670611.4212267,
+    "seen": 1789671434.944477,
+    "ast_hash": "e790fff8382bbd5e43b13d97a2c22d12",
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/ProgressView.tsx": {
@@ -126,15 +126,15 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminDashboard.tsx": {
-    "mtime": 1789058245.6980145,
-    "seen": 1789655175.7671766,
-    "ast_hash": "1ccce51ce519d1327af64163d0479ec2",
+    "mtime": 1789670838.436443,
+    "seen": 1789671434.9508002,
+    "ast_hash": "4a4a5e684cbf9f3b5600fd183867d033",
     "semantic_hash": ""
   },
   "frontend/src/pages/AssessmentPage.tsx": {
-    "mtime": 1789519875.3547292,
-    "seen": 1789655175.7671793,
-    "ast_hash": "c7d13d5b2568e181591c522524702c2c",
+    "mtime": 1789671107.1933787,
+    "seen": 1789671434.9508078,
+    "ast_hash": "57868467b5c68737e9419d1a28b8e02d",
     "semantic_hash": ""
   },
   "frontend/src/pages/ChangePasswordPage.tsx": {
@@ -144,15 +144,15 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/LandingPage.tsx": {
-    "mtime": 1789659452.0903141,
-    "seen": 1789660066.1617122,
-    "ast_hash": "46b63083ad87a0a44dcbdb7ee941af50",
+    "mtime": 1789670966.6661222,
+    "seen": 1789671434.9513965,
+    "ast_hash": "72fb426967c99944a07dd3f96b8d2d06",
     "semantic_hash": ""
   },
   "frontend/src/pages/LearnerDashboard.tsx": {
-    "mtime": 1789659579.5993845,
-    "seen": 1789660066.1617172,
-    "ast_hash": "a9ff441b8d08e0edea94996fe938ee81",
+    "mtime": 1789670585.4912746,
+    "seen": 1789671434.9514039,
+    "ast_hash": "ff043b10c48b42e55742c7e4c509d068",
     "semantic_hash": ""
   },
   "frontend/src/pages/LoginPage.tsx": {
@@ -198,9 +198,9 @@
     "semantic_hash": ""
   },
   "frontend/tailwind.config.js": {
-    "mtime": 1789659264.77594,
-    "seen": 1789660066.1653883,
-    "ast_hash": "92520000e89b6df43c35dd6dc3e1c9a4",
+    "mtime": 1789670194.1386075,
+    "seen": 1789671434.9552372,
+    "ast_hash": "4c1f20de2b61e78063e213bcbbcbb823",
     "semantic_hash": ""
   },
   "frontend/tsconfig.json": {
@@ -582,9 +582,9 @@
     "semantic_hash": ""
   },
   "docs/features/admin-dashboard.md": {
-    "mtime": 1789652639.4454608,
-    "seen": 1789655175.7673395,
-    "ast_hash": "f2e67c5f78b031fbff9d266744df50ee",
+    "mtime": 1789671361.4885204,
+    "seen": 1789671434.9899955,
+    "ast_hash": "069699d72ca6c7420c8c0bedc7d48be4",
     "semantic_hash": ""
   },
   "docs/features/auth-and-rbac.md": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "docs/features/learner-dashboard.md": {
-    "mtime": 1789660029.2152734,
-    "seen": 1789660066.2104626,
-    "ast_hash": "27202152f3b6a2b12064f5ad7ade866c",
+    "mtime": 1789671339.8623145,
+    "seen": 1789671434.9924588,
+    "ast_hash": "b1761b0ace2ca47a6b26cd6ce336a56f",
     "semantic_hash": ""
   },
   "docs/features/mock-igot-integration.md": {
@@ -630,9 +630,9 @@
     "semantic_hash": ""
   },
   "docs/features/rag-quiz-generator.md": {
-    "mtime": 1789652533.5566945,
-    "seen": 1789655175.7673554,
-    "ast_hash": "36e2b79a49c5791fd044946716913f20",
+    "mtime": 1789671377.139776,
+    "seen": 1789671434.9934673,
+    "ast_hash": "1817d08ebe2c762508597ee2a4432d8c",
     "semantic_hash": ""
   },
   "docs/features/recommendation-engine.md": {
@@ -654,9 +654,9 @@
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1789659268.405753,
-    "seen": 1789660066.2137783,
-    "ast_hash": "d66fecd849daa4781cd2427200cda81c",
+    "mtime": 1789670172.101291,
+    "seen": 1789671434.9948423,
+    "ast_hash": "24871246210a9b8f08f26447989cfa6a",
     "semantic_hash": ""
   },
   "main-lms-backend/_err.txt": {
@@ -723,6 +723,78 @@
     "mtime": 1789659310.4856498,
     "seen": 1789660066.1556644,
     "ast_hash": "7e745a1a8865973cc5891b1edda1eef5",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/dashboard/CompetencyOverviewTable.tsx": {
+    "mtime": 1789670408.6906357,
+    "seen": 1789671434.9430242,
+    "ast_hash": "030d00c1809316787a6d290b00cca066",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/dashboard/LearningSnapshot.tsx": {
+    "mtime": 1789670429.7220514,
+    "seen": 1789671434.9438174,
+    "ast_hash": "20affed3826f96fe95234c51176a471d",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/dashboard/RecentActivityList.tsx": {
+    "mtime": 1789670443.0538466,
+    "seen": 1789671434.9450645,
+    "ast_hash": "f6992af8f711fed5f03245729371d4cc",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/dashboard/RecommendationsPanel.tsx": {
+    "mtime": 1789670463.777152,
+    "seen": 1789671434.9450707,
+    "ast_hash": "eaff3a1eecb2727e5c3be023a1c6cfda",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/shell/AppShell.tsx": {
+    "mtime": 1789670284.942168,
+    "seen": 1789671434.94723,
+    "ast_hash": "1da9b7a612a3811558a8915e3b367c85",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/shell/PageHeader.tsx": {
+    "mtime": 1789670334.0421994,
+    "seen": 1789671434.9472365,
+    "ast_hash": "493c560c461cf1a89b5a610a78824228",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/shell/SectionCard.tsx": {
+    "mtime": 1789670321.8077059,
+    "seen": 1789671434.9472413,
+    "ast_hash": "23a0b5cfaa7a62e5b28023627055350f",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/shell/StatCard.tsx": {
+    "mtime": 1789670310.8198967,
+    "seen": 1789671434.9472451,
+    "ast_hash": "19b278e4944f17fc862a7671b39374da",
+    "semantic_hash": ""
+  },
+  "main-lms-backend/pyproject.toml": {
+    "mtime": 1787893948.0937743,
+    "seen": 1789672196.4086847,
+    "ast_hash": "2b4a62c137e0e0cfb7c95fd14420f5bd",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/courses.json": {
+    "mtime": 1787910107.6273973,
+    "seen": 1789672196.4087381,
+    "ast_hash": "71329f11ced49a9f50e04902d3d2cbd1",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/courses_1.json": {
+    "mtime": 1788437604.4831629,
+    "seen": 1789672196.4087415,
+    "ast_hash": "046561753341f88304417733c30b24c3",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/pyproject.toml": {
+    "mtime": 1787893948.1103475,
+    "seen": 1789672196.4087577,
+    "ast_hash": "2b4a62c137e0e0cfb7c95fd14420f5bd",
     "semantic_hash": ""
   }
 }

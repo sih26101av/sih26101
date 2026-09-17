@@ -9,12 +9,45 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Bot, Languages, ChevronDown, Mic, MicOff, Navigation } from 'lucide-react';
+import {
+  X, Send, Bot, Languages, ChevronDown, ChevronRight, Mic, MicOff, Navigation,
+  Target, GraduationCap, TrendingUp, ClipboardCheck, Lightbulb, AudioLines, Landmark,
+} from 'lucide-react';
 import type { SkillGapEntry, CourseRecommendation } from '../../types/domain';
 import type { NavigateAction } from '../../services/chatApi';
 import type { ChatMessage } from '../../services/chatApi';
 import { useChatEngine } from '../../hooks/useChatEngine';
 import { useTheme } from '../../hooks/useTheme';
+import { GyanBot, GyanHero } from '../chat/GyanAvatar';
+import { AshokaChakra } from '../gov/GovUI';
+
+// ─── Capability cards — each sends a real prompt to the engine ───────────────
+const CAPABILITIES = [
+  {
+    id: 'gaps', icon: Target,
+    label: { en: 'Skill Gaps', hi: 'कौशल अंतर' },
+    prompt: { en: 'What are my skill gaps?', hi: 'मेरे skill gaps क्या हैं?' },
+    tile: 'bg-accent-rose-soft', ink: 'text-accent-rose',
+  },
+  {
+    id: 'courses', icon: GraduationCap,
+    label: { en: 'My Courses', hi: 'मेरे पाठ्यक्रम' },
+    prompt: { en: 'Which course should I take first?', hi: 'मुझे पहले कौन सा course लेना चाहिए?' },
+    tile: 'bg-accent-green-soft', ink: 'text-accent-green',
+  },
+  {
+    id: 'progress', icon: TrendingUp,
+    label: { en: 'My Progress', hi: 'मेरी प्रगति' },
+    prompt: { en: 'Show me my progress', hi: 'मेरी progress दिखाओ' },
+    tile: 'bg-accent-blue-soft', ink: 'text-accent-blue',
+  },
+  {
+    id: 'assess', icon: ClipboardCheck,
+    label: { en: 'Assessments', hi: 'मूल्यांकन' },
+    prompt: { en: 'How do I take an assessment?', hi: 'Assessment कैसे लूँ?' },
+    tile: 'bg-accent-purple-soft', ink: 'text-accent-purple',
+  },
+] as const;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface ChatWidgetProps {
@@ -60,11 +93,11 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
 // ─── Typing indicator ─────────────────────────────────────────────────────────
 const TypingIndicator: React.FC = () => (
-  <div className="flex items-end gap-2 mb-3">
-    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2b4c7e] to-[#1e3a5f] flex items-center justify-center flex-shrink-0 shadow-sm">
-      <Bot size={14} className="text-white" />
-    </div>
-    <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm border border-slate-100">
+  <div className="mb-3 flex items-end gap-2">
+    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+      <GyanBot size={22} />
+    </span>
+    <div className="rounded-2xl rounded-bl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
       <div className="flex gap-1 items-center h-4">
         {[0, 1, 2].map(i => (
           <span
@@ -87,7 +120,7 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
     return (
       <div className="flex justify-end mb-3">
         <div className="max-w-[78%]">
-          <div className="bg-gradient-to-br from-[#2b4c7e] to-[#1a3660] text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-[13px] leading-relaxed shadow-md">
+          <div className="rounded-2xl rounded-br-sm bg-gradient-to-br from-gov-ink to-gov-blue px-4 py-2.5 text-[13px] leading-relaxed text-white shadow-md">
             {msg.content}
           </div>
           <p className="text-[10px] text-slate-400 text-right mt-1 mr-1">{time}</p>
@@ -97,12 +130,12 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
   }
 
   return (
-    <div className="flex items-end gap-2 mb-3">
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2b4c7e] to-[#1e3a5f] flex items-center justify-center flex-shrink-0 shadow-sm">
-        <Bot size={14} className="text-white" />
-      </div>
+    <div className="mb-3 flex items-end gap-2">
+      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+        <GyanBot size={22} />
+      </span>
       <div className="max-w-[82%]">
-        <div className="bg-white text-slate-800 px-4 py-2.5 rounded-2xl rounded-bl-sm text-[13px] leading-relaxed shadow-sm border border-slate-100">
+        <div className="rounded-2xl rounded-bl-sm border border-slate-100 bg-white px-4 py-2.5 text-[13px] leading-relaxed text-slate-800 shadow-sm">
           {renderMarkdown(msg.content)}
         </div>
         <p className="text-[10px] text-slate-400 mt-1 ml-1">{time}</p>
@@ -182,13 +215,14 @@ const VoiceButton: React.FC<{
     <button
       onClick={toggleListening}
       title={listening ? 'Stop listening' : 'Voice input'}
-      className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all
+      aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+      className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all
         ${listening
-          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200'
-          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+          ? 'animate-pulse bg-red-500 text-white shadow-lg shadow-red-200'
+          : 'text-slate-400 hover:bg-slate-100 hover:text-gov-navy'
         }`}
     >
-      {listening ? <MicOff size={13} /> : <Mic size={13} />}
+      {listening ? <MicOff size={16} /> : <Mic size={16} />}
     </button>
   );
 };
@@ -265,71 +299,107 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     <>
       {/* ── Chat Panel ────────────────────────────────────────────────────── */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-[370px] max-h-[580px] flex flex-col
-          bg-[#f8fafc] rounded-3xl shadow-2xl border border-slate-200/80
-          transition-all duration-300 ease-out origin-bottom-right
+        role="dialog"
+        aria-label="Gyan AI assistant"
+        className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
+          overflow-hidden rounded-[28px] border border-slate-200/80 bg-white
+          transition-all duration-300 ease-out sm:right-6
           ${isOpen
-            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
+            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-4 scale-95 opacity-0'
           }`}
-        style={{ boxShadow: '0 24px 60px -12px rgba(0,0,0,0.18), 0 8px 20px -8px rgba(43,76,126,0.12)' }}
+        style={{ boxShadow: '0 28px 70px -14px rgba(10,26,51,0.35)' }}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-[#1a2f52] to-[#2b4c7e] rounded-t-3xl flex-shrink-0">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-              <Bot size={18} className="text-white" />
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#1a2f52]" />
+        <div className="relative flex flex-shrink-0 items-center gap-3 overflow-hidden bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue px-4 py-3.5">
+          <div className="pointer-events-none absolute -right-6 -top-10 text-white/[0.07]">
+            <AshokaChakra size={140} />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-[13px] leading-none">Gyan (ज्ञान)</p>
-            <p className="text-blue-200 text-[10px] mt-0.5">MoSPI AI Training Assistant · Online</p>
+
+          <div className="relative flex-shrink-0">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/25 bg-white/15">
+              <GyanBot size={30} />
+            </span>
+            <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-gov-ink bg-emerald-400" />
+          </div>
+
+          <div className="relative min-w-0 flex-1">
+            <p className="text-[15px] font-bold leading-tight text-white">Gyan (ज्ञान)</p>
+            <p className="mt-0.5 truncate text-[11px] font-medium text-sky-300">
+              MoSPI AI Assistant • {lang === 'hi' ? 'कुछ भी पूछें' : 'Ask me anything'}
+            </p>
           </div>
 
           {/* Language Toggle */}
           <button
             onClick={() => setLang(l => l === 'en' ? 'hi' : 'en')}
             title="Switch language"
-            className="flex items-center gap-1 bg-white/15 hover:bg-white/25 border border-white/20 rounded-full px-2.5 py-1 text-white text-[10px] font-bold transition-colors"
+            aria-label="Switch assistant language"
+            className="relative flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11.5px] font-bold text-white transition-colors hover:bg-white/20"
           >
-            <Languages size={10} />
+            <Languages size={13} />
             {lang === 'en' ? 'EN' : 'HI'}
           </button>
 
           {/* Minimize */}
           <button
             onClick={() => setIsOpen(false)}
-            className="text-white/70 hover:text-white hover:bg-white/10 rounded-full p-1 transition-colors"
+            aria-label="Minimise assistant"
+            className="relative flex-shrink-0 rounded-full p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <ChevronDown size={16} />
+            <ChevronDown size={18} />
           </button>
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 scroll-smooth min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-gradient-to-b from-[#f7faff] to-white px-4 py-4 custom-scrollbar">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center pt-2 pb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2b4c7e] to-[#1e3a5f] flex items-center justify-center shadow-md mb-3">
-                <Bot size={22} className="text-white" />
-              </div>
-              <p className="text-slate-700 font-bold text-[13px] text-center">
-                {lang === 'hi' ? 'Namaste! Main Gyan hoon 🙏' : "Hello! I'm Gyan 👋"}
+            <div className="flex flex-col items-center">
+              <GyanHero className="mb-1" />
+
+              <p className="text-center text-[21px] font-bold text-gov-ink">
+                {lang === 'hi' ? 'नमस्ते! मैं ज्ञान हूँ 🙏' : "Hello! I'm Gyan 👋"}
               </p>
-              <p className="text-slate-500 text-[11px] text-center mt-1 mb-4 leading-relaxed">
+              <p className="mb-5 mt-1 text-center text-[12.5px] leading-relaxed text-slate-500">
                 {lang === 'hi'
-                  ? `Aapke paas ${activeGapsCount} active skill gap${activeGapsCount !== 1 ? 's' : ''} hain.`
+                  ? `आपके पास ${activeGapsCount} सक्रिय skill gap ${activeGapsCount !== 1 ? 'हैं' : 'है'}।`
                   : `You have ${activeGapsCount} active skill gap${activeGapsCount !== 1 ? 's' : ''}. Ask me anything!`
                 }
               </p>
-              <div className="flex flex-col gap-2 w-full">
+
+              {/* Capability cards — each sends a real prompt */}
+              <div className="mb-5 grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {CAPABILITIES.map(({ id, icon: Icon, label, prompt, tile, ink }) => (
+                  <button
+                    key={id}
+                    onClick={() => handleSend(prompt[lang])}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-gov-blue/30 hover:shadow-md"
+                  >
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${tile}`}>
+                      <Icon size={18} className={ink} aria-hidden="true" />
+                    </span>
+                    <span className="text-[10.5px] font-semibold leading-tight text-slate-700">{label[lang]}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mb-3 flex w-full items-center gap-3">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-[11.5px] font-medium text-slate-400">
+                  {lang === 'hi' ? 'यह पूछकर देखें' : 'Try asking'}
+                </span>
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <div className="flex w-full flex-col gap-2">
                 {suggestions.map((s, i) => (
                   <button
                     key={i}
                     onClick={() => { handleSend(s); }}
-                    className="text-left px-3 py-2 rounded-xl bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-[12px] text-slate-700 font-medium transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+                    className="group flex items-center gap-3 rounded-xl border border-slate-200/80 bg-[#f4f8ff] px-3.5 py-2.5 text-left transition-all duration-200 hover:border-gov-blue/35 hover:bg-white hover:shadow-sm"
                   >
-                    {s}
+                    <span className="flex-1 text-[12.5px] font-medium text-slate-700">{s}</span>
+                    <ChevronRight size={15} className="flex-shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-gov-navy" />
                   </button>
                 ))}
               </div>
@@ -352,30 +422,45 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         )}
 
         {/* Input bar */}
-        <div className="flex-shrink-0 bg-white border-t border-slate-100 rounded-b-3xl px-3 py-3">
-          <div className="flex items-end gap-2 bg-slate-50 rounded-2xl border border-slate-200 px-3 py-2 focus-within:ring-2 focus-within:ring-[#2b4c7e]/20 focus-within:border-[#2b4c7e]/40 transition-all">
+        <div className="relative flex-shrink-0 overflow-hidden border-t border-slate-100 bg-white px-3.5 pb-3 pt-3">
+          <div className="pointer-events-none absolute -bottom-3 right-4 text-slate-900/[0.04]">
+            <Landmark size={64} strokeWidth={1} />
+          </div>
+
+          <div className="relative flex items-end gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-4 pr-1.5 transition-all focus-within:border-gov-blue/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-gov-sky/15">
             <textarea
               ref={inputRef}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={lang === 'hi' ? 'Kuch bhi poochiye...' : 'Ask anything about your training...'}
+              placeholder={lang === 'hi' ? 'अपने प्रशिक्षण के बारे में पूछें…' : 'Ask anything about your training…'}
               rows={1}
               disabled={isTyping}
-              className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder-slate-400 resize-none focus:outline-none max-h-24 overflow-y-auto leading-relaxed disabled:opacity-50"
+              aria-label="Message Gyan"
+              className="max-h-24 flex-1 resize-none self-center overflow-y-auto bg-transparent py-1.5 text-[13px] leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none disabled:opacity-50"
               style={{ minHeight: '24px' }}
             />
             <VoiceButton lang={lang} onResult={onVoiceResult} />
             <button
               onClick={() => { handleSend(inputValue); setInputValue(''); }}
               disabled={!inputValue.trim() || isTyping}
-              className="flex-shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-[#2b4c7e] to-[#1a3660] text-white flex items-center justify-center shadow-md hover:shadow-lg hover:from-[#3a5d91] transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+              aria-label="Send message"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gov-navy to-gov-blue text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Send size={13} />
+              <Send size={15} />
             </button>
           </div>
-          <p className="text-[10px] text-slate-400 text-center mt-1.5">
-            {lang === 'hi' ? 'Shift+Enter नई line | 🎤 बोलकर पूछें' : 'Shift+Enter for new line | 🎤 speak to ask'}
+
+          <p className="relative mt-2 flex items-center justify-center gap-2.5 text-[10.5px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <Lightbulb size={11} className="text-gov-saffron" aria-hidden="true" />
+              {lang === 'hi' ? 'नई line के लिए Shift + Enter' : 'Shift + Enter for new line'}
+            </span>
+            <span className="h-3 w-px bg-slate-200" />
+            <span className="flex items-center gap-1">
+              <AudioLines size={11} className="text-accent-blue" aria-hidden="true" />
+              {lang === 'hi' ? 'बोलने के लिए mic दबाएँ' : 'Click mic to speak'}
+            </span>
           </p>
         </div>
       </div>
@@ -385,7 +470,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         id="chat-widget-bubble"
         onClick={() => setIsOpen(v => !v)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full
-          bg-gradient-to-br from-[#2b4c7e] to-[#1a3660]
+          bg-gradient-to-br from-gov-ink to-gov-blue
           text-white shadow-[0_8px_32px_-8px_rgba(43,76,126,0.6)]
           hover:shadow-[0_12px_40px_-8px_rgba(43,76,126,0.8)]
           hover:scale-110 active:scale-95

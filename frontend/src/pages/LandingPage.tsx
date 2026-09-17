@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import {
   User, Users, BookOpen, Activity, Award, Route, Moon, Sun, BrainCircuit, BookOpenCheck,
   FileQuestion, RefreshCw, Shield, LayoutDashboard, ArrowRight, Megaphone, MapPin, Mail, Phone,
-  ExternalLink, ChevronRight, BarChart3, Menu, X, Accessibility,
+  ExternalLink, ChevronRight, BarChart3, Menu, X, Accessibility, Square,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useScreenReader } from '../hooks/useScreenReader';
 import LoginPage from './LoginPage';
 import HomeChatWidget from '../components/home/HomeChatWidget';
 import { AshokaChakra, GovEmblem, Reveal, CountUp } from '../components/gov/GovUI';
@@ -20,6 +21,10 @@ const translations: Record<string, React.ReactNode> = {
   "Features": "विशेषताएँ",
   "Contact": "संपर्क",
   "Eng_Hi": "Eng | हिंदी",
+  "SR_Label": "स्क्रीन रीडर",
+  "SR_On": "पढ़ना रोकें",
+  "SR_Start": "यह पृष्ठ सुनें",
+  "SR_Stop": "पढ़ना बंद करें",
   "OFFICIAL_LOGIN": "अधिकारी लॉगिन",
   "ADMIN_PORTAL": "एडमिन पोर्टल",
   "Whats_New": "नया क्या है",
@@ -98,6 +103,7 @@ const LandingPage: React.FC = () => {
 
   const { theme, toggleTheme } = useTheme();
   const [lang, setLang] = useState<'en' | 'hi'>('en');
+  const screenReader = useScreenReader(lang);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -214,11 +220,30 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center gap-4">
             <a href="#main" className="hidden sm:inline hover:text-white transition-colors">{t('Skip', 'Skip to main content')}</a>
             <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
-            <span className="hidden sm:flex items-center gap-1.5"><Accessibility size={13} /> Screen Reader</span>
-            <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
+            {screenReader.supported && (
+              <>
+                <button
+                  onClick={() => screenReader.toggle('#main')}
+                  aria-pressed={screenReader.speaking}
+                  title={screenReader.speaking
+                    ? t('SR_Stop', 'Stop reading the page') as string
+                    : t('SR_Start', 'Read this page aloud') as string}
+                  className={`hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-semibold transition-colors ${
+                    screenReader.speaking
+                      ? 'bg-gov-saffron text-gov-ink'
+                      : 'hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {screenReader.speaking
+                    ? <><Square size={11} className="fill-current" /> {t('SR_On', 'Stop Reading')}</>
+                    : <><Accessibility size={13} /> {t('SR_Label', 'Screen Reader')}</>}
+                </button>
+                <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
+              </>
+            )}
             <div className="flex items-center rounded-full bg-white/10 p-0.5">
-              <button onClick={() => setLang('en')} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'en' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>EN</button>
-              <button onClick={() => setLang('hi')} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'hi' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>हिंदी</button>
+              <button onClick={() => { screenReader.stop(); setLang('en'); }} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'en' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>EN</button>
+              <button onClick={() => { screenReader.stop(); setLang('hi'); }} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'hi' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>हिंदी</button>
             </div>
             <button aria-label="Toggle Theme" onClick={toggleTheme} className="p-1 rounded-full hover:bg-white/10 hover:text-white transition-colors">
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
@@ -237,11 +262,11 @@ const LandingPage: React.FC = () => {
               <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-gov-blue dark:text-sky-300 leading-tight">
                 Ministry of Statistics &amp; Programme Implementation
               </span>
-              <span className="font-serif font-bold text-gov-ink dark:text-white text-[19px] md:text-[24px] leading-tight">
-                {t('SIP', 'Skill Intelligence Platform')}
+              <span className="font-serif font-bold text-gov-ink dark:text-white text-[20px] md:text-[26px] leading-tight">
+                KarmaSkill
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.2em] uppercase mt-0.5">
-                {t('GoI', 'Government of India')}
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.18em] uppercase mt-0.5">
+                {t('SIP', 'Skill Intelligence Platform')} · {t('GoI', 'Government of India')}
               </span>
             </div>
           </a>
@@ -319,14 +344,17 @@ const LandingPage: React.FC = () => {
 
       <main id="main">
         {/* ── Hero ───────────────────────────────────────────────────────── */}
-        <section id="home" className="relative overflow-hidden bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue text-white">
-          {/* decorative layers */}
-          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-          <div className="absolute -right-40 -top-40 text-white/[0.06] pointer-events-none">
-            <AshokaChakra size={720} strokeWidth={0.8} className="animate-spin-slow" />
-          </div>
-          <div className="absolute -left-24 bottom-[-120px] w-[420px] h-[420px] rounded-full bg-gov-saffron/20 blur-[110px]" />
-          <div className="absolute right-[20%] top-[30%] w-[320px] h-[320px] rounded-full bg-gov-green/20 blur-[110px]" />
+        <section id="home" className="relative overflow-hidden bg-gov-navy text-white">
+          {/* Hero artwork (chakra, growth bars, orbit arc) — gradient stays behind it
+              so the section still reads correctly if the image fails to load. */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue" />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: 'url("/hero-bg-blue.png")' }}
+          />
+          {/* Left-side scrim keeps the headline legible over the artwork */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gov-ink/80 via-gov-ink/35 to-transparent" />
 
           <div className="relative max-w-[1320px] mx-auto px-4 md:px-8 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
             <div>
@@ -335,7 +363,7 @@ const LandingPage: React.FC = () => {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-gov-saffron opacity-75 animate-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gov-saffron" />
                 </span>
-                {t('Powered', 'Powered by MoSPI AI Engine')} · Mission Karmayogi
+                KarmaSkill · {t('Powered', 'Powered by MoSPI AI Engine')}
               </div>
 
               <h1 className="font-serif text-[36px] sm:text-[46px] md:text-[56px] leading-[1.1] font-black tracking-tight mb-6 animate-fade-up [animation-delay:120ms]">
@@ -392,11 +420,28 @@ const LandingPage: React.FC = () => {
               </h4>
 
               <ol className="relative space-y-5 pl-2">
-                {/* Connector rail behind the markers */}
-                <span
+                {/* Curved connector echoing the orbit arc in the hero artwork */}
+                <svg
                   aria-hidden="true"
-                  className="absolute left-[29px] top-8 bottom-8 w-px bg-gradient-to-b from-gov-saffron/60 via-white/30 to-gov-green/60"
-                />
+                  className="pointer-events-none absolute left-0 top-0 h-full w-[60px] overflow-visible"
+                  viewBox="0 0 60 300"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M29 34 C -6 110, -6 190, 29 266"
+                    fill="none"
+                    stroke="url(#railGrad)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="railGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ff9933" stopOpacity="0.7" />
+                      <stop offset="50%" stopColor="#ffffff" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#4ade80" stopOpacity="0.7" />
+                    </linearGradient>
+                  </defs>
+                </svg>
                 {outcomes.map(({ icon: Icon, key, title, dKey, desc, ring, tint }, i) => (
                   <li
                     key={key}
@@ -540,12 +585,14 @@ const LandingPage: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <GovEmblem size={46} />
               <div>
-                <div className="text-[11.5px] text-gov-saffron font-semibold" lang="hi">सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय</div>
-                <div className="font-serif font-bold text-white text-[14px] leading-tight">Ministry of Statistics &amp; Programme Implementation</div>
+                <div className="font-serif font-bold text-white text-[18px] leading-tight">KarmaSkill</div>
+                <div className="text-[11px] text-white/55 font-bold uppercase tracking-[0.14em]">
+                  Ministry of Statistics &amp; Programme Implementation
+                </div>
               </div>
             </div>
             <p className="text-[13px] leading-[1.7] text-white/60 max-w-sm">
-              {t('SIP', 'Skill Intelligence Platform')} — evidence-based competency baselines, skill-gap analysis and iGOT learning pathways for officials of the National Statistical System.
+              KarmaSkill, the {t('SIP', 'Skill Intelligence Platform')} — evidence-based competency baselines, skill-gap analysis and iGOT learning pathways for officials of the National Statistical System.
             </p>
           </div>
 

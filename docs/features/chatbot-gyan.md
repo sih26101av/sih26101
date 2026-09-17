@@ -43,10 +43,21 @@ Frontend:
 - `src/hooks/useChatEngine.ts` — message state, typing delay, executes `theme` and
   `language` actions immediately, routes other actions through a confirmation banner
   (`pendingNav` → `confirmNav` / `cancelNav`).
+- `src/components/chat/GyanAvatar.tsx` — the assistant's artwork, shared by both
+  widgets: `GyanBot` (head, used in the header and every bot bubble) and `GyanHero`
+  (bot + chat bubbles + sparkles, used on the welcome screen). Pure inline SVG.
 - `src/components/dashboard/ChatWidget.tsx` — floating widget on the dashboard;
   markdown rendering, suggestion chips, Web Speech voice input (`types/speech.d.ts`).
 - `src/components/home/HomeChatWidget.tsx` — landing-page variant wired to
   `onScrollToSection` / `onOpenLogin` / `onLanguageChange`.
+- Both widgets share one presentation: a 400px-max rounded panel (full-width minus
+  gutters on mobile), navy header with the `GyanBot` avatar, online dot, chakra
+  watermark and a language control (a dropdown on home, a toggle on the dashboard),
+  a welcome screen of `GyanHero` + four `CAPABILITIES` cards + a "Try asking" list,
+  and a pill input with mic + send plus the Shift+Enter / mic hints.
+  Each capability card and suggestion row calls `handleSend` with a real prompt —
+  none of them are decorative. There is deliberately **no** file-attach button: the
+  chat engine has no upload path, so the icon would be dead.
 
 ## In / out
 

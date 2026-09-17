@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/ChatWidget.tsx": {
-    "mtime": 1789467597.6496682,
-    "seen": 1789655175.7671483,
-    "ast_hash": "9413bdde01531694a0cca149fbb5b0c8",
+    "mtime": 1789673152.290162,
+    "seen": 1789673301.1296566,
+    "ast_hash": "3e3367238371a30e5cb51ed1f150635f",
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/CourseCard.tsx": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/home/HomeChatWidget.tsx": {
-    "mtime": 1789467597.6522007,
-    "seen": 1789655175.7671616,
-    "ast_hash": "50ae0137220876059d28d5fffac65e3d",
+    "mtime": 1789673002.728381,
+    "seen": 1789673301.132904,
+    "ast_hash": "e41e04bc92861b5a9afcd6ce4065310c",
     "semantic_hash": ""
   },
   "frontend/src/context/AuthContext.tsx": {
@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/LandingPage.tsx": {
-    "mtime": 1789670966.6661222,
-    "seen": 1789671434.9513965,
-    "ast_hash": "72fb426967c99944a07dd3f96b8d2d06",
+    "mtime": 1789672889.1714761,
+    "seen": 1789673301.137621,
+    "ast_hash": "e6d74149eb7af608cd72422ce3802d9d",
     "semantic_hash": ""
   },
   "frontend/src/pages/LearnerDashboard.tsx": {
@@ -600,9 +600,9 @@
     "semantic_hash": ""
   },
   "docs/features/chatbot-gyan.md": {
-    "mtime": 1789652558.35874,
-    "seen": 1789655175.7673457,
-    "ast_hash": "8a0b89ce6fa2079f4983511b9d26565e",
+    "mtime": 1789673264.8578508,
+    "seen": 1789673301.1637402,
+    "ast_hash": "e6c8e14e1859a84519213f35539e0860",
     "semantic_hash": ""
   },
   "docs/features/karma-points.md": {
@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "docs/features/learner-dashboard.md": {
-    "mtime": 1789671339.8623145,
-    "seen": 1789671434.9924588,
-    "ast_hash": "b1761b0ace2ca47a6b26cd6ce336a56f",
+    "mtime": 1789673246.88545,
+    "seen": 1789673301.1639924,
+    "ast_hash": "53b8239352701a38da26a5b60cab591c",
     "semantic_hash": ""
   },
   "docs/features/mock-igot-integration.md": {
@@ -654,9 +654,9 @@
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1789670172.101291,
-    "seen": 1789671434.9948423,
-    "ast_hash": "24871246210a9b8f08f26447989cfa6a",
+    "mtime": 1789672824.2664294,
+    "seen": 1789673301.1655135,
+    "ast_hash": "b606344b63fb77e2db41574372131166",
     "semantic_hash": ""
   },
   "main-lms-backend/_err.txt": {
@@ -771,6 +771,48 @@
     "mtime": 1789670310.8198967,
     "seen": 1789671434.9472451,
     "ast_hash": "19b278e4944f17fc862a7671b39374da",
+    "semantic_hash": ""
+  },
+  "main-lms-backend/pyproject.toml": {
+    "mtime": 1787893948.0937743,
+    "seen": 1789672196.4086847,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/courses.json": {
+    "mtime": 1787910107.6273973,
+    "seen": 1789672196.4087381,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/courses_1.json": {
+    "mtime": 1788437604.4831629,
+    "seen": 1789672196.4087415,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "mock-igot-server/pyproject.toml": {
+    "mtime": 1787893948.1103475,
+    "seen": 1789672196.4087577,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/chat/GyanAvatar.tsx": {
+    "mtime": 1789672915.6853929,
+    "seen": 1789673301.1293952,
+    "ast_hash": "97c16bcbee19cd4da7e9388d003d0240",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useScreenReader.ts": {
+    "mtime": 1789672851.6865718,
+    "seen": 1789673301.1356044,
+    "ast_hash": "aac0f46e76714e229e652793d9fa540b",
+    "semantic_hash": ""
+  },
+  "frontend/public/hero-bg-blue.png": {
+    "mtime": 1789672747.0749438,
+    "seen": 1789673301.1675534,
+    "ast_hash": "ac46bd64e42e9052cf87f2236c1adb4f",
     "semantic_hash": ""
   }
 }
