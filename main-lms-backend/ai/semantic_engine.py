@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from collections import Counter
 from difflib import get_close_matches
 from typing import Optional
@@ -54,42 +55,19 @@ LANGUAGE_POOLS: dict[str, tuple[str, ...]] = {
 LATIN_LANGUAGES = frozenset({"en", "hi_latn"})
 TOP_K = 1
 
-# Winning scores below this are treated as "not understood". Similarity scales
-# differ per model: e5 scores cluster in 0.85–0.97. 0.87 sits below ~99% of
-# held-out in-scope queries and above keyboard-mash input (scripts/eval_intents.py).
+# Winning scores below this mean "nothing here really matches" and the query is
+# answered with "I don't know" rather than the nearest-but-unrelated intent.
+# Similarity scales differ per model: e5 scores cluster in 0.85–1.00. Measured on
+# tests/data/gibberish_eval.json vs the held-out benchmark, 0.89 rejects 98% of
+# nonsense and costs 6 of 906 real queries; 0.87 rejected only 85% of nonsense.
 _LOW_CONFIDENCE = {
-    "intfloat/multilingual-e5-small": 0.87,
+    "intfloat/multilingual-e5-small": 0.89,
     "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": 0.50,
 }
 
 
 def low_confidence_threshold() -> float:
     return _LOW_CONFIDENCE.get(model_name("chat"), 0.0)
-
-_NAV_VOCAB = [
-    "dashboard", "skill", "gap", "gaps", "competency", "competencies",
-    "course", "courses", "enroll", "enrollment", "my courses", "active",
-    "progress", "achievement", "achievements", "radar", "chart",
-    "quiz", "assessment", "upload", "pdf", "generate", "ai generator",
-    "profile", "header", "mandatory", "statistics", "analysis",
-    "recommend", "recommendation", "pathway", "learning",
-    "navigate", "how", "where", "help", "find", "access", "open", "go to",
-    "tab", "section", "button", "panel",
-    "great", "thanks", "good", "bye", "yes", "okay",
-]
-
-
-def _correct_tokens(query: str) -> str:
-    """Fuzzy-correct English UI vocabulary typos ('dasboard' -> 'dashboard')."""
-    corrected = []
-    for tok in query.lower().split():
-        if len(tok) >= 3:
-            match = get_close_matches(tok, _NAV_VOCAB, n=1, cutoff=0.75)
-            corrected.append(match[0] if match else tok)
-        else:
-            corrected.append(tok)
-    return " ".join(corrected)
-
 
 def load_corpus() -> dict[str, dict[str, list[str]]]:
     """Returns {intent: {lang: [phrases]}}."""
@@ -103,6 +81,58 @@ def load_corpus() -> dict[str, dict[str, list[str]]]:
 
 INTENT_CORPUS = load_corpus()
 INTENTS: tuple[str, ...] = tuple(sorted(INTENT_CORPUS))
+
+
+# ── Typo correction ───────────────────────────────────────────────────────────
+# Tuned on tests/data/typo_eval.json: these values give ~90% intent accuracy on
+# misspelled queries with no loss on the held-out benchmark. Correcting against a
+# small hand-written word list (the previous approach) scored *worse than no
+# correction at all* — it snapped unknown words onto the nearest of ~50 entries,
+# so "helo" became "help" (→ Contact section) and "goodby" became "good".
+_TYPO_MIN_LENGTH = 4      # shorter tokens have too many equally-close neighbours
+_TYPO_CUTOFF = 0.85       # difflib ratio; below ~0.8 real words get rewritten
+_PUNCTUATION = ".,!?;:'\"()[]{}"
+
+# Texting shorthand is too short for fuzzy matching ("r" is one edit from a dozen
+# words), so the unambiguous ones are expanded from an explicit table instead.
+_SHORTHAND = {
+    "u": "you", "ur": "your", "urs": "yours", "r": "are", "n": "and",
+    "pls": "please", "plz": "please", "thx": "thanks", "thnx": "thanks", "ty": "thanks",
+    "abt": "about", "b4": "before", "bcoz": "because", "bcz": "because", "coz": "because",
+    "wat": "what", "wut": "what", "wht": "what", "hw": "how",
+    "info": "information", "msg": "message",
+}
+
+
+def _build_vocabulary() -> frozenset[str]:
+    """Every word used in a Latin-script prototype — the vocabulary Gyan must understand."""
+    words: set[str] = set()
+    for per_language in INTENT_CORPUS.values():
+        for language in LATIN_LANGUAGES:
+            for phrase in per_language.get(language, []):
+                words.update(w for w in re.findall(r"[a-z]+", phrase.lower()) if len(w) >= 3)
+    return frozenset(words)
+
+
+VOCABULARY = _build_vocabulary()
+
+
+def _correct_tokens(query: str) -> str:
+    """Repair typos in Latin-script queries ("dasboard" -> "dashboard", "helo" -> "hello").
+
+    Words already in the vocabulary are never rewritten, so valid input passes through.
+    """
+    corrected = []
+    for token in query.lower().split():
+        word = token.strip(_PUNCTUATION)
+        if word in _SHORTHAND:
+            corrected.append(_SHORTHAND[word])
+        elif len(word) >= _TYPO_MIN_LENGTH and word.isalpha() and word not in VOCABULARY:
+            match = get_close_matches(word, VOCABULARY, n=1, cutoff=_TYPO_CUTOFF)
+            corrected.append(match[0] if match else token)
+        else:
+            corrected.append(token)
+    return " ".join(corrected)
 
 _INTENT_LABELS: list[str] = []
 _PROTOTYPE_SENTENCES: list[str] = []
@@ -171,7 +201,12 @@ def score_intents(query: str, lang: str, top_k: int = TOP_K) -> dict[str, float]
 
 
 def classify_intent(query: str, lang: Optional[str] = None) -> tuple[str, float]:
-    """Returns (best_intent, confidence). ("general", 0.0) if the embedder is unavailable."""
+    """Returns (intent, confidence) — a final decision the caller can render directly.
+
+    A query that matches nothing well enough comes back as "out_of_scope" rather than
+    the nearest unrelated intent, so random input gets "I don't know" instead of a
+    confident wrong answer. ("general", 0.0) means the embedder is unavailable.
+    """
     if lang is None:
         from services.language_service import detect_chat_variant
         lang = detect_chat_variant(query)
@@ -184,11 +219,19 @@ def classify_intent(query: str, lang: Optional[str] = None) -> tuple[str, float]
         return "general", 0.0
 
     best_intent = max(scores, key=scores.get)
+    confidence = scores[best_intent]
+    if confidence < low_confidence_threshold():
+        logger.debug(
+            "[SemanticEngine] query=%r lang=%s best=%s confidence=%.3f below threshold — out_of_scope",
+            query, lang, best_intent, confidence,
+        )
+        return "out_of_scope", confidence
+
     logger.debug(
         "[SemanticEngine] query=%r lang=%s intent=%s confidence=%.3f",
-        query, lang, best_intent, scores[best_intent],
+        query, lang, best_intent, confidence,
     )
-    return best_intent, scores[best_intent]
+    return best_intent, confidence
 
 
 def vectorize_profile(skill_gaps: list[dict]) -> dict:

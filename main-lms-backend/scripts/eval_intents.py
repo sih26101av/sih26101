@@ -4,9 +4,11 @@ Benchmark Gyan's intent classifier on the held-out multilingual set.
     python scripts/eval_intents.py
     python scripts/eval_intents.py --model intfloat/multilingual-e5-small --top-k 1
     python scripts/eval_intents.py --detect          # route by detected language, not the true one
+    python scripts/eval_intents.py --robustness      # typo tolerance + gibberish rejection
     python scripts/eval_intents.py --json out.json
 
 Eval phrases: tests/data/intent_eval/<lang>.json  ({intent: [phrases]}).
+Robustness:   tests/data/typo_eval.json, tests/data/gibberish_eval.json.
 """
 
 from __future__ import annotations
@@ -35,6 +37,8 @@ def main() -> None:
     parser.add_argument("--model", help="CHAT_EMBEDDER_MODEL override")
     parser.add_argument("--top-k", type=int, default=None)
     parser.add_argument("--detect", action="store_true", help="classify using detected language")
+    parser.add_argument("--robustness", action="store_true",
+                        help="also score typo tolerance and gibberish rejection")
     parser.add_argument("--json", help="write results to this path")
     args = parser.parse_args()
 
@@ -97,6 +101,26 @@ def main() -> None:
     print(f"  in-scope      {pct(in_scope_conf, .1):.3f} / {pct(in_scope_conf, .5):.3f} / {pct(in_scope_conf, .9):.3f}")
     print(f"  out_of_scope  {pct(oos_conf, .1):.3f} / {pct(oos_conf, .5):.3f} / {pct(oos_conf, .9):.3f}")
     results["top_confusions"] = [[*k, n] for k, n in confusions.most_common(30)]
+
+    if args.robustness:
+        data_dir = os.path.join(ROOT, "tests", "data")
+        typos = json.load(open(os.path.join(data_dir, "typo_eval.json"), encoding="utf-8"))
+        gibberish = json.load(open(os.path.join(data_dir, "gibberish_eval.json"), encoding="utf-8"))
+        classify = lambda q: se.classify_intent(q, detect_chat_variant(q))[0]  # noqa: E731
+
+        outcomes = Counter()
+        for case in typos:
+            got = classify(case["query"])
+            outcomes["correct" if got == case["intent"] else
+                      "rejected" if got == "out_of_scope" else "wrong"] += 1
+        rejected = sum(classify(c["query"]) == "out_of_scope" for c in gibberish)
+
+        results["typo_accuracy"] = round(outcomes["correct"] / len(typos), 4)
+        results["gibberish_rejection"] = round(rejected / len(gibberish), 4)
+        print(f"\nRobustness  (threshold {se.low_confidence_threshold():.2f})")
+        print(f"  typos       {outcomes['correct']}/{len(typos)} correct "
+              f"({results['typo_accuracy']:.0%}), {outcomes['rejected']} rejected, {outcomes['wrong']} wrong")
+        print(f"  gibberish   {rejected}/{len(gibberish)} rejected ({results['gibberish_rejection']:.0%})")
 
     if args.json:
         with open(args.json, "w", encoding="utf-8") as f:

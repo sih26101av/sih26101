@@ -297,15 +297,19 @@ async def chat(req: ChatRequest):
     if intercepted is not None:
         return intercepted
 
-    from ai.semantic_engine import LATIN_LANGUAGES, classify_intent, low_confidence_threshold
+    from ai.semantic_engine import LATIN_LANGUAGES, classify_intent
 
     intent, confidence = classify_intent(req.message, variant)
     logger.info("[Gyan/semantic] lang=%s intent=%s confidence=%.3f query=%r", variant, intent, confidence, req.message)
 
-    if intent != "general" and confidence >= low_confidence_threshold():
+    # classify_intent already downgrades weak matches to out_of_scope, so its answer
+    # is final. The keyword tier below only covers the embedder being unavailable —
+    # it must not second-guess a working model, or nonsense containing domain words
+    # ("course gap dashboard banana") gets answered with real recommendations.
+    if intent != "general":
         return _intent_response(intent, req, variant, ctx, engine="semantic")
 
-    logger.info("[Gyan] No confident semantic intent (%.3f) — keyword fallback.", confidence)
+    logger.info("[Gyan] Semantic engine unavailable — keyword fallback.")
     fallback_intent = detect_intent_keyword(req.message) if variant in LATIN_LANGUAGES else "fallback"
     return _intent_response(fallback_intent, req, variant, ctx, engine="template")
 

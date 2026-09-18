@@ -1,0 +1,212 @@
+[
+  {
+    "lang": "en",
+    "query": "wat are my skil gaps",
+    "intent": "skill_gaps"
+  },
+  {
+    "lang": "en",
+    "query": "wht r my skill gapss",
+    "intent": "skill_gaps"
+  },
+  {
+    "lang": "en",
+    "query": "sho me my skill gap",
+    "intent": "skill_gaps"
+  },
+  {
+    "lang": "en",
+    "query": "which skils am i weake in",
+    "intent": "skill_gaps"
+  },
+  {
+    "lang": "en",
+    "query": "recomend me a corse",
+    "intent": "recommend"
+  },
+  {
+    "lang": "en",
+    "query": "sugest a cours for me",
+    "intent": "recommend"
+  },
+  {
+    "lang": "en",
+    "query": "wich corse shud i take",
+    "intent": "recommend"
+  },
+  {
+    "lang": "en",
+    "query": "watt shud i lern nex",
+    "intent": "recommend"
+  },
+  {
+    "lang": "en",
+    "query": "shw my progres",
+    "intent": "progress"
+  },
+  {
+    "lang": "en",
+    "query": "hw am i doin",
+    "intent": "progress"
+  },
+  {
+    "lang": "en",
+    "query": "my achievments",
+    "intent": "achievements"
+  },
+  {
+    "lang": "en",
+    "query": "wheres the dashbord",
+    "intent": "navigation_dashboard"
+  },
+  {
+    "lang": "en",
+    "query": "opne dashboad",
+    "intent": "navigation_dashboard"
+  },
+  {
+    "lang": "en",
+    "query": "wher r my corses",
+    "intent": "navigation_my_courses"
+  },
+  {
+    "lang": "en",
+    "query": "my enrolld courses",
+    "intent": "navigation_my_courses"
+  },
+  {
+    "lang": "en",
+    "query": "helo",
+    "intent": "greeting"
+  },
+  {
+    "lang": "en",
+    "query": "helllo there",
+    "intent": "greeting"
+  },
+  {
+    "lang": "en",
+    "query": "goood mornign",
+    "intent": "greeting"
+  },
+  {
+    "lang": "en",
+    "query": "thnaks",
+    "intent": "gratitude"
+  },
+  {
+    "lang": "en",
+    "query": "thnx alot",
+    "intent": "gratitude"
+  },
+  {
+    "lang": "en",
+    "query": "tank you",
+    "intent": "gratitude"
+  },
+  {
+    "lang": "en",
+    "query": "byee",
+    "intent": "farewell"
+  },
+  {
+    "lang": "en",
+    "query": "goodby",
+    "intent": "farewell"
+  },
+  {
+    "lang": "en",
+    "query": "wat is gdp",
+    "intent": "statistics_gdp"
+  },
+  {
+    "lang": "en",
+    "query": "explane cpi",
+    "intent": "statistics_cpi"
+  },
+  {
+    "lang": "en",
+    "query": "watsapp is ur name",
+    "intent": "bot_identity"
+  },
+  {
+    "lang": "en",
+    "query": "who r u",
+    "intent": "bot_identity"
+  },
+  {
+    "lang": "en",
+    "query": "wat can u do",
+    "intent": "bot_identity"
+  },
+  {
+    "lang": "en",
+    "query": "chnage to dark mod",
+    "intent": "ui_action_request"
+  },
+  {
+    "lang": "en",
+    "query": "turn darkmode on",
+    "intent": "ui_action_request"
+  },
+  {
+    "lang": "en",
+    "query": "swithc to hindi languge",
+    "intent": "ui_action_request"
+  },
+  {
+    "lang": "en",
+    "query": "log me in",
+    "intent": "navigation_login"
+  },
+  {
+    "lang": "en",
+    "query": "sigin in pls",
+    "intent": "navigation_login"
+  },
+  {
+    "lang": "en",
+    "query": "wat is skil gap",
+    "intent": "concept_skill_gap"
+  },
+  {
+    "lang": "en",
+    "query": "wen was i last assesed",
+    "intent": "last_assessment"
+  },
+  {
+    "lang": "en",
+    "query": "mi profil stats",
+    "intent": "profile_stats"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "mera skil gap kya hai",
+    "intent": "skill_gaps"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "kaunsa cors karu",
+    "intent": "recommend"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "progres dikao",
+    "intent": "progress"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "dashbord kaha hai",
+    "intent": "navigation_dashboard"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "namste",
+    "intent": "greeting"
+  },
+  {
+    "lang": "hi_latn",
+    "query": "shukriya bhot",
+    "intent": "gratitude"
+  }
+]

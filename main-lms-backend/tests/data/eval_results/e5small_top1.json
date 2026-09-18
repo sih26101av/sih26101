@@ -203,12 +203,6 @@
     ],
     [
       "en",
-      "gratitude",
-      "navigation_progress",
-      1
-    ],
-    [
-      "en",
       "farewell",
       "greeting",
       1
@@ -217,6 +211,12 @@
       "en",
       "navigation_features",
       "about_platform",
+      1
+    ],
+    [
+      "en",
+      "navigation_about",
+      "navigation_dashboard",
       1
     ],
     [
@@ -231,5 +231,7 @@
       "recommend",
       1
     ]
-  ]
+  ],
+  "typo_accuracy": 0.9048,
+  "gibberish_rejection": 0.9783
 }
