@@ -24,6 +24,8 @@ import type { Achievement } from "../types/domain";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
 import PageHeader from "../components/shell/PageHeader";
+import { MediaAnalysisCard, MediaAnswerReview, YoutubeLinkInput } from "../components/assessment/MediaQuizExtras";
+import { MEDIA_ACCEPT, generateMediaQuiz, generateYoutubeQuiz, isMediaFile, isYoutubeUrl } from "../services/mediaQuizApi";
 import SectionCard from "../components/shell/SectionCard";
 
 type StudioTab = "new_quiz" | "history" | "settings";
@@ -57,6 +59,7 @@ const AssessmentPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState("pdf");
   const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
   const [searchTerm, setSearchTerm] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
 
   // ── Real assessment history ────────────────────────────────────────────────
   const [history, setHistory] = useState<Achievement[]>([]);
@@ -95,9 +98,32 @@ const AssessmentPage: React.FC = () => {
   const triggerFileInput = () => inputRef.current?.click();
 
   const handleGenerate = async () => {
-    if (!file) { setErrorMsg("Please upload a document to proceed."); return; }
+    // Video / audio / YouTube go to the media pipeline (services/mediaQuizApi.ts).
+    const useYoutube = selectedFormat === "text" && youtubeUrl.trim() !== "";
+    if (useYoutube && !isYoutubeUrl(youtubeUrl)) { setErrorMsg("Please paste a valid YouTube link."); return; }
+    if (!file && !useYoutube) { setErrorMsg("Please upload a document to proceed."); return; }
+    const isMedia = useYoutube || (file !== null && isMediaFile(file));
     setErrorMsg("");
     setStatus("loading");
+    if (isMedia) {
+      setLoadingText(useYoutube ? "Downloading video..." : "Probing speech, on-screen text and activity...");
+      setTimeout(() => setLoadingText("Extracting evidence (speech, slides, screen)..."), 6000);
+      setTimeout(() => setLoadingText("Reading slides and speech — long videos take 2–5 minutes..."), 30000);
+      setTimeout(() => setLoadingText("Generating evidence-cited questions..."), 120000);
+      try {
+        const data = useYoutube
+          ? await generateYoutubeQuiz(youtubeUrl, difficulty)
+          : await generateMediaQuiz(file as File, difficulty);
+        setQuizData(data);
+        setAnswers(new Array(data.questions.length).fill(-1));
+        setStatus("quiz");
+      } catch (err: any) {
+        console.error(err);
+        setErrorMsg(err.message || "An error occurred");
+        setStatus("idle");
+      }
+      return;
+    }
     setLoadingText("Extracting knowledge base...");
 
     setTimeout(() => setLoadingText("Generating Q&A pairs..."), 2000);
@@ -105,7 +131,7 @@ const AssessmentPage: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", file as File);
       formData.append("user_id", userId);
       formData.append("difficulty", difficulty);
 
@@ -174,6 +200,7 @@ const AssessmentPage: React.FC = () => {
     setScoreInfo(null);
     setStatus("idle");
     setErrorMsg("");
+    setYoutubeUrl("");
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -229,13 +256,13 @@ const AssessmentPage: React.FC = () => {
             <>
               <SectionCard
                 title="Generate New Assessment"
-                subtitle="Supported: PDF, DOCX, PPTX, TXT, MP4, MP3"
+                subtitle="Supported: PDF, DOCX, PPTX, TXT, video (MP4, MKV, WEBM, MOV), audio (MP3, WAV, M4A) and YouTube links"
               >
                 <input
                   ref={inputRef}
                   type="file"
                   className="hidden"
-                  accept=".pdf,.txt,.docx,.pptx,.mp4,.mp3"
+                  accept={`.pdf,.txt,.docx,.pptx,${MEDIA_ACCEPT}`}
                   aria-label="Choose a document to generate an assessment from"
                   onChange={handleFileChange}
                 />
@@ -248,7 +275,7 @@ const AssessmentPage: React.FC = () => {
                         key={id}
                         type="button"
                         aria-pressed={isSelected}
-                        onClick={() => { setSelectedFormat(id); triggerFileInput(); }}
+                        onClick={() => { setSelectedFormat(id); if (id !== "text") triggerFileInput(); }}
                         className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-5 text-center transition-all duration-300 hover:-translate-y-0.5 ${
                           isSelected
                             ? "border-gov-blue bg-accent-blue-soft shadow-gov dark:border-sky-500 dark:bg-sky-500/10"
@@ -263,6 +290,8 @@ const AssessmentPage: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {selectedFormat === "text" && <YoutubeLinkInput value={youtubeUrl} onChange={setYoutubeUrl} />}
 
                 {file && (
                   <div className="mb-5 flex items-center justify-between rounded-xl border border-accent-blue/25 bg-accent-blue-soft px-4 py-3 text-accent-blue dark:border-sky-800/50 dark:bg-sky-900/20 dark:text-sky-300">
@@ -479,6 +508,8 @@ const AssessmentPage: React.FC = () => {
             </span>
           </div>
 
+          {quizData.media && <MediaAnalysisCard report={quizData.media} skillName={quizData.skill_name} />}
+
           {errorMsg && (
             <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-accent-rose dark:border-red-800/50 dark:bg-red-900/20 dark:text-red-400">
               {errorMsg}
@@ -580,6 +611,9 @@ const AssessmentPage: React.FC = () => {
               </button>
             </div>
           </div>
+          {quizData?.media && (
+            <MediaAnswerReview questions={quizData.questions} evidence={quizData.evidence ?? []} answers={answers} />
+          )}
         </div>
       )}
     </AppShell>

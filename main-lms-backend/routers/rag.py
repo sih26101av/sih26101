@@ -25,10 +25,8 @@ from typing import Optional, Dict, Any, Tuple, List
 
 import httpx
 from dotenv import load_dotenv
-import google.generativeai as genai
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from auth.database import SessionLocal, engine, get_db
 from auth.dependencies import get_current_user
@@ -48,22 +46,9 @@ from fastapi import Depends
 # Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
 
-# PDF Extraction libraries
-try:
-    import pdfplumber
-except ImportError:
-    pdfplumber = None
-
-try:
-    import pypdf
-except ImportError:
-    pypdf = None
-
-# PPTX Extraction library
-try:
-    from pptx import Presentation
-except ImportError:
-    Presentation = None
+# PDF/PPTX extraction, LangChain and Gemini are imported inside the functions
+# that use them: langchain_text_splitters alone pulls in torch + transformers
+# (~20 s), which kept the server from binding its port at startup.
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -135,6 +120,8 @@ class GradeResponse(BaseModel):
     db_updated: Optional[bool] = Field(None, description="Indicates whether the internal SQLite database was updated")
     # FIX (Bug #10): new field — True only on first submission
     evidenceWritten: Optional[bool] = Field(None, description="True if a new EvidenceLog row was written (first submission only)")
+    karmaAwarded: Optional[int] = Field(None, description="Karma Points earned by this submission (first pass only)")
+    karmaNote: Optional[str] = Field(None, description="Why fewer / no karma points were awarded (daily cap, limit)")
 
 
 
@@ -217,6 +204,15 @@ def _extract_pdf(file_bytes: bytes) -> Tuple[str, int]:
     Extracts text from PDF bytes using pdfplumber (primary) with fallback to pypdf.
     Returns a tuple of (extracted_text, page_count).
     """
+    try:
+        import pdfplumber
+    except ImportError:
+        pdfplumber = None
+    try:
+        import pypdf
+    except ImportError:
+        pypdf = None
+
     extracted_pages = []
     page_count = 0
 
@@ -267,6 +263,11 @@ def _extract_pptx(file_bytes: bytes) -> Tuple[str, int]:
     Extracts text from PPTX files using python-pptx with XML fallback.
     Returns a tuple of (extracted_text, slide_count).
     """
+    try:
+        from pptx import Presentation
+    except ImportError:
+        Presentation = None
+
     slide_texts = []
     slide_count = 0
 
@@ -366,6 +367,8 @@ def _chunk_document_text(text: str, chunk_size: int = 1000, chunk_overlap: int =
     """
     if not text or not text.strip():
         return []
+
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -549,6 +552,8 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="GEMINI_API_KEY is not configured in the .env file. Please configure a valid Gemini API key.",
         )
+
+    import google.generativeai as genai
 
     try:
         genai.configure(api_key=api_key)
@@ -949,6 +954,7 @@ async def grade_quiz(
     db_updated: Optional[bool] = None
     evidence_written: Optional[bool] = None
     final_level: int = 3
+    karma_result = None
 
     def _grant_value_for_score(score: float) -> float:
         """Maps pass score [70,100] → evidence level [2.5, 4.0] (Bug #10)."""
@@ -1033,6 +1039,18 @@ async def grade_quiz(
                 evidence_written = False
 
             db.commit()
+            if evidence_written:
+                # The memoised competency state predates this row — drop it so
+                # the dashboard refetch after a pass shows the new level.
+                from services import app_state
+                app_state.invalidate_user(igot_user_id)
+            if passed:
+                from models.models import KarmaEventType
+                from services.karma_engine import karma_engine
+                karma_result = karma_engine.award_safe(igot_user_id, KarmaEventType.ASSESSMENT_PASSED, {
+                    "referenceId": payload.quiz_id,
+                    "note": quiz.get("skill_name") or quiz.get("filename") or "Quiz passed",
+                })
 
     except Exception as exc:
         db.rollback()
@@ -1099,6 +1117,8 @@ async def grade_quiz(
             msg += " Practice assessment evidence recorded for skill gap analysis."
         elif evidence_written is False and not (existing_attempt if 'existing_attempt' in dir() else True):
             msg += " (Evidence already recorded from a previous submission.)"
+        if karma_result and karma_result.points_awarded > 0:
+            msg += f" +{karma_result.points_awarded} Karma Points earned."
         if synced_to_igot:
             msg += " Synced to iGOT."
         elif synced_to_igot is False:
@@ -1122,6 +1142,8 @@ async def grade_quiz(
         igot_response   = igot_response_data,
         db_updated      = db_updated,
         evidenceWritten = evidence_written,
+        karmaAwarded    = karma_result.points_awarded if karma_result else None,
+        karmaNote       = karma_result.reason if karma_result else None,
     )
 
 

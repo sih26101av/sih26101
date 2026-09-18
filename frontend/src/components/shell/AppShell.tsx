@@ -53,6 +53,8 @@ interface AppShellProps {
 
   /** Rendered at the bottom of the sidebar (help card / ministry mark). */
   sidebarFooter?: React.ReactNode;
+  /** Decorative illustration between the nav and the footer (desktop sidebar only). */
+  sidebarArt?: React.ReactNode;
 
   children: React.ReactNode;
 }
@@ -69,6 +71,7 @@ const AppShell: React.FC<AppShellProps> = ({
   onSearchChange,
   searchPlaceholder = 'Search…',
   sidebarFooter,
+  sidebarArt,
   children,
 }) => {
   const { theme, toggleTheme } = useTheme();
@@ -271,6 +274,7 @@ const AppShell: React.FC<AppShellProps> = ({
         {/* ── Sidebar (desktop) ──────────────────────────────────────────── */}
         <aside className="sticky top-[62px] hidden h-[calc(100vh-62px)] w-[246px] flex-shrink-0 flex-col border-r border-gov-line bg-white dark:border-slate-800 dark:bg-slate-900/60 lg:flex">
           {navList}
+          {sidebarArt}
           {sidebarFooter && <div className="px-3 pb-4">{sidebarFooter}</div>}
         </aside>
 

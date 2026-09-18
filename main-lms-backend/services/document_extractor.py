@@ -7,10 +7,8 @@ Zero external API calls.
 """
 
 import json
-import requests
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from pypdf import PdfReader
 
 # ── Structured Output Schemas ────────────────────────────────────────────────
 
@@ -35,6 +33,7 @@ class DocumentExtractorService:
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         try:
+            from pypdf import PdfReader
             reader = PdfReader(pdf_path)
             return "\n".join([page.extract_text() or "" for page in reader.pages])
         except Exception as e:
@@ -62,6 +61,7 @@ class DocumentExtractorService:
         # FIX: Pydantic V2 syntax
         schema = CertificateExtractionResult.model_json_schema()
 
+        import requests
         response = requests.post(
             f"{self.ollama_url}/api/generate",
             json={

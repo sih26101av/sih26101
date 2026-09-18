@@ -111,7 +111,9 @@ Frontend:
 
 Consumes learner-dashboard state; drives UI via `useTheme`, tab state and the
 landing page's scroll handlers. Shares the embedding model with the recommendation
-engine, so the first chat request after startup may pay the model-load cost.
+engine. The chat embedder and prototype vectors (disk-cached) load during
+`main._warm_up`; `POST /api/v1/chat` waits in `_readiness_gate` until then,
+while `GET /api/v1/chat/mode` answers immediately (`not_loaded` meanwhile).
 
 ## TODOs / edge cases
 

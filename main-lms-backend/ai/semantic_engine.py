@@ -30,7 +30,7 @@ from typing import Optional
 
 import numpy as np
 
-from ai.embedder import get_embedder, is_embedder_ready, model_name
+from ai.embedder import encode_cached, get_embedder, is_embedder_ready, model_name
 
 logger = logging.getLogger(__name__)
 
@@ -130,12 +130,8 @@ def _ensure_prototypes() -> None:
             "[SemanticEngine] Encoding %d prototypes (%d intents, %d languages)…",
             len(_PROTOTYPE_SENTENCES), len(INTENTS), len(CORPUS_LANGUAGES),
         )
-        _prototype_vecs = get_embedder("chat").encode(
-            _PROTOTYPE_SENTENCES,
-            normalize_embeddings=True,
-            batch_size=64,
-            show_progress_bar=False,
-        )
+        # Memoised on disk; the model is loaded regardless since queries are encoded live.
+        _prototype_vecs = encode_cached("chat", _PROTOTYPE_SENTENCES, kind="query", embedder=get_embedder("chat"))
         logger.info("[SemanticEngine] Intent prototypes ready.")
     except Exception as exc:
         logger.warning("[SemanticEngine] Could not encode prototypes: %s", exc)

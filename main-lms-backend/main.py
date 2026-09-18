@@ -10,7 +10,12 @@ Responsibilities
   AFTER a request has been authenticated/authorised here.
 • Never stores auth data on the mock server; never proxies raw tokens.
 
-On startup: creates users_auth table in the auth DB (Neon Postgres, or SQLite auth.db fallback) (idempotent).
+On startup the port binds at once; the rest happens in the background:
+  • _create_schema — users_auth + karma tables in the auth DB (Neon Postgres,
+    or SQLite auth.db fallback), idempotent → app_state.db_ready
+  • _warm_up — embedders, recommendation engine, SCIL reference data → app_state.ready
+_readiness_gate holds each request only for what it needs (see _UNGATED).
+GET /health reports both states and never waits.
 """
 
 from routers import competency
@@ -31,6 +36,7 @@ from models.domain import (
 )
 from routers.chatbot import router as chatbot_router
 from routers.rag import router as rag_router
+from routers.media_quiz import router as media_quiz_router
 from routers.ai_tools import router as ai_tools_router
 from routers.karma import router as karma_router
 import httpx
@@ -45,6 +51,36 @@ app = FastAPI(
     description="Main Orchestrator Server — owns auth, delegates data to iGOT adapter",
     version="2.0",
 )
+
+# ── Readiness gate ─────────────────────────────────────────────────────────────
+# Startup binds the port before the schema check and AI warm-up finish. Every
+# request except /health and the docs waits for the schema (_create_schema);
+# routes that read the engine / assembler / reference data / chat embedder
+# also wait for _warm_up instead of failing. Auth, karma and RAG only need the
+# DB. Registered before CORS so CORS stays the outermost middleware.
+import asyncio
+import re as _re
+from starlette.middleware.base import BaseHTTPMiddleware
+
+_NO_WAIT = _re.compile(r"^/(?:health|docs|redoc|openapi\.json)")
+_UNGATED = _re.compile(r"^/(?:$|auth/|api/v1/(?:rag/|ai/|chat/mode))|/karma(?:/|$)")
+_WARMUP_WAIT_S = float(os.getenv("WARMUP_WAIT_SECONDS", "240"))
+
+
+async def _readiness_gate(request, call_next):
+    path = request.url.path
+    if request.method != "OPTIONS" and not _NO_WAIT.search(path):
+        waits = [app_state.db_ready] + ([] if _UNGATED.search(path) else [app_state.ready])
+        for event in waits:
+            if not event.is_set():
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=_WARMUP_WAIT_S)
+                except asyncio.TimeoutError:
+                    pass    # handlers already degrade (503) when the engine is missing
+    return await call_next(request)
+
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=_readiness_gate)
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
 # Tightened from allow_origins=["*"] to explicit frontend origin so that
@@ -86,82 +122,137 @@ _ref: ReferenceData = ReferenceData()
 
 @app.on_event("startup")
 async def _startup():
-    """Create users_auth table and karma tables if they don't exist yet."""
-    global _rec_engine, _assembler
-    AuthBase.metadata.create_all(bind=engine)
-    # Create karma tables (KarmaEvent, KarmaMonthlyUsage) in the same auth DB
-    from models.models import Base as DomainBase
-    DomainBase.metadata.create_all(bind=engine)
+    """Return at once so uvicorn binds the port; schema + warm-up run in the background."""
+    import threading
+    loop = asyncio.get_running_loop()
+    loop.create_task(_create_schema())
+    # Own thread + own event loop: the warm-up's HTTP clients, JSON parsing and
+    # model loading never delay the server binding its port or answering requests.
+    threading.Thread(target=lambda: asyncio.run(_warm_up(loop)), name="warm-up", daemon=True).start()
 
-    # Load the chat embedder and encode intent prototypes now; done lazily this
-    # takes ~30s and the first chat request would outlast the frontend's patience.
-    from ai.semantic_engine import _ensure_prototypes
-    _ensure_prototypes()
 
+async def _create_schema():
+    """Create users_auth and the karma/evidence tables if missing (idempotent)."""
     import logging
+
+    def _create():
+        from models.models import Base as DomainBase
+        with engine.begin() as conn:        # one connection for all the table checks
+            AuthBase.metadata.create_all(bind=conn)
+            # Karma tables (KarmaEvent, KarmaMonthlyUsage) live in the same auth DB
+            DomainBase.metadata.create_all(bind=conn)
+        from services.karma_engine import migrate_karma_schema
+        migrate_karma_schema(engine)        # referenceId/note columns, enum values, unique index
+    try:
+        await asyncio.to_thread(_create)
+    except Exception as exc:
+        logging.getLogger(__name__).error("[startup] Auth DB schema check failed: %s", exc)
+    finally:
+        app_state.db_ready.set()
+
+
+async def _warm_up(server_loop: asyncio.AbstractEventLoop):
+    """
+    Everything slow, off the request path, on the "warm-up" thread's own loop
+    so `server_loop` keeps serving auth, karma and /health meanwhile. Sets
+    app_state.ready (on server_loop) when done — even on failure, since the
+    handlers already cope with a missing engine — then starts the workforce
+    snapshot on server_loop.
+    """
+    global _rec_engine, _assembler, _ref
+    import logging
+    import time
     log = logging.getLogger(__name__)
-
-    # One catalogue: rank over exactly what the mock iGOT server serves. If it
-    # is down, fall back to the same generated files on disk (and say so).
-    catalog = frac = crosswalk = None
+    t0 = time.perf_counter()
     try:
-        catalog   = await adapter.fetch_catalog()
-        frac      = await adapter.fetch_frac_competencies()
-        crosswalk = await adapter.fetch_frac_crosswalk()
-        log.info("[startup] Catalogue loaded from iGOT adapter: %d courses, %d FRAC competencies.",
-                 len(catalog), len(frac))
-    except Exception as exc:
-        catalog = frac = crosswalk = None
-        log.warning("[startup] iGOT mock server unreachable (%s) — loading the catalogue from "
-                    "mock-igot-server/data/*.json on disk instead.", exc)
+        # Chat embedder + intent prototypes (cached on disk by ai/embedder.encode_cached).
+        from ai.semantic_engine import _ensure_prototypes
+        chat_warm = asyncio.to_thread(_ensure_prototypes)
 
-    try:
-        _rec_engine = HybridRecommendationEngine(catalog=catalog, frac=frac, crosswalk=crosswalk)
-        log.info("[startup] HybridRecommendationEngine ready (catalogue source: %s).",
-                 _rec_engine.catalog_source)
+        # One catalogue: rank over exactly what the mock iGOT server serves. If it
+        # is down, fall back to the same generated files on disk (and say so).
+        # Fetched concurrently with the chat warm-up and the reference data.
+        async def _catalogue():
+            try:
+                return await asyncio.gather(adapter.fetch_catalog(), adapter.fetch_frac_competencies(),
+                                            adapter.fetch_frac_crosswalk())
+            except Exception as exc:
+                log.warning("[startup] iGOT mock server unreachable (%s) — loading the catalogue from "
+                            "mock-igot-server/data/*.json on disk instead.", exc)
+                return None, None, None
 
-        # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
-        # on, so the Verified channel credits a completed course at its tagged level.
-        course_comp_map = _rec_engine.course_comp_levels()
+        # SCIL v6 reference data (GSBPM map, office workload, …) — adapter, disk fallback.
+        _, (catalog, frac, crosswalk), _ref = await asyncio.gather(
+            chat_warm, _catalogue(), ReferenceData.load(adapter))
+        if catalog is not None:
+            log.info("[startup] Catalogue loaded from iGOT adapter: %d courses, %d FRAC competencies.",
+                     len(catalog), len(frac))
 
-        _assembler = BaselineAssembler(course_comp_map)
-        log.info("[startup] BaselineAssembler ready. Mapped %d courses.", len(course_comp_map))
-
-    except Exception as exc:
-        log.error("[startup] Engine/Assembler failed to initialise: %s", exc)
-        _rec_engine = None
-        _assembler  = None
-
-    # SCIL v6 reference data (GSBPM map, office workload, …) — adapter, disk fallback.
-    global _ref
-    _ref = await ReferenceData.load(adapter)
-    app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
-    app_state.snapshot_builder = _build_workforce_snapshot
-    app_state.competency_state = _learner_competency_state
-    import asyncio
-    asyncio.get_running_loop().create_task(_build_workforce_snapshot())
-
-    # SCIL v6 §6: measured course uplift from outcome assessments (~1 s), used to
-    # flag near-zero-uplift courses in ranking and for the admin effectiveness view.
-    if _ref.outcomes and _rec_engine is not None:
-        from services.uplift_service import estimate_uplift
         try:
-            _ref.cache["uplift"] = estimate_uplift(_ref.outcomes, _ref.comparisons, _rec_engine.course_meta())
-            _rec_engine.set_measured_uplift(_ref.cache["uplift"]["courses"])
-            log.info("[startup] Measured uplift for %d courses (%d flagged).",
-                     len(_ref.cache["uplift"]["courses"]),
-                     sum(c["misTagFlag"] for c in _ref.cache["uplift"]["courses"]))
+            _rec_engine = await asyncio.to_thread(
+                HybridRecommendationEngine, catalog=catalog, frac=frac, crosswalk=crosswalk)
+            log.info("[startup] HybridRecommendationEngine ready (catalogue source: %s).",
+                     _rec_engine.catalog_source)
+
+            # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
+            # on, so the Verified channel credits a completed course at its tagged level.
+            course_comp_map = _rec_engine.course_comp_levels()
+
+            _assembler = BaselineAssembler(course_comp_map)
+            log.info("[startup] BaselineAssembler ready. Mapped %d courses.", len(course_comp_map))
+
         except Exception as exc:
-            log.error("[startup] Uplift estimation failed: %s", exc)
+            log.error("[startup] Engine/Assembler failed to initialise: %s", exc)
+            _rec_engine = None
+            _assembler  = None
+
+        app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
+        app_state.snapshot_builder = _build_workforce_snapshot
+        app_state.competency_state = _learner_competency_state
+
+        # SCIL v6 §6: measured course uplift from outcome assessments (~1 s), used to
+        # flag near-zero-uplift courses in ranking and for the admin effectiveness view.
+        if _ref.outcomes and _rec_engine is not None:
+            from services.uplift_service import estimate_uplift
+            try:
+                _ref.cache["uplift"] = await asyncio.to_thread(
+                    estimate_uplift, _ref.outcomes, _ref.comparisons, _rec_engine.course_meta())
+                _rec_engine.set_measured_uplift(_ref.cache["uplift"]["courses"])
+                log.info("[startup] Measured uplift for %d courses (%d flagged).",
+                         len(_ref.cache["uplift"]["courses"]),
+                         sum(c["misTagFlag"] for c in _ref.cache["uplift"]["courses"]))
+            except Exception as exc:
+                log.error("[startup] Uplift estimation failed: %s", exc)
+    except Exception as exc:
+        log.error("[startup] Warm-up failed: %s", exc)
+    finally:
+        server_loop.call_soon_threadsafe(app_state.ready.set)
+        log.info("[startup] Warm-up finished in %.1fs.", time.perf_counter() - t0)
+
+    async def _snapshot_after_schema():
+        await app_state.db_ready.wait()     # the snapshot reads EvidenceLog
+        await _build_workforce_snapshot()
+    asyncio.run_coroutine_threadsafe(_snapshot_after_schema(), server_loop)
 
 
-
+@app.get("/health", tags=["meta"])
+async def health():
+    """Liveness + warm-up state. Cheap: use it as the Render health check / keep-alive ping."""
+    from ai.semantic_engine import is_semantic_engine_ready
+    return {
+        "status": "ok",
+        "ready": app_state.ready.is_set(),
+        "recommendationEngine": _rec_engine is not None,
+        "chatSemantic": is_semantic_engine_ready(),
+        "workforceSnapshot": app_state.snapshot_status,
+    }
 
 
 # ── Register routers ───────────────────────────────────────────────────────────
 app.include_router(auth_router,    prefix="/auth",       tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1",     tags=["chatbot"])
 app.include_router(rag_router,     prefix="/api/v1/rag", tags=["rag"])
+app.include_router(media_quiz_router, prefix="/api/v1/rag/media", tags=["media-quiz"])
 app.include_router(ai_tools_router,prefix="/api/v1/ai",  tags=["ai-tools"])
 app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
 app.include_router(competency.router)
@@ -245,6 +336,9 @@ async def _build_workforce_snapshot() -> None:
             }
         app_state.snapshot = snap
         app_state.snapshot_status = "ready"
+        # Annotated states were built against the old population / cohort priors.
+        for key in [k for k in app_state.user_state_cache if k[1]]:
+            app_state.user_state_cache.pop(key, None)
         _ref.cache.pop("workforce", None)
         log.info("[snapshot] workforce snapshot ready: %d officials.", len(snap))
     except Exception as exc:
@@ -252,39 +346,47 @@ async def _build_workforce_snapshot() -> None:
         log.error("[snapshot] failed: %s", exc)
 
 
+_STATE_CACHE_TTL_S = float(os.getenv("COMPETENCY_STATE_CACHE_SECONDS", "30"))
+
+
 async def _learner_competency_state(user_id: str, annotate: bool = True) -> dict:
     """
-    Profile + enrollments + EvidenceLog → one resolved row per role competency.
-
-    This is the ONLY place a learner's level is decided (via
-    baseline_assembler.resolve_level); skill-gaps, recommendations and pathway
-    all read these rows, so the dashboard and the course suggestions can no
-    longer disagree about the same gap.
+    Memoised _resolve_competency_state. Concurrent callers (the dashboard's
+    /skill-gaps, /recommendations, /pathway) share one in-flight resolution;
+    the result is kept for _STATE_CACHE_TTL_S or until an EvidenceLog write
+    calls app_state.invalidate_user. Errors are never cached. The returned
+    dict is shared — callers must not mutate it.
     """
-    from fastapi import HTTPException
+    import time
+    key = (user_id, annotate)
+    now = time.monotonic()
+    hit = app_state.user_state_cache.get(key)
+    if hit and hit[0] > now:
+        value = hit[1]
+        return await asyncio.shield(value) if isinstance(value, asyncio.Future) else value
+
+    task = asyncio.ensure_future(_resolve_competency_state(user_id, annotate))
+    app_state.user_state_cache[key] = (now + _STATE_CACHE_TTL_S, task)
+    try:
+        state = await asyncio.shield(task)
+    except Exception:
+        if app_state.user_state_cache.get(key, (0, None))[1] is task:
+            app_state.user_state_cache.pop(key, None)
+        raise
+    # Only store if nobody invalidated this entry while it was being computed.
+    if app_state.user_state_cache.get(key, (0, None))[1] is task:
+        app_state.user_state_cache[key] = (time.monotonic() + _STATE_CACHE_TTL_S, state)
+    return state
+
+
+def _load_db_evidence(user_id: str) -> list:
+    """The LMS's own EvidenceLog rows for one user (sync — run in a worker thread)."""
     from auth.database import get_db
     from models.models import EvidenceLog
-    from services.baseline_assembler import resolve_level
-
-    try:
-        user = await adapter.fetch_user_by_id(user_id)
-    except Exception:
-        raise HTTPException(
-            status_code=503,
-            detail="iGOT mock server is unreachable. Start it with: "
-                   "cd mock-igot-server && uvicorn mock_igot_server:app --port 8001",
-        )
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
-
-    try:
-        enrollments = await adapter.fetch_user_enrollments(user_id)
-    except Exception:
-        enrollments = []
 
     db_session = next(get_db())
     try:
-        db_evidence = [
+        return [
             {
                 "comp_id":       row.compId,
                 "evidence_type": row.evidenceType,
@@ -294,14 +396,52 @@ async def _learner_competency_state(user_id: str, annotate: bool = True) -> dict
             for row in db_session.query(EvidenceLog).filter(EvidenceLog.userId == user_id).all()
         ]
     except Exception:
-        db_evidence = []
+        return []
     finally:
         db_session.close()
 
+
+async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict:
+    """
+    Profile + enrollments + EvidenceLog → one resolved row per role competency.
+
+    This is the ONLY place a learner's level is decided (via
+    baseline_assembler.resolve_level); skill-gaps, recommendations and pathway
+    all read these rows, so the dashboard and the course suggestions can no
+    longer disagree about the same gap.
+
+    The four reads (profile, enrollments, iGOT workplace evidence, the LMS
+    EvidenceLog in Postgres) run concurrently; the DB read runs in a thread so
+    a slow Neon round-trip never blocks the event loop.
+    """
+    from fastapi import HTTPException
+    from services.baseline_assembler import resolve_level
+
+    user_r, enrollments_r, igot_evidence_r, db_evidence = await asyncio.gather(
+        adapter.fetch_user_by_id(user_id),
+        adapter.fetch_user_enrollments(user_id),
+        adapter.fetch_user_evidence(user_id),
+        asyncio.to_thread(_load_db_evidence, user_id),
+        return_exceptions=True,
+    )
+    if isinstance(user_r, BaseException):
+        raise HTTPException(
+            status_code=503,
+            detail="iGOT mock server is unreachable. Start it with: "
+                   "cd mock-igot-server && uvicorn mock_igot_server:app --port 8001",
+        )
+    user = user_r
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    enrollments = [] if isinstance(enrollments_r, BaseException) else enrollments_r
+    if isinstance(db_evidence, BaseException):
+        db_evidence = []
+
     # SCIL v6 §3 workplace channels (supervisor / utility / work sample / peer),
     # EvidenceLog-style rows from the iGOT side, merged with the LMS's own rows.
-    try:
-        for row in await adapter.fetch_user_evidence(user_id):
+    if not isinstance(igot_evidence_r, BaseException):
+        for row in igot_evidence_r:
             db_evidence.append({
                 "comp_id":       row.get("compId"),
                 "evidence_type": row.get("evidenceType"),
@@ -310,8 +450,6 @@ async def _learner_competency_state(user_id: str, annotate: bool = True) -> dict
                 "source":        row.get("source"),
                 "meta":          row.get("meta") or {},
             })
-    except Exception:
-        pass
 
     raw_comps = user.get("competencies") or \
                 (user.get("profileDetails") or {}).get("competencies") or []
@@ -697,7 +835,13 @@ async def get_learning_pathway(
             detail="Recommendation engine is not available. Check startup logs.",
         )
 
-    state = await _learner_competency_state(user_id)
+    async def _cbplan():
+        try:
+            return await adapter.fetch_user_cbplan(user_id)
+        except Exception:
+            return None
+
+    state, cbplan = await asyncio.gather(_learner_competency_state(user_id), _cbplan())
     rows = state["competencies"]
     if competencyId:
         rows = [r for r in rows if r["competencyId"] == competencyId]
@@ -735,10 +879,6 @@ async def get_learning_pathway(
         p["opportunity"] = r["opportunity"]
 
     # ACBP (SCIL v6 §5): mandatory courses + this official's learning hours per quarter.
-    try:
-        cbplan = await adapter.fetch_user_cbplan(user_id)
-    except Exception:
-        cbplan = None
     mandatory = (cbplan or {}).get("mandatoryCourses") or []
     quarter_hours = (cbplan or {}).get("learningHoursPerQuarter")
     if unbudgeted:

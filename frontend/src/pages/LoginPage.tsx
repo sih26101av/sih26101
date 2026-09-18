@@ -23,7 +23,7 @@ interface LoginPageProps {
 // in the database today. Clicking a card only fills the fields; it does not
 // submit, so it never masks a real login failure.
 const QUICK_LOGINS: { label: string; designation: string; username: string; password: string }[] = [
-  { label: 'Admin',  designation: 'Platform Administrator',     username: 'admin',          password: 'Admin123' },
+  { label: 'Admin',  designation: 'Platform Administrator',     username: 'admin',          password: 'admin123' },
   { label: 'Shikha',  designation: 'Deputy Director',            username: 'usr_720465595',  password: 'Shikha95' },
   { label: 'Pankaj',  designation: 'Junior Statistical Officer',  username: 'usr_791131756',  password: 'Pankaj56' },
 ];

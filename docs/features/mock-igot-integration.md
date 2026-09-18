@@ -21,6 +21,13 @@ data it serves is **synthetic**: one deterministic generator writes it (see
     the crosswalk.
   - `fetch_user_by_id` returns `None` on 404; `fetch_user_enrollments` returns
     `[]` on 404.
+  - Per-user reads (`fetch_user_by_id`, `fetch_user_enrollments`,
+    `fetch_user_evidence`, `fetch_user_cbplan`) use a pooled keep-alive
+    `httpx.AsyncClient` (one per event loop, `_client()`) and a TTL memo
+    (`_cached`, `IGOT_USER_CACHE_SECONDS`, default 30) that also merges concurrent
+    duplicate calls; errors are not cached. `invalidate_user(id)` drops one user.
+    Results are shared objects — callers must not mutate them. Catalogue /
+    reference reads still open a client per call (startup only).
 - Helpers `_prof_detail` and `_competencies` read `profileDetails.*`.
 - Instantiated as a module-level singleton in `main.py`, `routers/karma.py` and
   `routers/competency.py`.
@@ -101,7 +108,7 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   served).
 - `seed_data.py` is a shim that calls the generator.
 
-**Backend startup** (`main.py::_startup`) loads catalogue + FRAC + crosswalk
+**Backend warm-up** (`main.py::_warm_up`, background thread after the port binds) loads catalogue + FRAC + crosswalk
 through the adapter. If the mock server is down, it logs a warning and
 `HybridRecommendationEngine` reads the same generated files from disk
 (`catalog_source` = `"adapter"` or `"disk"`).

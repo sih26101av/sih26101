@@ -1,13 +1,14 @@
 """
 services/reference_data.py — SCIL v6 reference datasets
 
-Loaded ONCE at startup (main._startup) through MockIgotAdapter. If the mock
+Loaded ONCE at startup (main._warm_up, concurrently) through MockIgotAdapter. If the mock
 iGOT server is down, each dataset falls back to the same generated file in
 mock-igot-server/data/ and a warning is logged, the same rule as the course
 catalogue. All of it is synthetic mock data (see mock-igot-server/data/README.md).
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -62,14 +63,20 @@ class ReferenceData:
     @classmethod
     async def load(cls, adapter) -> "ReferenceData":
         ref = cls()
-        gsbpm = await ref._load("gsbpm", adapter.fetch_gsbpm_map, "gsbpm_map.json")
+        # Independent datasets: fetch concurrently (sequential round-trips were ~6 s).
+        gsbpm, offices, prereq, bank, hrms, outcomes = await asyncio.gather(
+            ref._load("gsbpm", adapter.fetch_gsbpm_map, "gsbpm_map.json"),
+            ref._load("offices", adapter.fetch_offices, "offices.json"),
+            ref._load("prerequisites", adapter.fetch_prerequisites, "prerequisites.json"),
+            ref._load("itemBank", adapter.fetch_item_bank, "item_bank.json"),
+            ref._load("hrms", adapter.fetch_hrms, "hrms.json"),
+            ref._load("outcomes", adapter.fetch_course_outcomes, "course_outcomes.json"),
+        )
         if gsbpm:
             ref.gsbpm = {k: v for k, v in gsbpm.items() if k != "_meta"}
-        offices = await ref._load("offices", adapter.fetch_offices, "offices.json")
         if offices:
             ref.offices = {o["officeId"]: o for o in offices.get("offices", [])}
             ref.cycle = offices.get("cycle", {})
-        prereq = await ref._load("prerequisites", adapter.fetch_prerequisites, "prerequisites.json")
         if prereq:
             from services.prerequisite_service import validate_edges
             raw = prereq.get("edges", [])
@@ -78,16 +85,13 @@ class ReferenceData:
             ref.prerequisite_check = {k: check[k] for k in ("cycle", "rejected", "invalid")} | {"received": len(raw)}
             if check["rejected"]:
                 logger.error("[reference] prerequisite edges REJECTED — cycle: %s", " → ".join(check["cycle"]))
-        bank = await ref._load("itemBank", adapter.fetch_item_bank, "item_bank.json")
         if bank:
             ref.item_bank = {}
             for item in bank.get("items", []):
                 ref.item_bank.setdefault(item["competencyId"], []).append(item)
             ref.item_bank_calibration = bank.get("calibration", "synthetic — demo only")
-        hrms = await ref._load("hrms", adapter.fetch_hrms, "hrms.json")
         if hrms:
             ref.hrms = {k: v for k, v in hrms.items() if k != "_meta"}
-        outcomes = await ref._load("outcomes", adapter.fetch_course_outcomes, "course_outcomes.json")
         if outcomes:
             ref.outcomes = outcomes.get("outcomes", [])
             ref.comparisons = outcomes.get("comparisons", [])

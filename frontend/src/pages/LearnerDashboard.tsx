@@ -33,7 +33,7 @@ import SkillGapCard from "../components/dashboard/SkillGapCard";
 import MyCoursesView from "../components/dashboard/MyCoursesView";
 import ProgressView from "../components/dashboard/ProgressView";
 import ChatWidget from "../components/dashboard/ChatWidget";
-import RightSidebar from "../components/dashboard/RightSidebar";
+import KarmaRewardsView from "../components/karma/KarmaRewardsView";
 import AssessmentUploadZone from "../components/dashboard/AssessmentUploadZone";
 import CompetencyOverviewTable from "../components/dashboard/CompetencyOverviewTable";
 import LearningSnapshot from "../components/dashboard/LearningSnapshot";
@@ -54,7 +54,7 @@ const SECTION_META: Record<TabType, { title: string; subtitle: string; crumb: st
   assessments:     { title: "Assessment Studio",subtitle: "Generate assessments from MoSPI training documents and log verified evidence", crumb: "Assessment Studio" },
   certificates:    { title: "Certificates",     subtitle: "Submit external certificates for FRAC competency verification",  crumb: "Certificates" },
   progress:        { title: "Progress Reports", subtitle: "Competency trajectory and your verified achievement record",     crumb: "Progress Reports" },
-  karma:           { title: "Karma & Rewards",  subtitle: "Your iGOT Karmayogi karma points, streak and monthly cap",       crumb: "Karma" },
+  karma:           { title: "Karma & Rewards",  subtitle: "Your karma points, level, streak, daily cap and how to earn more",       crumb: "Karma" },
 };
 
 // ─── Loading / error ──────────────────────────────────────────────────────────
@@ -103,6 +103,31 @@ const SidebarHelp: React.FC = () => (
     >
       Contact Support
     </a>
+  </div>
+);
+
+// ─── Sidebar illustration (palace art + ministry motto) ───────────────────────
+// Hidden on short viewports so it never squeezes the nav list.
+const SidebarArt: React.FC = () => (
+  <div className="pointer-events-none relative mx-3 mb-3 flex-shrink-0 select-none [@media(max-height:780px)]:hidden" aria-hidden="true">
+    <img
+      src="/sidebar-palace.webp"
+      alt=""
+      className="h-[170px] w-full object-cover object-[center_62%] opacity-90 dark:opacity-30"
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent, black 22%, black 70%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 22%, black 70%, transparent)",
+      }}
+    />
+    <div className="absolute bottom-3 left-3">
+      <p className="text-[15px] font-semibold leading-snug text-gov-ink dark:text-white">
+        Data for a<br />Stronger India
+      </p>
+      <div className="mt-1.5 flex">
+        <span className="h-[3px] w-6 rounded-l-full bg-gov-saffron" />
+        <span className="h-[3px] w-6 rounded-r-full bg-gov-green" />
+      </div>
+    </div>
   </div>
 );
 
@@ -308,18 +333,22 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
         searchValue={search}
         onSearchChange={(v) => { setSearch(v); if (v) setActiveTab("skill-gap"); }}
         searchPlaceholder="Search your competencies…"
+        sidebarArt={<SidebarArt />}
         sidebarFooter={<SidebarHelp />}
       >
         {isLoading || !profile ? (
           <LoadingSkeleton />
         ) : (
           <>
-            <PageHeader
-              title={meta.title}
-              subtitle={meta.subtitle}
-              breadcrumb={["Home", "Learner", meta.crumb]}
-              dateCaption="Keep learning, keep growing!"
-            />
+            {/* The overview banner carries its own date chip, so skip the page header there */}
+            {activeTab !== "dashboard" && (
+              <PageHeader
+                title={meta.title}
+                subtitle={meta.subtitle}
+                breadcrumb={["Home", "Learner", meta.crumb]}
+                dateCaption="Keep learning, keep growing!"
+              />
+            )}
 
             {/* ── Overview ──────────────────────────────────────────────── */}
             {activeTab === "dashboard" && (
@@ -340,10 +369,6 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                       skillGaps={skillGaps}
                       onFindCourses={handleFindCourses}
                       onViewDetailed={() => setActiveTab("skill-gap")}
-                    />
-                    <StudioPromo
-                      onOpenStudio={() => setActiveTab("assessments")}
-                      onOpenQuizPage={() => navigate("/assessment")}
                     />
                   </div>
 
@@ -516,9 +541,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
             {/* ── Karma ─────────────────────────────────────────────────── */}
             {activeTab === "karma" && (
               <div className="animate-fade-up">
-                <div className="max-w-lg">
-                  <RightSidebar karma={karma} userId={userId} />
-                </div>
+                <KarmaRewardsView karma={karma} userId={userId} />
               </div>
             )}
           </>

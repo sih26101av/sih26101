@@ -12,30 +12,40 @@ sections, all fed by the single `useLearnerDashboard` fetch.
   - The chatbot still switches sections via `onNavigate`; its `tabMap` covers the
     three legacy targets plus the new ones (`skill-gap`, `recommendations`,
     `assessments`, `certificates`, `karma`) and aliases (`skill-gaps`, `courses`).
-  - `dashboard` → `ProfileHeader` + 5 `StatCard` tiles (assessed, active gaps,
+  - `dashboard` → (no `PageHeader`; the banner carries the date chip) `ProfileHeader` + 5 `StatCard` tiles (assessed, active gaps,
     mandatory gaps, recommendations, overall proficiency) + `CompetencyOverviewTable`
-    + `StudioPromo` + `LearningSnapshot` + `RecentActivityList` + a 3-card
+    + `LearningSnapshot` + `RecentActivityList` + a 3-card
     `RecommendationsPanel` preview.
   - `my-courses` → `MyCoursesView`; `progress` → `ProgressView` + `LearningSnapshot`.
   - `skill-gap` → 4 stat tiles + `SkillGapCard` (filtered by the topbar search).
   - `recommendations` → full `RecommendationsPanel` (honours the competency filter).
   - `assessments` → `StudioPromo` + `AssessmentUploadZone` + a top-5 gap list.
   - `certificates` → `CertificateUploadZone` + `RecentActivityList`.
-  - `karma` → `RightSidebar`.
+  - `karma` → `KarmaRewardsView` (see `karma-points.md`).
   - Persistent: `ChatWidget` (rendered outside the shell, fixed).
+  - Sidebar: `SidebarArt` (`public/sidebar-palace.webp` palace illustration, masked
+    top/bottom, "Data for a Stronger India" + saffron/green underline; hidden below
+    780px viewport height) above the `SidebarHelp` card.
   - Topbar search filters the competency set; the bell count is the mandatory-gap
     count and jumps to the Skill-Gap Centre.
 - `src/components/shell/` — shared with the admin dashboard and Assessment Studio:
   - `AppShell.tsx` — tricolour strip + navy NSO topbar (search, notifications, theme,
     account menu, sign-out) + sticky sidebar (mobile drawer under `lg`) + footer.
-    Takes `groups`/`activeId`/`onNavigate`; owns no data.
+    Takes `groups`/`activeId`/`onNavigate`; owns no data. Optional `sidebarArt`
+    slot renders between nav and `sidebarFooter` (desktop only; admin doesn't use it).
   - `PageHeader.tsx` — title, subtitle, breadcrumb, date chip, action slot.
   - `SectionCard.tsx` (+ `SectionAction`) — titled panel; `padded={false}` for tables.
   - `StatCard.tsx` — KPI tile (`StatTone`, optional delta / caption / progress /
     `onClick`; renders as a `<button>` only when clickable).
 - `src/hooks/useLearnerDashboard.ts` — single fetch orchestrator: profile + skill
   gaps, enrollments, recommendations, achievements, karma; exposes loading/error and
-  a refetch used after a quiz pass.
+  a refetch used after a quiz pass. All requests fire in parallel; karma fills in
+  after first paint. Stale-while-revalidate: a module-level cache per `officialId`
+  renders instantly on remount (home → dashboard, back from the Assessment Studio)
+  and refreshes silently; a failed background refresh keeps the cached data. The
+  cache is wiped by `api.ts::onSessionEnd` when `setApiToken(null)` runs (logout).
+  Backend side: see the competency-state memo in
+  [skill-gap-analysis.md](skill-gap-analysis.md).
 - `src/components/dashboard/`
   - `SkillGapCard.tsx` — `GapRow` per competency: `PipStrip` (current level),
     `ExactGlassGauge` (target), `CONFIDENCE_CONFIG` badge, `EvidenceBar` per channel,
@@ -65,8 +75,15 @@ sections, all fed by the single `useLearnerDashboard` fetch.
   - `RecommendationsPanel.tsx` — the `CourseCard` grid plus the competency-filter
     chip; falls back to the full list when a filter matches nothing.
   - `CourseCard.tsx` — title, provider, duration, score chips, TPAC badge, match reasons.
-  - `MyCoursesView.tsx`, `ProgressView.tsx`, `ProfileHeader.tsx`.
-  - `RightSidebar.tsx` — karma card, milestone stepper, career-match card.
+  - `MyCoursesView.tsx`, `ProgressView.tsx`.
+  - `ProfileHeader.tsx` — light hero over `public/profile-banner.webp` (waves, dotted
+    India map, growth bars, chakra; a 3:1 layer sized to the banner height, pinned
+    right with a left-edge mask fade so the art is never cropped, dimmed under a navy
+    scrim in dark mode): tricolour-ring avatar, name + Verified chip, role, id /
+    department / last-assessed chips, today's date chip, ministry strapline,
+    LEARN·ANALYSE·CONTRIBUTE·GROW motto (xl+), saffron/green bottom accent.
+  - `RightSidebar.tsx` — compact karma card, milestone stepper, career-match card
+    (no longer mounted; the Karma tab uses `components/karma/KarmaRewardsView.tsx`).
   - `AssessmentUploadZone.tsx` — now rendered (Assessment Studio section); it was
     orphaned before this redesign.
 - `src/types/domain.ts` — `Official`, `SkillGapEntry`, `CourseRecommendation`,
@@ -142,6 +159,9 @@ gaps and recommendations it already has in state (the bot does not re-query them
 - API base URLs are hardcoded to `http://localhost:8000` in `api.ts`, `authApi.ts`
   and the quiz components — no env-driven base URL for deployment.
 - `fetchRecommendations` hardcodes `domain: 'Statistical'` for the bridged competency.
+- Karma is fetched via `POST /karma/check-in` (daily check-in side effect); its DB
+  work runs in the threadpool so it no longer blocks the event loop.
+- The first-ever load after a backend restart waits on warm-up (readiness gate).
 - Karma failures degrade to `null` silently; other fetch failures surface an
   `ErrorState` with retry.
 - `/trainer` renders this same dashboard without an official id.

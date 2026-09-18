@@ -379,14 +379,21 @@ export type KarmaEventType =
   | 'COURSE_COMPLETION'
   | 'ASSESSMENT_PASSED'
   | 'COURSE_RATED'
-  | 'CBP_BONUS';
+  | 'CBP_BONUS'
+  | 'DAILY_LOGIN'
+  | 'STREAK_BONUS'
+  | 'DIAGNOSTIC_COMPLETED'
+  | 'ADMIN_ADJUSTMENT';
 
 export interface KarmaTransaction {
   eventId: string;
   eventType: KarmaEventType;
+  /** 0 when an action was blocked by a limit (see `note`); negative for admin deductions */
   pointsAwarded: number;
   courseId: string | null;
   isCbp: boolean;
+  referenceId: string | null;
+  note: string | null;
   createdAt: string;
 }
 
@@ -399,13 +406,70 @@ export interface KarmaMonthlyUsage {
 /** Per-event-type totals (e.g. { COURSE_COMPLETION: 25, ASSESSMENT_PASSED: 10 }) */
 export type KarmaBreakdown = Partial<Record<KarmaEventType, number>>;
 
+export interface KarmaLevel {
+  rank: number;
+  name: string;
+  minPoints: number;
+  nextName: string | null;
+  nextMinPoints: number | null;
+  pointsToNext: number;
+  progressPct: number;
+}
+
+export interface KarmaToday {
+  /** Points from daily-capped activities earned today (IST) */
+  earned: number;
+  totalEarned: number;
+  cap: number;
+  remaining: number;
+  checkedIn: boolean;
+  resetsAt: string;
+}
+
+export interface KarmaAward {
+  eventType: KarmaEventType | null;
+  pointsAwarded: number;
+  capReached: boolean;
+  alreadyClaimed: boolean;
+  dailyCapReached: boolean;
+  dailyLimitReached: boolean;
+  reason: string | null;
+}
+
 export interface KarmaLedger {
   userId: string;
   totalPoints: number;
+  level: KarmaLevel;
+  today: KarmaToday;
   streak: number;
+  longestStreak: number;
+  rank: { position: number; totalLearners: number; topPercent: number };
   monthlyUsage: KarmaMonthlyUsage;
   breakdown: KarmaBreakdown;
+  totalEvents: number;
   ledger: KarmaTransaction[];
+  /** Awards made by the check-in that produced this summary (e.g. +1 daily check-in) */
+  recentAwards: KarmaAward[];
+}
+
+export interface KarmaRule {
+  eventType: KarmaEventType;
+  points: number;
+  title: string;
+  how: string;
+  frequency: string;
+  category: 'engagement' | 'learning' | 'milestone' | 'admin';
+  perDay: number | null;
+  dailyCapped: boolean;
+}
+
+export interface KarmaRules {
+  dailyCap: number;
+  monthlyCompletionCap: number;
+  streakMilestones: { days: number; points: number }[];
+  levels: { name: string; minPoints: number }[];
+  rules: KarmaRule[];
+  timezone: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

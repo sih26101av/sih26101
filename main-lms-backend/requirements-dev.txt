@@ -1,0 +1,10 @@
+# requirements-dev.txt — local development extras (do NOT install on Render)
+#   pip install -r requirements-dev.txt
+-r requirements.txt
+
+# PyTorch embedder fallback (ai/embedder.py uses it only when
+# ai/.cache/onnx/<model>/ is missing) and scripts/eval_intents.py comparisons.
+sentence-transformers>=3.0.0
+
+# scripts/quantize_model.py → ai/.cache/model_int8.onnx
+optimum[onnxruntime]

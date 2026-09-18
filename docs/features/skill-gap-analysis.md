@@ -49,6 +49,14 @@ three can never disagree.
   - `_learner_competency_state(user_id)` — profile + enrollments + `EvidenceLog` →
     crosswalk (`_rec_engine.crosswalk`) → assembler → `resolve_level` → one row per
     role competency. Shared by `/skill-gaps`, `/recommendations`, `/pathway`.
+    It is a memo over `_resolve_competency_state` keyed `(userId, annotate)`
+    (`app_state.user_state_cache`, `COMPETENCY_STATE_CACHE_SECONDS`, default 30):
+    the three dashboard calls share one in-flight resolution. The four reads
+    (profile, enrollments, iGOT evidence, `EvidenceLog` via `_load_db_evidence` in
+    a worker thread) run concurrently. **Any new `EvidenceLog` writer must call
+    `app_state.invalidate_user(user_id)`** (rag grading and the diagnostic do); a
+    new workforce snapshot drops all annotated entries. The returned dict is
+    shared — do not mutate it.
   - `_ensure_can_view(user_id, current_user)` — learners may only read their own
     data (403 otherwise); admins may read anyone's.
   - `get_skill_gaps_by_user_id` — maps FRAC type → UI domain

@@ -8,11 +8,11 @@ one study order across all gaps.
 ## Code
 
 `main-lms-backend/services/recommendation_service.py` — `HybridRecommendationEngine`
-(singleton, built once in `main.py::_startup` as `_rec_engine`).
+(singleton, built once in `main.py::_warm_up` as `_rec_engine`).
 
 - `__init__(catalog_path, frac_path, catalog=None, frac=None, crosswalk=None)` —
   takes the catalogue / FRAC set / crosswalk **as served by the mock iGOT server**
-  (`main._startup` loads them through `MockIgotAdapter`); a list not given is read
+  (`main._warm_up` loads them through `MockIgotAdapter`); a list not given is read
   from the same generated file on disk (`catalog_source` = `adapter` | `disk`).
   Loads the FRAC set into `_frac_map` (incl. `levels`: the L1–L5 proficiency
   descriptors from `children`), parses the catalogue into `_catalog` + `_comp_index` + `_by_id`, builds
@@ -188,10 +188,14 @@ channel at its FRAC level — for crosswalked competencies too (`comp_aliases`).
   `tagSupported` / `tagReviewFlags` still guard against mis-tags in real data.
 - Semantic / curated crosswalk mappings are unconfirmed; SCIL v6 wants a human
   confirmation queue.
-- Embeddings are recomputed on every startup (`Course.syllabusVectorEmbedding`
+- Corpus and crosswalk-anchor embeddings are memoised on disk by
+  `ai/embedder.encode_cached` (keyed by model + exact texts), so they are only
+  recomputed when the catalogue text changes (`Course.syllabusVectorEmbedding`
   unused). The catalogue is loaded through `MockIgotAdapter` at startup only, so a
   catalogue change needs a backend restart.
-- Startup failure is swallowed (`_rec_engine = None`) and surfaces as a 503.
+- Warm-up failure is swallowed (`_rec_engine = None`) and surfaces as a 503.
+  Requests made while warm-up is still running wait in `main._readiness_gate`
+  (up to `WARMUP_WAIT_SECONDS`, default 240) instead of getting that 503.
 - The 1.25× NSSTA boost applies to any `is_tpac` course while Stage 3 distinguishes
   verified (1.0) from inferred (0.5).
 - Not implemented from SCIL v6: cross-encoder re-ranking, expert/data-inferred

@@ -66,6 +66,10 @@ The `PRACTICE_ASSESSMENT` evidence row is read by `BaselineAssembler` through th
 documented channel, so a passed quiz directly raises the baseline and shrinks the
 gap shown on the dashboard (see `skill-gap-analysis.md`).
 
+Video, audio and YouTube sources use a separate pipeline (`routers/media_quiz.py`,
+see `media-quiz-generator.md`) that writes into this router's `QUIZ_STORE`, so
+`/grade` handles those quizzes too.
+
 ## TODOs / edge cases
 
 - **Known bug:** both frontend callers post to `/grade` without an `Authorization`
@@ -82,5 +86,6 @@ gap shown on the dashboard (see `skill-gap-analysis.md`).
 - Legacy `.ppt` binaries are rejected; scanned PDFs without OCR return 422.
 - Line 1100 of `rag.py` uses `'existing_attempt' in dir()`, which does not do what
   it looks like it does — the "evidence already recorded" message is unreliable.
-- Karma is **not** awarded automatically on a pass; the frontend would have to call
-  the karma endpoint separately.
+- The first passing submission awards `ASSESSMENT_PASSED` karma server-side
+  (`karma_engine.award_safe`, idempotent per quizId, subject to the daily cap);
+  `GradeResponse.karmaAwarded` / `karmaNote` report it.

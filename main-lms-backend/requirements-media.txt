@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# requirements-media.txt — video / audio / YouTube → quiz (services/media_quiz/)
+# Optional add-on to requirements.txt; without it the media endpoints return 503
+# and the document quiz keeps working.
+#
+#   pip install -r requirements.txt -r requirements-media.txt
+#
+# No PyTorch and no ffmpeg binary needed: PyAV decodes media, Silero VAD ships
+# inside faster-whisper as ONNX, RapidOCR runs PaddleOCR's models on ONNX Runtime.
+# First run downloads the Whisper model (MEDIA_WHISPER_MODEL, default "small",
+# ~480 MB) and the RapidOCR models (bundled in the wheel).
+# ─────────────────────────────────────────────────────────────────────────────
+
+faster-whisper>=1.1.0          # ASR (CTranslate2) + bundled Silero VAD + PyAV decoding
+av>=12.0.0                     # container / stream probing (pulled in by faster-whisper)
+opencv-python-headless>=4.9    # frame sampling, scene-change detection
+rapidocr_onnxruntime>=1.3.0    # text detection (probe) + recognition (keyframes)
+yt-dlp>=2024.8.6               # YouTube links
+
+# Offline VLM (optional): install Ollama and `ollama pull qwen2.5vl:3b`, then set
+# MEDIA_VLM_BACKEND=ollama. Default is Gemini vision (cloud, demo-only).

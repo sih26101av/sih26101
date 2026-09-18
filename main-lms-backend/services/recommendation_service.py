@@ -54,7 +54,7 @@ import numpy as np
 from pydantic import BaseModel
 from rank_bm25 import BM25Okapi
 
-from ai.embedder import get_embedder
+from ai.embedder import encode_cached, get_embedder
 
 logger = logging.getLogger(__name__)
 
@@ -285,16 +285,14 @@ class HybridRecommendationEngine:
         self._bm25 = BM25Okapi(corpus_tokens)
         logger.info("[RecEngine] BM25 index built over %d documents.", len(self._catalog))
 
-        # ── 4. Load sentence-transformer + build FAISS index ──────────────────
-                # Model loaded ONCE for whole backend via ai/embedder.py singleton.
-        logger.info("[RecEngine] Acquiring shared multilingual embedder...")
+        # ── 4. Load the embedder + build FAISS index ──────────────────────────
+        # Model loaded ONCE for whole backend via ai/embedder.py singleton; it is
+        # needed for per-request queries even when the corpus vectors are cached.
+        logger.info("[RecEngine] Acquiring catalog embedder...")
         embedder = get_embedder("catalog")
 
         corpus_texts = [doc.corpus_text for doc in self._catalog]
-        embeddings = embedder.encode(
-            corpus_texts, kind="passage", batch_size=64, normalize_embeddings=True, show_progress_bar=False
-        )
-        embeddings = np.array(embeddings, dtype="float32")
+        embeddings = encode_cached("catalog", corpus_texts, kind="passage", embedder=embedder)   # memoised on disk
         self._embeddings = embeddings   # kept for exact cosine over small candidate pools
 
         # Use faiss lazy import (not installed on every machine at import time)
@@ -314,11 +312,10 @@ class HybridRecommendationEngine:
         self._xw_cache: Dict[Tuple[str, str], Optional[Dict[str, Any]]] = {}
         self._xw_threshold = float("inf")      # uncalibrated → never map semantically
         if self._xw_ids:
-            self._xw_emb = np.asarray(embedder.encode(
-                [f"{self._frac_map[c]['name']}. {self._frac_map[c]['description']}".strip()
-                 for c in self._xw_ids],
-                kind="passage", normalize_embeddings=True, show_progress_bar=False,
-            ), dtype="float32")
+            self._xw_emb = encode_cached("catalog", [
+                f"{self._frac_map[c]['name']}. {self._frac_map[c]['description']}".strip()
+                for c in self._xw_ids
+            ], kind="passage", embedder=embedder)
             if len(self._xw_ids) >= 2:
                 sims = self._xw_emb @ self._xw_emb.T
                 self._xw_threshold = float(np.percentile(sims[~np.eye(len(sims), dtype=bool)], 95))

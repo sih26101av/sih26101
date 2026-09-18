@@ -10,14 +10,15 @@
 
 import React, { useState } from "react";
 import {
-  Flame, CheckCircle2, Clock, ChevronRight, Star, Zap, Award, TrendingUp,
-  BookOpen, BarChart2, Gift, Loader2, AlertCircle,
+  Flame, CheckCircle2, Clock, ChevronRight, TrendingUp,
+  BarChart2, Gift, Loader2, AlertCircle,
 } from "lucide-react";
 import {
   RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis,
 } from "recharts";
 import { claimCbpBonus } from "../../services/api";
 import type { KarmaLedger, KarmaEventType } from "../../types/domain";
+import { EVENT_META, formatPoints, metaFor } from "../karma/karmaMeta";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -45,49 +46,9 @@ const milestones: MilestoneStep[] = [
 const CAREER_MATCH_PCT = 82;
 
 
-// ─── Event type → display config ─────────────────────────────────────────────
-
-const EVENT_META: Record<KarmaEventType, { label: string; icon: React.ReactNode; colorClasses: string; pts: number }> = {
-  SELF_REGISTRATION: {
-    label: "Registration Bonus",
-    pts: 5,
-    icon: <Star size={12} />,
-    colorClasses: "text-amber-500 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40",
-  },
-  FIRST_ENROLLMENT: {
-    label: "First Enrollment",
-    pts: 5,
-    icon: <BookOpen size={12} />,
-    colorClasses: "text-sky-600 bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800/40",
-  },
-  COURSE_COMPLETION: {
-    label: "Course Completion",
-    pts: 5,
-    icon: <CheckCircle2 size={12} />,
-    colorClasses: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/40",
-  },
-  ASSESSMENT_PASSED: {
-    label: "Assessment Passed",
-    pts: 5,
-    icon: <Award size={12} />,
-    colorClasses: "text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-900/20 border-fuchsia-200 dark:border-fuchsia-800/40",
-  },
-  COURSE_RATED: {
-    label: "Course Feedback",
-    pts: 2,
-    icon: <Zap size={12} />,
-    colorClasses: "text-blue-600 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/40",
-  },
-  CBP_BONUS: {
-    label: "CBP Mandated Bonus",
-    pts: 10,
-    icon: <Gift size={12} />,
-    colorClasses: "text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800/40",
-  },
-};
-
 // Canonical display order for the breakdown pills
 const PILL_ORDER: KarmaEventType[] = [
+  "DAILY_LOGIN",
   "SELF_REGISTRATION",
   "COURSE_COMPLETION",
   "ASSESSMENT_PASSED",
@@ -104,7 +65,7 @@ const PassbookRow: React.FC<{
   createdAt: string;
   isCbp: boolean;
 }> = ({ eventType, points, createdAt, isCbp }) => {
-  const meta = EVENT_META[eventType] ?? EVENT_META.COURSE_COMPLETION;
+  const meta = metaFor(eventType);
   const date = new Date(createdAt);
   const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   const timeStr = date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
@@ -120,8 +81,8 @@ const PassbookRow: React.FC<{
         </p>
         <p className="text-[10px] text-slate-400">{dateStr} · {timeStr}</p>
       </div>
-      <span className="text-[13px] font-black text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-        +{points}
+      <span className={`text-[13px] font-black flex-shrink-0 ${points > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
+        {formatPoints(points)}
       </span>
     </div>
   );
@@ -254,7 +215,7 @@ const KarmaCard: React.FC<{ karma: KarmaLedger | null; userId: string }> = ({ ka
                     {meta.label}
                   </span>
                   <span className="font-black">
-                    {earned > 0 ? `+${earned}` : `+${meta.pts} each`}
+                    {earned > 0 ? `+${earned}` : "—"}
                   </span>
                 </div>
               );

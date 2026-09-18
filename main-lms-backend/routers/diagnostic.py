@@ -113,5 +113,11 @@ def _write_evidence(session_id: str) -> None:
         ))
         db.commit()
         s["evidenceWritten"] = True
+        app_state.invalidate_user(s["userId"])      # dashboard shows the new level at once
     finally:
         db.close()
+    from models.models import KarmaEventType
+    from services.karma_engine import karma_engine
+    karma_engine.award_safe(s["userId"], KarmaEventType.DIAGNOSTIC_COMPLETED, {
+        "referenceId": session_id, "note": comp["competencyName"],
+    })

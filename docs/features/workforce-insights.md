@@ -11,7 +11,7 @@ and the Insights tab opens with the same warning.
 ## Reference data loading
 
 - `main-lms-backend/services/reference_data.py` — `ReferenceData.load(adapter)`
-  runs once in `main._startup`. Each dataset tries the adapter first. If that
+  runs once in `main._warm_up` (the six fetches run concurrently). Each dataset tries the adapter first. If that
   fails, it logs a warning and reads the same generated file in
   `mock-igot-server/data/`. `sources` records `adapter | disk | missing` per
   dataset. A missing dataset disables its feature (it gives a 503 or no badge)
@@ -177,7 +177,7 @@ served at `GET /api/course/v1/assessment/outcomes` and loaded into
 `ReferenceData.outcomes/comparisons` at startup.
 
 **Computation** — `services/uplift_service.py::estimate_uplift`, run once in
-`main._startup` (~1 s) and cached in `ReferenceData.cache["uplift"]`:
+`main._warm_up` (~1 s) and cached in `ReferenceData.cache["uplift"]`:
 1. **Groups.** Treated = takers of course j. Controls = comparison episodes of
    learners with no course on j's primary competency.
 2. **Propensity model.** Ridge logistic (`PROPENSITY_RIDGE = 0.1`) on

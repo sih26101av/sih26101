@@ -22,6 +22,7 @@ System design, folder map, data flow and the mermaid-vs-code mismatches:
 | Skill gap analysis (6-term baseline formula) | [docs/features/skill-gap-analysis.md](docs/features/skill-gap-analysis.md) |
 | AI course recommendations (FAISS + BM25 + RRF) | [docs/features/recommendation-engine.md](docs/features/recommendation-engine.md) |
 | RAG document → quiz + grading → evidence | [docs/features/rag-quiz-generator.md](docs/features/rag-quiz-generator.md) |
+| Video / audio / YouTube → evidence-cited quiz | [docs/features/media-quiz-generator.md](docs/features/media-quiz-generator.md) |
 | Gyan chatbot (semantic + template tiers) | [docs/features/chatbot-gyan.md](docs/features/chatbot-gyan.md) |
 | Karma points / gamification | [docs/features/karma-points.md](docs/features/karma-points.md) |
 | Certificate → FRAC evidence extraction | [docs/features/certificate-evidence-extraction.md](docs/features/certificate-evidence-extraction.md) |
@@ -51,7 +52,7 @@ One-time / occasional:
 ```bash
 cd main-lms-backend
 python -m auth.seed              # seed users_auth from the mock server (idempotent)
-python scripts/download_model.py # fetch the ONNX embedder cache into ai/.cache/
+python scripts/download_model.py # ONNX embedders + embedding cache into ai/.cache/ (also the deploy build step)
 python -m ai.seed_knowledge      # optional: seed ChromaDB (needs local Ollama)
 ```
 

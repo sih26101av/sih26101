@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "purpose": "Seed reference set for the media-quiz fact-check (flaw 11) and the glossary used to protect terms during translation (flaw 13).",
+    "note": "Small, hand-curated seed. Extend with entries from the NSSO manuals, the CPI handbook and the MoSPI glossary. A mismatch only FLAGS a question for trainer review; it never rejects it, so a stale entry costs a review, not a lost question.",
+    "fields": "keywords: all must be non-empty; an entry matches when at least `min_hits` keywords appear in the question + correct answer. numbers: every value the reference accepts for this topic (old and revised series both count)."
+  },
+  "facts": [
+    {"id": "ref_cpi_base", "topic": "CPI base year", "keywords": ["cpi", "consumer price", "base year", "base"], "min_hits": 2,
+     "numbers": ["2012", "2024"], "statement": "The CPI (Rural/Urban/Combined) series compiled by NSO uses base year 2012=100; a revised series with base 2024 has been announced.", "source": "MoSPI CPI handbook"},
+    {"id": "ref_cpi_formula", "topic": "CPI index formula", "keywords": ["cpi", "consumer price", "formula", "laspeyres", "index"], "min_hits": 2,
+     "numbers": [], "statement": "CPI in India is compiled with a (modified) Laspeyres base-weighted formula.", "source": "MoSPI CPI handbook"},
+    {"id": "ref_gdp_base", "topic": "GDP / National Accounts base year", "keywords": ["gdp", "gva", "national accounts", "base year", "base"], "min_hits": 2,
+     "numbers": ["2011-12", "2011", "2022-23", "2022"], "statement": "The current National Accounts series (GDP/GVA) uses base year 2011-12; a revision to 2022-23 has been announced.", "source": "MoSPI National Accounts Statistics"},
+    {"id": "ref_iip_base", "topic": "IIP base year", "keywords": ["iip", "industrial production", "base year", "base"], "min_hits": 2,
+     "numbers": ["2011-12", "2011"], "statement": "The Index of Industrial Production uses base year 2011-12.", "source": "MoSPI IIP release"},
+    {"id": "ref_wpi_base", "topic": "WPI base year", "keywords": ["wpi", "wholesale price", "base year", "base"], "min_hits": 2,
+     "numbers": ["2011-12", "2011"], "statement": "The Wholesale Price Index (compiled by DPIIT, not MoSPI) uses base year 2011-12.", "source": "Office of the Economic Adviser, DPIIT"},
+    {"id": "ref_sna", "topic": "System of National Accounts", "keywords": ["sna", "system of national accounts", "international standard"], "min_hits": 1,
+     "numbers": ["2008", "2025"], "statement": "India's national accounts follow the UN System of National Accounts 2008 (SNA 2008); SNA 2025 is the newly adopted update.", "source": "UN Statistical Commission"},
+    {"id": "ref_nso_formation", "topic": "NSO formation", "keywords": ["nso", "nsso", "cso", "merged", "national statistical office"], "min_hits": 2,
+     "numbers": ["2019"], "statement": "The CSO and NSSO were merged into the National Statistical Office (NSO) under MoSPI in 2019.", "source": "MoSPI order, May 2019"},
+    {"id": "ref_nsso_est", "topic": "NSSO establishment", "keywords": ["nsso", "national sample survey", "established", "set up"], "min_hits": 2,
+     "numbers": ["1950"], "statement": "The National Sample Survey was set up in 1950.", "source": "MoSPI history"},
+    {"id": "ref_plfs", "topic": "PLFS launch", "keywords": ["plfs", "periodic labour force survey", "launched", "started"], "min_hits": 2,
+     "numbers": ["2017", "2017-18"], "statement": "The Periodic Labour Force Survey was launched by NSO in 2017 (first annual report 2017-18).", "source": "PLFS annual report"},
+    {"id": "ref_srs_def", "topic": "Simple random sampling", "keywords": ["simple random sampling", "srs", "equal probability"], "min_hits": 1,
+     "numbers": [], "statement": "In simple random sampling every unit (and every sample of the same size) has an equal probability of selection.", "source": "NSSO sampling manual"}
+  ],
+  "glossary_terms": [
+    "MoSPI", "NSO", "NSSO", "CSO", "CPI", "WPI", "IIP", "GDP", "GVA", "PLFS", "ASI", "HCES", "SNA 2008", "SNA",
+    "Laspeyres", "Paasche", "Fisher index", "base year", "stratified sampling", "simple random sampling",
+    "design effect", "standard error", "sampling frame", "first stage unit", "FSU", "multiplier", "imputation",
+    "seasonal adjustment", "deflator", "supply-use table", "GSBPM", "FRAC", "iGOT Karmayogi", "pivot table",
+    "Excel", "Python", "pandas", "R"
+  ]
+}

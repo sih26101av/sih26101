@@ -30,6 +30,8 @@ import type {
   Achievement,
   KarmaLedger,
   KarmaEventType,
+  KarmaAward,
+  KarmaRules,
   EvidenceConfidence,
   LearningPathwayResponse,
 } from '../types/domain';
@@ -48,6 +50,15 @@ let _onLogout: (() => void) | null = null;
  */
 export function setApiToken(token: string | null): void {
   _accessToken = token;
+  // Session ended → drop per-user client caches so the next login never sees them.
+  if (token === null) _sessionClearers.forEach((clear) => clear());
+}
+
+const _sessionClearers = new Set<() => void>();
+
+/** Register a cache to wipe when the session ends (token set to null). */
+export function onSessionEnd(clear: () => void): void {
+  _sessionClearers.add(clear);
 }
 
 /**
@@ -568,20 +579,34 @@ export async function fetchPrerequisiteDag(): Promise<PrerequisiteDagReport> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetches the full Karma Points ledger for a learner.
- * Returns totalPoints, streak, monthlyUsage, breakdown, and the 10 most recent
- * transactions. Returns null (never throws) on error so the dashboard degrades
- * gracefully if the karma service is unavailable.
+ * Daily check-in + full Karma summary. The backend syncs new iGOT completions,
+ * awards the once-a-day check-in and streak milestones (idempotent per IST day)
+ * and returns the summary with `recentAwards`. Returns null (never throws) so
+ * the dashboard degrades gracefully if the karma service is unavailable.
  */
-export async function fetchKarmaLedger(userId: string): Promise<KarmaLedger | null> {
+export async function fetchKarmaLedger(userId: string, limit = 20): Promise<KarmaLedger | null> {
   try {
     return await lmsFetch<KarmaLedger>(
-      `/api/v1/learner/${userId}/karma`,
+      `/api/v1/learner/${userId}/karma/check-in?limit=${limit}`,
       'karma-ledger',
+      { method: 'POST' },
     );
   } catch {
     return null;
   }
+}
+
+/** Passbook page (read-only; no check-in side effects). */
+export async function fetchKarmaHistory(userId: string, limit = 20, offset = 0): Promise<KarmaLedger> {
+  return lmsFetch<KarmaLedger>(
+    `/api/v1/learner/${userId}/karma?limit=${limit}&offset=${offset}`,
+    'karma-history',
+  );
+}
+
+/** Earning rules, daily cap, streak milestones and levels — drives "How to earn". */
+export async function fetchKarmaRules(): Promise<KarmaRules> {
+  return lmsFetch<KarmaRules>('/api/v1/karma/rules', 'karma-rules');
 }
 
 /**
@@ -593,7 +618,7 @@ export async function awardKarmaEvent(
   userId: string,
   eventType: KarmaEventType,
   options: { courseId?: string; isCbp?: boolean; is_mdo_onboarded?: boolean } = {},
-): Promise<{ pointsAwarded: number; capReached: boolean; newBalance: number }> {
+): Promise<KarmaAward & { newBalance: number }> {
   return lmsFetch(
     `/api/v1/learner/${userId}/karma/event`,
     'karma-award',
@@ -615,7 +640,7 @@ export async function awardKarmaEvent(
 export async function claimCbpBonus(
   userId: string,
   courseId: string,
-): Promise<{ pointsAwarded: number; alreadyClaimed: boolean; newBalance: number }> {
+): Promise<KarmaAward & { newBalance: number }> {
   return lmsFetch(
     `/api/v1/learner/${userId}/karma/claim-cbp-bonus`,
     'karma-cbp-claim',

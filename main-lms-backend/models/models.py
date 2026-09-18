@@ -246,6 +246,11 @@ class KarmaEventType(enum.Enum):
     ASSESSMENT_PASSED = "ASSESSMENT_PASSED"
     COURSE_RATED      = "COURSE_RATED"
     CBP_BONUS         = "CBP_BONUS"
+    # Added with the daily-cap / streak rework (migrated by karma_engine.migrate_karma_schema)
+    DAILY_LOGIN          = "DAILY_LOGIN"
+    STREAK_BONUS         = "STREAK_BONUS"
+    DIAGNOSTIC_COMPLETED = "DIAGNOSTIC_COMPLETED"
+    ADMIN_ADJUSTMENT     = "ADMIN_ADJUSTMENT"
 
 
 class KarmaEvent(Base):
@@ -259,6 +264,10 @@ class KarmaEvent(Base):
     courseId      = Column(String, nullable=True)   # optional course reference
     isCbp         = Column(Boolean, default=False)  # True if CBP-mandated course
     createdAt     = Column(DateTime, default=datetime.utcnow)
+    # Idempotency key (quizId, courseId, IST date, "once", ...). Unique per
+    # (userId, eventType) when not NULL — partial index made by migrate_karma_schema.
+    referenceId   = Column(String, nullable=True)
+    note          = Column(String, nullable=True)   # passbook text, e.g. "Daily cap reached"
 
 
 class KarmaMonthlyUsage(Base):
