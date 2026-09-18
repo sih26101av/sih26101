@@ -13,64 +13,44 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  X, Send, Bot, Languages, ChevronDown, ChevronRight, Mic, MicOff, Navigation,
+  X, Send, Bot, ChevronDown, ChevronRight, Mic, MicOff, Navigation,
   BookOpen, GraduationCap, BarChart3, FileText, Search, User, Landmark, Lightbulb, AudioLines,
 } from 'lucide-react';
-import type { NavigateAction } from '../../services/chatApi';
+import type { ChatLanguage, NavigateAction } from '../../services/chatApi';
 import type { ChatMessage } from '../../services/chatApi';
 import { useChatEngine } from '../../hooks/useChatEngine';
 import { useTheme } from '../../hooks/useTheme';
 import { GyanBot, GyanHero } from '../chat/GyanAvatar';
+import LanguageMenu from '../chat/LanguageMenu';
 import { AshokaChakra } from '../gov/GovUI';
+import { chatCopy, isPageLanguage, languageOption, type ChatCopy } from '../../i18n/chatLanguages';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 interface HomeChatWidgetProps {
   onScrollToSection: (sectionId: string) => void;
   onOpenLogin: () => void;
-  onLanguageChange?: (lang: 'en' | 'hi') => void;
+  /** The *page's* language. It seeds the chat language and overrides it whenever
+   *  the visitor flips the header EN/हिंदी switch. The page itself is only
+   *  translated into those two, so picking a regional language in the widget
+   *  changes the conversation only. */
+  lang: 'en' | 'hi';
+  onLanguageChange: (lang: 'en' | 'hi') => void;
 }
 
-// ─── Capability cards — each one sends a real prompt to the engine ───────────
+// ─── Capability cards — `label`/`ask` are keys into the per-language copy ─────
 const CAPABILITIES = [
-  {
-    id: 'guidance', icon: BookOpen,
-    label: { en: 'Platform Guidance', hi: 'प्लेटफ़ॉर्म मार्गदर्शन' },
-    prompt: { en: 'What is this platform?', hi: 'यह platform क्या है?' },
-    tile: 'bg-accent-blue-soft', ink: 'text-accent-blue',
-  },
-  {
-    id: 'courses', icon: GraduationCap,
-    label: { en: 'Course Recommendations', hi: 'पाठ्यक्रम अनुशंसाएँ' },
-    prompt: { en: 'How do course recommendations work?', hi: 'Course recommendations कैसे काम करती हैं?' },
-    tile: 'bg-accent-green-soft', ink: 'text-accent-green',
-  },
-  {
-    id: 'insights', icon: BarChart3,
-    label: { en: 'Competency Insights', hi: 'दक्षता अंतर्दृष्टि' },
-    prompt: { en: 'How does skill gap analysis work?', hi: 'Skill gap analysis कैसे होता है?' },
-    tile: 'bg-accent-orange-soft', ink: 'text-accent-orange',
-  },
-  {
-    id: 'quick', icon: FileText,
-    label: { en: 'Quick Information', hi: 'त्वरित जानकारी' },
-    prompt: { en: 'Tell me about MoSPI', hi: 'MoSPI के बारे में बताओ' },
-    tile: 'bg-accent-purple-soft', ink: 'text-accent-purple',
-  },
+  { id: 'guidance', icon: BookOpen,      label: 'guidance',   ask: 'platform',        tile: 'bg-accent-blue-soft',   ink: 'text-accent-blue' },
+  { id: 'courses',  icon: GraduationCap, label: 'courseRecs', ask: 'recommendations', tile: 'bg-accent-green-soft',  ink: 'text-accent-green' },
+  { id: 'insights', icon: BarChart3,     label: 'insights',   ask: 'gapAnalysis',     tile: 'bg-accent-orange-soft', ink: 'text-accent-orange' },
+  { id: 'quick',    icon: FileText,      label: 'quick',      ask: 'mospi',           tile: 'bg-accent-purple-soft', ink: 'text-accent-purple' },
 ] as const;
 
-// ─── Homepage-specific suggestions ───────────────────────────────────────────
-const SUGGESTIONS_EN = [
-  { icon: Search, text: 'What is this platform?' },
-  { icon: BookOpen, text: 'Show me the Features section' },
-  { icon: User, text: 'How do I login?' },
-  { icon: Landmark, text: 'Tell me about MoSPI' },
-];
-const SUGGESTIONS_HI = [
-  { icon: Search, text: 'यह platform क्या है?' },
-  { icon: BookOpen, text: 'Features section दिखाओ' },
-  { icon: User, text: 'Login कैसे करूँ?' },
-  { icon: Landmark, text: 'MoSPI के बारे में बताओ' },
-];
+const SUGGESTIONS = [
+  { icon: Search,   ask: 'platform' },
+  { icon: BookOpen, ask: 'features' },
+  { icon: User,     ask: 'login' },
+  { icon: Landmark, ask: 'mospi' },
+] as const;
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -90,14 +70,14 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
 // ─── Typing indicator ─────────────────────────────────────────────────────────
 const TypingIndicator: React.FC = () => (
-  <div className="mb-3 flex items-end gap-2">
-    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+  <div className="mb-3 flex animate-bubble-in items-end gap-2">
+    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80">
       <GyanBot size={22} />
     </span>
-    <div className="rounded-2xl rounded-bl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
+    <div className="rounded-2xl rounded-bl-md border border-slate-200/70 bg-white px-4 py-3 shadow-sm">
       <div className="flex h-4 items-center gap-1">
         {[0, 1, 2].map(i => (
-          <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400"
+          <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-gov-sky/70"
             style={{ animationDelay: `${i * 0.18}s`, animationDuration: '0.9s' }} />
         ))}
       </div>
@@ -112,27 +92,27 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
 
   if (isUser) {
     return (
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex animate-bubble-in justify-end">
         <div className="max-w-[78%]">
-          <div className="rounded-2xl rounded-br-sm bg-gradient-to-br from-gov-ink to-gov-blue px-4 py-2.5 text-[13px] leading-relaxed text-white shadow-md">
+          <div className="rounded-2xl rounded-br-md bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue px-4 py-2.5 text-[13px] leading-relaxed text-white shadow-[0_6px_18px_-8px_rgba(11,42,85,0.75)]">
             {msg.content}
           </div>
-          <p className="mr-1 mt-1 text-right text-[10px] text-slate-400">{time}</p>
+          <p className="mr-1.5 mt-1 text-right text-[10px] tabular-nums text-slate-400">{time}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-3 flex items-end gap-2">
-      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+    <div className="mb-3 flex animate-bubble-in items-end gap-2">
+      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200/80">
         <GyanBot size={22} />
       </span>
       <div className="max-w-[82%]">
-        <div className="rounded-2xl rounded-bl-sm border border-slate-100 bg-white px-4 py-2.5 text-[13px] leading-relaxed text-slate-800 shadow-sm">
+        <div className="rounded-2xl rounded-bl-md border border-slate-200/70 bg-white px-4 py-2.5 text-[13px] leading-relaxed text-slate-800 shadow-[0_4px_16px_-10px_rgba(10,26,51,0.5)]">
           {renderMarkdown(msg.content)}
         </div>
-        <p className="ml-1 mt-1 text-[10px] text-slate-400">{time}</p>
+        <p className="ml-1.5 mt-1 text-[10px] tabular-nums text-slate-400">{time}</p>
       </div>
     </div>
   );
@@ -141,32 +121,30 @@ const MessageBubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
 // ─── Nav Confirmation Banner ──────────────────────────────────────────────────
 const NavConfirmBanner: React.FC<{
   action: NavigateAction;
-  lang: 'en' | 'hi';
+  copy: ChatCopy;
   onConfirm: () => void;
   onCancel: () => void;
-}> = ({ action, lang, onConfirm, onCancel }) => (
-  <div className="mx-4 mb-3 flex flex-col gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
-    <p className="flex items-center gap-1.5 text-[12px] font-medium text-blue-800">
-      <Navigation size={12} />
-      {lang === 'hi'
-        ? `क्या मैं आपको "${action.label}" पर ले जाऊं?`
-        : `Scroll to the ${action.label}?`}
+}> = ({ action, copy, onConfirm, onCancel }) => (
+  <div className="animate-bubble-in mx-3.5 mb-3 flex flex-col gap-2 rounded-2xl border border-gov-sky/25 bg-gradient-to-br from-[#eef4ff] to-white p-3 shadow-sm">
+    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-gov-navy">
+      <Navigation size={12} className="text-gov-blue" />
+      {copy.navConfirmHome(action.label)}
     </p>
     <div className="flex gap-2">
       <button onClick={onConfirm}
-        className="flex-1 rounded-lg bg-gov-navy py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-gov-blue">
-        {lang === 'hi' ? 'हाँ ✈️' : 'Yes, take me there ✈️'}
+        className="flex-1 rounded-xl bg-gradient-to-br from-gov-navy to-gov-blue py-1.5 text-[11px] font-bold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98]">
+        {copy.yes}
       </button>
       <button onClick={onCancel}
-        className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-100">
-        {lang === 'hi' ? 'नहीं' : 'No'}
+        className="rounded-xl px-3 py-1.5 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700">
+        {copy.no}
       </button>
     </div>
   </div>
 );
 
 // ─── Voice Button ─────────────────────────────────────────────────────────────
-const VoiceButton: React.FC<{ lang: 'en' | 'hi'; onResult: (t: string) => void }> = ({ lang, onResult }) => {
+const VoiceButton: React.FC<{ lang: ChatLanguage; onResult: (t: string) => void }> = ({ lang, onResult }) => {
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRecognition | null>(null);
 
@@ -179,7 +157,7 @@ const VoiceButton: React.FC<{ lang: 'en' | 'hi'; onResult: (t: string) => void }
   const toggle = () => {
     if (listening) { recRef.current?.stop(); setListening(false); return; }
     const rec = new SRAPI();
-    rec.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+    rec.lang = languageOption(lang).speech;
     rec.onresult = (e: SpeechRecognitionEvent) => { onResult(e.results[0][0].transcript); setListening(false); };
     rec.onerror = () => setListening(false);
     rec.onend   = () => setListening(false);
@@ -194,7 +172,7 @@ const VoiceButton: React.FC<{ lang: 'en' | 'hi'; onResult: (t: string) => void }
       aria-label={listening ? 'Stop voice input' : 'Start voice input'}
       title={listening ? 'Stop' : 'Voice input'}
       className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all
-        ${listening ? 'animate-pulse bg-red-500 text-white shadow-lg shadow-red-200' : 'text-slate-400 hover:bg-slate-100 hover:text-gov-navy'}`}
+        ${listening ? 'animate-pulse bg-red-500 text-white shadow-lg shadow-red-200' : 'text-slate-400 hover:bg-white hover:text-gov-navy hover:shadow-sm'}`}
     >
       {listening ? <MicOff size={16} /> : <Mic size={16} />}
     </button>
@@ -202,13 +180,25 @@ const VoiceButton: React.FC<{ lang: 'en' | 'hi'; onResult: (t: string) => void }
 };
 
 // ─── Main HomeChatWidget ───────────────────────────────────────────────────────
-const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOpenLogin, onLanguageChange }) => {
+const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOpenLogin, lang, onLanguageChange }) => {
   const [isOpen, setIsOpen]         = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [lang, setLang]             = useState<'en' | 'hi'>('en');
   const [hasUnread, setHasUnread]   = useState(true);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const inputRef                    = useRef<HTMLTextAreaElement>(null);
+
+  // The conversation's language. Seeded from the page and kept in step with the
+  // header EN/हिंदी switch, but it can go further than the page can (Telugu,
+  // Tamil, …) because only the replies need a translation for those.
+  const [chatLang, setChatLang] = useState<ChatLanguage>(lang);
+  useEffect(() => { setChatLang(lang); }, [lang]);
+
+  const copy = chatCopy(chatLang);
+
+  const changeChatLanguage = useCallback((next: ChatLanguage) => {
+    setChatLang(next);
+    // Keep the whole page in step when the pick is one the page can render.
+    if (isPageLanguage(next)) onLanguageChange(next);
+  }, [onLanguageChange]);
 
   // Navigation handler: route scroll/modal actions from the bot
   const handleNavigate = useCallback((action: NavigateAction) => {
@@ -227,17 +217,15 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
     useChatEngine({
       officialId: 'anonymous',
       context: 'home',
-      lang,
+      lang: chatLang,
       onNavigate: handleNavigate,
       onThemeToggle: (target) => {
         if (target === 'toggle') { toggleTheme(); }
         else if (target === 'dark'  && theme !== 'dark')  { toggleTheme(); }
         else if (target === 'light' && theme !== 'light') { toggleTheme(); }
       },
-      onLanguageChange,
+      onLanguageChange: changeChatLanguage,
     });
-
-  const suggestions = lang === 'hi' ? SUGGESTIONS_HI : SUGGESTIONS_EN;
 
   useEffect(() => {
     if (isOpen) { setTimeout(() => inputRef.current?.focus(), 300); setHasUnread(false); }
@@ -263,6 +251,8 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
     setTimeout(() => { handleSend(text); setInputValue(''); }, 800);
   }, [handleSend]);
 
+  const canSend = Boolean(inputValue.trim()) && !isTyping;
+
   return (
     <>
       {/* ── Chat Panel ────────────────────────────────────────────────── */}
@@ -270,65 +260,35 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
         role="dialog"
         aria-label="Gyan AI assistant"
         className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
-          overflow-hidden rounded-[28px] border border-slate-200/80 bg-white
+          overflow-hidden rounded-[28px] border border-white/60 bg-white ring-1 ring-slate-900/[0.06]
           transition-all duration-300 ease-out sm:right-6
           ${isOpen ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-4 scale-95 opacity-0'}`}
-        style={{ boxShadow: '0 28px 70px -14px rgba(10,26,51,0.35)' }}
+        style={{ boxShadow: '0 32px 80px -16px rgba(10,26,51,0.42), 0 8px 24px -12px rgba(10,26,51,0.22)' }}
       >
         {/* ── Header ───────────────────────────────────────────────────── */}
-        <div className="relative flex flex-shrink-0 items-center gap-3 overflow-hidden bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue px-4 py-3.5">
+        <div className="relative flex flex-shrink-0 items-center gap-3 overflow-hidden bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue px-4 pb-4 pt-3.5">
           <div className="pointer-events-none absolute -right-6 -top-10 text-white/[0.07]">
             <AshokaChakra size={140} />
           </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
 
           <div className="relative flex-shrink-0">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/25 bg-white/15">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-inner backdrop-blur-sm">
               <GyanBot size={30} />
             </span>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-gov-ink bg-emerald-400" />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-gov-ink bg-emerald-400">
+              <span className="h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            </span>
           </div>
 
           <div className="relative min-w-0 flex-1">
             <p className="text-[15px] font-bold leading-tight text-white">Gyan (ज्ञान)</p>
             <p className="mt-0.5 truncate text-[11px] font-medium text-sky-300">
-              MoSPI AI Assistant • {lang === 'hi' ? 'कुछ भी पूछें' : 'Ask me anything'}
+              MoSPI AI Assistant • {copy.tagline}
             </p>
           </div>
 
-          {/* Language selector */}
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => setLangMenuOpen(o => !o)}
-              aria-haspopup="menu"
-              aria-expanded={langMenuOpen}
-              aria-label="Change assistant language"
-              className="flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11.5px] font-bold text-white transition-colors hover:bg-white/20"
-            >
-              <Languages size={13} />
-              {lang === 'en' ? 'EN' : 'HI'}
-              <ChevronDown size={13} className={`transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {langMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-0" onClick={() => setLangMenuOpen(false)} aria-hidden="true" />
-                <div role="menu" className="animate-scale-in absolute right-0 z-10 mt-1.5 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
-                  {(['en', 'hi'] as const).map(l => (
-                    <button
-                      key={l}
-                      role="menuitem"
-                      onClick={() => { setLang(l); setLangMenuOpen(false); }}
-                      className={`block w-full px-3.5 py-2 text-left text-[12.5px] font-medium transition-colors hover:bg-slate-50 ${
-                        lang === l ? 'text-gov-navy' : 'text-slate-600'
-                      }`}
-                    >
-                      {l === 'en' ? 'English' : 'हिंदी'}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <LanguageMenu value={chatLang} onChange={changeChatLanguage} />
 
           <button
             onClick={() => setIsOpen(false)}
@@ -337,57 +297,54 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
           >
             <ChevronDown size={18} />
           </button>
+
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-gov-saffron via-white/80 to-gov-green" />
         </div>
 
         {/* ── Body ─────────────────────────────────────────────────────── */}
-        <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-gradient-to-b from-[#f7faff] to-white px-4 py-4 custom-scrollbar">
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto scroll-smooth bg-gradient-to-b from-[#f5f9ff] via-[#fbfdff] to-white px-4 py-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center">
+            <div className="flex animate-fade-in flex-col items-center">
               <GyanHero className="mb-1" />
 
-              <p className="text-center text-[21px] font-bold text-gov-ink">
-                {lang === 'hi' ? 'नमस्ते! मैं ज्ञान हूँ 🙏' : "Hello! I'm Gyan 👋"}
-              </p>
-              <p className="mb-5 mt-1 text-center text-[12.5px] leading-relaxed text-slate-500">
-                {lang === 'hi'
-                  ? 'KarmaSkill के लिए आपका AI सहायक'
-                  : 'Your AI assistant for KarmaSkill'}
-              </p>
+              <p className="text-center text-[21px] font-bold text-gov-ink">{copy.greeting}</p>
+              <p className="mb-5 mt-1 text-center text-[12.5px] leading-relaxed text-slate-500">{copy.homeSubtitle}</p>
 
               {/* Capability cards — each sends a real prompt */}
               <div className="mb-5 grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4">
-                {CAPABILITIES.map(({ id, icon: Icon, label, prompt, tile, ink }) => (
+                {CAPABILITIES.map(({ id, icon: Icon, label, ask, tile, ink }) => (
                   <button
                     key={id}
-                    onClick={() => handleSend(prompt[lang])}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-gov-blue/30 hover:shadow-md"
+                    onClick={() => handleSend(copy.ask[ask])}
+                    className="group flex flex-col items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-2 py-3 text-center
+                      transition-all duration-200 hover:-translate-y-0.5 hover:border-gov-blue/30 hover:shadow-[0_10px_24px_-14px_rgba(10,26,51,0.6)]"
                   >
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${tile}`}>
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tile} transition-transform duration-200 group-hover:scale-105`}>
                       <Icon size={18} className={ink} aria-hidden="true" />
                     </span>
-                    <span className="text-[10.5px] font-semibold leading-tight text-slate-700">{label[lang]}</span>
+                    <span className="text-[10.5px] font-semibold leading-tight text-slate-700">{copy.label[label]}</span>
                   </button>
                 ))}
               </div>
 
               {/* Divider */}
               <div className="mb-3 flex w-full items-center gap-3">
-                <span className="h-px flex-1 bg-slate-200" />
-                <span className="text-[11.5px] font-medium text-slate-400">
-                  {lang === 'hi' ? 'यह पूछकर देखें' : 'Try asking'}
-                </span>
-                <span className="h-px flex-1 bg-slate-200" />
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200" />
+                <span className="text-[11.5px] font-medium text-slate-400">{copy.tryAsking}</span>
+                <span className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200" />
               </div>
 
               <div className="flex w-full flex-col gap-2">
-                {suggestions.map(({ icon: Icon, text }, i) => (
+                {SUGGESTIONS.map(({ icon: Icon, ask }) => (
                   <button
-                    key={i}
-                    onClick={() => handleSend(text)}
-                    className="group flex items-center gap-3 rounded-xl border border-slate-200/80 bg-[#f4f8ff] px-3.5 py-2.5 text-left transition-all duration-200 hover:border-gov-blue/35 hover:bg-white hover:shadow-sm"
+                    key={ask}
+                    onClick={() => handleSend(copy.ask[ask])}
+                    className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-[#f4f8ff] px-3.5 py-2.5 text-left
+                      transition-all duration-200 hover:border-gov-blue/35 hover:bg-white hover:shadow-sm"
                   >
+                    <span className="absolute inset-y-0 left-0 w-[3px] origin-top scale-y-0 bg-gov-saffron transition-transform duration-200 group-hover:scale-y-100" />
                     <Icon size={15} className="flex-shrink-0 text-accent-blue" aria-hidden="true" />
-                    <span className="flex-1 text-[12.5px] font-medium text-slate-700">{text}</span>
+                    <span className="flex-1 text-[12.5px] font-medium text-slate-700">{copy.ask[ask]}</span>
                     <ChevronRight size={15} className="flex-shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-gov-navy" />
                   </button>
                 ))}
@@ -402,7 +359,7 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
 
         {/* Navigation Confirmation */}
         {pendingNav && (
-          <NavConfirmBanner action={pendingNav.action} lang={lang} onConfirm={confirmNav} onCancel={cancelNav} />
+          <NavConfirmBanner action={pendingNav.action} copy={copy} onConfirm={confirmNav} onCancel={cancelNav} />
         )}
 
         {/* ── Input bar ────────────────────────────────────────────────── */}
@@ -411,39 +368,47 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
             <Landmark size={64} strokeWidth={1} />
           </div>
 
-          <div className="relative flex items-end gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-4 pr-1.5 transition-all focus-within:border-gov-blue/40 focus-within:bg-white focus-within:ring-2 focus-within:ring-gov-sky/15">
+          <div className="relative flex items-end gap-1.5 rounded-[22px] border border-slate-200 bg-slate-50/80 py-1.5 pl-4 pr-1.5
+            transition-all duration-200 focus-within:border-gov-blue/40 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(47,111,191,0.10)]">
             <textarea
               ref={inputRef}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={lang === 'hi' ? 'MoSPI, features, login के बारे में पूछें…' : 'Ask about MoSPI, features, login…'}
+              placeholder={copy.placeholderHome}
               rows={1}
               disabled={isTyping}
               aria-label="Message Gyan"
-              className="max-h-24 flex-1 resize-none self-center overflow-y-auto bg-transparent py-1.5 text-[13px] leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none disabled:opacity-50"
+              // focus-visible:ring-0 opts out of the global saffron a11y ring —
+              // the pill's own focus-within treatment already shows focus here.
+              className="max-h-24 flex-1 resize-none self-center overflow-y-auto bg-transparent py-1.5 text-[13px] leading-relaxed text-slate-800
+                placeholder-slate-400 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
               style={{ minHeight: '24px' }}
             />
-            <VoiceButton lang={lang} onResult={onVoiceResult} />
+            <VoiceButton lang={chatLang} onResult={onVoiceResult} />
             <button
               onClick={() => { handleSend(inputValue); setInputValue(''); }}
-              disabled={!inputValue.trim() || isTyping}
+              disabled={!canSend}
               aria-label="Send message"
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gov-navy to-gov-blue text-white shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-40"
+              className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-white transition-all duration-200
+                ${canSend
+                  ? 'bg-gradient-to-br from-gov-navy to-gov-blue shadow-[0_6px_16px_-6px_rgba(11,42,85,0.8)] hover:scale-105 active:scale-95'
+                  : 'cursor-not-allowed bg-slate-300 shadow-none'
+                }`}
             >
-              <Send size={15} />
+              <Send size={15} className={canSend ? 'translate-x-[1px]' : ''} />
             </button>
           </div>
 
           <p className="relative mt-2 flex items-center justify-center gap-2.5 text-[10.5px] text-slate-400">
             <span className="flex items-center gap-1">
               <Lightbulb size={11} className="text-gov-saffron" aria-hidden="true" />
-              {lang === 'hi' ? 'नई line के लिए Shift + Enter' : 'Shift + Enter for new line'}
+              {copy.hintNewline}
             </span>
             <span className="h-3 w-px bg-slate-200" />
             <span className="flex items-center gap-1">
               <AudioLines size={11} className="text-accent-blue" aria-hidden="true" />
-              {lang === 'hi' ? 'बोलने के लिए mic दबाएँ' : 'Click mic to speak'}
+              {copy.hintMic}
             </span>
           </p>
         </div>
@@ -457,12 +422,13 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
           bg-gradient-to-br from-gov-ink to-gov-blue text-white
           shadow-[0_8px_32px_-8px_rgba(11,42,85,0.6)] transition-all duration-200
           hover:scale-110 hover:shadow-[0_12px_40px_-8px_rgba(11,42,85,0.8)] active:scale-95`}
-        title={lang === 'hi' ? 'Gyan AI से बात करें' : 'Chat with Gyan AI'}
+        title={copy.bubbleTitle}
         aria-label="Open AI chat assistant"
       >
         {isOpen ? <X size={20} /> : (
           <>
-            <Bot size={22} />
+            <span className="absolute inset-0 animate-ping rounded-full bg-gov-sky/25" style={{ animationDuration: '3s' }} />
+            <Bot size={22} className="relative" />
             {hasUnread && <span className="absolute -right-1 -top-1 h-4 w-4 animate-pulse rounded-full border-2 border-white bg-emerald-400" />}
           </>
         )}

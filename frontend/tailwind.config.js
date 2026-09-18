@@ -59,6 +59,11 @@ export default {
         float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
         marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
         'grow-x': { '0%': { transform: 'scaleX(0)' }, '100%': { transform: 'scaleX(1)' } },
+        // Chat message entrance — short and subtle, it fires on every bubble.
+        'bubble-in': {
+          '0%': { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.7s cubic-bezier(0.2,0.7,0.2,1) both',
@@ -69,6 +74,7 @@ export default {
         marquee: 'marquee 40s linear infinite',
         'spin-slow': 'spin 60s linear infinite',
         'grow-x': 'grow-x 0.9s cubic-bezier(0.2,0.7,0.2,1) both',
+        'bubble-in': 'bubble-in 0.26s cubic-bezier(0.2,0.7,0.2,1) both',
       },
     },
   },

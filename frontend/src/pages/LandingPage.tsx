@@ -663,7 +663,8 @@ const LandingPage: React.FC = () => {
           else document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
         }}
         onOpenLogin={() => setIsLoginModalOpen(true)}
-        onLanguageChange={(l) => setLang(l)}
+        lang={lang}
+        onLanguageChange={(l) => { screenReader.stop(); setLang(l); }}
       />
     </div>
   );

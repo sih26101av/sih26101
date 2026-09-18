@@ -12,7 +12,9 @@
 
 import type { SkillGapEntry, CourseRecommendation } from '../types/domain';
 
-export type ChatLanguage = 'en' | 'hi' | 'bn' | 'mr' | 'gu' | 'or' | 'ta' | 'te';
+/** Mirrors the backend: `SUPPORTED_CHAT_LANGUAGES` plus `hi_latn` (romanized
+ *  Hindi), which is a reply *variant* rather than an ISO language. */
+export type ChatLanguage = 'en' | 'hi' | 'hi_latn' | 'bn' | 'mr' | 'gu' | 'or' | 'ta' | 'te';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +41,8 @@ interface ChatApiPayload {
   full_name?: string;
   gov_id?: string;
   context?: string;
+  /** Language picked in the widget; only used when the message has no signal. */
+  preferred_language?: string;
   skill_gaps: {
     skillName: string;
     domain: string;
@@ -64,7 +68,8 @@ const HINGLISH_WORDS = new Set([
   'aaj', 'kal', 'namaste', 'namaskar',
 ]);
 
-function detectLanguage(text: string): ChatLanguage {
+/** The language the text itself signals, or null when it gives nothing away. */
+function detectLanguage(text: string): ChatLanguage | null {
   if (/[\u0980-\u09FF]/.test(text)) return 'bn';
   if (/[\u0A80-\u0AFF]/.test(text)) return 'gu';
   if (/[\u0B00-\u0B7F]/.test(text)) return 'or';
@@ -73,7 +78,7 @@ function detectLanguage(text: string): ChatLanguage {
   if (/[\u0900-\u097F]/.test(text)) return 'hi';
   const words = new Set(text.toLowerCase().split(/\s+/));
   if ([...words].some(w => HINGLISH_WORDS.has(w))) return 'hi';
-  return 'en';
+  return null;
 }
 
 // ─── Intent Detection ─────────────────────────────────────────────────────────
@@ -271,6 +276,10 @@ export async function sendChatMessage(
   fullName?: string,
   govId?: string,
   context?: string,
+  /** The widget's current language. The backend prefers a signal in the message
+   *  itself and only falls back to this, so Devanagari input still gets a
+   *  Devanagari reply even when the picker says EN. */
+  preferredLanguage?: ChatLanguage,
 ): Promise<{ reply: string; detectedLanguage: ChatLanguage; navigateAction?: NavigateAction; navigateActions: NavigateAction[] }> {
 
   const payload: ChatApiPayload = {
@@ -282,6 +291,7 @@ export async function sendChatMessage(
     full_name: fullName,
     gov_id: govId,
     context,
+    preferred_language: preferredLanguage,
     skill_gaps: skillGaps.map(g => ({
       skillName: g.competency.skillName,
       domain: g.competency.domain,
@@ -316,11 +326,13 @@ export async function sendChatMessage(
   } catch (err) {
     // ── Backend unavailable → use client-side engine ──────────────────────────
     console.warn('[Gyan] Backend chat failed; using limited English/Hindi browser fallback.', err);
-    const lang = detectLanguage(message);
+    // Mirror the backend rule: a signal in the message wins, otherwise the
+    // widget's picked language decides.
+    const lang = detectLanguage(message) ?? preferredLanguage ?? 'en';
     const intent = detectIntent(message);
     // The browser fallback is intentionally small and only ships English/Hindi
     // templates. The backend supplies the full regional-language catalogue.
-    const fallbackLanguage = lang === 'hi' ? 'hi' : 'en';
+    const fallbackLanguage = lang === 'hi' || lang === 'hi_latn' ? 'hi' : 'en';
     const reply = buildLocalReply(
       intent, fallbackLanguage, officialId, jobRole, department, skillGaps, recommendations, message
     );

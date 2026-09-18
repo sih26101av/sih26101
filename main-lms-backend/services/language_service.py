@@ -55,11 +55,13 @@ def _devanagari_language(text: str) -> str:
     return language if language in {"hi", "mr"} else "hi"
 
 
-def detect_chat_variant(text: str) -> str:
-    """Internal language variant: en, hi (Devanagari), hi_latn (romanized Hindi), mr, bn, gu, or, ta, te.
+def detect_chat_variant_or_none(text: str) -> str | None:
+    """The variant the *text itself* signals, or None when it carries no signal.
 
-    Replies mirror the user's script, so Devanagari and romanized Hindi are
-    distinct variants even though both are ISO "hi".
+    Plain Latin text with no romanized-Hindi markers ("show my courses") is
+    indistinguishable from English, so it returns None rather than guessing.
+    Callers that have a UI language preference should use it in that case;
+    ``detect_chat_variant`` keeps the historical English default.
     """
     for pattern, language in _SCRIPT_LANGUAGE_PATTERNS:
         if pattern.search(text):
@@ -71,6 +73,39 @@ def detect_chat_variant(text: str) -> str:
     words = set(re.findall(r"[a-zA-Z]+", text.lower()))
     if words & _HINGLISH_WORDS:
         return "hi_latn"
+
+    return None
+
+
+def detect_chat_variant(text: str) -> str:
+    """Internal language variant: en, hi (Devanagari), hi_latn (romanized Hindi), mr, bn, gu, or, ta, te.
+
+    Replies mirror the user's script, so Devanagari and romanized Hindi are
+    distinct variants even though both are ISO "hi".
+    """
+    return detect_chat_variant_or_none(text) or "en"
+
+
+def resolve_chat_variant(text: str, preferred_language: str | None) -> str:
+    """Pick the reply variant for a message, honouring the UI language picker.
+
+    A positive signal in the message always wins — someone typing Devanagari
+    gets Devanagari back even if the widget says "EN". Only when the message
+    gives nothing away does the caller's preference decide, so switching the
+    picker to हिंदी and typing "show my courses" now replies in Hindi instead
+    of silently defaulting to English.
+    """
+    detected = detect_chat_variant_or_none(text)
+    if detected is not None:
+        return detected
+
+    if preferred_language:
+        preferred = preferred_language.strip().lower().replace("-", "_")
+        # "hi_latn" is accepted so a caller can ask for romanized Hindi replies.
+        if preferred == "hi_latn":
+            return "hi_latn"
+        if preferred in SUPPORTED_CHAT_LANGUAGES:
+            return preferred
 
     return "en"
 
