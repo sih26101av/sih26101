@@ -45,6 +45,43 @@ def _frac_names() -> dict:
     return {cid: meta.get("name", cid) for cid, meta in (engine._frac_map.items() if engine else [])}
 
 
+@router.get("/training-effectiveness")
+async def training_effectiveness(
+    competencyId: Optional[str] = None,
+    flaggedOnly: bool = False,
+    minLearners: int = 0,
+    _admin: UserAuth = Depends(require_role("admin")),
+):
+    """
+    SCIL v6 §6 — courses by measured uplift (propensity-weighted, shrunk, 95%
+    bootstrap CI) with the mis-tag flag (declared relevance high, uplift ≈ 0).
+    Computed once at startup by services/uplift_service.py on synthetic data.
+    """
+    ref = app_state.ref
+    est = ref.cache.get("uplift")
+    if not est:
+        raise HTTPException(status_code=503, detail="Course outcome data not loaded — no uplift estimates.")
+    courses = [c for c in est["courses"]
+               if (not competencyId or c["competencyId"] == competencyId)
+               and (not flaggedOnly or c["misTagFlag"]) and c["n"] >= minLearners]
+    all_courses = est["courses"]
+    return {
+        "summary": {
+            "courses": len(all_courses),
+            "learnerRecords": len(ref.outcomes),
+            "comparisonEpisodes": len(ref.comparisons),
+            "flagged": sum(c["misTagFlag"] for c in all_courses),
+            "medianMeasuredUplift": sorted(c["measuredUplift"] for c in all_courses)[len(all_courses) // 2],
+            "priorsByLevel": est["priors"],
+        },
+        "courses": courses,
+        "constants": est["constants"],
+        "method": est["method"],
+        "dataNote": SYNTHETIC_NOTE + " Effects in this data are planted by the generator; recovering them "
+                                     "shows the method works, it is not a validation.",
+    }
+
+
 @router.get("/prerequisites")
 async def prerequisite_dag(_admin: UserAuth = Depends(require_role("admin"))):
     """

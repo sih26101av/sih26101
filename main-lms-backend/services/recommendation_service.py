@@ -109,6 +109,10 @@ class RecommendationResult(BaseModel):
     # False = course text is no closer to the competency than a typical UNtagged
     # course, i.e. the author-declared tag isn't supported by content (review it).
     tagSupported: Optional[bool] = None
+    # SCIL v6 §6: measured uplift (FRAC levels, shrunk) from course outcome data, and
+    # whether that data says the course barely moves its competency (synthetic data).
+    measuredUplift: Optional[float] = None
+    upliftFlag:     Optional[bool]  = None
 
 
 
@@ -322,6 +326,8 @@ class HybridRecommendationEngine:
         # Explicit crosswalk (data/frac_crosswalk.json): iGOT dictionary CID id →
         # catalogue id, each with a `confirmed` flag. Consulted before embeddings.
         self._xw_curated: Dict[str, Dict[str, Any]] = {}
+        # courseId → {measuredUplift, ci95, misTagFlag, …} (set_measured_uplift, SCIL v6 §6)
+        self._uplift: Dict[str, Dict[str, Any]] = {}
         if crosswalk is None:
             path = crosswalk_path or os.path.join(os.path.dirname(os.path.normpath(catalog_path)),
                                                   "frac_crosswalk.json")
@@ -436,6 +442,21 @@ class HybridRecommendationEngine:
         """{courseId: {compId: FRAC level}} — feeds BaselineAssembler so the
         Verified channel and the candidate filter read the same tags."""
         return {d.identifier: dict(d.comp_levels) for d in self._catalog if d.comp_levels}
+
+    def set_measured_uplift(self, estimates: List[Dict[str, Any]]) -> None:
+        """Attach per-course measured uplift (uplift_service.estimate_uplift) — SCIL v6 §6."""
+        self._uplift = {e["courseId"]: e for e in estimates}
+
+    def course_meta(self) -> Dict[str, Dict[str, Any]]:
+        """{courseId: title, primary competency, format, rating, enrolments} for analytics views."""
+        out = {}
+        for d in self._catalog:
+            comp = d.comp_ids[0] if d.comp_ids else None
+            out[d.identifier] = {
+                "title": d.name, "competencyName": self._frac_map.get(comp, {}).get("name", comp),
+                "format": d.fmt, "rating": d.rating, "enrollmentCount": d.enrollment_count,
+            }
+        return out
 
     def course_hours(self, course_id: str) -> Optional[float]:
         """Catalogue duration in hours, or None for a course not in the catalogue."""
@@ -771,6 +792,9 @@ class HybridRecommendationEngine:
 
             # Build human-readable match reasons
             reasons = [f"FRAC tag: {gap.competencyName}"]
+            uplift = self._uplift.get(doc.identifier) or {}
+            if uplift.get("misTagFlag"):
+                reasons.append("Measured uplift near zero in outcome data — flagged for review")
             if tag_supported is False:
                 reasons.append("Tag flagged for review — course content doesn't clearly match this competency")
             if course_level:
@@ -808,11 +832,15 @@ class HybridRecommendationEngine:
                 tpacSource     = doc.tpac_source,  # Bug #6
                 courseLevel    = course_level,
                 tagSupported   = tag_supported,
+                measuredUplift = uplift.get("measuredUplift"),
+                upliftFlag     = uplift.get("misTagFlag"),
             ))
 
         # Content-supported tags first, then finalScore — so wherever a level
         # has a course that genuinely teaches the competency, it wins.
-        results.sort(key=lambda r: (r.tagSupported is False, -r.finalScore))
+        # A flagged course (content doesn't match the tag, or measured uplift ≈ 0) is
+        # used only when nothing else exists at that level — never hidden.
+        results.sort(key=lambda r: (r.tagSupported is False or bool(r.upliftFlag), -r.finalScore))
         return results
 
     # ── Public API ─────────────────────────────────────────────────────────────
@@ -1068,6 +1096,9 @@ class HybridRecommendationEngine:
             reason = f"Target met. Optional: this Level-{course_level} course takes you further."
         else:
             reason = f"Takes you from Level {from_level} to Level {to_level}."
+        if choice.upliftFlag:
+            reason += (" Note: outcome data shows near-zero measured uplift for this course; it is the "
+                       "only option at this level and is flagged for review.")
         if choice.tagSupported is False:
             reason += (" Note: no course at this level clearly matches the competency by content; "
                        "this one's FRAC tag is flagged for review.")
@@ -1454,6 +1485,8 @@ def _course_summary(r: RecommendationResult, progress: float = 0.0) -> Dict[str,
         "relevanceScore":     r.relevanceScore,
         "qualityScore":       r.qualityScore,
         "tagSupported":       r.tagSupported,
+        "measuredUplift":     r.measuredUplift,
+        "upliftFlag":         r.upliftFlag,
         "progressPercentage": progress,
     }
 

@@ -11,7 +11,8 @@ import { AlertTriangle, FlaskConical, GitBranch, Layers, Route } from 'lucide-re
 
 import SectionCard from '../shell/SectionCard';
 import {
-  fetchGsbpmScope, fetchPrerequisiteDag, type GsbpmScopeReport, type PrerequisiteDagReport,
+  fetchGsbpmScope, fetchPrerequisiteDag, fetchTrainingEffectiveness,
+  type GsbpmScopeReport, type PrerequisiteDagReport, type TrainingEffectivenessReport,
 } from '../../services/api';
 
 // ─── Small shared helpers ─────────────────────────────────────────────────────
@@ -234,6 +235,124 @@ const PrerequisitePanel: React.FC = () => {
   );
 };
 
+// ─── Training effectiveness: measured uplift (SCIL v6 §6) ────────────────────
+
+/** A CI whisker on a shared −0.5 … +1.25 level axis, with the point estimate. */
+const UpliftBar: React.FC<{ value: number; ci: [number, number]; flagged: boolean }> = ({ value, ci, flagged }) => {
+  const lo = -0.5, hi = 1.25;
+  const x = (v: number) => `${((Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo)) * 100}%`;
+  return (
+    <div className="relative h-3 w-40 rounded bg-slate-100 dark:bg-slate-700" title={`[${ci[0]}, ${ci[1]}]`}>
+      <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: x(0) }} />
+      <div className={`absolute top-1 h-1 rounded ${flagged ? 'bg-rose-300' : 'bg-blue-300'}`}
+           style={{ left: x(ci[0]), width: `calc(${x(ci[1])} - ${x(ci[0])})` }} />
+      <div className={`absolute top-0 h-3 w-1 rounded ${flagged ? 'bg-rose-600' : 'bg-gov-blue'}`}
+           style={{ left: `calc(${x(value)} - 2px)` }} />
+    </div>
+  );
+};
+
+const TrainingEffectivenessPanel: React.FC = () => {
+  const [flaggedOnly, setFlaggedOnly] = React.useState(false);
+  const [minLearners, setMinLearners] = React.useState(10);
+  const [order, setOrder] = React.useState<'desc' | 'asc'>('asc');
+  const [limit, setLimit] = React.useState(15);
+  const { data, error, loading } = useInsight<TrainingEffectivenessReport>(
+    () => fetchTrainingEffectiveness({ flaggedOnly, minLearners }), [flaggedOnly, minLearners],
+  );
+  const rows = data
+    ? [...data.courses].sort((a, b) => (order === 'asc' ? 1 : -1) * (a.measuredUplift - b.measuredUplift))
+    : [];
+
+  return (
+    <SectionCard
+      title="Training effectiveness — measured uplift"
+      subtitle="Levels gained per course from pre/post assessments, propensity-weighted against non-takers and shrunk to the level prior"
+      action={
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+          <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={flaggedOnly} onChange={(e) => setFlaggedOnly(e.target.checked)} />
+            Flagged only
+          </label>
+          <select value={minLearners} onChange={(e) => setMinLearners(Number(e.target.value))}
+                  className="rounded-lg border border-gov-line bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+            {[0, 5, 10, 20].map((n) => <option key={n} value={n}>n ≥ {n}</option>)}
+          </select>
+          <button type="button" onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+                  className="rounded-lg border border-gov-line px-2 py-1 font-semibold dark:border-slate-600">
+            {order === 'asc' ? 'Lowest first' : 'Highest first'}
+          </button>
+        </div>
+      }
+    >
+      <PanelState loading={loading && !data} error={error} />
+      {data && (
+        <div className="space-y-3">
+          <p className="text-[12.5px] text-slate-600 dark:text-slate-300">
+            {data.summary.courses} courses · {data.summary.learnerRecords.toLocaleString('en-IN')} learner records ·{' '}
+            {data.summary.comparisonEpisodes.toLocaleString('en-IN')} comparison episodes · median uplift{' '}
+            {data.summary.medianMeasuredUplift.toFixed(2)} levels ·{' '}
+            <span className="font-semibold text-rose-600 dark:text-rose-400">{data.summary.flagged} flagged</span>{' '}
+            (declared relevance, near-zero uplift)
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
+                  <th className="py-2 pr-3 font-semibold">Course</th>
+                  <th className="py-2 pr-3 font-semibold">n</th>
+                  <th className="py-2 pr-3 font-semibold">Naive / IPW</th>
+                  <th className="py-2 pr-3 font-semibold">Measured uplift (95% CI)</th>
+                  <th className="py-2 pr-3 font-semibold">Rating · enrolments</th>
+                  <th className="py-2 font-semibold">Flag</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.slice(0, limit).map((c) => (
+                  <tr key={c.courseId} className="border-b border-gov-line/60 align-top dark:border-slate-700/60">
+                    <td className="py-2 pr-3">
+                      <p className="font-medium text-slate-800 dark:text-slate-100">{c.title}</p>
+                      <p className="text-[10.5px] text-slate-400">{c.competencyName} · L{c.courseLevel}</p>
+                    </td>
+                    <td className="py-2 pr-3 font-mono">{c.n}</td>
+                    <td className="py-2 pr-3 font-mono text-slate-500">{c.naiveUplift.toFixed(2)} / {c.ipwUplift.toFixed(2)}</td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-2">
+                        <UpliftBar value={c.measuredUplift} ci={c.ci95} flagged={c.misTagFlag} />
+                        <span className="font-mono">{c.measuredUplift.toFixed(2)}</span>
+                        <span className="font-mono text-[10.5px] text-slate-400">[{c.ci95[0].toFixed(2)}, {c.ci95[1].toFixed(2)}]</span>
+                      </div>
+                    </td>
+                    <td className="py-2 pr-3 font-mono text-slate-500">
+                      {c.rating != null ? c.rating.toFixed(2) : '—'} · {c.enrollmentCount?.toLocaleString('en-IN') ?? '—'}
+                    </td>
+                    <td className="py-2">
+                      {c.misTagFlag && (
+                        <span title={c.flagReason ?? undefined}
+                              className="rounded-full bg-rose-50 px-2 py-0.5 text-[10.5px] font-bold text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+                          Review tag
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {rows.length > limit && (
+            <button type="button" onClick={() => setLimit((l) => l + 25)}
+                    className="text-[11.5px] font-semibold text-gov-blue hover:underline">
+              Show more ({rows.length - limit} left)
+            </button>
+          )}
+          <p className="text-[10.5px] text-slate-400">{data.method}</p>
+          <p className="text-[10.5px] text-amber-600 dark:text-amber-400">{data.dataNote}</p>
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const WorkforceInsights: React.FC = () => (
@@ -254,6 +373,7 @@ const WorkforceInsights: React.FC = () => (
       <Route size={13} /> Learning design
     </div>
     <PrerequisitePanel />
+    <TrainingEffectivenessPanel />
   </div>
 );
 

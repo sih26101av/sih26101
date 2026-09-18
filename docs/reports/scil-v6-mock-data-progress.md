@@ -20,8 +20,8 @@ validation against real officials.
 | A5 Enrollments / history | done | `5e646b5` | Status 2 ⇔ 100%; dates over 3 years; 5 planted out-of-order learners |
 | B2+B1 GSBPM + opportunity | done | `8c8f495` | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
 | B3 ACBP + budget + modality | done | `aaa6356` | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
-| B4 Prerequisite DAG | done | (B4 commit) | 18 expert edges, cycle-checked with the ladders (cyclic set rejected); gate orders/blocks rungs, unknown levels advisory; data-driven suggestions (OLS + BH-FDR 10% + bootstrap CI) never applied; recovers both planted precedence effects |
-| B5 Measured gain / uplift | pending | | |
+| B4 Prerequisite DAG | done | `e9dcdee` | 18 expert edges, cycle-checked with the ladders (cyclic set rejected); gate orders/blocks rungs, unknown levels advisory; data-driven suggestions (OLS + BH-FDR 10% + bootstrap CI) never applied; recovers both planted precedence effects |
+| B5 Measured gain / uplift | done | (B5 commit) | IPW (ATT) uplift per course + shrinkage κ=5 + bootstrap CI; mis-tag flag; all 4 planted zero-uplift courses flagged (and nothing else); r=0.91 vs planted truth (n≥15); flagged courses demoted in pathways; admin effectiveness view |
 | B6 Evidence channels U/S/A | pending | | |
 | B8 Decay + cold start + foresight | pending | | |
 | B7 Item bank + IRT + CAT | pending | | |
@@ -200,6 +200,25 @@ Duration by format after Phase A (min / median / p90 / max, hours):
 38. **Planted-group sample size.** Courses in a planted-precedence group get
     ≥ 18 platform takers (`PLANTED_GROUP_TAKERS`). Without that, the planted
     effects had 2–3 learners with the prerequisite, which was untestable.
+
+39. **B5 propensity model.** Features are `[1, z, z², tenure, statistics
+    degree]`, with z = preθ − (level − 0.5). A linear term alone could not
+    represent "takers sit just below the course level", and IPW then barely
+    beat naive.
+40. **Comparison episodes spread uniformly over ability** (`U(0.1, 4.9)`, 60 per
+    competency). With the first triangular draw only about 3 controls per
+    competency had θ < 1. They are shared by every L1 course on that
+    competency, which made the estimates noisy.
+41. **The flag uses the unshrunk IPW CI**, and q̂ (shrunk) is used for
+    display and ranking. Shrinking toward a positive level prior hid 2 of the
+    4 planted courses from the flag.
+42. **Measured uplift demotes, it does not re-score.** A flagged course is
+    treated like a content-unsupported tag (last resort at its level, reason
+    note, still shown). q̂ is not blended into `finalScore`, because most
+    courses have few learners and all of this is synthetic.
+43. **CI coverage of the planted truth is 80%, not 95%.** The intervals are
+    conditional on the fitted propensity model and share control pools. This is
+    stated in the doc and not hidden.
 
 ## Could not do / blocked
 

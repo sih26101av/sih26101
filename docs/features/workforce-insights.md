@@ -169,6 +169,76 @@ method}, dataNote}`. Inference is computed once and cached in
 - Admin → Insights → "Prerequisite DAG" shows the edge table and the suggestion
   table (effect, CI, n, status).
 
+## Measured uplift → coverage learning + training effectiveness (SCIL v6 §6, B5)
+
+**Data:** `data/course_outcomes.json` (see the data README for the planted
+effects) holds 2,571 learner records and 2,400 comparison episodes. It is
+served at `GET /api/course/v1/assessment/outcomes` and loaded into
+`ReferenceData.outcomes/comparisons` at startup.
+
+**Computation** — `services/uplift_service.py::estimate_uplift`, run once in
+`main._startup` (~1 s) and cached in `ReferenceData.cache["uplift"]`:
+1. **Groups.** Treated = takers of course j. Controls = comparison episodes of
+   learners with no course on j's primary competency.
+2. **Propensity model.** Ridge logistic (`PROPENSITY_RIDGE = 0.1`) on
+   `[1, z, z², tenure/10, statistics degree]`, with `z = preθ − (L − 0.5)`.
+   The quadratic captures that takers sit in a band just below the course
+   level. Propensities are clipped to `PROPENSITY_CLIP = (0.02, 0.98)`.
+3. **ATT weighting.** Control weights `w = e/(1−e)`:
+   `ipwUplift = mean_T(Δθ) − Σ w·Δθ_C / Σ w`. `naiveUplift` (unweighted) is
+   reported alongside.
+4. **Shrinkage.** `q̂_jc = (n·ipwUplift + κ·q_prior)/(n + κ)` with `KAPPA = 5`.
+   `q_prior` = pooled IPW uplift of all courses at the same FRAC level
+   (data-derived).
+5. **Bootstrap CIs** (`BOOTSTRAP_ROUNDS = 300`, vectorised, seeded per course;
+   the propensity model is held fixed, so the CIs are conditional on it):
+   `ci95` for q̂ and `ipwCi95` for the unshrunk estimate.
+6. **Mis-tag flag.** The primary FRAC tag declares the competency (high
+   declared relevance), but the **unshrunk** `ipwCi95` upper bound is below
+   `MIS_TAG_MAX_UPLIFT = 0.15` levels, with n ≥ `MIN_TAKERS_FOR_FLAG = 10`. It
+   uses the unshrunk interval because shrinking toward a positive prior would
+   hide exactly these courses.
+
+**Coverage learning in the engine**
+- `HybridRecommendationEngine.set_measured_uplift()` attaches the estimates.
+  Every `RecommendationResult` / pathway course carries `measuredUplift` and
+  `upliftFlag`.
+- A flagged course is ordered like a content-unsupported tag: used only when
+  nothing else exists at that level, never hidden, with a reason note.
+- q̂ is **not** blended into `finalScore`. Most courses have few learners, and
+  the data is synthetic.
+
+**Recovery of planted synthetic effects** (the generator's `_truth/`; not a
+validation):
+- **Planted zero-uplift courses.** All 4 are flagged, and no other course is.
+  These courses are popular and highly rated: rating 4.65–4.77, 8.7k–15.8k
+  enrolments. Their measured q̂ runs from −0.11 to 0.00.
+- **Correlation.** Estimated vs planted true uplift: r = 0.91 over the 22
+  courses with n ≥ 15.
+- **Confounding.** Maturation grows with ability, and strong officers take the
+  advanced courses. Mean bias of the naive estimate by level is −0.10 / −0.07 /
+  −0.01 / +0.03 / +0.07. IPW reduces it to −0.07 / −0.04 / −0.01 / −0.01 /
+  +0.04. There is residual bias at the extremes, where few comparison learners
+  exist.
+- **CI coverage.** The unshrunk IPW CIs contain the planted truth for 80% of
+  courses, below the nominal 95%. That is expected: the intervals are
+  conditional on the fitted propensity model, and courses on one competency
+  share one control pool.
+
+**Endpoint:** `GET /api/v1/admin/training-effectiveness?competencyId=&flaggedOnly=&minLearners=`
+returns `{summary{courses, learnerRecords, comparisonEpisodes, flagged,
+medianMeasuredUplift, priorsByLevel}, courses[{…, n, naiveUplift, ipwUplift,
+prior, measuredUplift, ci95, ipwCi95, misTagFlag, flagReason}], constants,
+method, dataNote}`. The backend never reads `_truth/`; recovery is checked in
+`tests/test_uplift.py`.
+
+**UI**
+- Admin → Insights → "Training effectiveness" shows a table with a CI whisker
+  per course, naive vs IPW, rating and enrolments next to measured uplift, and
+  "Review tag" chips. It has a flagged-only filter, a minimum-n filter and a
+  sort toggle.
+- Learner ladders show "Low measured uplift" on flagged courses.
+
 ## TODOs / limits
 
 - GSBPM **v5.1** sub-process list; "5.2" was requested but could not be

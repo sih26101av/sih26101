@@ -446,6 +446,53 @@ export interface PrerequisiteDagReport {
   dataNote: string;
 }
 
+export interface CourseUplift {
+  courseId: string;
+  title: string;
+  competencyId: string;
+  competencyName: string;
+  courseLevel: number;
+  format: string | null;
+  rating: number | null;
+  enrollmentCount: number | null;
+  n: number;
+  controls: number;
+  controlsEffectiveN: number;
+  naiveUplift: number;
+  ipwUplift: number;
+  prior: number;
+  measuredUplift: number;
+  ci95: [number, number];
+  ipwCi95: [number, number];
+  misTagFlag: boolean;
+  flagReason: string | null;
+}
+
+export interface TrainingEffectivenessReport {
+  summary: {
+    courses: number; learnerRecords: number; comparisonEpisodes: number; flagged: number;
+    medianMeasuredUplift: number; priorsByLevel: Record<string, number>;
+  };
+  courses: CourseUplift[];
+  constants: Record<string, number | number[]>;
+  method: string;
+  dataNote: string;
+}
+
+/** SCIL v6 §6 — courses by measured uplift with CIs and the mis-tag flag. */
+export async function fetchTrainingEffectiveness(
+  opts: { competencyId?: string; flaggedOnly?: boolean; minLearners?: number } = {},
+): Promise<TrainingEffectivenessReport> {
+  const params = new URLSearchParams();
+  if (opts.competencyId) params.set('competencyId', opts.competencyId);
+  if (opts.flaggedOnly) params.set('flaggedOnly', 'true');
+  if (opts.minLearners) params.set('minLearners', String(opts.minLearners));
+  const qs = params.toString();
+  return lmsFetch<TrainingEffectivenessReport>(
+    `/api/v1/admin/training-effectiveness${qs ? `?${qs}` : ''}`, 'training-effectiveness',
+  );
+}
+
 /** SCIL v6 §5 — enforced expert prerequisite DAG + data-driven suggestions (never applied). */
 export async function fetchPrerequisiteDag(): Promise<PrerequisiteDagReport> {
   return lmsFetch<PrerequisiteDagReport>('/api/v1/admin/prerequisites', 'prerequisites');

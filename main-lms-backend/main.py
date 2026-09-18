@@ -137,6 +137,19 @@ async def _startup():
     _ref = await ReferenceData.load(adapter)
     app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
 
+    # SCIL v6 §6: measured course uplift from outcome assessments (~1 s), used to
+    # flag near-zero-uplift courses in ranking and for the admin effectiveness view.
+    if _ref.outcomes and _rec_engine is not None:
+        from services.uplift_service import estimate_uplift
+        try:
+            _ref.cache["uplift"] = estimate_uplift(_ref.outcomes, _ref.comparisons, _rec_engine.course_meta())
+            _rec_engine.set_measured_uplift(_ref.cache["uplift"]["courses"])
+            log.info("[startup] Measured uplift for %d courses (%d flagged).",
+                     len(_ref.cache["uplift"]["courses"]),
+                     sum(c["misTagFlag"] for c in _ref.cache["uplift"]["courses"]))
+        except Exception as exc:
+            log.error("[startup] Uplift estimation failed: %s", exc)
+
 
 
 

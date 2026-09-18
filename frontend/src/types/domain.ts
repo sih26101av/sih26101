@@ -145,6 +145,9 @@ export interface PathwayCourse {
   /** false → course text doesn't support its FRAC tag; flagged for review */
   tagSupported: boolean | null;
   progressPercentage: number;
+  /** SCIL v6 §6 measured uplift (FRAC levels) from outcome data; upliftFlag → ≈ 0, review */
+  measuredUplift?: number | null;
+  upliftFlag?: boolean | null;
 }
 
 export interface PathwayStep {

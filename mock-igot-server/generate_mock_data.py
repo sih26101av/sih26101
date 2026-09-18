@@ -870,7 +870,7 @@ MATURATION_SLOPE = 0.05      # … per level of prior ability: strong officers g
 ASSESSMENT_NOISE_SD = 0.20   # measurement error of each θ assessment
 TAKERS_PER_ENROLMENTS = 250  # one outcome record per 250 platform enrolments …
 TAKERS_MIN, TAKERS_MAX = 2, 30   # … clipped to [2, 30] learners per course
-CONTROLS_PER_COMPETENCY = 40     # non-taker comparison episodes per competency
+CONTROLS_PER_COMPETENCY = 60     # non-taker comparison episodes per competency, spread over all ability levels
 PLANTED_GROUP_TAKERS = 18        # min platform takers per course in a planted-precedence group
 PLANTED_PRIOR_SHARE = 0.5        # share of those takers who did the planted prerequisite first
 EDU_FIELDS = {"statistics": 0.3, "economics": 0.25, "mathematics": 0.1, "computer science": 0.1,
@@ -980,7 +980,7 @@ def build_outcomes(catalog: list, enrollments: list, users: list, facts: dict, h
     comparisons = []
     for comp in comps:
         for k in range(CONTROLS_PER_COMPETENCY):
-            pre = min(4.9, max(0.1, rng.triangular(0.1, 4.9, 2.0)))
+            pre = rng.uniform(0.1, 4.9)
             growth = MATURATION_BASE + MATURATION_SLOPE * pre
             end = ref_minus(rng.uniform(20, HISTORY_YEARS * 365), rng)
             start = end - timedelta(days=rng.randint(30, 120))

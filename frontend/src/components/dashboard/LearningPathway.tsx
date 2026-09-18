@@ -38,6 +38,14 @@ const CourseMeta: React.FC<{ course: PathwayCourse; hours: number | null }> = ({
         <ShieldCheck size={10} /> NSSTA
       </span>
     )}
+    {course.upliftFlag && (
+      <span
+        title="Pre/post assessments show near-zero measured uplift for this course (synthetic outcome data); its tag is flagged for review."
+        className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold"
+      >
+        <AlertTriangle size={10} /> Low measured uplift
+      </span>
+    )}
     {course.tagSupported === false && (
       <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
         <AlertTriangle size={10} /> Tag under review

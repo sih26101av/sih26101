@@ -216,9 +216,9 @@ ground truth is in `_truth/planted_effects.json`.
   - SPSS/SAS before Survey Design L3: +0.35. This is not an expert edge.
   - Index Numbers before Price Statistics L3: +0.25. This backs an expert edge.
   - `PLANTED_PRIOR_SHARE = 0.5` of those groups did the prerequisite first.
-- **Comparison episodes:** `CONTROLS_PER_COMPETENCY = 40` non-takers per
-  competency, with pre ~ Triangular(0.1, 4.9, mode 2) and a 30–120-day
-  interval.
+- **Comparison episodes:** `CONTROLS_PER_COMPETENCY = 60` non-takers per
+  competency, with pre ~ U(0.1, 4.9) (spread over all ability levels, so every
+  course level has comparable non-takers) and a 30–120-day interval.
 
 ## Deliberate holes and planted cases
 

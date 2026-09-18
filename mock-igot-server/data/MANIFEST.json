@@ -29,8 +29,8 @@
   },
   "course_outcomes.json": {
    "synthetic": true,
-   "sha256": "69b4a4a618cbedaa7cf7e47f4eb4e0c39454a48251e18f15bf0fc7b11e2eb912",
-   "bytes": 1326364
+   "sha256": "e0aad466473a35534e44dd5d8fbe4760afea2dc63bdcf564b8f3244d6c90e762",
+   "bytes": 1505325
   },
   "enrollments.json": {
    "synthetic": true,

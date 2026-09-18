@@ -48,6 +48,12 @@ one study order across all gaps.
 - `_tag_support_threshold(comp)` — median cosine of courses *not* tagged with the
   competency; a tagged course at or below it has `tagSupported=False` (its
   author-declared tag isn't backed by content → preferred last, flagged for review).
+- `set_measured_uplift(estimates)` / `course_meta()` — SCIL v6 §6 coverage
+  learning: per-course measured uplift from outcome data
+  (`uplift_service.estimate_uplift`, run at startup). Results carry
+  `measuredUplift` / `upliftFlag`; an uplift-flagged course is ordered like an
+  unsupported tag (last resort at its level, reason note) — see
+  [workforce-insights.md](workforce-insights.md). Not blended into `finalScore`.
 - `_quality_score` — **Stage 3** `0.35·completion + 0.35·rating + 0.20·log-pop +
   0.10·tpac_flag`, min-max within the shortlist; ratings use Bayesian shrinkage.
 - `get_recommendations(gaps, limit_per_gap, enrolled_ids)` — level-gated: only
