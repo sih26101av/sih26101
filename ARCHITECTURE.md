@@ -41,7 +41,7 @@ everything user-specific.
 ### `main-lms-backend/` — FastAPI orchestrator
 | Path | Responsibility |
 |------|----------------|
-| `main.py` | App bootstrap, CORS, router registration, startup singletons (`_rec_engine`, `_assembler`), learner endpoints (profile, skill-gaps, enrollments, recommendations, achievements), admin proxies |
+| `main.py` | App bootstrap, CORS, router registration, startup singletons (`_rec_engine`, `_assembler`), learner endpoints (profile, skill-gaps, enrollments, recommendations, pathway, achievements), admin proxies |
 | `auth/` | JWT access tokens + httpOnly refresh cookie, bcrypt hashing, `users_auth` table, RBAC dependencies, `seed.py` (one-shot user seeding from the mock server) |
 | `adapters/` | `ILearningPlatformAdapter` port + `MockIgotAdapter` HTTP adapter to port 8001 |
 | `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (Ollama certificate parsing) |
@@ -64,7 +64,7 @@ Data: `courses.json`, `courses_1.json`, `competencies.json`, `jobprofiles.json`
 | `services/` | `api.ts` (`lmsFetch` with JWT + 401-retry interceptor), `authApi.ts`, `chatApi.ts` (with offline client-side reply fallback) |
 | `hooks/` | `useLearnerDashboard`, `useAdminData`, `useSkillsData`, `useChatEngine`, `useTheme` |
 | `pages/` | `LandingPage`, `LoginPage`, `ChangePasswordPage`, `LearnerDashboard`, `AdminDashboard`, `AssessmentPage` |
-| `components/dashboard/` | `SkillGapCard`, `CourseCard`, `MyCoursesView`, `ProgressView`, `ProfileHeader`, `RightSidebar` (karma), `AssessmentUploadZone`, `ChatWidget` |
+| `components/dashboard/` | `SkillGapCard` (+ `LearningPathway`), `CourseCard`, `MyCoursesView`, `ProgressView`, `ProfileHeader`, `RightSidebar` (karma), `AssessmentUploadZone`, `ChatWidget` |
 | `patterns/DashboardFactory.ts` | Role → dashboard/route resolution |
 
 `node/`, `node-v20.17.0-win-x64/`, `node.zip` are a vendored Node runtime, not app code.
@@ -73,22 +73,36 @@ Data: `courses.json`, `courses_1.json`, `competencies.json`, `jobprofiles.json`
 
 ## 3. Core data flow
 
-**Skill gaps** (`GET /api/v1/learner/{id}/skill-gaps`)
+**Skill gaps** (`GET /api/v1/learner/{id}/skill-gaps`) — all three learner
+competency endpoints below share `main.py::_learner_competency_state` and are
+self-or-admin only (`_ensure_can_view`).
 1. `MockIgotAdapter.fetch_user_by_id` + `fetch_user_enrollments` → :8001
 2. `EvidenceLog` rows for that iGOT userId → `auth.db`
-3. `BaselineAssembler.compute_for_user` gathers 6 evidence channels and calls
-   `CompetencyCalculator.calculate_baseline` →
-   `core_k = 0.45·Verified + 0.15·Documented + 0.20·Tenure + 0.10·SelfReport + 0.05·Education + 0.05·Seniority`,
-   plus adjacency synergy, recency decay, confidence-derived ceilings
-   (verified → 5.0/HIGH, documented → 3.5/MEDIUM, else 2.5/LOW, all-zero → UNASSESSED)
-4. `main.py` merges the formula result with the iGOT self-reported level and emits
-   `{currentLevel, targetLevel, gapScore, confidence, rawScore, evidence{}}`
+3. `HybridRecommendationEngine.crosswalk` maps each role competency to the
+   catalogue FRAC competency that serves it (exact id, or unconfirmed name match)
+4. `BaselineAssembler.compute_for_user` gathers 6 evidence channels (completed
+   courses credited at their FRAC tag level) and calls
+   `CompetencyCalculator.calculate_baseline` → weighted mean over the channels
+   present (weights `0.45·Verified 0.15·Documented 0.20·Tenure 0.10·SelfReport
+   0.05·Education 0.05·Seniority`), plus adjacency synergy, recency decay,
+   confidence-derived ceilings (verified → 5.0/HIGH, documented → 3.5/MEDIUM,
+   else 2.5/LOW, all-zero → UNASSESSED)
+5. `baseline_assembler.resolve_level` merges evidence floors with the iGOT
+   self-reported level → `{currentLevel, targetLevel, gapScore, confidence, basis,
+   evidenceLevel, rawScore, evidence{}, crosswalk}`
 
 **Recommendations** (`GET /api/v1/learner/{id}/recommendations`)
-Same baselines → `calculate_gaps` (Stage 0 priority `gap·target/5`) →
-`get_recommendations`: FRAC-tag filter (Stage 1) → FAISS dense + BM25 sparse + RRF
-fusion + TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3), results
-concatenated in gap-priority order.
+Same resolved levels → `calculate_gaps` (Stage 0 priority `gap·target/5`, UNASSESSED
+skipped → `needsDiagnostic`) → `get_recommendations`: FRAC-tag + level filter
+`current < courseLevel ≤ target` (Stage 1) → dense + BM25 sparse + RRF fusion +
+TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3), interleaved by
+level, concatenated in gap-priority order.
+
+**Learning pathway** (`GET /api/v1/learner/{id}/pathway`)
+Same resolved levels → `build_pathway` per competency (one course per FRAC level,
+diagnostic / bridge / continue / stretch steps) → `build_study_plan` (greedy
+priority-weighted levels per hour across all ladders, optional hours budget) →
+`SkillGapCard` "View learning path" + "Suggested study order".
 
 **Document → quiz → evidence** (`POST /api/v1/rag/upload`, `/grade`)
 Upload → pdfplumber/pypdf/python-pptx extraction → LangChain chunking → Gemini

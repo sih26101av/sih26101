@@ -65,15 +65,33 @@ export interface Course {
   thumbnailUrl?: string;
 }
 
+export type EvidenceConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNASSESSED';
+
+/** Which evidence set the displayed level (backend resolve_level). */
+export type LevelBasis = 'evidence' | 'course_completion' | 'self_report' | 'none';
+
+/** Catalogue FRAC competency that serves a role competency (backend crosswalk). */
+export interface CompetencyCrosswalk {
+  catalogueId: string;
+  catalogueName: string;
+  method: 'exact' | 'semantic_crosswalk';
+  similarity: number;
+}
+
 export interface SkillGapEntry {
   competency: Competency;
+  /** null at runtime when confidence is UNASSESSED */
   currentLevel: number;
   requiredLevel: number;
+  /** null at runtime when confidence is UNASSESSED */
   gap: number;
   isMandatory: boolean;
   verificationSource: string;
   evaluatedAt: string;
-  confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence?: EvidenceConfidence;
+  basis?: LevelBasis;
+  evidenceLevel?: number | null;
+  crosswalk?: CompetencyCrosswalk | null;
   rawScore?: number;
   evidence?: {
     verified: number;
@@ -87,6 +105,105 @@ export interface SkillGapEntry {
 
 export interface SkillGapReport {
   gaps: SkillGapEntry[];
+}
+
+// ── Learning pathway — GET /api/v1/learner/{id}/pathway ─────────────────────
+
+export type PathwayStepKind = 'diagnostic' | 'bridge' | 'course' | 'continue' | 'stretch' | 'optional';
+
+export interface PathwayCourse {
+  courseId: string;
+  title: string;
+  provider: string;
+  durationHours: number;
+  /** FRAC level the course is tagged at for this competency */
+  courseLevel: number | null;
+  isTpac: boolean;
+  tpacSource: string | null;
+  finalScore: number | null;
+  relevanceScore: number | null;
+  qualityScore: number | null;
+  /** false → course text doesn't support its FRAC tag; flagged for review */
+  tagSupported: boolean | null;
+  progressPercentage: number;
+}
+
+export interface PathwayStep {
+  order: number;
+  kind: PathwayStepKind;
+  fromLevel: number;
+  toLevel: number;
+  /** FRAC levels this step closes (more than one on a stretch step) */
+  covers: number[];
+  /** FRAC proficiency descriptor for toLevel */
+  levelDescriptor: string;
+  course: PathwayCourse | null;
+  hours: number | null;
+  reason: string;
+  alternatives: PathwayCourse[];
+  action?: 'practice_assessment';
+}
+
+export interface LearningPathway {
+  competencyId: string;
+  catalogueCompetencyId: string;
+  crosswalk: CompetencyCrosswalk | null;
+  message: string | null;
+  competencyName: string;
+  currentLevel: number | null;
+  startLevel: number;
+  targetLevel: number;
+  gap: number;
+  priorityScore: number;
+  confidence: EvidenceConfidence;
+  basis: LevelBasis;
+  evidenceLevel: number | null;
+  status: 'ready' | 'partial' | 'no_content' | 'met';
+  needsDiagnostic: boolean;
+  steps: PathwayStep[];
+  totalHours: number;
+  bridgeHours: number;
+  coverageGaps: number[];
+  unreachableLevels: number[];
+  tagReviewFlags: string[];
+}
+
+export interface StudyPlanStep {
+  order: number;
+  courseId: string;
+  title: string;
+  provider: string;
+  isTpac: boolean;
+  kind: PathwayStepKind;
+  hours: number;
+  cumulativeHours: number;
+  advances: {
+    competencyId: string;
+    competencyName: string;
+    fromLevel: number;
+    toLevel: number;
+    covers: number[];
+  }[];
+}
+
+export interface StudyPlan {
+  budgetHours: number | null;
+  totalHours: number;
+  diagnostics: { competencyId: string; competencyName: string; reason: string }[];
+  steps: StudyPlanStep[];
+  deferred: {
+    competencyId: string;
+    competencyName: string;
+    remainingSteps: number;
+    remainingHours: number;
+    reason: string;
+  }[];
+  method: string;
+}
+
+export interface LearningPathwayResponse {
+  pathways: LearningPathway[];
+  studyPlan: StudyPlan;
 }
 
 export interface CourseRecommendation {

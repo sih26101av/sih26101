@@ -39,7 +39,11 @@ sections, all fed by the single `useLearnerDashboard` fetch.
 - `src/components/dashboard/`
   - `SkillGapCard.tsx` — `GapRow` per competency: `PipStrip` (current level),
     `ExactGlassGauge` (target), `CONFIDENCE_CONFIG` badge, `EvidenceBar` per channel,
-    "find courses" callback that jumps to the recommendation list.
+    "find courses" callback that jumps to the recommendation list, a "Not yet
+    assessed" section, and — when given `officialId` — fetches
+    `/api/v1/learner/{id}/pathway` once to show "Suggested study order" and a
+    per-gap "View learning path" ladder (`LearningPathway.tsx`; see
+    [recommendation-engine.md](recommendation-engine.md)).
   - `CompetencyOverviewTable.tsx` — compact gap table for the overview: domain filter
     chips with live counts, `LevelPips` current vs target, gap chip, priority badge
     (`priorityOf`), per-row "find courses", "show all" toggle.
@@ -106,7 +110,7 @@ sections, all fed by the single `useLearnerDashboard` fetch.
 - In: `officialId` from the route (an iGOT `usr_…` id), JWT from `AuthContext`.
 - Out: rendered UI; user actions call back into the quiz, karma and chat features.
 - Backend endpoints consumed: `/api/v1/profile/{id}`, `/api/v1/learner/{id}/skill-gaps`,
-  `/enrollments`, `/recommendations`, `/achievements`, `/api/v1/learner/{id}/karma`.
+  `/enrollments`, `/recommendations`, `/pathway`, `/achievements`, `/api/v1/learner/{id}/karma`.
 
 ## Connections
 

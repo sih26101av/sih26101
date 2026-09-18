@@ -30,6 +30,8 @@ import type {
   Achievement,
   KarmaLedger,
   KarmaEventType,
+  EvidenceConfidence,
+  LearningPathwayResponse,
 } from '../types/domain';
 import { refresh } from './authApi';
 
@@ -226,7 +228,10 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
     isMandatory:        g.gapScore > 0,
     verificationSource: 'iGOT FRAC Profile',
     evaluatedAt:        new Date().toISOString(),
-    confidence:         g.confidence as 'HIGH' | 'MEDIUM' | 'LOW' | undefined,
+    confidence:         g.confidence as EvidenceConfidence | undefined,
+    basis:              g.basis,
+    evidenceLevel:      g.evidenceLevel ?? null,
+    crosswalk:          g.crosswalk ?? null,
     rawScore:           g.rawScore,
     evidence:           g.evidence,
   }));
@@ -307,6 +312,26 @@ export async function fetchRecommendations(
     matchReasons: r.matchReasons ?? (r.matchReason ? [r.matchReason] : []),
     priorityRank: r.priorityRank,
   }));
+}
+
+/**
+ * Level-by-level learning paths for every role competency plus one study
+ * order across them. `competencyId` narrows to one path; `budgetHours` caps
+ * the study plan (ladders that don't fit come back under studyPlan.deferred).
+ */
+export async function fetchLearningPathways(
+  userId: string,
+  opts: { competencyId?: string; budgetHours?: number } = {},
+): Promise<LearningPathwayResponse> {
+  const params = new URLSearchParams();
+  if (opts.competencyId) params.set('competencyId', opts.competencyId);
+  if (opts.budgetHours && opts.budgetHours > 0) params.set('budgetHours', String(opts.budgetHours));
+  const qs = params.toString();
+  const result = await lmsFetch<{ status: string } & LearningPathwayResponse>(
+    `/api/v1/learner/${userId}/pathway${qs ? `?${qs}` : ''}`,
+    'pathway',
+  );
+  return { pathways: result.pathways ?? [], studyPlan: result.studyPlan };
 }
 
 export async function fetchAchievements(userId: string): Promise<Achievement[]> {

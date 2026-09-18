@@ -15,7 +15,7 @@ On startup: creates users_auth table in auth.db (idempotent).
 
 from routers import competency
 from services.recommendation_service import HybridRecommendationEngine
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from adapters.igot_adapter import MockIgotAdapter
@@ -98,14 +98,9 @@ async def _startup():
         import logging
         logging.getLogger(__name__).info("[startup] HybridRecommendationEngine ready.")
 
-        # Build course → [comp_id, ...] map by inverting the rec engine's comp_index
-        # _comp_index: {comp_id → [catalog_idx, ...]}
-        # We need:      {course_id → [comp_id, ...]}
-        course_comp_map: dict[str, list[str]] = {}
-        for comp_id, cat_indices in _rec_engine._comp_index.items():
-            for idx in cat_indices:
-                course_id = _rec_engine._catalog[idx].identifier
-                course_comp_map.setdefault(course_id, []).append(comp_id)
+        # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
+        # on, so the Verified channel credits a completed course at its tagged level.
+        course_comp_map = _rec_engine.course_comp_levels()
 
         _assembler = BaselineAssembler(course_comp_map)
         logging.getLogger(__name__).info(
@@ -155,6 +150,116 @@ def _level_to_int(level_str: str) -> int:
     return int(digits) if digits else 2
 
 
+# ── Skill-gap / recommendation / pathway shared state ─────────────────────────
+
+def _ensure_can_view(user_id: str, current_user: UserAuth) -> None:
+    """A learner may only read their own competency data; admins may read anyone's."""
+    from fastapi import HTTPException
+    if current_user.username != user_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="You can only view your own learning data.")
+
+
+def _self_reported_level(comp: dict) -> int:
+    """iGOT profile competencyLevel ('Level 3') → 3; missing → 0 (no claim)."""
+    import re
+    m = re.search(r"\d+", comp.get("competencyLevel") or "")
+    return int(m.group()) if m else 0
+
+
+async def _learner_competency_state(user_id: str) -> dict:
+    """
+    Profile + enrollments + EvidenceLog → one resolved row per role competency.
+
+    This is the ONLY place a learner's level is decided (via
+    baseline_assembler.resolve_level); skill-gaps, recommendations and pathway
+    all read these rows, so the dashboard and the course suggestions can no
+    longer disagree about the same gap.
+    """
+    from fastapi import HTTPException
+    from auth.database import get_db
+    from models.models import EvidenceLog
+    from services.baseline_assembler import resolve_level
+
+    try:
+        user = await adapter.fetch_user_by_id(user_id)
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="iGOT mock server is unreachable. Start it with: "
+                   "cd mock-igot-server && uvicorn mock_igot_server:app --port 8001",
+        )
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    try:
+        enrollments = await adapter.fetch_user_enrollments(user_id)
+    except Exception:
+        enrollments = []
+
+    db_session = next(get_db())
+    try:
+        db_evidence = [
+            {
+                "comp_id":       row.compId,
+                "evidence_type": row.evidenceType,
+                "granted_value": row.grantedValue,
+                "issue_date":    row.issueDate,
+            }
+            for row in db_session.query(EvidenceLog).filter(EvidenceLog.userId == user_id).all()
+        ]
+    except Exception:
+        db_evidence = []
+    finally:
+        db_session.close()
+
+    raw_comps = user.get("competencies") or \
+                (user.get("profileDetails") or {}).get("competencies") or []
+    seen_ids: set = set()
+    comps = []
+    for comp in raw_comps:
+        cid = comp.get("id", "")
+        if cid and cid not in seen_ids:
+            seen_ids.add(cid)
+            comps.append(comp)
+
+    # Role profiles may use a wider FRAC dictionary than the catalogue is tagged
+    # with; map each competency to the catalogue competency that serves it.
+    crosswalks = {
+        c["id"]: (_rec_engine.crosswalk(c["id"], c.get("name") or "") if _rec_engine else None)
+        for c in comps
+    }
+    aliases = {cid: xw["catalogueId"] for cid, xw in crosswalks.items()
+               if xw and xw["catalogueId"] != cid}
+
+    baseline_results = (
+        _assembler.compute_for_user(user=user, enrollments=enrollments,
+                                    db_evidence=db_evidence, comp_aliases=aliases)
+        if _assembler is not None else {}
+    )
+
+    rows = []
+    for comp in comps:
+        cid = comp["id"]
+        bline = baseline_results.get(cid, {})
+        resolved = resolve_level(bline, _self_reported_level(comp))
+        rows.append({
+            "competencyId":  cid,
+            "name":          (comp.get("name") or "").strip(),
+            "type":          comp.get("type", "Functional"),
+            "targetLevel":   int(comp.get("requiredLevel") or 3),
+            "currentLevel":  resolved["level"],          # None when UNASSESSED
+            "confidence":    resolved["confidence"],
+            "basis":         resolved["basis"],          # evidence | course_completion | self_report | none
+            "evidenceLevel": resolved["evidenceLevel"],
+            "rawScore":      float(bline.get("score", 0.0)),
+            "evidence":      bline.get("_evidence", {}),
+            "catalogueId":   (crosswalks[cid] or {}).get("catalogueId"),
+            "crosswalk":     crosswalks[cid],                # None → not in catalogue
+        })
+
+    return {"user": user, "enrollments": enrollments, "competencies": rows}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # LEARNER ENDPOINTS — by userId (usr_...)
 # All data access goes through adapter methods (Adapter pattern / OCP).
@@ -194,28 +299,31 @@ async def get_profile_by_user_id(
 @app.get("/api/v1/learner/{user_id}/skill-gaps")
 async def get_skill_gaps_by_user_id(
     user_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
+    current_user: UserAuth = Depends(get_current_user),
 ):
     """
-    Skill-gap analysis using the locked 6-term baseline formula:
+    Skill-gap analysis on the 6-term baseline formula — a weighted mean over
+    the evidence channels that are actually present (see
+    services/competency_service.py):
 
-      core_k = 0.45·Verified + 0.15·Documented + 0.20·Tenure
-             + 0.10·SelfReport + 0.05·Education + 0.05·Seniority
-
-      b_k = clamp(core_k + synergy_k, 0, InferredCeiling_k)
+      b_k = clamp(mean_w(Verified, Documented, Tenure, SelfReport, Education,
+                         Seniority) + synergy_k, 0, ConfidenceCeiling_k)
 
     Evidence sources:
-      Verified    — iGOT/NSSTA enrollment completions (via adapter)
-      Documented  — uploaded certificate rows (EvidenceLog DB)
+      Verified    — completed iGOT/NSSTA courses, credited at their FRAC tag level
+      Documented  — certificates + passed practice assessments (EvidenceLog DB)
       Tenure      — career history from user profile (role-relevant, decayed)
       SelfReport  — EvidenceLog SELF_REPORT rows (0 if not provided)
       Education   — degree relevance to competency type
-      Seniority   — designation tier (only for Generic/Behavioural; 0 for Domain/Technical)
+      Seniority   — designation tier (only for Behavioural; 0 otherwise)
 
-    Confidence tags (HIGH/MEDIUM/LOW) determine how fast scores can move
-    on new evidence and whether a diagnostic quiz is offered.
+    The displayed level comes from baseline_assembler.resolve_level — the same
+    value /recommendations and /pathway use. `basis` says what set it
+    (evidence | course_completion | self_report | none); LOW / UNASSESSED
+    levels get a diagnostic step first in the learning pathway.
     """
-    from fastapi import HTTPException
+    _ensure_can_view(user_id, current_user)
+    from services.baseline_assembler import is_completed
 
     # ── FRAC type → frontend CompetencyDomain ─────────────────────────────
     _DOMAIN_MAP: dict[str, str] = {
@@ -226,166 +334,51 @@ async def get_skill_gaps_by_user_id(
         "COMPETENCY":  "Statistical",
     }
 
-    # 1. Fetch user profile
-    try:
-        user = await adapter.fetch_user_by_id(user_id)
-    except Exception:
-        raise HTTPException(
-            status_code=503,
-            detail="iGOT mock server is unreachable. Start it with: "
-                   "cd mock-igot-server && uvicorn mock_igot_server:app --port 8001",
-        )
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+    state = await _learner_competency_state(user_id)
+    user, enrollments, rows = state["user"], state["enrollments"], state["competencies"]
 
     prof_list = (user.get("profileDetails") or {}).get("professionalDetails") or [{}]
     prof      = prof_list[0] if prof_list else {}
 
-    # 2. Fetch enrollments (needed for Verified term + exclusion filter in recs)
-    try:
-        enrollments = await adapter.fetch_user_enrollments(user_id)
-    except Exception:
-        enrollments = []
-
-    # 3. Fetch DB EvidenceLog rows for this user (Documented / SelfReport rows)
-    from auth.database import get_db
-    from models.models import EvidenceLog
-    db_session = next(get_db())
-    try:
-        db_rows = db_session.query(EvidenceLog).filter(
-            EvidenceLog.userId == user_id
-        ).all()
-        db_evidence = [
-            {
-                "comp_id":       row.compId,
-                "evidence_type": row.evidenceType,
-                "granted_value": row.grantedValue,
-                "issue_date":    row.issueDate,
-            }
-            for row in db_rows
-        ]
-    except Exception:
-        db_evidence = []
-    finally:
-        db_session.close()
-
-    # 4. Run the 6-term baseline formula via BaselineAssembler
-    #    Falls back to simple heuristic if assembler not ready (startup failed)
-    _DOMAIN_MAP_FRAC = _DOMAIN_MAP   # alias for closure below
-
-    if _assembler is not None:
-        baseline_results = _assembler.compute_for_user(
-            user=user,
-            enrollments=enrollments,
-            db_evidence=db_evidence,
-        )
-    else:
-        # Fallback heuristic (should never happen in normal operation)
-        baseline_results = {}
-
-    # 5. Build skill gap list from role competencies + computed baselines
-    raw_comps = user.get("competencies") or \
-                (user.get("profileDetails") or {}).get("competencies") or []
-    seen_ids: set = set()
-    unique_comps = []
-    for c in raw_comps:
-        cid = c.get("id", "")
-        if cid and cid not in seen_ids:
-            seen_ids.add(cid)
-            unique_comps.append(c)
-
-    # Track names already added — if two comps share the same name but different IDs
-    # (mock data artifact), suffix the ID so the UI shows them as distinct
+    # Two comps sharing a name but not an id (mock data artifact) get the id
+    # appended so the UI shows them as distinct.
     name_counts: dict[str, int] = {}
-    for comp in unique_comps:
-        n = comp.get("name", "").strip()
-        name_counts[n] = name_counts.get(n, 0) + 1
+    for row in rows:
+        name_counts[row["name"]] = name_counts.get(row["name"], 0) + 1
 
     skill_gaps = []
-    for comp in unique_comps:
-        cid          = comp.get("id", "")
-        frac_type    = comp.get("type", "Functional")
-        domain       = _DOMAIN_MAP_FRAC.get(frac_type, "Governance")
-        target_level = int(comp.get("requiredLevel") or 3)
-        base_name    = comp.get("name", "").strip()
-
-        # Disambiguate duplicate display names by appending the comp ID
-        skill_name = base_name if name_counts.get(base_name, 1) == 1 \
-                     else f"{base_name} ({cid})"
-
-        # Get baseline result from assembler
-        bline      = baseline_results.get(cid, {})
-        confidence = bline.get("confidence", "UNASSESSED")
-        raw_score  = float(bline.get("score", 0.0))
-        evidence   = bline.get("_evidence", {})
-
-        # FIX (Realism): Level display priority:
-        #   HIGH/MEDIUM confidence → trust 6-term formula (verified/documented evidence present)
-        #   LOW confidence         → prefer iGOT self-reported competencyLevel; use formula as
-        #                            a floor (prevents absurd regression from profile level)
-        #   UNASSESSED             → None (no evidence at all — shown as "?" in UI)
-        #
-        # This means someone who self-reports Level 4 on iGOT but has LOW evidence
-        # will display as Level 4, not Level 0 or 1. The gap is still correctly
-        # computed from targetLevel, just uses the self-report as the baseline.
-        assembler_level = bline.get("currentLevel")   # int or None
-
-        # Parse iGOT profile self-reported level (from enriched mock data)
-        igot_level_str = comp.get("competencyLevel", "") or ""
-        _m = __import__("re").search(r"\d+", igot_level_str)
-        igot_level = int(_m.group()) if _m else 0
-
-        if confidence in ("HIGH", "MEDIUM") and assembler_level and assembler_level > 0:
-            # Verified/documented evidence present — formula result is trustworthy
-            current_level = assembler_level
-        elif igot_level > 0:
-            # Self-reported level from iGOT profile (our enriched mock data)
-            # Use max(assembler_level, igot_level) so formula can only improve, not regress
-            current_level = max(igot_level, assembler_level or 0)
-            if confidence == "UNASSESSED":
-                confidence = "LOW"   # self-report is weak evidence but beats nothing
-        elif assembler_level and assembler_level > 0:
-            # Have formula result but no self-report — use formula
-            current_level = assembler_level
-        else:
-            current_level = None
-            confidence = "UNASSESSED"
-
-        gap = max(0, target_level - current_level) if current_level is not None else None
-
+    for row in rows:
+        current = row["currentLevel"]
         skill_gaps.append({
-            "competencyId": cid,
-            "skillName":    skill_name,
-            "domain":       domain,
-            "currentLevel": current_level,   # None when UNASSESSED
-            "targetLevel":  target_level,
-            "gapScore":     gap,             # None when UNASSESSED
-            "confidence":   confidence,      # "UNASSESSED" | "LOW" | "MEDIUM" | "HIGH"
-            "rawScore":     round(raw_score, 3),
-            "evidence":     evidence,        # per-channel breakdown dict
+            "competencyId":  row["competencyId"],
+            "skillName":     row["name"] if name_counts.get(row["name"], 1) == 1
+                             else f"{row['name']} ({row['competencyId']})",
+            "domain":        _DOMAIN_MAP.get(row["type"], "Governance"),
+            "currentLevel":  current,                        # None when UNASSESSED
+            "targetLevel":   row["targetLevel"],
+            "gapScore":      max(0, row["targetLevel"] - current) if current is not None else None,
+            "confidence":    row["confidence"],              # "UNASSESSED" | "LOW" | "MEDIUM" | "HIGH"
+            "basis":         row["basis"],
+            "evidenceLevel": row["evidenceLevel"],
+            "rawScore":      round(row["rawScore"], 3),
+            "evidence":      row["evidence"],                # per-channel breakdown dict
+            "crosswalk":     row["crosswalk"],               # catalogue competency serving it
         })
-
-
 
     # Sort: known gaps first (largest gap, lowest score), UNASSESSED last
     skill_gaps.sort(key=lambda g: (
         g["gapScore"] is None,           # False (0) sorts before True (1)
         -(g["gapScore"] or 0),           # larger gap first
-        g["rawScore"],                    # lower raw score first within same gap
+        g["rawScore"],                   # lower raw score first within same gap
     ))
-
-
-
-    total_courses     = len(enrollments)
-    completed_courses = sum(1 for e in enrollments if (e.get("completionPercentage") or 0) >= 100)
 
     return {
         "userId":           user_id,
         "govId":            user.get("govId", user_id),
         "jobRole":          prof.get("designation", "Official"),
         "department":       prof.get("department", "MoSPI"),
-        "totalCourses":     total_courses,
-        "completedCourses": completed_courses,
+        "totalCourses":     len(enrollments),
+        "completedCourses": sum(1 for e in enrollments if is_completed(e)),
         "skillGaps":        skill_gaps,
     }
 
@@ -427,106 +420,44 @@ async def get_enrollments_by_user_id(
 @app.get("/api/v1/learner/{user_id}/recommendations")
 async def get_recommendations_by_user_id(
     user_id: str,
-    _current_user: UserAuth = Depends(get_current_user),
+    current_user: UserAuth = Depends(get_current_user),
 ):
     """
-    3-Stage Hybrid Recommendation Engine:
-      Stage 0 — Cross-gap prioritization (priority_k = gap_k * target_k/5)
-      Stage 1 — Mandatory FRAC-tag filtering (no untagged courses)
-      Stage 2 — Dense FAISS + Sparse BM25 + RRF fusion + NSSTA 1.25× boost
-      Stage 3 — final = 0.6*relevance + 0.4*quality (Wilson rating, log-pop)
+    Level-gated hybrid recommendations:
+      Stage 0 — gap prioritisation (priority_k = gap_k * target_k/5) on the
+                resolved levels shared with /skill-gaps
+      Stage 1 — FRAC-tag + level filter (current < courseLevel <= target)
+      Stage 2 — dense + BM25, RRF fusion, NSSTA 1.25× boost
+      Stage 3 — final = 0.6*relevance + 0.4*quality (Bayesian-shrunk rating, log-pop)
+    UNASSESSED competencies are not ranked as gaps ("no evidence" is not
+    "level 0"); they are returned under `needsDiagnostic` instead.
     """
     from fastapi import HTTPException
+    from services.baseline_assembler import enrollment_course_id
 
+    _ensure_can_view(user_id, current_user)
     if _rec_engine is None:
         raise HTTPException(
             status_code=503,
             detail="Recommendation engine is not available. Check startup logs.",
         )
 
-    # 1. Fetch user profile to derive competency baselines
-    try:
-        user = await adapter.fetch_user_by_id(user_id)
-    except Exception:
-        raise HTTPException(
-            status_code=503,
-            detail="iGOT mock server is unreachable. Start it with: "
-                   "cd mock-igot-server && uvicorn mock_igot_server:app --port 8001",
-        )
+    state = await _learner_competency_state(user_id)
+    rows = state["competencies"]
+    enrolled_ids = {enrollment_course_id(e) for e in state["enrollments"]} - {""}
 
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
-
-    # 2. Get enrollments (needed for Verified term + enrolled_ids exclusion filter)
-    try:
-        enrolled_raw = await adapter.fetch_user_enrollments(user_id)
-    except Exception:
-        enrolled_raw = []
-
-    enrolled_ids = {e.get("courseId", "") for e in enrolled_raw}
-
-    # 3. Fetch DB EvidenceLog rows (same as skill-gaps endpoint)
-    from auth.database import get_db
-    from models.models import EvidenceLog
-    db_session = next(get_db())
-    try:
-        db_rows = db_session.query(EvidenceLog).filter(
-            EvidenceLog.userId == user_id
-        ).all()
-        db_evidence = [
-            {
-                "comp_id":       row.compId,
-                "evidence_type": row.evidenceType,
-                "granted_value": row.grantedValue,
-                "issue_date":    row.issueDate,
-            }
-            for row in db_rows
-        ]
-    except Exception:
-        db_evidence = []
-    finally:
-        db_session.close()
-
-    # 4. Run 6-term assembler to get b_k for every competency (same formula as skill-gaps)
-    if _assembler is not None:
-        baseline_results = _assembler.compute_for_user(
-            user=user, enrollments=enrolled_raw, db_evidence=db_evidence
-        )
-    else:
-        baseline_results = {}
-
-    # Build baselines + targets for the rec engine (uses b_k from assembler)
-    raw_comps = user.get("competencies") or \
-                (user.get("profileDetails") or {}).get("competencies") or []
-    seen_ids: set = set()
-    unique_comps = []
-    for c in raw_comps:
-        cid = c.get("id", "")
-        if cid and cid not in seen_ids:
-            seen_ids.add(cid); unique_comps.append(c)
-
-    baselines: dict[str, float] = {}
-    targets:   dict[str, float] = {}
-    for comp in unique_comps:
-        cid = comp.get("id", "")
-        if cid:
-            bline = baseline_results.get(cid, {})
-            baselines[cid] = float(bline.get("score", 0.0))   # raw b_k score [0,5]
-            targets[cid]   = float(int(comp.get("requiredLevel") or 3))
-
-    # 5. Inject comp names into rec engine's frac_map so GapEntry.competencyName is readable
-    for comp in unique_comps:
-        cid  = comp.get("id", "")
-        name = comp.get("name", "").strip()
-        if cid and name and cid not in _rec_engine._frac_map:
-            _rec_engine._frac_map[cid] = {
-                "name":        name,
-                "description": name,
-                "type":        comp.get("type", "Functional"),
-            }
-
-    # 6. Compute prioritised gaps (Stage 0)
-    gaps = _rec_engine.calculate_gaps(baselines, targets)
+    needs_diagnostic = [
+        {"competencyId": r["competencyId"], "competencyName": r["name"]}
+        for r in rows if r["currentLevel"] is None
+    ]
+    gaps = _rec_engine.calculate_gaps(
+        baselines  = {r["competencyId"]: float(r["currentLevel"])
+                      for r in rows if r["currentLevel"] is not None},
+        targets    = {r["competencyId"]: float(r["targetLevel"]) for r in rows},
+        names      = {r["competencyId"]: r["name"] for r in rows},
+        confidence = {r["competencyId"]: r["confidence"] for r in rows},
+        catalogue_ids = {r["competencyId"]: r["catalogueId"] for r in rows if r["catalogueId"]},
+    )
 
     if not gaps:
         return {
@@ -535,17 +466,16 @@ async def get_recommendations_by_user_id(
             "message": "No skill gaps detected. Keep learning!",
             "skillGaps": [],
             "recommendations": [],
-            }
+            "needsDiagnostic": needs_diagnostic,
+        }
 
-
-    # 4. Run hybrid search + scoring (Stages 1-3)
     recs = _rec_engine.get_recommendations(
         gaps=gaps,
         limit_per_gap=3,
         enrolled_ids=enrolled_ids,
     )
 
-    # 5. Shape response — map to what api.ts fetchRecommendations expects
+    # Shape response — map to what api.ts fetchRecommendations expects
     skill_gaps_payload = [
         {
             "competencyId":   g.competencyId,
@@ -554,13 +484,13 @@ async def get_recommendations_by_user_id(
             "targetLevel":    g.targetLevel,
             "gapScore":       g.gapScore,
             "priorityScore":  g.priorityScore,
+            "confidence":     g.confidence,
         }
         for g in gaps
     ]
 
-    recommendations_payload = []
-    for r in recs:
-        recommendations_payload.append({
+    recommendations_payload = [
+        {
             "courseId":       r.courseId,
             "title":          r.title,
             "provider":       r.provider,
@@ -577,14 +507,92 @@ async def get_recommendations_by_user_id(
             "matchReasons":   r.matchReasons,
             "matchType":      r.matchType,     # "frac_tag" | "semantic_fallback"
             "tpacSource":     r.tpacSource,    # "verified" | "inferred" | "none"
-        })
-
+            "courseLevel":    r.courseLevel,   # FRAC level the course is tagged at
+            "tagSupported":   r.tagSupported,  # False → tag flagged for review
+        }
+        for r in recs
+    ]
 
     return {
         "status":          "success",
         "officialId":      user_id,
         "skillGaps":       skill_gaps_payload,
         "recommendations": recommendations_payload,
+        "needsDiagnostic": needs_diagnostic,
+    }
+
+
+@app.get("/api/v1/learner/{user_id}/pathway")
+async def get_learning_pathway(
+    user_id: str,
+    competencyId: str | None = None,
+    budgetHours: float | None = Query(default=None, gt=0),
+    current_user: UserAuth = Depends(get_current_user),
+):
+    """
+    Step-by-step learning paths. For every role competency: one course per
+    FRAC level from the official's current level up to the target, lowest
+    level first ("first this course, then that one"), with a diagnostic step
+    first when the level is unassessed, inferred or self-reported. Plus one
+    study plan ordering the rungs of all paths by priority-weighted levels
+    gained per hour, never breaking a ladder's level order.
+
+    ?competencyId=… returns only that competency's path (and a plan for it).
+    ?budgetHours=… caps the plan; ladders that don't fit are listed under
+    studyPlan.deferred.
+    """
+    from fastapi import HTTPException
+    from services.baseline_assembler import enrollment_course_id, is_completed
+
+    _ensure_can_view(user_id, current_user)
+    if _rec_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Recommendation engine is not available. Check startup logs.",
+        )
+
+    state = await _learner_competency_state(user_id)
+    rows = state["competencies"]
+    if competencyId:
+        rows = [r for r in rows if r["competencyId"] == competencyId]
+        if not rows:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Competency '{competencyId}' is not part of this official's role profile.",
+            )
+
+    enrollments   = state["enrollments"]
+    completed_ids = {enrollment_course_id(e) for e in enrollments if is_completed(e)} - {""}
+    in_progress   = {
+        enrollment_course_id(e): float(e.get("completionPercentage") or 0)
+        for e in enrollments
+        if enrollment_course_id(e) and not is_completed(e)
+    }
+
+    pathways = [
+        _rec_engine.build_pathway(
+            comp_id        = r["catalogueId"] or r["competencyId"],
+            role_comp_id   = r["competencyId"],
+            crosswalk      = r["crosswalk"],
+            comp_name      = r["name"],
+            current_level  = r["currentLevel"],
+            target_level   = r["targetLevel"],
+            confidence     = r["confidence"],
+            basis          = r["basis"],
+            evidence_level = r["evidenceLevel"],
+            completed_ids  = completed_ids,
+            in_progress    = in_progress,
+        )
+        for r in rows
+    ]
+    study_plan = _rec_engine.build_study_plan(pathways, budget_hours=budgetHours)
+    pathways.sort(key=lambda p: (p["status"] == "met", -p["priorityScore"]))
+
+    return {
+        "status":     "success",
+        "officialId": user_id,
+        "pathways":   pathways,
+        "studyPlan":  study_plan,
     }
 
 

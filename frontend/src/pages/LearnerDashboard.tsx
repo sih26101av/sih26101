@@ -405,7 +405,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                   </p>
                 )}
 
-                <SkillGapCard skillGaps={searchedGaps} onFindCourses={handleFindCourses} />
+                <SkillGapCard skillGaps={searchedGaps} onFindCourses={handleFindCourses} officialId={userId} />
               </div>
             )}
 

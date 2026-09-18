@@ -3,12 +3,16 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
-import type { SkillGapEntry, CompetencyDomain } from "../../types/domain";
+import { Target, CheckCircle2, AlertCircle, BookOpen, Route, HelpCircle } from "lucide-react";
+import type { SkillGapEntry, CompetencyDomain, LearningPathway, StudyPlan } from "../../types/domain";
+import { fetchLearningPathways } from "../../services/api";
+import { PathwayLadder, StudyPlanSummary } from "./LearningPathway";
 
 interface SkillGapCardProps {
   skillGaps: SkillGapEntry[];
   onFindCourses?: (skillName: string) => void;
+  /** iGOT userId — enables the level-by-level learning paths */
+  officialId?: string;
 }
 
 const DOMAIN_BADGE: Record<string, string> = {
@@ -88,9 +92,10 @@ const ExactGlassGauge: React.FC<{ target: number; domain?: CompetencyDomain }> =
 };
 
 const CONFIDENCE_CONFIG = {
-  HIGH:   { label: 'Verified',   bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
-  MEDIUM: { label: 'Documented', bg: 'bg-amber-100 dark:bg-amber-900/30',   text: 'text-amber-700 dark:text-amber-400',   dot: 'bg-amber-500'   },
-  LOW:    { label: 'Inferred',   bg: 'bg-slate-100 dark:bg-slate-700/50',   text: 'text-slate-600 dark:text-slate-400',   dot: 'bg-slate-400'   },
+  HIGH:       { label: 'Verified',   bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+  MEDIUM:     { label: 'Documented', bg: 'bg-amber-100 dark:bg-amber-900/30',   text: 'text-amber-700 dark:text-amber-400',   dot: 'bg-amber-500'   },
+  LOW:        { label: 'Inferred',   bg: 'bg-slate-100 dark:bg-slate-700/50',   text: 'text-slate-600 dark:text-slate-400',   dot: 'bg-slate-400'   },
+  UNASSESSED: { label: 'No',         bg: 'bg-violet-100 dark:bg-violet-900/30', text: 'text-violet-700 dark:text-violet-300', dot: 'bg-violet-500'  },
 };
 
 const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color: string }> = ({ label, value, max = 5, color }) => {
@@ -106,15 +111,30 @@ const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color:
   );
 };
 
-const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: string) => void }> = ({ entry, onFindCourses }) => {
-  const { competency, currentLevel, requiredLevel, gap, isMandatory, confidence, rawScore, evidence } = entry;
-  const hasGap = gap > 0;
+interface GapRowProps {
+  entry: SkillGapEntry;
+  onFindCourses?: (skillName: string) => void;
+  pathway?: LearningPathway;
+  pathwayLoading?: boolean;
+}
+
+const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayLoading }) => {
+  const { competency, currentLevel, requiredLevel, gap, isMandatory, confidence, basis, rawScore, evidence } = entry;
+  const unassessed = confidence === 'UNASSESSED';
+  const hasGap = !unassessed && gap > 0;
   const badge = DOMAIN_BADGE[competency.domain] ?? DOMAIN_BADGE.Statistical;
   const conf = CONFIDENCE_CONFIG[confidence ?? 'LOW'];
+  const confLabel = basis === 'self_report' ? 'Self-reported' : conf.label;
   const [showEvidence, setShowEvidence] = React.useState(false);
+  const [showPath, setShowPath] = React.useState(false);
+  const pathSteps = pathway?.steps.filter(s => s.kind !== 'bridge').length ?? 0;
+  const borderTone = unassessed
+    ? 'border-l-violet-400'
+    : hasGap ? (isMandatory ? 'border-l-gov-saffron' : 'border-l-red-500') : 'border-l-gov-green';
 
   return (
-    <div className={`relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-gov-line dark:border-slate-700/50 border-l-4 ${hasGap ? (isMandatory ? 'border-l-gov-saffron' : 'border-l-red-500') : 'border-l-gov-green'} shadow-sm hover:shadow-gov hover:-translate-y-0.5 overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4 transition-all duration-300`}>
+    <div className={`relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-gov-line dark:border-slate-700/50 border-l-4 ${borderTone} shadow-sm hover:shadow-gov overflow-hidden transition-all duration-300`}>
+    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
       <div className="flex-1 relative z-10 w-full">
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -129,7 +149,7 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
           {/* Confidence badge */}
           <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${conf.bg} ${conf.text}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${conf.dot}`} />
-            {conf.label} Evidence
+            {confLabel} Evidence
           </span>
         </div>
 
@@ -137,7 +157,18 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
           {competency.skillName}
         </h3>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mb-1 transition-colors duration-300">Current Level</p>
-        <PipStrip current={currentLevel} />
+        {unassessed ? (
+          <p className="text-[12px] font-semibold text-violet-700 dark:text-violet-300 mt-1">
+            Not yet assessed — no evidence for this competency
+          </p>
+        ) : (
+          <PipStrip current={currentLevel} />
+        )}
+        {basis === 'self_report' && entry.evidenceLevel != null && (
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+            Evidence so far supports Level {entry.evidenceLevel}
+          </p>
+        )}
 
         {/* b_k raw score */}
         {rawScore !== undefined && (
@@ -172,16 +203,33 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
           </div>
         )}
 
-        {/* Find Courses button — only shown when there is a gap */}
-        {hasGap && onFindCourses && (
-          <button
-            onClick={() => onFindCourses(competency.skillName)}
-            className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all"
-          >
-            <BookOpen size={12} />
-            Find Courses for this Gap →
-          </button>
-        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {/* Learning path — step-by-step, lowest level first */}
+          {(pathway || pathwayLoading) && (
+            <button
+              onClick={() => setShowPath(v => !v)}
+              disabled={!pathway}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-800/40 disabled:opacity-60 transition-all"
+            >
+              <Route size={12} />
+              {!pathway
+                ? 'Building learning path…'
+                : showPath
+                  ? 'Hide learning path'
+                  : `View learning path${pathSteps ? ` (${pathSteps} step${pathSteps > 1 ? 's' : ''}${pathway.totalHours ? ` · ${pathway.totalHours}h` : ''})` : ''}`}
+            </button>
+          )}
+          {/* Find Courses button — only shown when there is a gap */}
+          {hasGap && onFindCourses && (
+            <button
+              onClick={() => onFindCourses(competency.skillName)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-all"
+            >
+              <BookOpen size={12} />
+              Find Courses for this Gap →
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-end gap-6 relative z-10">
@@ -191,7 +239,11 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
         
         <div className="flex flex-col items-center relative">
           <div className="absolute -top-6 right-0">
-            {hasGap ? (
+            {unassessed ? (
+              <span className="flex items-center gap-1.5 text-[11px] font-bold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 px-3 py-1 rounded-full">
+                <HelpCircle size={12} /> Unknown
+              </span>
+            ) : hasGap ? (
               <span className="flex items-center gap-1.5 text-[11px] font-bold bg-[#fee2e2] dark:bg-red-900/30 text-[#ef4444] dark:text-red-400 px-3 py-1 rounded-full transition-colors duration-300">
                 <AlertCircle size={12} className="text-[#ef4444] dark:text-red-400" /> Gap -{gap}
               </span>
@@ -208,13 +260,48 @@ const GapRow: React.FC<{ entry: SkillGapEntry; onFindCourses?: (skillName: strin
         </div>
       </div>
     </div>
+      {showPath && pathway && <PathwayLadder pathway={pathway} />}
+    </div>
   );
 };
 
 
-const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses }) => {
-  const withGaps = skillGaps.filter(e => e.gap > 0);
-  const met = skillGaps.filter(e => e.gap === 0);
+const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses, officialId }) => {
+  const unassessed = skillGaps.filter(e => e.confidence === 'UNASSESSED');
+  const withGaps = skillGaps.filter(e => e.confidence !== 'UNASSESSED' && e.gap > 0);
+  const met = skillGaps.filter(e => e.confidence !== 'UNASSESSED' && e.gap === 0);
+
+  // One call returns every competency's path plus the cross-gap study order.
+  // Re-fetched when any level changes (quiz passed, course completed) so the
+  // path never contradicts the card it sits in.
+  const levelSignature = skillGaps.map(g => `${g.competency.compId}:${g.currentLevel}`).join('|');
+  const [pathways, setPathways] = React.useState<Record<string, LearningPathway>>({});
+  const [plan, setPlan] = React.useState<StudyPlan | null>(null);
+  const [pathLoading, setPathLoading] = React.useState(false);
+  React.useEffect(() => {
+    if (!officialId) return;
+    let cancelled = false;
+    setPathLoading(true);
+    fetchLearningPathways(officialId)
+      .then(({ pathways: list, studyPlan }) => {
+        if (cancelled) return;
+        setPathways(Object.fromEntries(list.map(p => [p.competencyId, p])));
+        setPlan(studyPlan);
+      })
+      .catch(err => console.error('[SkillGapCard] learning pathway', err))
+      .finally(() => { if (!cancelled) setPathLoading(false); });
+    return () => { cancelled = true; };
+  }, [officialId, levelSignature]);
+
+  const row = (e: SkillGapEntry) => (
+    <GapRow
+      key={e.competency.compId}
+      entry={e}
+      onFindCourses={onFindCourses}
+      pathway={pathways[e.competency.compId]}
+      pathwayLoading={pathLoading}
+    />
+  );
 
   return (
     <div className="gov-card p-6">
@@ -224,7 +311,7 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses })
             Competency &amp; Skill-Gap Analysis
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-xs mt-1.5 pl-4">
-            6-term formula: Verified · Documented · Tenure · Education · Seniority · Self-Report
+            6-term formula: Verified · Documented · Tenure · Education · Seniority · Self-Report · level-by-level learning paths
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
@@ -236,9 +323,19 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses })
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#dcfce7] dark:bg-green-900/30 text-[#15803d] dark:text-green-400 transition-colors duration-300">
             {met.length} Met
           </span>
+          {unassessed.length > 0 && (
+            <>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                {unassessed.length} Unassessed
+              </span>
+            </>
+          )}
         </div>
       </div>
-      
+
+      {plan && <StudyPlanSummary plan={plan} />}
+
       <div className="px-1">
         {withGaps.length > 0 && (
           <>
@@ -246,11 +343,20 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses })
               <AlertCircle size={14} className="text-[#ef4444] dark:text-red-400 transition-colors duration-300" />
               <span className="text-[11px] font-bold text-[#ef4444] dark:text-red-400 uppercase tracking-widest transition-colors duration-300">Active Gaps</span>
             </div>
-            {withGaps.map(e => <GapRow key={e.competency.compId} entry={e} onFindCourses={onFindCourses} />)}
+            {withGaps.map(row)}
           </>
         )}
-        {withGaps.length === 0 && (
+        {withGaps.length === 0 && unassessed.length === 0 && (
           <p className="text-center py-10 text-slate-400 dark:text-slate-500 text-sm transition-colors duration-300">All competencies are met! 🎉</p>
+        )}
+        {unassessed.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 py-2 mb-2 mt-2">
+              <HelpCircle size={14} className="text-violet-600 dark:text-violet-400" />
+              <span className="text-[11px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-widest">Not Yet Assessed</span>
+            </div>
+            {unassessed.map(row)}
+          </>
         )}
       </div>
     </div>

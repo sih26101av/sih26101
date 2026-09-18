@@ -14,14 +14,27 @@ Changes vs prior version:
   never fabricated.
 - Bug #9 read path: PRACTICE_ASSESSMENT rows from EvidenceLog are treated as
   the documented evidence channel (same decay logic as DOCUMENTED_CERT).
+- Verified channel is level-aware: a COMPLETED course tagged with this
+  competency at FRAC "Level N" credits N. Partial progress credits nothing
+  (a 10%-watched course used to count as verified and flip confidence to HIGH).
+- currentLevel is floor(b_k) on the 0-5 FRAC scale. The old `requiredLevel - 1`
+  cap is gone — it made every evidence-backed gap impossible to close.
+- resolve_level() is the single place that decides the level shown to the
+  learner AND used by the recommendation/pathway engine, so the dashboard and
+  recommendations can no longer disagree.
 """
 from __future__ import annotations
 import math
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from services.competency_service import CompetencyCalculator
 
 _calculator = CompetencyCalculator()
+
+# Credit for a completed course whose FRAC tag carries no level (legacy maps).
+_UNLEVELLED_COMPLETION_CREDIT = 3.5
+
+_CONFIDENCE_RANK = {"UNASSESSED": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3}
 
 _TIER_SENIORITY = {
     "TIER1_SENIOR": 4.5, "TIER2_UPPER": 3.5, "TIER3_MID": 2.5,
@@ -83,32 +96,96 @@ def _tenure_score(career_history: list, exp_years: int, cat: str, comp_name: str
     return round(min((total / 10.0) * 4.0, 5.0), 2)
 
 
-def _verified_from_enrollments(enrollments: list, comp_id: str, course_comp_map: dict) -> float:
-    """
-    FIX (Bug #2): STRICTLY comp-id-tag-matched. Stage 2 general engagement
-    fallback is REMOVED. If no enrolled course is actually tagged with this
-    comp_id, returns 0.0 — this competency's Verified channel is empty.
+def enrollment_course_id(e: Dict) -> str:
+    return e.get("courseId") or e.get("contentId") or ""
 
-    No fallback preserves the evidence hierarchy:
-      Verified > Documented > Tenure > Self-report > Education > Seniority
-    A user with unrelated enrollments no longer gets an inflated Verified
-    score, which was previously promoting them to HIGH confidence incorrectly.
+
+def is_completed(e: Dict) -> bool:
+    """iGOT/Sunbird marks completion as status 2 or 100% progress."""
+    return e.get("status") == 2 or float(e.get("completionPercentage") or 0) >= 100
+
+
+def _verified_from_enrollments(
+    enrollments: list, comp_id: str, course_comp_map: Dict[str, Dict[str, Optional[int]]],
+) -> Tuple[float, int]:
     """
-    best = 0.0
+    Returns (verified_value, completed_level) for one competency.
+
+    FIX (Bug #2): STRICTLY comp-id-tag-matched — an enrollment only counts if
+    the course is tagged with this comp_id. No general-engagement fallback.
+
+    Only COMPLETED courses count. The credit is the FRAC level the course is
+    tagged at for this competency: finishing a "Level 3" course is evidence of
+    Level 3, not of a flat 3.5 regardless of what the course teaches.
+    completed_level is the highest such level (0 if none) and acts as an
+    evidence floor in resolve_level().
+    """
+    best, completed_level = 0.0, 0
     for e in enrollments:
-        pct = float(e.get("completionPercentage") or 0)
-        cid = e.get("courseId") or e.get("contentId") or ""
-        if not cid:
+        cid = enrollment_course_id(e)
+        if not cid or not is_completed(e):
             continue
-        # Only credit if this course is actually tagged with the target comp_id
-        if comp_id in course_comp_map.get(cid, []):
-            best = max(best, (pct / 100.0) * 3.5)
-    return round(best, 2)
+        tags = course_comp_map.get(cid, {})
+        if comp_id not in tags:
+            continue
+        level = tags[comp_id]
+        if level:
+            best = max(best, float(level))
+            completed_level = max(completed_level, int(level))
+        else:
+            best = max(best, _UNLEVELLED_COMPLETION_CREDIT)
+    return round(best, 2), completed_level
+
+
+def resolve_level(assessment: Dict, self_reported_level: int = 0) -> Dict:
+    """
+    Single source of truth for an official's level on one competency.
+
+    Every evidence source in this system is a *floor*: completing a Level-N
+    course, passing a practice quiz or holding a certificate shows the official
+    can do at least that much — none of them shows they can do less. So the
+    displayed level is the highest floor, which makes it monotone: doing more
+    learning can never lower it (it used to — finishing a course could turn a
+    gap of 0 into a gap of 3).
+
+    Self-report is a claim, not evidence. It still counts as a floor (an
+    official who claims Level 4 is not shown as Level 1), but when it is the
+    thing setting the level the confidence is LOW with basis "self_report", and
+    the pathway engine puts a diagnostic check first.
+
+    Returns {"level", "confidence", "basis", "evidenceLevel"}; level is None
+    only when there is no evidence and no claim at all (UNASSESSED).
+    """
+    formula_level = assessment.get("currentLevel")          # None when UNASSESSED
+    formula_conf  = assessment.get("confidence", "UNASSESSED")
+    completed     = int(assessment.get("completedLevel") or 0)
+
+    evidence_level: Optional[int] = None
+    confidence, basis = "UNASSESSED", "none"
+    if formula_level is not None:
+        evidence_level, confidence, basis = formula_level, formula_conf, "evidence"
+    if completed and (evidence_level is None or completed > evidence_level):
+        evidence_level, confidence, basis = completed, "HIGH", "course_completion"
+
+    if self_reported_level and (evidence_level is None or self_reported_level > evidence_level):
+        return {"level": self_reported_level, "confidence": "LOW",
+                "basis": "self_report", "evidenceLevel": evidence_level}
+    return {"level": evidence_level, "confidence": confidence,
+            "basis": basis, "evidenceLevel": evidence_level}
+
+
+def _normalise_course_map(course_comp_map: Dict) -> Dict[str, Dict[str, Optional[int]]]:
+    """Accept {courseId: {compId: level}} or the legacy {courseId: [compId]}."""
+    out: Dict[str, Dict[str, Optional[int]]] = {}
+    for course_id, tags in (course_comp_map or {}).items():
+        out[course_id] = dict(tags) if isinstance(tags, dict) else {c: None for c in tags}
+    return out
 
 
 class BaselineAssembler:
-    def __init__(self, course_comp_map: Dict[str, List[str]]):
-        self._course_comp_map = course_comp_map
+    def __init__(self, course_comp_map: Dict):
+        # {courseId: {compId: FRAC level (1-5) or None}}
+        self._course_comp_map = _normalise_course_map(course_comp_map)
 
     def compute_for_user(
         self,
@@ -116,7 +193,15 @@ class BaselineAssembler:
         enrollments: List[Dict],
         db_evidence: Optional[List[Dict]] = None,
         now: Optional[datetime] = None,
+        comp_aliases: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Dict]:
+        """
+        `comp_aliases` maps a role competency id to the catalogue FRAC id it is
+        crosswalked to (recommendation engine's crosswalk()). Course tags,
+        adjacency and evidence rows are then read under both ids, so finishing
+        a course from the competency's learning pathway moves its level.
+        """
+        comp_aliases = comp_aliases or {}
         now        = now or datetime.utcnow()
         db_evidence = db_evidence or []
         exp_years  = int(user.get("experienceYears") or 0)
@@ -143,17 +228,28 @@ class BaselineAssembler:
             if k:
                 db_idx.setdefault(k, []).append(row)
 
+        def tag_id(cid: str) -> str:
+            return comp_aliases.get(cid) or cid
+
+        def rows_for(cid: str) -> List[Dict]:
+            alias = tag_id(cid)
+            return db_idx.get(cid, []) + (db_idx.get(alias, []) if alias != cid else [])
+
         # ── Pass 1: compute Verified for every competency first ────────────────
         # We need the full verified_scores_by_comp dict before computing synergy
         # in Pass 2, because synergy depends on adjacent comps' Verified scores.
+        # Keyed by catalogue (tag) id — the id space ADJACENT_COMPETENCIES uses.
         verified_scores_by_comp: Dict[str, float] = {}
+        completed_levels: Dict[str, int] = {}
         for c in comps:
             cid  = c.get("id", "")
-            vs   = _verified_from_enrollments(enrollments, cid, self._course_comp_map)
-            for r in db_idx.get(cid, []):
+            vs, completed_levels[cid] = _verified_from_enrollments(
+                enrollments, tag_id(cid), self._course_comp_map
+            )
+            for r in rows_for(cid):
                 if r.get("evidence_type") == "VERIFIED_IGOT":
                     vs = max(vs, float(r.get("granted_value") or 0))
-            verified_scores_by_comp[cid] = vs
+            verified_scores_by_comp[tag_id(cid)] = max(vs, verified_scores_by_comp.get(tag_id(cid), 0.0))
 
         # ── Pass 2: full 6-term fusion with adjacency synergy ─────────────────
         results: Dict[str, Dict] = {}
@@ -162,14 +258,13 @@ class BaselineAssembler:
             ftype = comp.get("type", "Functional")
             name  = (comp.get("name") or "").strip()
             cat   = _map_category(ftype)
-            req   = int(comp.get("requiredLevel") or 3)
 
-            vs    = verified_scores_by_comp.get(cid, 0.0)
+            vs    = verified_scores_by_comp.get(tag_id(cid), 0.0)
 
             # DocumentedScore — Bug #9 read path: include PRACTICE_ASSESSMENT rows
             # in the documented channel so quiz-derived evidence feeds the formula.
             ds, doc_date = 0.0, None
-            for r in db_idx.get(cid, []):
+            for r in rows_for(cid):
                 etype = r.get("evidence_type") or r.get("evidenceType", "")
                 if etype in ("DOCUMENTED_CERT", "PRACTICE_ASSESSMENT"):
                     val = float(r.get("granted_value") or r.get("grantedValue") or 0)
@@ -189,7 +284,7 @@ class BaselineAssembler:
             srs = max(
                 (
                     float(r.get("granted_value") or r.get("grantedValue") or 0)
-                    for r in db_idx.get(cid, [])
+                    for r in rows_for(cid)
                     if (r.get("evidence_type") or r.get("evidenceType", "")) == "SELF_REPORT"
                 ),
                 default=0.0,
@@ -213,34 +308,20 @@ class BaselineAssembler:
                 verified_count_in_category=0,           # unused when comp_id supplied
                 current_time=now,
                 verified_scores_by_comp=verified_scores_by_comp,  # Bug #4
-                comp_id=cid,                            # Bug #4
+                comp_id=tag_id(cid),                    # Bug #4 (catalogue id space)
             )
 
             # FIX (Bug #1): UNASSESSED → currentLevel = None, never fabricated.
-            if conf == "UNASSESSED":
-                current_level = None
-            else:
-                # Ceiling-relative scaling so displayed level reflects "how far
-                # along within the possible range", not just the raw floor.
-                if conf == "HIGH":
-                    ceiling = 5.0
-                    current_level = min(int(b_k), req - 1)
-                elif conf == "MEDIUM":
-                    ceiling = 3.5
-                    normalized = (b_k / ceiling) * (req - 1)
-                    current_level = min(round(normalized), req - 1)
-                else:  # LOW
-                    ceiling = 2.5
-                    if b_k <= 0:
-                        current_level = 0
-                    else:
-                        normalized = (b_k / ceiling) * (req - 1)
-                        current_level = min(round(normalized), req - 1)
+            # Otherwise the highest FRAC level fully reached. b_k is already on
+            # the 0-5 level scale (channels are renormalised) and bounded by
+            # the confidence ceiling, so no further rescaling or capping.
+            current_level = None if conf == "UNASSESSED" else max(0, min(5, int(b_k)))
 
             results[cid] = {
                 "score":      b_k,
                 "confidence": conf,
-                "currentLevel": current_level,  # None when UNASSESSED
+                "currentLevel":   current_level,          # None when UNASSESSED
+                "completedLevel": completed_levels.get(cid, 0),
                 "_evidence": {
                     "verified":   round(vs, 3),
                     "documented": round(ds, 3),

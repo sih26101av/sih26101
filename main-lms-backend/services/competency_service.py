@@ -12,10 +12,20 @@ Changes vs prior version:
 - ADJACENT_COMPETENCIES dict + compute_synergy() (Bug #4): synergy bonus is
   now scoped to an explicit, hand-curated adjacency table. No more blanket
   "any verified comp in the same broad category" credit. Cap reduced to 0.15.
+- Missing channels are RENORMALISED OUT of the weighted sum instead of being
+  counted as zero (SCIL v6 §3). Previously an official with one strong channel
+  and nothing else was structurally pinned near 0 (a fully completed course
+  alone gave b_k ≈ 1.6), which is what forced the display-layer hacks.
+  Weak-evidence-only estimates are still bounded by the confidence ceilings.
+- Recency decay now uses a true half-life (value halves every `half_life`
+  years); it previously used exp(-t/h), i.e. a time constant mislabelled as one.
+- Adjacency ids now match the real FRAC catalogue ids (the old `comp_python`
+  style ids never matched, so synergy never fired).
 
 Honesty ledger:
 - Channel weights (0.45/0.15/0.20/0.10/0.05/0.05): reasoned defaults carried
-  over; not empirically validated against HR outcome data.
+  over; not empirically validated against HR outcome data. SCIL v6 §3 replaces
+  them with AHP-elicited weights once an expert panel exists.
 - Half-lives (3.0y Domain/Technical, 8.0y Behavioural): reasoned defaults
   loosely informed by skill-decay literature — NOT a validated equivalence.
 - Synergy cap 0.15 and the adjacency pairs are illustrative/hand-curated;
@@ -31,23 +41,22 @@ from typing import Dict, Optional, Tuple
 # Synergy is ONLY granted between competencies with a documented, deliberate
 # skill-adjacency relationship — never a blanket "same broad category" credit.
 # Extend this dict with real FRAC-adjacency data as it becomes available.
+# Ids are the FRAC catalogue ids (mock-igot-server/data/frac_competencies.json).
+# Translated from the original illustrative table; "sampling" is folded into
+# Survey Design & Sampling (002), and pairs with no catalogue counterpart
+# (cybersecurity, government cloud, data quality) were dropped.
 ADJACENT_COMPETENCIES: Dict[str, list] = {
     # Statistical / Domain
-    "comp_survey_design":    ["comp_sampling", "comp_data_quality"],
-    "comp_sampling":         ["comp_survey_design", "comp_national_accounts"],
-    "comp_national_accounts": ["comp_sampling", "comp_price_statistics"],
-    "comp_price_statistics": ["comp_national_accounts", "comp_index_numbers"],
-    "comp_index_numbers":    ["comp_price_statistics"],
+    "comp_survey_design_002": ["comp_nat_accounts_001"],
+    "comp_nat_accounts_001":  ["comp_survey_design_002", "comp_price_stats_003"],
+    "comp_price_stats_003":   ["comp_nat_accounts_001", "comp_index_numbers_004"],
+    "comp_index_numbers_004": ["comp_price_stats_003"],
     # Technical
-    "comp_python":           ["comp_r", "comp_ai_ml", "comp_data_visualization"],
-    "comp_r":                ["comp_python", "comp_data_visualization"],
-    "comp_ai_ml":            ["comp_python", "comp_cloud_computing"],
-    "comp_data_visualization": ["comp_python", "comp_r"],
-    "comp_cloud_computing":  ["comp_ai_ml", "comp_cybersecurity"],
-    # Governance / Cybersecurity
-    "comp_cybersecurity":    ["comp_data_privacy", "comp_government_cloud"],
-    "comp_data_privacy":     ["comp_cybersecurity"],
-    "comp_government_cloud": ["comp_cybersecurity", "comp_cloud_computing"],
+    "comp_python_stats_017":  ["comp_r_analytics_018", "comp_ml_stats_005", "comp_data_viz_019"],
+    "comp_r_analytics_018":   ["comp_python_stats_017", "comp_data_viz_019"],
+    "comp_ml_stats_005":      ["comp_python_stats_017", "comp_cloud_infra_027"],
+    "comp_data_viz_019":      ["comp_python_stats_017", "comp_r_analytics_018"],
+    "comp_cloud_infra_027":   ["comp_ml_stats_005"],
 }
 
 SYNERGY_CAP = 0.15  # maximum bonus from adjacency, regardless of how many fire
@@ -81,7 +90,7 @@ class CompetencyCalculator:
         now = current_time or datetime.utcnow()
         years_ago = max(0.0, (now - issue_date).days / 365.25)
         half_life = 3.0 if comp_category == 'DOMAIN_TECHNICAL' else 8.0
-        return max(0.2, math.exp(-years_ago / half_life))
+        return max(0.2, 0.5 ** (years_ago / half_life))
 
     # ── Bug #4 fix: explicit adjacency-based synergy ──────────────────────────
     @staticmethod
@@ -162,15 +171,21 @@ class CompetencyCalculator:
         if all_zero:
             return 0.0, "UNASSESSED"
 
-        # 3. Core weighted sum
-        core_k = (
-            (self.WEIGHTS['verified']    * verified)   +
-            (self.WEIGHTS['documented']  * documented) +
-            (self.WEIGHTS['tenure']      * tenure)     +
-            (self.WEIGHTS['self_report'] * self_report)+
-            (self.WEIGHTS['education']   * education)  +
-            (self.WEIGHTS['seniority']   * seniority)
-        )
+        # 3. Core weighted mean over the channels that actually carry evidence.
+        #    A channel with no evidence is "not instrumented", not "scored 0"
+        #    (SCIL v6 §3), so its weight is renormalised out rather than
+        #    dragging the estimate towards zero.
+        channels = {
+            'verified':    verified,
+            'documented':  documented,
+            'tenure':      tenure,
+            'self_report': self_report,
+            'education':   education,
+            'seniority':   seniority,
+        }
+        present = {k: v for k, v in channels.items() if v > 0}
+        weight_sum = sum(self.WEIGHTS[k] for k in present)
+        core_k = sum(self.WEIGHTS[k] * v for k, v in present.items()) / weight_sum
 
         # 4. Synergy bonus — Bug #4 fix: use adjacency table when available,
         #    fall back to legacy count-based bonus if comp_id not provided.
@@ -214,8 +229,11 @@ if __name__ == "__main__":
         frac_type="Domain", evidence_data=evidence,
         verified_count_in_category=1, current_time=mock_current_time,
     )
+    # documented 3.5 × 0.5^(3y/3y) = 1.75; mean over the 4 present channels
+    # (documented, tenure, self-report×0.6, education) = 0.772/0.50 = 1.545,
+    # plus legacy synergy 0.1 → 1.645. Seniority is zeroed for Domain.
     print(f"Test 1 — Calculated Score: {score}, Confidence: {tag}")
-    assert round(score, 2) == 0.80, f"Math failed! Expected ~0.80, got {score}"
+    assert abs(score - 1.645) < 0.005, f"Math failed! Expected ~1.645, got {score}"
     assert tag == "MEDIUM", f"Tag failed! Expected MEDIUM, got {tag}"
     print("Test 1 PASSED: Engine math matches specification.")
 
@@ -233,7 +251,8 @@ if __name__ == "__main__":
 
     # Test 3: Adjacency synergy (Bug #4 fix)
     synergy = CompetencyCalculator.compute_synergy(
-        "comp_python", {"comp_r": 0.0, "comp_ai_ml": 2.5, "comp_data_visualization": 0.0}
+        "comp_python_stats_017",
+        {"comp_r_analytics_018": 0.0, "comp_ml_stats_005": 2.5, "comp_data_viz_019": 0.0},
     )
     assert synergy == 0.05, f"Bug #4 synergy wrong: {synergy}"
     print("Test 3 PASSED: Adjacency synergy uses explicit table.")
