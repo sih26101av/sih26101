@@ -159,6 +159,14 @@ class MockIgotAdapter(ILearningPlatformAdapter):
         """GET /api/org/v1/offices — {cycle, offices[{officeId, subprocesses[{id, officerHours}]}]}."""
         return await self._get_result("/api/org/v1/offices")
 
+    async def fetch_prerequisites(self) -> Dict[str, Any]:
+        """GET /api/frac/v1/prerequisites — {count, edges[]} expert-seeded prerequisite DAG."""
+        return await self._get_result("/api/frac/v1/prerequisites")
+
+    async def fetch_course_outcomes(self) -> Dict[str, Any]:
+        """GET /api/course/v1/assessment/outcomes — {outcomes[], comparisons[]} pre/post θ records."""
+        return await self._get_result("/api/course/v1/assessment/outcomes", timeout=30.0)
+
     async def fetch_user_cbplan(self, user_id: str) -> Optional[Dict[str, Any]]:
         """GET /api/cbplan/v1/user/{id} — ACBP mandatory courses + learning hours/quarter. None on 404."""
         async with httpx.AsyncClient() as client:

@@ -7,10 +7,12 @@
  */
 
 import React from 'react';
-import { AlertTriangle, FlaskConical, Layers } from 'lucide-react';
+import { AlertTriangle, FlaskConical, GitBranch, Layers, Route } from 'lucide-react';
 
 import SectionCard from '../shell/SectionCard';
-import { fetchGsbpmScope, type GsbpmScopeReport } from '../../services/api';
+import {
+  fetchGsbpmScope, fetchPrerequisiteDag, type GsbpmScopeReport, type PrerequisiteDagReport,
+} from '../../services/api';
 
 // ─── Small shared helpers ─────────────────────────────────────────────────────
 
@@ -141,6 +143,97 @@ const GsbpmScopePanel: React.FC = () => {
   );
 };
 
+// ─── Prerequisite DAG + data-driven suggestions (SCIL v6 §5) ─────────────────
+
+const PrerequisitePanel: React.FC = () => {
+  const { data, error, loading } = useInsight<PrerequisiteDagReport>(fetchPrerequisiteDag, []);
+  const inf = data?.inference;
+  return (
+    <SectionCard
+      title="Prerequisite DAG"
+      subtitle="Expert-seeded edges the study plan enforces, and edges suggested by outcome data for review"
+    >
+      <PanelState loading={loading} error={error} />
+      {data && (
+        <div className="space-y-4">
+          <p className="flex items-center gap-2 text-[12.5px] text-slate-600 dark:text-slate-300">
+            {data.validation.rejected ? (
+              <span className="font-semibold text-rose-600 dark:text-rose-400">
+                Cycle found — all {data.validation.received} edges rejected: {data.validation.cycle?.join(' → ')}
+              </span>
+            ) : (
+              <span>
+                <span className="font-semibold">{data.edges.length} expert edges</span> — acyclic with the level
+                ladders, enforced in every study plan.
+              </span>
+            )}
+          </p>
+          <div className="max-h-64 overflow-y-auto">
+            <table className="w-full text-left text-[12px]">
+              <tbody>
+                {data.edges.map((e) => (
+                  <tr key={e.id} className="border-b border-gov-line/60 align-top dark:border-slate-700/60">
+                    <td className="py-1.5 pr-3 font-medium text-slate-800 dark:text-slate-100">
+                      {e.fromName} <span className="font-mono text-slate-400">L{e.from.level}</span>
+                    </td>
+                    <td className="py-1.5 pr-3 text-slate-400">→</td>
+                    <td className="py-1.5 pr-3 font-medium text-slate-800 dark:text-slate-100">
+                      {e.toName} <span className="font-mono text-slate-400">L{e.to.level}</span>
+                    </td>
+                    <td className="py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">{e.rationale}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <p className="mb-1 flex items-center gap-2 text-[12.5px] font-semibold text-slate-700 dark:text-slate-200">
+              <GitBranch size={14} /> Suggested from outcome data — for expert review, never applied automatically
+            </p>
+            {!inf ? (
+              <p className="text-[12px] text-slate-400">No outcome data loaded.</p>
+            ) : inf.suggestions.length === 0 ? (
+              <p className="text-[12px] text-slate-400">No pair passed the test ({inf.testedPairs} tested).</p>
+            ) : (
+              <table className="w-full text-left text-[12px]">
+                <thead>
+                  <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
+                    <th className="py-2 pr-3 font-semibold">Before</th>
+                    <th className="py-2 pr-3 font-semibold">Then</th>
+                    <th className="py-2 pr-3 font-semibold">Extra gain (95% CI)</th>
+                    <th className="py-2 pr-3 font-semibold">n with / without</th>
+                    <th className="py-2 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inf.suggestions.map((s) => (
+                    <tr key={`${s.from.competencyId}-${s.to.competencyId}-${s.to.level}`}
+                        className="border-b border-gov-line/60 dark:border-slate-700/60">
+                      <td className="py-2 pr-3">{s.from.competencyName} L{s.from.level}</td>
+                      <td className="py-2 pr-3">{s.to.competencyName} L{s.to.level}</td>
+                      <td className="py-2 pr-3 font-mono">+{s.effect.toFixed(2)} [{s.ci95[0].toFixed(2)}, {s.ci95[1].toFixed(2)}]</td>
+                      <td className="py-2 pr-3 font-mono">{s.nWith} / {s.nWithout}</td>
+                      <td className="py-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${s.status === 'new_suggestion'
+                          ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                          : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
+                          {s.status === 'new_suggestion' ? 'New — review' : 'Supports expert edge'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {inf && <p className="mt-2 text-[10.5px] text-slate-400">{inf.testedPairs} pairs tested. {inf.method}</p>}
+          </div>
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const WorkforceInsights: React.FC = () => (
@@ -157,6 +250,10 @@ const WorkforceInsights: React.FC = () => (
       <Layers size={13} /> Capability scope
     </div>
     <GsbpmScopePanel />
+    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+      <Route size={13} /> Learning design
+    </div>
+    <PrerequisitePanel />
   </div>
 );
 

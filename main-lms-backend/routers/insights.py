@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from auth.dependencies import require_role
 from auth.models import UserAuth
-from services import app_state, gsbpm_service
+from services import app_state, gsbpm_service, prerequisite_service
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin-insights"])
 
@@ -38,3 +38,33 @@ async def gsbpm_scope(
                           "totalOfficerHours": o["totalOfficerHours"]} for o in ref.offices.values()]
     report["dataNote"] = SYNTHETIC_NOTE
     return report
+
+
+def _frac_names() -> dict:
+    engine = app_state.engine
+    return {cid: meta.get("name", cid) for cid, meta in (engine._frac_map.items() if engine else [])}
+
+
+@router.get("/prerequisites")
+async def prerequisite_dag(_admin: UserAuth = Depends(require_role("admin"))):
+    """
+    SCIL v6 §5 — the expert-seeded prerequisite DAG that build_study_plan
+    enforces (after cycle validation), plus data-driven edge SUGGESTIONS from
+    course outcome assessments. Suggestions are for human review and are never
+    applied to any plan.
+    """
+    ref = app_state.ref
+    names = _frac_names()
+    if ref.outcomes and "prereq_suggestions" not in ref.cache:
+        ref.cache["prereq_suggestions"] = prerequisite_service.infer_edges(
+            ref.outcomes, ref.prerequisites, names)
+    edges = [{**e, "fromName": names.get(e["from"]["competencyId"], e["from"]["competencyId"]),
+              "toName": names.get(e["to"]["competencyId"], e["to"]["competencyId"])}
+             for e in ref.prerequisites]
+    return {
+        "edges": edges,
+        "validation": ref.prerequisite_check,
+        "enforced": bool(ref.prerequisites),
+        "inference": ref.cache.get("prereq_suggestions"),
+        "dataNote": SYNTHETIC_NOTE,
+    }

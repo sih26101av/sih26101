@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,12 @@ class ReferenceData:
         self.gsbpm: Dict[str, Any] = {}            # {subprocesses, competencies, phases, version}
         self.offices: Dict[str, Dict[str, Any]] = {}   # officeId → office workload
         self.cycle: Dict[str, Any] = {}
+        self.prerequisites: List[Dict[str, Any]] = []   # validated, acyclic expert edges ([] if rejected)
+        self.prerequisite_check: Dict[str, Any] = {}    # {cycle, rejected, invalid, received}
+        self.outcomes: List[Dict[str, Any]] = []        # course pre/post assessments
+        self.comparisons: List[Dict[str, Any]] = []     # non-taker comparison episodes
         self.sources: Dict[str, str] = {}          # dataset → "adapter" | "disk" | "missing"
+        self.cache: Dict[str, Any] = {}            # derived analytics computed once per process
 
     async def _load(self, name: str, fetch: Callable[[], Awaitable[Dict[str, Any]]],
                     filename: str) -> Optional[Dict[str, Any]]:
@@ -61,5 +66,18 @@ class ReferenceData:
         if offices:
             ref.offices = {o["officeId"]: o for o in offices.get("offices", [])}
             ref.cycle = offices.get("cycle", {})
+        prereq = await ref._load("prerequisites", adapter.fetch_prerequisites, "prerequisites.json")
+        if prereq:
+            from services.prerequisite_service import validate_edges
+            raw = prereq.get("edges", [])
+            check = validate_edges(raw)
+            ref.prerequisites = check["edges"]
+            ref.prerequisite_check = {k: check[k] for k in ("cycle", "rejected", "invalid")} | {"received": len(raw)}
+            if check["rejected"]:
+                logger.error("[reference] prerequisite edges REJECTED — cycle: %s", " → ".join(check["cycle"]))
+        outcomes = await ref._load("outcomes", adapter.fetch_course_outcomes, "course_outcomes.json")
+        if outcomes:
+            ref.outcomes = outcomes.get("outcomes", [])
+            ref.comparisons = outcomes.get("comparisons", [])
         logger.info("[reference] loaded: %s", ref.sources)
         return ref

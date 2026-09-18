@@ -19,8 +19,8 @@ validation against real officials.
 | A4 One catalogue source | done | `5e646b5` | `POST /api/composite/v1/search` → adapter → engine; disk fallback with warning |
 | A5 Enrollments / history | done | `5e646b5` | Status 2 ⇔ 100%; dates over 3 years; 5 planted out-of-order learners |
 | B2+B1 GSBPM + opportunity | done | `8c8f495` | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
-| B3 ACBP + budget + modality | done | (B3 commit) | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
-| B4 Prerequisite DAG | pending | | |
+| B3 ACBP + budget + modality | done | `aaa6356` | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
+| B4 Prerequisite DAG | done | (B4 commit) | 18 expert edges, cycle-checked with the ladders (cyclic set rejected); gate orders/blocks rungs, unknown levels advisory; data-driven suggestions (OLS + BH-FDR 10% + bootstrap CI) never applied; recovers both planted precedence effects |
 | B5 Measured gain / uplift | pending | | |
 | B6 Evidence channels U/S/A | pending | | |
 | B8 Decay + cold start + foresight | pending | | |
@@ -119,8 +119,11 @@ Duration by format after Phase A (min / median / p90 / max, hours):
 19. **Format mix.** The TPAC share was tuned down (L3 6%, L4 22%, L5 40%),
     giving 71/514 TPAC programmes. With the first draft, 46% of courses were
     NSSTA-made.
-20. **Data sizes.** `content_states.json` is written one record per line (compact).
-    Other files use `indent=1`.
+20. **Data sizes.** `content_states.json`, `userdata.json`, `enrollments.json`
+    and `course_outcomes.json` are written one record per line. Other files
+    use `indent=1`. Content-state `progressdetails` is kept only on the module
+    being read; completed modules keep `contentId/status/completionPercentage/lastAccessTime`.
+    The data dir was 5.0 MB after B4 data and is 3.9 MB after these changes.
 21. **Metrics script** `main-lms-backend/scripts/mock_data_metrics.py` computes
     every before/after number above, so they are reproducible.
 
@@ -175,6 +178,28 @@ Duration by format after Phase A (min / median / p90 / max, hours):
 32. **Metrics script.** It re-logs in on 401 (the access token expires during a
     151-user run) and measures pathways with `?unbudgeted=true`, so the numbers
     stay comparable with Phase A.
+
+33. **B4 generates the B5 outcome dataset.** The data-driven edge inference
+    needs measured pre/post gains, so `course_outcomes.json` (the B5 data) is
+    generated in B4. B5 adds the uplift estimator on the same data.
+34. **Outcome data is platform-wide.** Per-course effects on only the 151
+    roster officials would rest on 1–3 learners per course. The iGOT
+    assessment service covers every learner, so anonymised `lrn_…` learners
+    are added in proportion to each course's enrolment count. Roster
+    completions are included 1:1.
+35. **Unknown prerequisite level → advisory, not blocking.** Blocking on an
+    unmeasured level would dead-end plans for anyone with an UNASSESSED or
+    out-of-profile prerequisite.
+36. **A cyclic prerequisite set is rejected as a whole** rather than dropping
+    one edge. There is no principled choice of which expert edge to drop, so a
+    human must fix it; the cycle is logged and shown to the admin.
+37. **Inference thresholds.** Min 8 learners per side, BH-FDR 10%, min effect
+    0.20 levels, 400 seeded bootstrap resamples. Only the 2 planted groups
+    reach the minimum size, so the screen's false-positive rate is untested
+    here.
+38. **Planted-group sample size.** Courses in a planted-precedence group get
+    ≥ 18 platform takers (`PLANTED_GROUP_TAKERS`). Without that, the planted
+    effects had 2–3 learners with the prerequisite, which was untestable.
 
 ## Could not do / blocked
 

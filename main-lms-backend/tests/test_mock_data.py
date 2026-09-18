@@ -242,6 +242,34 @@ def test_acbp_mandatory_courses_are_short_catalogue_courses(data):
         assert o["learningHoursPerQuarter"] * 4 >= gen.KARMAYOGI_MIN_HOURS_PER_YEAR
 
 
+def test_expert_prerequisites_are_acyclic_and_use_catalogue_ids(data):
+    frac_ids = {c["id"] for c in data["frac_competencies.json"]}
+    edges = data["prerequisites.json"]["edges"]
+    assert gen.find_cycle(edges) is None
+    for e in edges:
+        assert {e["from"]["competencyId"], e["to"]["competencyId"]} <= frac_ids
+        assert e["source"] == "expert" and e["rationale"]
+
+
+def test_course_outcomes_are_consistent_with_catalogue_and_roster(data):
+    doc = data["course_outcomes.json"]
+    courses = {c["identifier"]: c for c in data["course_catalog.json"]}
+    done = {(e["userId"], e["courseId"]) for e in data["enrollments.json"] if e["status"] == 2}
+    roster = [o for o in doc["outcomes"] if o["learnerId"].startswith("usr_")]
+    assert {(o["learnerId"], o["courseId"]) for o in roster} == done          # every roster completion, nothing else
+    for o in doc["outcomes"]:
+        primary = next(t for t in _tags(courses[o["courseId"]]) if t["primary"])
+        assert o["competencyId"] == primary["id"] and o["courseLevel"] == int(primary["competencyLevel"][-1])
+        assert o["enrolled"] <= o["completed"]
+    assert len(doc["comparisons"]) == 40 * gen.CONTROLS_PER_COMPETENCY
+    truth = data["_truth/planted_effects.json"]
+    for cid in truth["zeroUpliftCourses"]:
+        assert sum(o["courseId"] == cid for o in doc["outcomes"]) >= 20      # popular → enough data
+        assert abs(truth["trueUplift"][cid]) < 0.1
+    others = [u for c, u in truth["trueUplift"].items() if c not in truth["zeroUpliftCourses"]]
+    assert min(others) >= 0.2                                                # most courses help
+
+
 def test_profile_incomplete_officials_exist_for_unassessed(data):
     incomplete = set(data["_truth/planted_effects.json"]["profileIncomplete"])
     assert len(incomplete) == gen.N_PROFILE_INCOMPLETE

@@ -1,0 +1,245 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "Expert-seeded cross-competency prerequisite edges: `from` (competency at level) must be reached before `to`. Hand-written for the demo, not elicited from a real panel. Checked acyclic together with the within-competency level ladders."
+ },
+ "edges": [
+  {
+   "id": "pre_001",
+   "from": {
+    "competencyId": "comp_index_numbers_004",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_price_stats_003",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "CPI compilation applies Laspeyres-type index formulas and chain-linking."
+  },
+  {
+   "id": "pre_002",
+   "from": {
+    "competencyId": "comp_survey_design_002",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_poverty_014",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Poverty estimates come from weighted consumption-survey data."
+  },
+  {
+   "id": "pre_003",
+   "from": {
+    "competencyId": "comp_survey_design_002",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_econ_census_007",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Census follow-up surveys are designed on the census frame."
+  },
+  {
+   "id": "pre_004",
+   "from": {
+    "competencyId": "comp_survey_design_002",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_industry_stats_010",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "ASI's sample sector is a stratified sample from the factory frame."
+  },
+  {
+   "id": "pre_005",
+   "from": {
+    "competencyId": "comp_index_numbers_004",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_industry_stats_010",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "IIP and ASI deflation need index-number theory."
+  },
+  {
+   "id": "pre_006",
+   "from": {
+    "competencyId": "comp_nat_accounts_001",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_gdp_nowcast_011",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Nowcasts target the national-accounts GDP concept and its revisions."
+  },
+  {
+   "id": "pre_007",
+   "from": {
+    "competencyId": "comp_time_series_013",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_gdp_nowcast_011",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Bridge and factor models are time-series models."
+  },
+  {
+   "id": "pre_008",
+   "from": {
+    "competencyId": "comp_python_stats_017",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_ml_stats_005",
+    "level": 2
+   },
+   "source": "expert",
+   "rationale": "ML exercises are taught in Python."
+  },
+  {
+   "id": "pre_009",
+   "from": {
+    "competencyId": "comp_db_design_029",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_big_data_006",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Integrating administrative sources needs relational data modelling."
+  },
+  {
+   "id": "pre_010",
+   "from": {
+    "competencyId": "comp_r_analytics_018",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_time_series_013",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Seasonal adjustment labs use R (seasonal / X-13 interfaces)."
+  },
+  {
+   "id": "pre_011",
+   "from": {
+    "competencyId": "comp_data_viz_019",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_sdg_monitor_015",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "SDG progress reports are dashboard-led."
+  },
+  {
+   "id": "pre_012",
+   "from": {
+    "competencyId": "comp_data_gov_016",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_data_privacy_026",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Disclosure control sits inside the data-governance framework."
+  },
+  {
+   "id": "pre_013",
+   "from": {
+    "competencyId": "comp_spatial_stat_012",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_agri_stats_009",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Remote-sensing crop forecasting needs GIS."
+  },
+  {
+   "id": "pre_014",
+   "from": {
+    "competencyId": "comp_api_int_028",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_e_gov_023",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Running digital services means integrating systems through APIs."
+  },
+  {
+   "id": "pre_015",
+   "from": {
+    "competencyId": "comp_public_fin_025",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_procurement_021",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Procurement decisions are bounded by budget rules."
+  },
+  {
+   "id": "pre_016",
+   "from": {
+    "competencyId": "comp_leadership_032",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_change_mgmt_035",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Leading change presupposes leading teams."
+  },
+  {
+   "id": "pre_017",
+   "from": {
+    "competencyId": "comp_decision_037",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_strategic_031",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Strategy is a sequence of decisions under uncertainty."
+  },
+  {
+   "id": "pre_018",
+   "from": {
+    "competencyId": "comp_comm_032",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_citizen_039",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Serving data users needs clear communication."
+  }
+ ]
+}

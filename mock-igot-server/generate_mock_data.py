@@ -650,11 +650,11 @@ def build_enrollments(users: list, catalog: list, facts: dict) -> tuple[list, di
                         "status": 2 if done else 1,
                         "completionPercentage": 100 if done else rng.randint(5, 95),
                         "lastAccessTime": iso(access),
-                        "progressdetails": {"max_size": size,
-                                            "current_size": size if done else rng.randint(1, size - 1),
-                                            "mimeType": rng.choice(["video/mp4", "application/pdf", "text/html"])},
-                    })
-                clist[-1]["completionPercentage"] = clist[-1]["completionPercentage"]
+                        })
+                    if not done:   # Sunbird progress details only for the module being read
+                        clist[-1]["progressdetails"] = {
+                            "max_size": size, "current_size": rng.randint(1, size - 1),
+                            "mimeType": rng.choice(["video/mp4", "application/pdf", "text/html"])}
                 states[f"{uid}|{cid}|{_batch(cid)}"] = {
                     "contentList": clist,
                     "lastReadContentId": last,
@@ -799,6 +799,231 @@ def build_acbp(roles: list, users: list, catalog: list) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Cross-competency prerequisite DAG (B4)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def find_cycle(edges: list) -> list | None:
+    """Cycle in expert edges + the implicit within-competency ladder (c@L-1 → c@L), or None."""
+    graph: dict = {}
+    nodes = set()
+    for e in edges:
+        a = (e["from"]["competencyId"], e["from"]["level"])
+        b = (e["to"]["competencyId"], e["to"]["level"])
+        graph.setdefault(a, set()).add(b)
+        nodes |= {a, b}
+    for comp, _lvl in sorted(nodes):
+        for lvl in range(1, 5):
+            graph.setdefault((comp, lvl), set()).add((comp, lvl + 1))
+            nodes |= {(comp, lvl), (comp, lvl + 1)}
+    state: dict = {}
+    stack: list = []
+
+    def visit(n):
+        state[n] = 1
+        stack.append(n)
+        for m in sorted(graph.get(n, ())):
+            if state.get(m) == 1:
+                return stack[stack.index(m):] + [m]
+            if m not in state:
+                found = visit(m)
+                if found:
+                    return found
+        state[n] = 2
+        stack.pop()
+        return None
+
+    for n in sorted(nodes):
+        if n not in state:
+            found = visit(n)
+            if found:
+                return [f"{c}@L{l}" for c, l in found]
+    return None
+
+
+def build_prerequisites() -> dict:
+    edges = [
+        {"id": f"pre_{i:03d}", "from": {"competencyId": a, "level": la}, "to": {"competencyId": b, "level": lb},
+         "source": "expert", "rationale": why}
+        for i, (a, la, b, lb, why) in enumerate(D.EXPERT_PREREQUISITES, start=1)
+    ]
+    cycle = find_cycle(edges)
+    if cycle:
+        raise ValueError(f"EXPERT_PREREQUISITES contain a cycle: {' → '.join(cycle)}")
+    return {
+        "_meta": meta("Expert-seeded cross-competency prerequisite edges: `from` (competency at level) must be "
+                      "reached before `to`. Hand-written for the demo, not elicited from a real panel. "
+                      "Checked acyclic together with the within-competency level ladders."),
+        "edges": edges,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Course outcome assessments (B4 inference + B5 measured uplift)
+# Platform-wide, anonymised: pre/post θ for course takers + comparison
+# episodes for non-takers. Every effect below is PLANTED and recorded in
+# _truth/planted_effects.json, so estimators can be checked for recovery.
+# ─────────────────────────────────────────────────────────────────────────────
+
+TRUE_UPLIFT_MEAN, TRUE_UPLIFT_SD = 0.55, 0.15   # most courses: ~half a FRAC level
+MATURATION_BASE = 0.03       # growth over one assessment interval without a course (on-the-job practice)
+MATURATION_SLOPE = 0.05      # … per level of prior ability: strong officers grow faster → confounds naive estimates
+ASSESSMENT_NOISE_SD = 0.20   # measurement error of each θ assessment
+TAKERS_PER_ENROLMENTS = 250  # one outcome record per 250 platform enrolments …
+TAKERS_MIN, TAKERS_MAX = 2, 30   # … clipped to [2, 30] learners per course
+CONTROLS_PER_COMPETENCY = 40     # non-taker comparison episodes per competency
+PLANTED_GROUP_TAKERS = 18        # min platform takers per course in a planted-precedence group
+PLANTED_PRIOR_SHARE = 0.5        # share of those takers who did the planted prerequisite first
+EDU_FIELDS = {"statistics": 0.3, "economics": 0.25, "mathematics": 0.1, "computer science": 0.1,
+              "public administration": 0.15, "other": 0.1}
+
+
+def _fit(pre: float, level: int) -> float:
+    """How much of a course's uplift a learner at `pre` can take from a Level-`level` course."""
+    if pre >= level:
+        return 0.3          # already there: little to learn
+    if pre < level - 2:
+        return 0.5          # far too hard (out-of-order)
+    return 1.0
+
+
+def _covariates(rng: random.Random, pre: float) -> dict:
+    return {
+        "tenureYears": int(min(35, max(1, round(3 + 5 * pre + rng.gauss(0, 4))))),
+        "education": weighted(rng, EDU_FIELDS),
+        "priorLevel": int(min(5, max(0, math.floor(pre)))),
+    }
+
+
+def build_outcomes(catalog: list, enrollments: list, users: list, facts: dict, hidden: dict,
+                   ooo: list) -> tuple[dict, dict]:
+    rng = rng_for("outcomes")
+    by_id = {c["identifier"]: c for c in catalog}
+    zero = set(hidden["zeroUpliftCourses"])
+    true_uplift = {}
+    for c in sorted(catalog, key=lambda c: c["identifier"]):
+        u = rng.gauss(0.02, 0.02) if c["identifier"] in zero else rng.gauss(TRUE_UPLIFT_MEAN, TRUE_UPLIFT_SD)
+        true_uplift[c["identifier"]] = round(min(1.0, max(-0.05 if c["identifier"] in zero else 0.2, u)), 3)
+    precedence = {(b, lvl): (a, bonus) for a, b, lvl, bonus in D.PLANTED_PRECEDENCE}
+    primary = {cid: next(t for t in course_tags(c) if t.get("primary")) for cid, c in by_id.items()}
+    ooo_pairs = {(p["userId"], p["courseId"]) for p in ooo}
+
+    def record(learner, course_id, pre, prior, enrolled, completed, cov):
+        tag = primary[course_id]
+        comp, level = tag["id"], int(tag["competencyLevel"][-1])
+        gain = true_uplift[course_id] * _fit(pre, level)
+        bonus_rule = precedence.get((comp, level))
+        if bonus_rule and any(p["competencyId"] == bonus_rule[0] for p in prior):
+            gain += bonus_rule[1]
+        growth = MATURATION_BASE + MATURATION_SLOPE * pre
+        pre_obs = pre + rng.gauss(0, ASSESSMENT_NOISE_SD)
+        post_obs = pre + growth + gain + rng.gauss(0, ASSESSMENT_NOISE_SD)
+        # pre-assessment at enrolment, post-assessment 1–4 weeks after completion
+        return {
+            "learnerId": learner, "courseId": course_id, "competencyId": comp, "courseLevel": level,
+            "enrolled": enrolled.date().isoformat(), "completed": completed.date().isoformat(),
+            "preTheta": round(pre_obs, 2), "postTheta": round(post_obs, 2),
+            "covariates": cov, "priorCompleted": prior,
+        }
+
+    outcomes = []
+    # 1. the roster's own completions (history from enrollments.json)
+    done = sorted((e for e in enrollments if e["status"] == 2), key=lambda e: (e["userId"], e["completedDate"]))
+    users_by_id = {u["userId"]: u for u in users}
+    for e in done:
+        tag = primary[e["courseId"]]
+        level = int(tag["competencyLevel"][-1])
+        if (e["userId"], e["courseId"]) in ooo_pairs:
+            pre = facts["truth"][e["userId"]][tag["id"]]["theta"] - 0.3
+        else:
+            pre = level - 1 + rng.uniform(0.15, 0.85)
+        prior = {}
+        for p in done:
+            if p["userId"] == e["userId"] and p["completedDate"] < e["enrolledDate"]:
+                pt = primary[p["courseId"]]
+                prior[pt["id"]] = max(prior.get(pt["id"], 0), int(pt["competencyLevel"][-1]))
+        u = users_by_id[e["userId"]]
+        edu = ((u.get("education") or [{}])[0].get("degree") or "other").lower()
+        cov = {"tenureYears": max(1, int(u.get("experienceYears") or 1)),
+               "education": next((f for f in EDU_FIELDS if f.split()[0] in edu), "other"),
+               "priorLevel": int(min(5, max(0, math.floor(pre))))}
+        enrolled = datetime.fromisoformat(e["enrolledDate"].replace("Z", "+00:00"))
+        completed = datetime.fromisoformat(e["completedDate"].replace("Z", "+00:00"))
+        outcomes.append(record(e["userId"], e["courseId"], pre,
+                               [{"competencyId": k, "level": v} for k, v in sorted(prior.items())],
+                               enrolled, completed, cov))
+
+    # 2. other iGOT learners (anonymised) — volume follows platform enrolments
+    comps = [c[0] for c in D.COMPETENCIES]
+    for c in sorted(catalog, key=lambda c: c["identifier"]):
+        n = int(min(TAKERS_MAX, max(TAKERS_MIN, round((c.get("enrollment_count") or 500) / TAKERS_PER_ENROLMENTS))))
+        tag = primary[c["identifier"]]
+        comp, level = tag["id"], int(tag["competencyLevel"][-1])
+        rule = precedence.get((comp, level))
+        if rule:
+            n = max(n, PLANTED_GROUP_TAKERS)       # enough learners for the planted effect to be testable
+        for k in range(n):
+            learner = "lrn_" + hashlib.sha1(f"{c['identifier']}:{k}".encode()).hexdigest()[:10]
+            pre = level - 1 + rng.uniform(0.15, 0.85)
+            prior = {}
+            for other in rng.sample(comps, rng.randint(0, 3)):
+                if other != comp:
+                    prior[other] = rng.randint(1, 3)
+            if rule and rng.random() < PLANTED_PRIOR_SHARE:
+                prior[rule[0]] = max(prior.get(rule[0], 0), rng.randint(1, 3))
+            completed = ref_minus(rng.uniform(20, HISTORY_YEARS * 365), rng)
+            enrolled = completed - timedelta(days=math.ceil(course_hours(c) / 6) + rng.randint(0, 30))
+            outcomes.append(record(learner, c["identifier"], pre,
+                                   [{"competencyId": k2, "level": v} for k2, v in sorted(prior.items())],
+                                   enrolled, completed, _covariates(rng, pre)))
+
+    # 3. comparison episodes: learners with the competency who took no course on it
+    comparisons = []
+    for comp in comps:
+        for k in range(CONTROLS_PER_COMPETENCY):
+            pre = min(4.9, max(0.1, rng.triangular(0.1, 4.9, 2.0)))
+            growth = MATURATION_BASE + MATURATION_SLOPE * pre
+            end = ref_minus(rng.uniform(20, HISTORY_YEARS * 365), rng)
+            start = end - timedelta(days=rng.randint(30, 120))
+            comparisons.append({
+                "learnerId": "lrn_" + hashlib.sha1(f"ctl:{comp}:{k}".encode()).hexdigest()[:10],
+                "competencyId": comp,
+                "preDate": start.date().isoformat(), "postDate": end.date().isoformat(),
+                "preTheta": round(pre + rng.gauss(0, ASSESSMENT_NOISE_SD), 2),
+                "postTheta": round(pre + growth + rng.gauss(0, ASSESSMENT_NOISE_SD), 2),
+                "covariates": _covariates(rng, pre),
+            })
+
+    doc = {
+        "_meta": meta("Course outcome assessments (synthetic, platform-wide, anonymised): pre/post θ on the "
+                      "FRAC level scale for course takers, plus comparison episodes for learners who took no "
+                      "course on the competency. Contains PLANTED effects (see data/README.md) — estimates "
+                      "computed on it demonstrate the method; they validate nothing."),
+        "scale": "theta on the FRAC level scale (0-5)",
+        "outcomes": outcomes,
+        "comparisons": comparisons,
+    }
+    truth = {
+        "trueUplift": true_uplift,
+        "maturation": {"base": MATURATION_BASE, "slopePerLevel": MATURATION_SLOPE},
+        "plantedPrecedence": [{"before": a, "then": b, "level": lvl, "bonus": bonus}
+                              for a, b, lvl, bonus in D.PLANTED_PRECEDENCE],
+    }
+    return doc, truth
+
+
+def dumps_records(doc: dict, list_keys: tuple) -> str:
+    """JSON with the big record lists written one record per line."""
+    parts = []
+    for k, v in doc.items():
+        if k in list_keys:
+            rows = ",\n".join("  " + json.dumps(r, ensure_ascii=False, separators=(",", ":")) for r in v)
+            parts.append(f"{json.dumps(k)}: [\n{rows}\n]")
+        else:
+            parts.append(f"{json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}")
+    return "{\n" + ",\n".join(parts) + "\n}\n"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Writing
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -829,17 +1054,20 @@ def generate() -> dict:
     catalog, hidden = build_catalog(frac)
     users, roles, facts = build_officials(roster_seed, catalog)
     enrollments, states, planted = build_enrollments(users, catalog, facts)
+    outcomes, outcome_truth = build_outcomes(catalog, enrollments, users, facts, hidden, planted["outOfOrder"])
 
     files = {
         "frac_competencies.json": dumps(frac),
         "course_catalog.json": dumps(catalog),
-        "userdata.json": dumps(users),
-        "enrollments.json": dumps(enrollments),
+        "userdata.json": dumps(users, compact=True),
+        "enrollments.json": dumps(enrollments, compact=True),
         "content_states.json": dumps(states, compact=True),
         "frac_crosswalk.json": dumps(build_crosswalk(igot_dictionary)),
         "gsbpm_map.json": dumps(build_gsbpm_map()),
         "offices.json": dumps(build_offices(users)),
         "acbp.json": dumps(build_acbp(roles, users, catalog)),
+        "prerequisites.json": dumps(build_prerequisites()),
+        "course_outcomes.json": dumps_records(outcomes, ("outcomes", "comparisons")),
         "roles.json": dumps({"_meta": meta("Role (office × designation) competency profiles; requiredLevel "
                                            "drawn from the designation tier."), "roles": roles}),
         "_truth/planted_effects.json": dumps({
@@ -850,6 +1078,7 @@ def generate() -> dict:
             "outOfOrder": planted["outOfOrder"],
             "zeroUpliftCourses": hidden["zeroUpliftCourses"],
             "trueLevels": facts["truth"],
+            **outcome_truth,
         }),
     }
     manifest = {

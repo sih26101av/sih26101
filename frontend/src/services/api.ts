@@ -412,6 +412,45 @@ export async function fetchGsbpmScope(officeId?: string): Promise<GsbpmScopeRepo
   return lmsFetch<GsbpmScopeReport>(`/api/v1/admin/gsbpm/scope${qs}`, 'gsbpm-scope');
 }
 
+export interface PrerequisiteEdge {
+  id: string;
+  from: { competencyId: string; level: number };
+  to: { competencyId: string; level: number };
+  fromName: string;
+  toName: string;
+  source: string;
+  rationale?: string;
+}
+
+export interface PrerequisiteSuggestion {
+  from: { competencyId: string; competencyName: string; level: number };
+  to: { competencyId: string; competencyName: string; level: number };
+  effect: number;
+  ci95: [number, number];
+  pValue: number;
+  nWith: number;
+  nWithout: number;
+  status: 'new_suggestion' | 'supports_expert_edge';
+  expertEdgeId: string | null;
+  applied: false;
+}
+
+export interface PrerequisiteDagReport {
+  edges: PrerequisiteEdge[];
+  validation: { cycle: string[] | null; rejected: boolean; invalid: number; received: number };
+  enforced: boolean;
+  inference: {
+    testedPairs: number; fdr: number; minEffect: number; minGroup: number;
+    suggestions: PrerequisiteSuggestion[]; method: string;
+  } | null;
+  dataNote: string;
+}
+
+/** SCIL v6 §5 — enforced expert prerequisite DAG + data-driven suggestions (never applied). */
+export async function fetchPrerequisiteDag(): Promise<PrerequisiteDagReport> {
+  return lmsFetch<PrerequisiteDagReport>('/api/v1/admin/prerequisites', 'prerequisites');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // KARMA POINTS API
 // ─────────────────────────────────────────────────────────────────────────────

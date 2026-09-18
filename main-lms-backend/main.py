@@ -79,7 +79,7 @@ _assembler: BaselineAssembler | None = None
 
 # ── SCIL v6 reference data (GSBPM map, office workload, …) ────────────────────
 from services.reference_data import ReferenceData
-from services import app_state, gsbpm_service
+from services import app_state, gsbpm_service, prerequisite_service
 _ref: ReferenceData = ReferenceData()
 
 
@@ -649,14 +649,25 @@ async def get_learning_pathway(
     else:
         budget, budget_source, classroom_cap = None, "none", None
 
+    # Cross-competency prerequisites (SCIL v6 §5): the official's current level per
+    # catalogue competency (None = UNASSESSED → advisory only) and, per step, the
+    # expert edges it depends on so the UI can say "needs X Level N first".
+    current_levels = {(r["catalogueId"] or r["competencyId"]): r["currentLevel"]
+                      for r in state["competencies"]}
+    frac_names = {c: m.get("name", c) for c, m in _rec_engine._frac_map.items()}
+
     mandatory_ids = {m["courseId"] for m in mandatory}
     for p in pathways:
         for s in p["steps"]:
             s["mandatory"] = bool(s.get("course") and s["course"]["courseId"] in mandatory_ids)
+            if s["kind"] in ("course", "continue", "stretch", "bridge"):
+                s["prerequisites"] = prerequisite_service.step_prerequisites(
+                    _ref.prerequisites, p["catalogueCompetencyId"], s["covers"], current_levels, frac_names)
 
     study_plan = _rec_engine.build_study_plan(
         pathways, budget_hours=budget, mandatory=mandatory if not competencyId else [],
         completed_ids=completed_ids, in_progress=in_progress, classroom_cap_hours=classroom_cap,
+        prerequisites=_ref.prerequisites, current_levels=current_levels,
     )
     study_plan["budgetSource"] = budget_source            # quarterly_hours | query | none
     study_plan["learningHoursPerQuarter"] = quarter_hours

@@ -9,7 +9,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, BadgeCheck, BookOpen, Briefcase, ChevronDown, ChevronUp, ClipboardCheck, Clock,
+  AlertTriangle, BadgeCheck, BookOpen, Briefcase, ChevronDown, ChevronUp, ClipboardCheck, Clock, GitBranch,
   ListOrdered, PlayCircle, ShieldCheck, Sparkles, TrendingUp,
 } from "lucide-react";
 import type {
@@ -86,6 +86,19 @@ const StepRow: React.FC<{ step: PathwayStep; isLast: boolean }> = ({ step, isLas
       )}
 
       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{step.reason}</p>
+      {(step.prerequisites ?? []).filter(p => p.met !== true).map(p => (
+        <p
+          key={p.competencyId}
+          title={p.rationale ?? undefined}
+          className={`mt-1 inline-flex items-center gap-1 text-[10px] font-semibold mr-2 ${p.met === false
+            ? "text-amber-700 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}
+        >
+          <GitBranch size={10} />
+          {p.met === false
+            ? `Needs ${p.competencyName} Level ${p.level} first (you're at Level ${p.currentLevel})`
+            : `Builds on ${p.competencyName} Level ${p.level} — your level there isn't assessed yet`}
+        </p>
+      ))}
       {step.levelDescriptor && step.kind !== "diagnostic" && (
         <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 italic">
           After this: {step.levelDescriptor}
@@ -236,6 +249,15 @@ export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> 
         >
           {expanded ? "Show fewer" : `Show all ${plan.steps.length} courses`}
         </button>
+      )}
+      {(plan.prerequisitesApplied ?? []).filter(a => a.status !== "advisory").length > 0 && (
+        <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+          Prerequisites:{" "}
+          {(plan.prerequisitesApplied ?? []).filter(a => a.status !== "advisory").map(a =>
+            `${a.from.competencyName} L${a.from.level} before ${a.to.competencyName} L${a.to.level}` +
+            (a.status === "blocked" ? " (not reachable in this plan)" : ""),
+          ).join(" · ")}.
+        </p>
       )}
       {doneMandatory.length > 0 && (
         <p className="mt-2 text-[10px] text-emerald-700 dark:text-emerald-400">

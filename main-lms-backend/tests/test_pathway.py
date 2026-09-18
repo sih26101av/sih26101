@@ -300,6 +300,52 @@ def test_classroom_cap_defers_the_ladder(tmp_path, monkeypatch):
     assert plan["classroomHours"] == 0.0 and plan["classroomCapHours"] == 2.0
 
 
+# ── Cross-competency prerequisite DAG (SCIL v6 §5, B4) ────────────────────────
+
+def _edge(a, la, b, lb):
+    return {"id": f"{a}>{b}", "from": {"competencyId": a, "level": la},
+            "to": {"competencyId": b, "level": lb}, "source": "expert"}
+
+
+def test_prerequisite_edge_orders_the_dependent_ladder_after_its_prerequisite(engine):
+    first = engine.build_study_plan(_two_level1_ladders(engine))["steps"][0]["advances"][0]["competencyId"]
+    other = "comp_b" if first == "comp_a" else "comp_a"
+    # make the normally-first ladder depend on the other one
+    plan = engine.build_study_plan(_two_level1_ladders(engine), prerequisites=[_edge(other, 1, first, 1)],
+                                   current_levels={"comp_a": 0, "comp_b": 0})
+    order = [s["advances"][0]["competencyId"] for s in plan["steps"]]
+    assert order == [other, first]
+    assert [a["status"] for a in plan["prerequisitesApplied"]] == ["ordered"]
+
+
+def test_unmet_prerequisite_defers_the_ladder_with_its_reason(engine):
+    # comp_a L1 needs comp_b L1, but comp_b's course doesn't fit the budget
+    plan = engine.build_study_plan(_two_level1_ladders(engine, hours_b=5.0), budget_hours=2.0,
+                                   prerequisites=[_edge("comp_b", 1, "comp_a", 1)],
+                                   current_levels={"comp_a": 0, "comp_b": 0})
+    assert plan["steps"] == []
+    reasons = {d["competencyId"]: d["reason"] for d in plan["deferred"]}
+    assert reasons["comp_b"] == "over budget"
+    assert reasons["comp_a"] == "prerequisite: Price Index Level 1 first"
+    assert plan["prerequisitesApplied"][0]["status"] == "blocked"
+
+
+def test_unknown_prerequisite_level_is_advisory_only(engine):
+    plan = engine.build_study_plan(_two_level1_ladders(engine),
+                                   prerequisites=[_edge("comp_zzz", 3, "comp_a", 1)],
+                                   current_levels={"comp_a": 0, "comp_b": 0})
+    assert {s["advances"][0]["competencyId"] for s in plan["steps"]} == {"comp_a", "comp_b"}
+    assert plan["prerequisitesApplied"][0]["status"] == "advisory"
+
+
+def test_already_met_prerequisite_changes_nothing(engine):
+    base = engine.build_study_plan(_two_level1_ladders(engine))
+    plan = engine.build_study_plan(_two_level1_ladders(engine), prerequisites=[_edge("comp_zzz", 2, "comp_a", 1)],
+                                   current_levels={"comp_a": 0, "comp_b": 0, "comp_zzz": 3})
+    assert [s["courseId"] for s in plan["steps"]] == [s["courseId"] for s in base["steps"]]
+    assert plan["prerequisitesApplied"] == []
+
+
 # ── Crosswalk: role competency ids outside the catalogue's FRAC set ───────────
 
 def test_crosswalk_exact_semantic_and_rejected(engine):

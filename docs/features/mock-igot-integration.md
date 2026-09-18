@@ -55,6 +55,11 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/gsbpm/v1/map`
   - `GET /api/org/v1/offices`
   - `GET /api/org/v1/offices/{officeId}`
+  - `GET /api/frac/v1/prerequisites` — expert prerequisite edges
+    (`fetch_prerequisites()`).
+  - `GET /api/course/v1/assessment/outcomes?competencyId=&courseId=` — course
+    pre/post θ assessments + non-taker comparison episodes
+    (`fetch_course_outcomes()`).
   - `GET /api/cbplan/v1/user/{userId}` — one official's ACBP: the
     organisation-wide + role mandatory (APAR-linked) courses,
     `learningHoursPerQuarter`, `cycle`. Adapter: `fetch_user_cbplan()` (None on

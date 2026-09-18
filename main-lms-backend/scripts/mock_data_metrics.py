@@ -164,7 +164,8 @@ def live_metrics(n_users: int = 20) -> dict:
     hours, plan_hours, mismatches, gate_violations = [], [], 0, 0
     no_content_comps = collections.Counter()
     opp_mix = collections.Counter()
-    plan_steps = tie_breaks = 0
+    plan_steps = tie_breaks = mandatory_steps = 0
+    prereq_mix = collections.Counter()
     for uid in users:
         sg = _get(f"{API}/api/v1/learner/{uid}/skill-gaps", headers=auth)
         rec = _get(f"{API}/api/v1/learner/{uid}/recommendations", headers=auth)
@@ -183,6 +184,9 @@ def live_metrics(n_users: int = 20) -> dict:
             xw_mix[(g.get("crosswalk") or {}).get("method", "none")] += 1
             if g.get("gapScore"):
                 opp_mix[(g.get("opportunity") or {}).get("level", "none")] += 1
+        for a in pw.get("studyPlan", {}).get("prerequisitesApplied", []):
+            prereq_mix[a["status"]] += 1
+        mandatory_steps += sum(1 for s in pw.get("studyPlan", {}).get("steps", []) if s.get("mandatory"))
         for s in pw.get("studyPlan", {}).get("steps", []):
             plan_steps += 1
             tie_breaks += s.get("selectedBy") == "opportunity_tie_break"
@@ -204,6 +208,8 @@ def live_metrics(n_users: int = 20) -> dict:
         "opportunityMixOnGaps": dict(opp_mix),
         "studyPlanSteps": plan_steps,
         "opportunityTieBreaks": tie_breaks,
+        "mandatoryPlanSteps": mandatory_steps,
+        "prerequisiteEffects": dict(prereq_mix),
         "pathwayStatusMix": dict(status_mix),
         "noContentCompetencies": dict(no_content_comps),
         "pathwayTotalHours": {"n": len(hours), "min": min(hours) if hours else None,

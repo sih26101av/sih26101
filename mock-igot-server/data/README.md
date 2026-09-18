@@ -54,6 +54,8 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 | `gsbpm_map.json` | GSBPM v5.1 phases and sub-processes (+ `OA.*` overarching), FRAC competency → sub-processes | `GET /api/gsbpm/v1/map` |
 | `offices.json` | 12 offices: sub-processes run in `FY2026-27-Q2` with officer-hours each, headcount, products | `GET /api/org/v1/offices[/{id}]` |
 | `acbp.json` | Annual Capacity Building Plan FY2026-27: org-wide + per-role APAR-linked mandatory courses, learning hours per quarter per official | `GET /api/cbplan/v1/user/{id}` |
+| `prerequisites.json` | 18 expert-seeded prerequisite edges (competency@level → competency@level), acyclic | `GET /api/frac/v1/prerequisites` |
+| `course_outcomes.json` | Platform-wide, anonymised pre/post θ course assessments + non-taker comparison episodes (one record per line) | `GET /api/course/v1/assessment/outcomes` |
 | `_truth/planted_effects.json` | **Ground truth for tests only**: latent true levels and planted effects. The server never serves it and the backend never reads it | (not served) |
 | `MANIFEST.json` | Synthetic-data label + hashes | (not served) |
 
@@ -176,6 +178,47 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
   staff get 4 h less, with a minimum of 14. Every official therefore has
   ≥ 56 h a year, above the Mission Karmayogi ≥ 50 h/year guidance
   (`KARMAYOGI_MIN_HOURS_PER_YEAR`, quoted in the file's `_meta`).
+
+### Prerequisites + course outcomes (B4 / B5)
+
+**Prerequisites**
+- `mockdata/domain.py::EXPERT_PREREQUISITES` holds 18 hand-written edges, each
+  with a rationale. `generate_mock_data.find_cycle` checks them together with
+  the implicit ladder edges `c@L-1 → c@L`, and generation fails on a cycle.
+
+**Course outcomes** (`course_outcomes.json`) — every effect is **planted**. The
+ground truth is in `_truth/planted_effects.json`.
+
+- **Learners:**
+  - Every completed roster enrolment gets one record (`learnerId` = `usr_…`).
+  - Anonymised iGOT learners (`lrn_…`) are added per course:
+    `clip(round(enrollment_count / TAKERS_PER_ENROLMENTS (250)), 2, 30)`.
+  - Courses in a planted-precedence group get at least `PLANTED_GROUP_TAKERS =
+    18` takers, so the effect is testable.
+- **Pre-course ability:**
+  - Normal cases: `pre = level − 1 + U(0.15, 0.85)`.
+  - Out-of-order roster learners: their latent θ − 0.3.
+- **True course uplift:**
+  - `N(TRUE_UPLIFT_MEAN = 0.55, TRUE_UPLIFT_SD = 0.15)`, clipped to
+    [0.2, 1.0], so most courses help by about half a level.
+  - The 4 planted popular courses get `N(0.02, 0.02)`, i.e. about zero.
+- **Fit:** a learner gets 30% of the uplift if already at the course's level,
+  and 50% if more than 2 levels below it.
+- **Maturation (the confounder):**
+  `MATURATION_BASE + MATURATION_SLOPE·pre = 0.03 + 0.05·pre`. Strong officers
+  grow faster even without a course, and they are the ones who take advanced
+  courses, so a naive takers-vs-non-takers comparison overstates uplift for
+  advanced courses.
+- **Covariates:** tenure ≈ 3 + 5·pre + N(0, 4); `education`; `priorLevel` =
+  ⌊pre⌋.
+- **Measurement noise:** `ASSESSMENT_NOISE_SD = 0.20` on each θ.
+- **Planted precedence** (`PLANTED_PRECEDENCE`):
+  - SPSS/SAS before Survey Design L3: +0.35. This is not an expert edge.
+  - Index Numbers before Price Statistics L3: +0.25. This backs an expert edge.
+  - `PLANTED_PRIOR_SHARE = 0.5` of those groups did the prerequisite first.
+- **Comparison episodes:** `CONTROLS_PER_COMPETENCY = 40` non-takers per
+  competency, with pre ~ Triangular(0.1, 4.9, mode 2) and a 30–120-day
+  interval.
 
 ## Deliberate holes and planted cases
 

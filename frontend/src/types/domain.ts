@@ -163,6 +163,27 @@ export interface PathwayStep {
   action?: 'practice_assessment';
   /** the course is an APAR-linked mandatory ACBP course */
   mandatory?: boolean;
+  /** cross-competency prerequisites this step depends on (SCIL v6 §5) */
+  prerequisites?: StepPrerequisite[];
+}
+
+export interface StepPrerequisite {
+  competencyId: string;
+  competencyName: string;
+  level: number;
+  currentLevel: number | null;
+  /** null → the official's level on it is unknown (advisory only) */
+  met: boolean | null;
+  rationale?: string;
+  source: string;
+}
+
+export interface AppliedPrerequisite {
+  edgeId: string | null;
+  from: { competencyId: string; competencyName: string; level: number };
+  to: { competencyId: string; competencyName: string; level: number };
+  /** ordered: the rung waited, then ran after its prerequisite · blocked: never met in this plan · advisory: level unknown */
+  status: 'ordered' | 'blocked' | 'advisory';
 }
 
 export interface LearningPathway {
@@ -236,6 +257,7 @@ export interface StudyPlan {
   classroomCapHours?: number | null;
   classroomHours?: number;
   mandatory?: MandatoryCourse[];
+  prerequisitesApplied?: AppliedPrerequisite[];
   diagnostics: { competencyId: string; competencyName: string; reason: string }[];
   steps: StudyPlanStep[];
   deferred: {

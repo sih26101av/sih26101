@@ -9,8 +9,8 @@
  "files": {
   "_truth/planted_effects.json": {
    "synthetic": true,
-   "sha256": "0ddbf2dfe1183ec88d1709900c561d3d77cae342ed27404b53a82fb41a416f4c",
-   "bytes": 83707
+   "sha256": "d268ade1e785c6e9da2f4e893a4bb776ace40e7dd9368efecd5c80aff95127cd",
+   "bytes": 102497
   },
   "acbp.json": {
    "synthetic": true,
@@ -19,18 +19,23 @@
   },
   "content_states.json": {
    "synthetic": true,
-   "sha256": "26c8ae7edcc0238c63d88f02bbf79820b8f42403ba2c42044deab88d9f4ceee7",
-   "bytes": 832560
+   "sha256": "8b24bd8403808a56d8dec4d8c3afd24264aa4edbd1857dd67072e3f8ee865061",
+   "bytes": 541637
   },
   "course_catalog.json": {
    "synthetic": true,
    "sha256": "68c4eb1805dc0013dadefb455cf7d0ba336e9dd4aea4fd87071338d3dc9c8424",
    "bytes": 732119
   },
+  "course_outcomes.json": {
+   "synthetic": true,
+   "sha256": "69b4a4a618cbedaa7cf7e47f4eb4e0c39454a48251e18f15bf0fc7b11e2eb912",
+   "bytes": 1326364
+  },
   "enrollments.json": {
    "synthetic": true,
-   "sha256": "60f11764ebf7a5e0e7675c0e2f4d8a28f6869c8767f965f4c6ecb607778e5985",
-   "bytes": 683058
+   "sha256": "190e42b13e7292ca47528cef0d11c4eb9bcd73f8fc8eccb3a435b81e011a2e4f",
+   "bytes": 592529
   },
   "frac_competencies.json": {
    "synthetic": true,
@@ -52,6 +57,11 @@
    "sha256": "304ebb247b5fc7409ba58b4505234260b66e48d861e1f3f7e5977619bb53b2b8",
    "bytes": 15730
   },
+  "prerequisites.json": {
+   "synthetic": true,
+   "sha256": "f532b409e120a71435a0e2e6c8857f763695b3d524aca71c794c2f5e30e6bf30",
+   "bytes": 5412
+  },
   "roles.json": {
    "synthetic": true,
    "sha256": "6206a44a9135f9cf7013f9321278704d1550bb9a8b0a740f45b498182f5a20b3",
@@ -59,8 +69,8 @@
   },
   "userdata.json": {
    "synthetic": true,
-   "sha256": "ac8c8a0a8d72fb0e4582e13f88447d2651c03a0a5686503dc2c0df5d1b0cfb4b",
-   "bytes": 632808
+   "sha256": "f4066a4a1c1a16e9afcfa0c0089dc3731ae0bd4520da7fe307d575aa90e71c1b",
+   "bytes": 491256
   }
  }
 }

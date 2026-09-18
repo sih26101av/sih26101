@@ -92,7 +92,8 @@ DB_COMPETENCIES: list[dict] = []     # competencies.json — the iGOT competency
 DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
 # SCIL v6 reference data (data/<file>) — see data/README.md
-REFERENCE_FILES = ["gsbpm_map.json", "offices.json", "acbp.json"]
+REFERENCE_FILES = ["gsbpm_map.json", "offices.json", "acbp.json", "prerequisites.json",
+                   "course_outcomes.json"]
 DB_REF: dict[str, Any] = {}
 
 # Seed data for user / enrolment / content-state lookups
@@ -960,6 +961,45 @@ async def get_office(office_id: str, x_authenticated_user_token: str | None = He
     if office is None:
         return sunbird_err(API_ID, VER, 404, "ERR_OFFICE_NOT_FOUND", f"Office '{office_id}' does not exist.")
     return sunbird_ok(API_ID, VER, {"office": office, "cycle": data["cycle"]})
+
+
+# ─────────────────────────────────────────────────────────────
+# Prerequisite DAG + course outcome assessments (SCIL v6 §5 / §6)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/frac/v1/prerequisites")
+async def get_prerequisites(x_authenticated_user_token: str | None = Header(default=None)):
+    """Expert-seeded cross-competency prerequisite edges (competency@level → competency@level)."""
+    API_ID, VER = "api.frac.prerequisites.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("prerequisites.json", API_ID, VER)
+    if err:
+        return err
+    return sunbird_ok(API_ID, VER, {"count": len(data["edges"]), "edges": data["edges"]})
+
+
+@app.get("/api/course/v1/assessment/outcomes")
+async def get_assessment_outcomes(
+    request: Request,
+    x_authenticated_user_token: str | None = Header(default=None),
+):
+    """
+    Pre/post course assessments (θ on the FRAC level scale) for course takers
+    plus comparison episodes for non-takers — platform-wide, anonymised,
+    synthetic. ?competencyId= / ?courseId= filter.
+    """
+    API_ID, VER = "api.course.assessment.outcomes", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("course_outcomes.json", API_ID, VER)
+    if err:
+        return err
+    comp = request.query_params.get("competencyId")
+    course = request.query_params.get("courseId")
+    outcomes = [o for o in data["outcomes"]
+                if (not comp or o["competencyId"] == comp) and (not course or o["courseId"] == course)]
+    comparisons = [c for c in data["comparisons"] if not comp or c["competencyId"] == comp]
+    return sunbird_ok(API_ID, VER, {"scale": data.get("scale"), "count": len(outcomes),
+                                    "outcomes": outcomes, "comparisons": comparisons})
 
 
 # ─────────────────────────────────────────────────────────────

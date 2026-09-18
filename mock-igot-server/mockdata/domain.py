@@ -660,3 +660,55 @@ OFFICE_HEADCOUNT = {
     "off_fod_north": 420, "off_fod_east": 380, "off_dpd": 110, "off_capd": 40, "off_dqad": 35,
     "off_nssta": 55,
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cross-competency prerequisites (B4) — expert-seeded, hand-written.
+# (from competency, level) must be reached before (to competency, level).
+# ─────────────────────────────────────────────────────────────────────────────
+EXPERT_PREREQUISITES = [
+    ("comp_index_numbers_004", 2, "comp_price_stats_003", 3,
+     "CPI compilation applies Laspeyres-type index formulas and chain-linking."),
+    ("comp_survey_design_002", 2, "comp_poverty_014", 3,
+     "Poverty estimates come from weighted consumption-survey data."),
+    ("comp_survey_design_002", 3, "comp_econ_census_007", 4,
+     "Census follow-up surveys are designed on the census frame."),
+    ("comp_survey_design_002", 2, "comp_industry_stats_010", 3,
+     "ASI's sample sector is a stratified sample from the factory frame."),
+    ("comp_index_numbers_004", 3, "comp_industry_stats_010", 4,
+     "IIP and ASI deflation need index-number theory."),
+    ("comp_nat_accounts_001", 3, "comp_gdp_nowcast_011", 3,
+     "Nowcasts target the national-accounts GDP concept and its revisions."),
+    ("comp_time_series_013", 2, "comp_gdp_nowcast_011", 3,
+     "Bridge and factor models are time-series models."),
+    ("comp_python_stats_017", 2, "comp_ml_stats_005", 2,
+     "ML exercises are taught in Python."),
+    ("comp_db_design_029", 2, "comp_big_data_006", 3,
+     "Integrating administrative sources needs relational data modelling."),
+    ("comp_r_analytics_018", 2, "comp_time_series_013", 3,
+     "Seasonal adjustment labs use R (seasonal / X-13 interfaces)."),
+    ("comp_data_viz_019", 2, "comp_sdg_monitor_015", 3,
+     "SDG progress reports are dashboard-led."),
+    ("comp_data_gov_016", 2, "comp_data_privacy_026", 3,
+     "Disclosure control sits inside the data-governance framework."),
+    ("comp_spatial_stat_012", 2, "comp_agri_stats_009", 4,
+     "Remote-sensing crop forecasting needs GIS."),
+    ("comp_api_int_028", 2, "comp_e_gov_023", 3,
+     "Running digital services means integrating systems through APIs."),
+    ("comp_public_fin_025", 2, "comp_procurement_021", 4,
+     "Procurement decisions are bounded by budget rules."),
+    ("comp_leadership_032", 3, "comp_change_mgmt_035", 4,
+     "Leading change presupposes leading teams."),
+    ("comp_decision_037", 3, "comp_strategic_031", 4,
+     "Strategy is a sequence of decisions under uncertainty."),
+    ("comp_comm_032", 2, "comp_citizen_039", 3,
+     "Serving data users needs clear communication."),
+]
+
+# Planted precedence effects in the synthetic outcome data (B4 inference demo):
+# learners who completed a course on `a` before a Level-`level` course on `b`
+# gain `bonus` more on `b`. The first is NOT an expert edge (the inference
+# should surface it as a new suggestion); the second backs an expert edge.
+PLANTED_PRECEDENCE = [
+    ("comp_statistical_sw_030", "comp_survey_design_002", 3, 0.35),
+    ("comp_index_numbers_004", "comp_price_stats_003", 3, 0.25),
+]

@@ -93,6 +93,82 @@ It returns `{level, share, officerHours, officeId, officeName, cycle, subprocess
     their hours share.
   - `StudyPlanSummary` marks tie-break picks with "practise at work".
 
+## Cross-competency prerequisite DAG (SCIL v6 §5, B4)
+
+**Data**
+- `data/prerequisites.json` holds 18 expert-seeded edges
+  `{from:{competencyId, level}, to:{competencyId, level}, source:"expert", rationale}`,
+  hand-written in `mockdata/domain.py::EXPERT_PREREQUISITES`. The generator
+  refuses to write a cyclic set.
+- `data/course_outcomes.json` holds platform-wide pre/post assessments (see
+  B5). Each record lists `priorCompleted`, the competencies the learner had
+  finished before the course, which the inference uses.
+
+**Mock / adapter:** `GET /api/frac/v1/prerequisites` →
+`fetch_prerequisites()`; `GET /api/course/v1/assessment/outcomes` →
+`fetch_course_outcomes()`.
+
+**Validation** — `services/prerequisite_service.py`
+- `find_cycle` / `validate_edges` check the expert edges **together with the
+  implicit ladder edges** `c@L-1 → c@L`. For example, "B@2 needs A@3" plus
+  "A@2 needs B@3" is a cycle through the ladders.
+- A cyclic set is rejected as a whole. Plans then run without cross-competency
+  prerequisites, and the startup log and the admin endpoint show the cycle.
+- Self-edges and out-of-range levels are dropped (`invalid`).
+- `ReferenceData.prerequisites` holds only validated edges.
+
+**Enforcement** — `recommendation_service._PrerequisiteGate` inside `build_study_plan`:
+- A rung of X that closes level Lx is on the frontier only if every edge
+  `A@La → X@Lx` is met.
+- A's level is its ladder's progress **in this plan** if A has a ladder; otherwise
+  it is the official's current level (`current_levels`, keyed by catalogue id).
+- If A's level is unknown (A not in the profile, or UNASSESSED), the edge is
+  **advisory**: reported, never enforced, so a missing measurement can't
+  dead-end a plan.
+- A ladder that is never unblocked is deferred with the reason
+  `prerequisite: <A> Level La first`.
+- `absorb()` respects the gate too.
+- Plan output `prerequisitesApplied[]`: `{edgeId, from, to, status: ordered |
+  blocked | advisory}`.
+- Each pathway step gets `prerequisites[]` (`step_prerequisites`:
+  `{competencyId, competencyName, level, currentLevel, met: true|false|null,
+  rationale}`).
+
+**Data-driven suggestions** — `prerequisite_service.infer_edges(outcomes, expert_edges)`:
+1. For each (course competency B, level L) and each A that takers completed
+   earlier, fit OLS `gain_B ~ 1 + preθ + completedA`. The `completedA`
+   coefficient is the extra gain, adjusted for starting ability.
+2. Test pairs with ≥ `SUGGEST_MIN_GROUP = 8` learners on each side.
+3. Keep pairs that pass Benjamini–Hochberg at `SUGGEST_FDR = 0.10` with effect
+   ≥ `SUGGEST_MIN_EFFECT = 0.20` levels.
+4. Give each a 95% bootstrap CI (`BOOTSTRAP_ROUNDS = 400`, seeded).
+5. Mark it `new_suggestion` or `supports_expert_edge`, with `applied: false`
+   always.
+
+This is an observational association for expert review, not a causal claim, and
+**never auto-applied**.
+
+**Recovery of planted synthetic effects** (not validation): the generator plants
+two precedence bonuses.
+- SPSS/SAS before Survey Design L3 (+0.35) is not an expert edge. It comes out
+  as a `new_suggestion`: +0.23 [0.06, 0.42], n 20/27.
+- Index Numbers before Price Statistics L3 (+0.25) is an expert edge. It comes
+  out as `supports_expert_edge`: +0.32 [0.19, 0.45], n 18/23.
+- Only these 2 pairs reach the minimum group size in the synthetic data, so the
+  false-positive behaviour of the screen is **not** exercised by this data.
+
+**Endpoint:** `GET /api/v1/admin/prerequisites` returns `{edges, validation,
+enforced, inference{testedPairs, fdr, minEffect, minGroup, suggestions[],
+method}, dataNote}`. Inference is computed once and cached in
+`ReferenceData.cache`.
+
+**UI**
+- Learner ladder steps show "Needs <A> Level N first (you're at Level M)" or
+  "Builds on <A> Level N — your level there isn't assessed yet".
+- The study plan lists the ordering it applied.
+- Admin → Insights → "Prerequisite DAG" shows the edge table and the suggestion
+  table (effect, CI, n, status).
+
 ## TODOs / limits
 
 - GSBPM **v5.1** sub-process list; "5.2" was requested but could not be

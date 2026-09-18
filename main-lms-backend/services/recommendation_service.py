@@ -1150,7 +1150,8 @@ class HybridRecommendationEngine:
             if rungs:
                 ladders.append({"p": p, "rungs": rungs, "ptr": 0, "blocked": False, "why": None})
 
-        gate = _PrerequisiteGate(prerequisites, current_levels, ladders)
+        gate = _PrerequisiteGate(prerequisites, current_levels, ladders,
+                                 names={c: m.get("name", c) for c, m in self._frac_map.items()})
         plan: List[Dict[str, Any]] = []
         taken: Dict[str, Dict[str, Any]] = {}      # courseId → plan step
         totals = {"used": 0.0, "classroom": 0.0}
@@ -1195,11 +1196,14 @@ class HybridRecommendationEngine:
             taken[cid] = step
 
         def absorb() -> None:
-            """A ladder whose next rung is a course already in the plan advances for free."""
+            """A ladder whose next rung is a course already in the plan advances for free
+            (once its prerequisites are met — the gate still orders it)."""
             moved = True
             while moved:
                 moved = False
                 for m in open_ladders():
+                    if not gate.check(m)[0]:
+                        continue
                     cid = next((c for c in taken if self._satisfies(c, m)), None)
                     if cid is not None:
                         taken[cid]["advances"].append(advance(m, cid))
@@ -1357,13 +1361,65 @@ class HybridRecommendationEngine:
 
 
 class _PrerequisiteGate:
-    """Cross-competency prerequisite check for build_study_plan (filled in by B4)."""
+    """
+    Cross-competency prerequisite DAG for build_study_plan (SCIL v6 §5, B4).
 
-    def __init__(self, edges, current_levels, ladders):
-        self.applied: List[Dict[str, Any]] = []
+    A rung of competency X that closes level Lx is on the frontier only when
+    every edge A@La → X@Lx is met: A's level — its ladder's progress in THIS
+    plan, else the official's current level — is at least La. That is what
+    orders "A first, then X". An unknown level (A not in the official's
+    profile, or UNASSESSED) is advisory: reported, never enforced, so a
+    missing measurement can't dead-end a plan. Edges must already be
+    validated acyclic (prerequisite_service.validate_edges).
+    """
+
+    def __init__(self, edges, current_levels, ladders, names=None):
+        self._into: Dict[str, List[Dict[str, Any]]] = {}
+        for e in edges or []:
+            self._into.setdefault(e["to"]["competencyId"], []).append(e)
+        self._levels = dict(current_levels or {})
+        self._ladders = {l["p"]["catalogueCompetencyId"]: l for l in ladders}
+        self._names = names or {}
+        self._status: Dict[str, Dict[str, Any]] = {}
+
+    def level_of(self, comp: str) -> Optional[int]:
+        ladder = self._ladders.get(comp)
+        if ladder is not None:
+            return ladder["rungs"][ladder["ptr"] - 1]["toLevel"] if ladder["ptr"] else ladder["p"]["startLevel"]
+        return self._levels.get(comp)
 
     def check(self, ladder: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-        return True, None
+        comp = ladder["p"]["catalogueCompetencyId"]
+        rung = ladder["rungs"][ladder["ptr"]]
+        covers = set(rung.get("covers") or [rung["toLevel"]])
+        waiting = None
+        for e in self._into.get(comp, []):
+            if int(e["to"]["level"]) not in covers:
+                continue
+            a, need = e["from"]["competencyId"], int(e["from"]["level"])
+            have = self.level_of(a)
+            rec = self._status.setdefault(e.get("id") or f"{a}>{comp}", {
+                "edgeId": e.get("id"),
+                "from": {"competencyId": a, "competencyName": self._names.get(a, a), "level": need},
+                "to": {"competencyId": comp, "competencyName": ladder["p"]["competencyName"],
+                       "level": int(e["to"]["level"])},
+                "status": None,
+            })
+            if have is None:
+                rec["status"] = rec["status"] or "advisory"
+            elif have < need:
+                rec["status"] = "blocked"          # becomes "ordered" if it is met later in the plan
+                waiting = waiting or f"prerequisite: {self._names.get(a, a)} Level {need} first"
+            elif rec["status"] == "blocked":
+                rec["status"] = "ordered"
+            elif rec["status"] is None:
+                rec["status"] = "met"
+        return waiting is None, waiting
+
+    @property
+    def applied(self) -> List[Dict[str, Any]]:
+        """Edges that changed or annotate the plan: ordered (waited, then met), blocked, advisory."""
+        return [r for r in self._status.values() if r["status"] in ("ordered", "blocked", "advisory")]
 
 
 # ── Module helpers ─────────────────────────────────────────────────────────────
