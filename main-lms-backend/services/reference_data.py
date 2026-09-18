@@ -37,6 +37,7 @@ class ReferenceData:
         self.prerequisite_check: Dict[str, Any] = {}    # {cycle, rejected, invalid, received}
         self.outcomes: List[Dict[str, Any]] = []        # course pre/post assessments
         self.comparisons: List[Dict[str, Any]] = []     # non-taker comparison episodes
+        self.hrms: Dict[str, Any] = {}                  # {officials{userId: …}, products, productCriticalCompetencies}
         self.sources: Dict[str, str] = {}          # dataset → "adapter" | "disk" | "missing"
         self.cache: Dict[str, Any] = {}            # derived analytics computed once per process
 
@@ -75,6 +76,9 @@ class ReferenceData:
             ref.prerequisite_check = {k: check[k] for k in ("cycle", "rejected", "invalid")} | {"received": len(raw)}
             if check["rejected"]:
                 logger.error("[reference] prerequisite edges REJECTED — cycle: %s", " → ".join(check["cycle"]))
+        hrms = await ref._load("hrms", adapter.fetch_hrms, "hrms.json")
+        if hrms:
+            ref.hrms = {k: v for k, v in hrms.items() if k != "_meta"}
         outcomes = await ref._load("outcomes", adapter.fetch_course_outcomes, "course_outcomes.json")
         if outcomes:
             ref.outcomes = outcomes.get("outcomes", [])

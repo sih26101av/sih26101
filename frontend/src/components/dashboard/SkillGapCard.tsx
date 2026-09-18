@@ -120,6 +120,49 @@ const OpportunityBadge: React.FC<{ opportunity: NonNullable<SkillGapEntry['oppor
   );
 };
 
+// SCIL v6 §3 evidence channels — which ones carry evidence for this competency.
+const CHANNEL_LABEL: Record<string, string> = {
+  K: 'Knowledge (courses, certificates, quizzes)',
+  A: 'Application (auto-graded work sample)',
+  U: 'Utility (use at work, confirmed by supervisor)',
+  S: 'Supervisor rating (APAR)',
+};
+
+const EvidenceCompletenessRow: React.FC<{ entry: SkillGapEntry }> = ({ entry }) => {
+  const c = entry.evidenceCompleteness;
+  if (!c) return null;
+  const all = ['K', 'A', 'U', 'S'] as const;
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 mt-2"
+      title={`Channel weights: ${all.map(k => `${k} ${c.weights[k]}`).join(' · ')} — ${c.weightsStatus}.`}
+    >
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+        Evidence {c.present.length}/4:
+      </span>
+      {all.map(k => {
+        const on = c.present.includes(k);
+        return (
+          <span
+            key={k}
+            title={`${CHANNEL_LABEL[k]}: ${on ? `level ${entry.channels?.[k]?.toFixed(1)}` : 'no evidence yet'}`}
+            className={`text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border ${on
+              ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+              : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 border-slate-200 dark:border-slate-700'}`}
+          >
+            {k}
+          </span>
+        );
+      })}
+      {(entry.peerFeedback ?? 0) > 0 && (
+        <span className="text-[10px] text-slate-400 dark:text-slate-500">
+          · {entry.peerFeedback} peer rating{entry.peerFeedback === 1 ? '' : 's'} (context only, not scored)
+        </span>
+      )}
+    </div>
+  );
+};
+
 const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color: string }> = ({ label, value, max = 5, color }) => {
   const pct = Math.min(100, (value / max) * 100);
   return (
@@ -146,7 +189,10 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
   const hasGap = !unassessed && gap > 0;
   const badge = DOMAIN_BADGE[competency.domain] ?? DOMAIN_BADGE.Statistical;
   const conf = CONFIDENCE_CONFIG[confidence ?? 'LOW'];
-  const confLabel = basis === 'self_report' ? 'Self-reported' : conf.label;
+  const confLabel = basis === 'self_report' ? 'Self-reported'
+    : basis === 'work_sample' ? 'Work-sample'
+    : basis === 'applied_at_work' ? 'Applied-at-work'
+    : conf.label;
   const [showEvidence, setShowEvidence] = React.useState(false);
   const [showPath, setShowPath] = React.useState(false);
   const pathSteps = pathway?.steps.filter(s => s.kind !== 'bridge').length ?? 0;
@@ -206,6 +252,8 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
           </div>
         )}
 
+        <EvidenceCompletenessRow entry={entry} />
+
         {/* Evidence breakdown toggle */}
         {evidence && (
           <button
@@ -223,6 +271,14 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
             <EvidenceBar label="Education"   value={evidence.education}   color="bg-purple-400 dark:bg-purple-500" />
             <EvidenceBar label="Seniority"   value={evidence.seniority}   color="bg-sky-400 dark:bg-sky-500" />
             <EvidenceBar label="Self-Report" value={evidence.selfReport}  color="bg-rose-400 dark:bg-rose-500" />
+            <EvidenceBar label="Work sample" value={evidence.workSample ?? 0} color="bg-teal-400 dark:bg-teal-500" />
+            <EvidenceBar label="Used at work" value={evidence.utility ?? 0}  color="bg-lime-400 dark:bg-lime-500" />
+            <EvidenceBar label="Supervisor"  value={evidence.supervisor ?? 0} color="bg-orange-400 dark:bg-orange-500" />
+            <p className="text-[9.5px] text-slate-400 dark:text-slate-500 pt-1">
+              The first six feed the knowledge channel K; K, work sample, use at work and supervisor are fused
+              with equal placeholder weights (0.25 each) until an expert AHP elicitation sets them.
+              Supervisor ratings are not corrected for rater leniency.
+            </p>
           </div>
         )}
 

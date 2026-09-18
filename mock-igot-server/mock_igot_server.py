@@ -93,7 +93,7 @@ DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
 # SCIL v6 reference data (data/<file>) — see data/README.md
 REFERENCE_FILES = ["gsbpm_map.json", "offices.json", "acbp.json", "prerequisites.json",
-                   "course_outcomes.json"]
+                   "course_outcomes.json", "workplace_evidence.json", "hrms.json"]
 DB_REF: dict[str, Any] = {}
 
 # Seed data for user / enrolment / content-state lookups
@@ -1000,6 +1000,41 @@ async def get_assessment_outcomes(
     comparisons = [c for c in data["comparisons"] if not comp or c["competencyId"] == comp]
     return sunbird_ok(API_ID, VER, {"scale": data.get("scale"), "count": len(outcomes),
                                     "outcomes": outcomes, "comparisons": comparisons})
+
+
+@app.get("/api/hrms/v1/officials")
+async def get_hrms_officials(x_authenticated_user_token: str | None = Header(default=None)):
+    """HRMS-style service records (DOB, joining, superannuation, product assignment). Synthetic."""
+    API_ID, VER = "api.hrms.officials.list", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("hrms.json", API_ID, VER)
+    if err:
+        return err
+    return sunbird_ok(API_ID, VER, {k: v for k, v in data.items() if k != "_meta"}
+                      | {"count": len(data["officials"])})
+
+
+@app.get("/api/evidence/v1/user/{user_id}")
+async def get_user_workplace_evidence(user_id: str, x_authenticated_user_token: str | None = Header(default=None)):
+    """
+    One official's workplace evidence as EvidenceLog-style rows: SUPERVISOR_RATING
+    (APAR), UTILITY (will-use + supervisor confirmation), WORK_SAMPLE (auto-graded),
+    PEER_RATING (context only — never scored). Synthetic.
+    """
+    API_ID, VER = "api.evidence.user.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("workplace_evidence.json", API_ID, VER)
+    if err:
+        return err
+    if _user_by_id(user_id) is None:
+        return sunbird_err(API_ID, VER, 404, "ERR_USER_NOT_FOUND", f"User '{user_id}' does not exist.")
+    rows = [r for r in data["rows"] if r["userId"] == user_id]
+    return sunbird_ok(API_ID, VER, {
+        "userId": user_id, "count": len(rows), "rows": rows,
+        "supervisorId": data.get("supervisors", {}).get(user_id),
+        "supervisorItem": data.get("supervisorItem"), "utilityItem": data.get("utilityItem"),
+        "peerNote": data.get("peerNote"),
+    })
 
 
 # ─────────────────────────────────────────────────────────────

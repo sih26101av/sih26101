@@ -1011,6 +1011,169 @@ def build_outcomes(catalog: list, enrollments: list, users: list, facts: dict, h
     return doc, truth
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Workplace evidence channels (B6): Supervisor, Utility, Application + peer
+# EvidenceLog-style rows. Supervisor ratings are deliberately biased.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SUPERVISOR_COVERAGE = 0.85          # share of role competencies rated in the last APAR cycle
+SUPERVISOR_LENIENCY_MEAN = 0.4      # raters are lenient on average (+0.4 level) …
+SUPERVISOR_LENIENCY_SD = 0.3        # … and differ from one another
+SUPERVISOR_HALO_SD = 0.4            # one overall impression per official, shared by all their ratings
+SUPERVISOR_NOISE_SD = 0.4           # item-level noise
+APAR_CYCLE_END = date(2026, 4, 30)  # last annual appraisal (APAR) cycle
+UTILITY_WINDOW_DAYS = 90            # "will use within 90 days", confirmed by the supervisor afterwards
+UTILITY_YES_IN_ROLE, UTILITY_YES_OFF_ROLE = 0.75, 0.3
+UTILITY_CONFIRM_BY_OPPORTUNITY = {"High": 0.85, "Medium": 0.65, "Low": 0.35}
+WORK_SAMPLE_ATTEMPT_P = 0.5         # officials with a gradable competency who attempted a work sample
+WORK_SAMPLE_PASS = 70               # pass mark (0–100)
+PEER_RATING_P = 0.15                # officials with peer feedback on a competency (never scored)
+
+
+def _office_opportunity(office_id: str, comp: str) -> str:
+    """Same bands as the backend's gsbpm_service.opportunity, on the office's sub-process weights."""
+    office = next(o for o in D.OFFICES if o[0] == office_id)
+    weights = office[5]
+    share = sum(w for s, w in weights.items() if s in set(D.GSBPM_MAP[comp])) / sum(weights.values())
+    return "High" if share >= 0.20 else "Medium" if share >= 0.05 else "Low"
+
+
+def build_workplace_evidence(users: list, enrollments: list, catalog: list, facts: dict) -> tuple[dict, dict]:
+    truth = facts["truth"]
+    by_id = {c["identifier"]: c for c in catalog}
+    rows = []
+    supervisors = {}
+    leniency = {}
+    for u in users:
+        uid, office = u["userId"], u["jobProfile"]["officeId"]
+        rng = rng_for(f"evidence:{uid}")
+        sup = f"sup_{office[4:]}_{zlib_short(uid) % 4 + 1}"          # 4 reporting officers per office
+        supervisors[uid] = sup
+        if sup not in leniency:
+            leniency[sup] = round(rng_for(f"leniency:{sup}").gauss(SUPERVISOR_LENIENCY_MEAN, SUPERVISOR_LENIENCY_SD), 3)
+        halo = rng.gauss(0, SUPERVISOR_HALO_SD)
+        rated_on = datetime(APAR_CYCLE_END.year, APAR_CYCLE_END.month, APAR_CYCLE_END.day, 9, 0,
+                            tzinfo=timezone.utc) + timedelta(days=rng.randint(0, 45))
+
+        for comp in u["competencies"]:
+            cid = comp["id"]
+            t = truth[uid][cid]
+            # S — supervisor rating: one structured item on the FRAC descriptors, 1–5
+            if rng.random() < SUPERVISOR_COVERAGE:
+                raw = t["theta"] + leniency[sup] + halo + rng.gauss(0, SUPERVISOR_NOISE_SD)
+                rows.append({"userId": uid, "compId": cid, "evidenceType": "SUPERVISOR_RATING",
+                             "grantedValue": int(min(5, max(1, round(raw)))), "issueDate": iso(rated_on),
+                             "source": "APAR-SPARROW", "meta": {"raterId": sup, "cycle": "2025-26"}})
+            # A — auto-graded work sample at the next level (or the current one)
+            tasks = D.WORK_SAMPLE_TASKS.get(cid)
+            if tasks and rng.random() < WORK_SAMPLE_ATTEMPT_P:
+                level = min(4, max(2, t["trueLevel"] + (1 if rng.random() < 0.5 else 0)))
+                p = 1 / (1 + math.exp(-2.2 * (t["theta"] - level)))
+                score = int(min(100, max(0, round(100 * p + rng.gauss(0, 8)))))
+                when = ref_minus(rng.uniform(15, 540), rng)
+                rows.append({"userId": uid, "compId": cid, "evidenceType": "WORK_SAMPLE",
+                             "grantedValue": level, "issueDate": iso(when), "source": "LMS-work-sample",
+                             "meta": {"taskId": f"ws_{cid[5:]}_L{level}", "task": tasks[level], "level": level,
+                                      "score": score, "passMark": WORK_SAMPLE_PASS,
+                                      "passed": score >= WORK_SAMPLE_PASS, "grader": "auto"}})
+            # peer feedback — recorded, never scored
+            if rng.random() < PEER_RATING_P:
+                rows.append({"userId": uid, "compId": cid, "evidenceType": "PEER_RATING",
+                             "grantedValue": int(min(5, max(1, round(t["theta"] + rng.gauss(0.6, 0.8))))),
+                             "issueDate": iso(ref_minus(rng.uniform(10, 300), rng)), "source": "360-feedback"})
+
+        # U — utility item on course completion, supervisor confirmation after 90 days
+        role = {c["id"] for c in u["competencies"]}
+        for e in enrollments:
+            if e["userId"] != uid or e["status"] != 2:
+                continue
+            completed = datetime.fromisoformat(e["completedDate"].replace("Z", "+00:00"))
+            if (ref_minus(0) - completed).days > 2 * 365:
+                continue
+            tag = next(t2 for t2 in course_tags(by_id[e["courseId"]]) if t2.get("primary"))
+            comp, level = tag["id"], int(tag["competencyLevel"][-1])
+            in_role = comp in role
+            will_use = rng.random() < (UTILITY_YES_IN_ROLE if in_role else UTILITY_YES_OFF_ROLE)
+            due = completed + timedelta(days=UTILITY_WINDOW_DAYS)
+            if not will_use:
+                confirmed = None
+            elif due > ref_minus(0):
+                confirmed = None                                  # confirmation not due yet
+            else:
+                p = UTILITY_CONFIRM_BY_OPPORTUNITY[_office_opportunity(u["jobProfile"]["officeId"], comp)]
+                confirmed = rng.random() < (p if in_role else p / 2)
+            rows.append({"userId": uid, "compId": comp, "evidenceType": "UTILITY",
+                         "grantedValue": level if confirmed else 0, "issueDate": iso(due if confirmed else completed),
+                         "source": "LMS-utility-survey",
+                         "meta": {"courseId": e["courseId"], "courseLevel": level, "willUse": will_use,
+                                  "confirmed": confirmed, "due": due.date().isoformat()}})
+    rows.sort(key=lambda r: (r["userId"], r["compId"], r["evidenceType"], r["issueDate"]))
+    doc = {
+        "_meta": meta("Workplace evidence (EvidenceLog-style rows): SUPERVISOR_RATING (APAR, lenient + halo "
+                      "bias built in), UTILITY (will-use-within-90-days + supervisor confirmation), WORK_SAMPLE "
+                      "(auto-graded tasks, 10 competencies), PEER_RATING (context only — never scored)."),
+        "supervisorItem": "Rate the officer's current proficiency in this competency against the FRAC level "
+                          "descriptors (1–5).",
+        "utilityItem": "I will use what this course taught within 90 days (yes/no); the reporting officer confirms "
+                       "the use after 90 days.",
+        "peerNote": "Peer ratings are shown for context and never scored.",
+        "supervisors": supervisors,
+        "rows": rows,
+    }
+    return doc, {"supervisorLeniency": dict(sorted(leniency.items())),
+                 "supervisorBias": {"leniencyMean": SUPERVISOR_LENIENCY_MEAN, "leniencySd": SUPERVISOR_LENIENCY_SD,
+                                    "haloSd": SUPERVISOR_HALO_SD, "noiseSd": SUPERVISOR_NOISE_SD}}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HRMS: dates of birth / joining, superannuation, product assignment (B8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+RETIREMENT_AGE = 60                 # Central Government superannuation age
+ENTRY_AGE_RANGE = (22, 31)          # age at joining the service
+
+
+def _last_day_of_month(d: date) -> date:
+    nxt = date(d.year + (d.month == 12), d.month % 12 + 1, 1)
+    return nxt - timedelta(days=1)
+
+
+def build_hrms(users: list) -> dict:
+    offices = {o[0]: o for o in D.OFFICES}
+    officials = {}
+    for u in users:
+        rng = rng_for(f"hrms:{u['userId']}")
+        exp = int(u["experienceYears"])
+        age = min(59.7, rng.uniform(*ENTRY_AGE_RANGE) + exp)          # still in service today
+        dob = REF_DATE - timedelta(days=int(age * 365.25))
+        doj = REF_DATE - timedelta(days=int(exp * 365.25) + rng.randint(0, 180))
+        sixty = date(dob.year + RETIREMENT_AGE, dob.month, min(dob.day, 28))
+        products = offices[u["jobProfile"]["officeId"]][4]
+        k = min(len(products), rng.choice([1, 1, 2]))
+        officials[u["userId"]] = {
+            "dateOfBirth": dob.isoformat(),
+            "dateOfJoining": doj.isoformat(),
+            # GoI rule: retire on the afternoon of the last day of the month of the 60th birthday
+            "superannuationDate": _last_day_of_month(sixty).isoformat(),
+            "products": sorted(rng.sample(products, k)) if k else [],
+            "serviceStatus": "in_service",
+        }
+    return {
+        "_meta": meta("HRMS-style service records: date of birth / joining, superannuation date "
+                      f"(age {RETIREMENT_AGE}, last day of the month), statistical products each official "
+                      "works on. Synthetic."),
+        "asOf": REF_DATE.isoformat(),
+        "retirementAge": RETIREMENT_AGE,
+        "products": D.PRODUCTS,
+        "productCriticalCompetencies": D.PRODUCT_CRITICAL,
+        "officials": officials,
+    }
+
+
+def zlib_short(text: str) -> int:
+    return int(hashlib.sha1(text.encode()).hexdigest()[:8], 16)
+
+
 def dumps_records(doc: dict, list_keys: tuple) -> str:
     """JSON with the big record lists written one record per line."""
     parts = []
@@ -1055,6 +1218,7 @@ def generate() -> dict:
     users, roles, facts = build_officials(roster_seed, catalog)
     enrollments, states, planted = build_enrollments(users, catalog, facts)
     outcomes, outcome_truth = build_outcomes(catalog, enrollments, users, facts, hidden, planted["outOfOrder"])
+    workplace, workplace_truth = build_workplace_evidence(users, enrollments, catalog, facts)
 
     files = {
         "frac_competencies.json": dumps(frac),
@@ -1068,6 +1232,8 @@ def generate() -> dict:
         "acbp.json": dumps(build_acbp(roles, users, catalog)),
         "prerequisites.json": dumps(build_prerequisites()),
         "course_outcomes.json": dumps_records(outcomes, ("outcomes", "comparisons")),
+        "workplace_evidence.json": dumps_records(workplace, ("rows",)),
+        "hrms.json": dumps(build_hrms(users)),
         "roles.json": dumps({"_meta": meta("Role (office × designation) competency profiles; requiredLevel "
                                            "drawn from the designation tier."), "roles": roles}),
         "_truth/planted_effects.json": dumps({
@@ -1079,6 +1245,7 @@ def generate() -> dict:
             "zeroUpliftCourses": hidden["zeroUpliftCourses"],
             "trueLevels": facts["truth"],
             **outcome_truth,
+            **workplace_truth,
         }),
     }
     manifest = {

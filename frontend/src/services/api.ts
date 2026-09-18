@@ -233,6 +233,9 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
     evidenceLevel:      g.evidenceLevel ?? null,
     crosswalk:          g.crosswalk ?? null,
     opportunity:        g.opportunity ?? null,
+    channels:           g.channels ?? null,
+    evidenceCompleteness: g.evidenceCompleteness ?? null,
+    peerFeedback:       g.peerFeedback ?? 0,
     rawScore:           g.rawScore,
     evidence:           g.evidence,
   }));

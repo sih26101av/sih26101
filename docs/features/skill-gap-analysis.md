@@ -65,8 +65,41 @@ three can never disagree.
   "Self-reported" label, per-channel `EvidenceBar`, "Not yet assessed" section,
   per-gap learning-path toggle — see
   [recommendation-engine.md](recommendation-engine.md)).
+- **SCIL v6 §3 evidence channels (B6).** The 6-term `b_k` above is channel
+  **K** (knowledge). Three workplace channels are fused with it:
+  - **A (application).** Auto-graded work samples. A passed Level-L sample
+    counts as L; a failed one counts as L − 0.5.
+  - **U (utility).** The highest course level whose use the supervisor
+    confirmed ≥ 90 days after completion.
+  - **S (supervisor).** The latest APAR rating, 1–5.
+
+  How it is computed:
+  - `competency_service.fuse_channels` takes a weighted mean over the channels
+    present, with `CHANNEL_WEIGHTS = 0.25` each. These weights are an
+    **explicitly labelled equal placeholder** (`CHANNEL_WEIGHTS_STATUS`) until
+    an expert AHP elicitation exists; nothing is fitted.
+  - `baseline_assembler._workplace_channels` reads EvidenceLog-style rows
+    (`WORK_SAMPLE`, `UTILITY`, `SUPERVISOR_RATING`). `PEER_RATING` rows are
+    counted (`peerFeedback`) and **never scored**.
+  - Confidence comes from the strongest objective channel: a passed work sample
+    gives HIGH; confirmed use lifts LOW/UNASSESSED to MEDIUM; a supervisor
+    rating alone gives LOW. The ceilings (5.0 / 3.5 / 2.5) still apply, so a
+    lenient rater without objective evidence can't push a level above 2.
+  - `resolve_level` gains two monotone floors: `workSampleLevel` (HIGH,
+    basis `work_sample`) and `appliedLevel` (MEDIUM, basis `applied_at_work`).
+    A supervisor rating is never a floor.
+  - Assessments now carry `knowledgeScore` (b_k), `score` (fused),
+    `channels{K,A,U,S}` and `completeness{present, missing, weights,
+    weightsStatus}`.
+  - The workplace rows come from the mock at
+    `GET /api/evidence/v1/user/{id}` (`MockIgotAdapter.fetch_user_evidence`).
+    `_learner_competency_state` merges them with the LMS's own `EvidenceLog`
+    rows.
 - Tests: `main-lms-backend/tests/test_pathway.py` (formula renormalisation,
-  monotone levels, partial progress, crosswalked evidence, UNASSESSED).
+  monotone levels, partial progress, crosswalked evidence, UNASSESSED),
+  `tests/test_evidence_channels.py` (equal weights, renormalisation,
+  lenient-rater ceiling, work-sample and confirmed-use floors, peer never
+  scored, monotonicity).
 
 ## In / out
 
@@ -80,9 +113,15 @@ three can never disagree.
   "skillGaps": [{ "competencyId", "skillName", "domain", "currentLevel",
                   "targetLevel", "gapScore", "confidence", "basis", "evidenceLevel",
                   "rawScore", "crosswalk", "opportunity",
+                  "channels": { "K","A","U","S" },
+                  "evidenceCompleteness": { "present","missing","weights","weightsStatus" },
+                  "peerFeedback",
                   "evidence": { "verified","documented","tenure","selfReport",
-                                "education","seniority" } }] }
+                                "education","seniority","workSample","utility",
+                                "supervisor" } }] }
 ```
+`rawScore` is the fused K/A/U/S score. `basis` also takes `work_sample` and
+`applied_at_work` values.
 `opportunity` (SCIL v6 §4, `null` when the office is unknown) =
 `{level: Low|Medium|High, share, officerHours, officeId, officeName, cycle,
 subprocesses[]}` — see [workforce-insights.md](workforce-insights.md).
@@ -110,6 +149,13 @@ context.
 - If `_assembler` fails to build at startup, levels fall back to self-report only.
 - Sessions are opened with `next(get_db())` rather than via `Depends(get_db)`.
 - `routers/competency.py::/baseline` still uses the legacy count-based synergy path.
-- Not implemented from SCIL v6: Bayesian IRT posteriors / CAT, Tier-2 attribute
-  mastery, expected-shortfall gaps, cohort-prior cold start, opportunity badge
-  (no data on which work each office runs).
+- **Supervisor ratings are not corrected for rater leniency.** The synthetic
+  raters are lenient by +0.4 levels on average, plus halo. With equal weights,
+  S raises the fused level where K is weak; the ceilings bound it only when no
+  objective evidence exists. A per-rater leniency correction needs repeated
+  ratings per rater and is a TODO.
+- Opportunity badge: done (B1).
+- Tier-2 attribute mastery (DINA) is not built. It needs 30–50 real
+  respondents; synthetic data is not enough.
+- Bayesian IRT, CAT, cold start and expected-shortfall gaps are covered by the
+  B7/B8 items; see [workforce-insights.md](workforce-insights.md).

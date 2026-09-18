@@ -712,3 +712,40 @@ PLANTED_PRECEDENCE = [
     ("comp_statistical_sw_030", "comp_survey_design_002", 3, 0.35),
     ("comp_index_numbers_004", "comp_price_stats_003", 3, 0.25),
 ]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Auto-gradable work samples (B6, SCIL v6 §3 Application channel) — 10
+# competencies with a task at L2–L4 that a script can mark.
+# ─────────────────────────────────────────────────────────────────────────────
+WORK_SAMPLE_TASKS = {
+    "comp_price_stats_003": {2: "Validate a month of price quotes and flag outliers",
+                             3: "Compute elementary aggregates and a CPI sub-index from quotes",
+                             4: "Rebase and link a CPI series across a basket revision"},
+    "comp_index_numbers_004": {2: "Compute Laspeyres and Paasche indices from a price-quantity table",
+                               3: "Chain-link three annual index segments",
+                               4: "Diagnose index drift under chaining"},
+    "comp_survey_design_002": {2: "Compute design weights for a two-stage sample",
+                               3: "Estimate a proportion and its standard error from survey microdata",
+                               4: "Allocate a stratified sample under a variance target"},
+    "comp_nat_accounts_001": {2: "Compile GVA by industry from output and intermediate consumption",
+                              3: "Build a supply-use balance for five products",
+                              4: "Reconcile production- and expenditure-side GDP"},
+    "comp_time_series_013": {2: "Decompose a monthly series into trend and seasonal parts",
+                             3: "Seasonally adjust an indicator and check residual seasonality",
+                             4: "Model festival effects in a monthly series"},
+    "comp_python_stats_017": {2: "Clean and tabulate a survey extract in pandas",
+                              3: "Write a weighted-estimation function with tests",
+                              4: "Refactor a tabulation script into a reusable package"},
+    "comp_r_analytics_018": {2: "Summarise a dataset with dplyr",
+                             3: "Produce weighted estimates with the survey package",
+                             4: "Fit and diagnose a regression model"},
+    "comp_db_design_029": {2: "Write SQL joins to assemble a tabulation extract",
+                           3: "Normalise a flat survey table into a schema",
+                           4: "Index and tune a slow query"},
+    "comp_statistical_sw_030": {2: "Produce a weighted frequency table in SPSS",
+                                3: "Run a complex-survey procedure in SAS",
+                                4: "Automate a publication table set with syntax"},
+    "comp_data_viz_019": {2: "Choose and build the right chart for a release table",
+                          3: "Design an accessible dashboard page",
+                          4: "Show uncertainty in a published chart"},
+}

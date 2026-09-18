@@ -27,9 +27,14 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-from services.competency_service import CompetencyCalculator
+from services.competency_service import (
+    CHANNEL_WEIGHTS, CHANNEL_WEIGHTS_STATUS, CompetencyCalculator, fuse_channels,
+)
 
 _calculator = CompetencyCalculator()
+
+# Anti-gaming ceilings by confidence tier (same values as CompetencyCalculator).
+_CONFIDENCE_CEILING = {"HIGH": 5.0, "MEDIUM": 3.5, "LOW": 2.5, "UNASSESSED": 0.0}
 
 # Credit for a completed course whose FRAC tag carries no level (legacy maps).
 _UNLEVELLED_COMPLETION_CREDIT = 3.5
@@ -160,20 +165,77 @@ def resolve_level(assessment: Dict, self_reported_level: int = 0) -> Dict:
     """
     formula_level = assessment.get("currentLevel")          # None when UNASSESSED
     formula_conf  = assessment.get("confidence", "UNASSESSED")
-    completed     = int(assessment.get("completedLevel") or 0)
 
     evidence_level: Optional[int] = None
     confidence, basis = "UNASSESSED", "none"
     if formula_level is not None:
         evidence_level, confidence, basis = formula_level, formula_conf, "evidence"
-    if completed and (evidence_level is None or completed > evidence_level):
-        evidence_level, confidence, basis = completed, "HIGH", "course_completion"
+    # Demonstrated-level floors: a completed Level-N course, a passed Level-N work
+    # sample (SCIL v6 §3 A), a supervisor-confirmed use of a Level-N course (U).
+    # A supervisor rating is NOT a floor — raters are lenient — it only enters
+    # the fused estimate above.
+    for floor, conf, why in (
+        (int(assessment.get("completedLevel") or 0), "HIGH", "course_completion"),
+        (int(assessment.get("workSampleLevel") or 0), "HIGH", "work_sample"),
+        (int(assessment.get("appliedLevel") or 0), "MEDIUM", "applied_at_work"),
+    ):
+        if floor and (evidence_level is None or floor > evidence_level):
+            evidence_level, confidence, basis = floor, conf, why
 
     if self_reported_level and (evidence_level is None or self_reported_level > evidence_level):
         return {"level": self_reported_level, "confidence": "LOW",
                 "basis": "self_report", "evidenceLevel": evidence_level}
     return {"level": evidence_level, "confidence": confidence,
             "basis": basis, "evidenceLevel": evidence_level}
+
+
+def _row_type(r: Dict) -> str:
+    return r.get("evidence_type") or r.get("evidenceType") or ""
+
+
+def _row_value(r: Dict) -> float:
+    return float(r.get("granted_value") or r.get("grantedValue") or 0)
+
+
+def _row_date(r: Dict) -> str:
+    d = r.get("issue_date") or r.get("issueDate") or ""
+    return d.isoformat() if isinstance(d, datetime) else str(d)
+
+
+def _workplace_channels(rows: List[Dict]) -> Dict[str, Any]:
+    """
+    SCIL v6 §3 workplace channels for one competency, on the 0–5 level scale:
+      A — work samples: a passed Level-L sample shows L; a failed one shows
+          "not yet L" (L − 0.5). Channel value = the best attempt.
+      U — utility: the highest course level whose use the supervisor confirmed.
+      S — supervisor rating (1–5), the most recent one.
+    Peer ratings are counted for display only — never a channel.
+    """
+    a_vals, ws_floor, u_floor, s_latest, peer = [], 0, 0, None, 0
+    for r in rows:
+        etype, meta = _row_type(r), r.get("meta") or {}
+        if etype == "WORK_SAMPLE":
+            level = int(meta.get("level") or _row_value(r))
+            passed = bool(meta.get("passed"))
+            a_vals.append(float(level) if passed else max(0.0, level - 0.5))
+            if passed:
+                ws_floor = max(ws_floor, level)
+        elif etype == "UTILITY":
+            if meta.get("confirmed") and _row_value(r) > 0:
+                u_floor = max(u_floor, int(_row_value(r)))
+        elif etype == "SUPERVISOR_RATING":
+            if s_latest is None or _row_date(r) > _row_date(s_latest):
+                s_latest = r
+        elif etype == "PEER_RATING":
+            peer += 1
+    return {
+        "A": max(a_vals) if a_vals else None,
+        "U": float(u_floor) if u_floor else None,
+        "S": _row_value(s_latest) if s_latest is not None else None,
+        "workSampleLevel": ws_floor,
+        "appliedLevel": u_floor,
+        "peer": peer,
+    }
 
 
 def _normalise_course_map(course_comp_map: Dict) -> Dict[str, Dict[str, Optional[int]]]:
@@ -313,17 +375,45 @@ class BaselineAssembler:
                 comp_id=tag_id(cid),                    # Bug #4 (catalogue id space)
             )
 
-            # FIX (Bug #1): UNASSESSED → currentLevel = None, never fabricated.
-            # Otherwise the highest FRAC level fully reached. b_k is already on
-            # the 0-5 level scale (channels are renormalised) and bounded by
-            # the confidence ceiling, so no further rescaling or capping.
-            current_level = None if conf == "UNASSESSED" else max(0, min(5, int(b_k)))
+            # ── SCIL v6 §3: fuse K (this b_k) with the workplace channels A/U/S ──
+            work = _workplace_channels(rows_for(cid))
+            knowledge = None if conf == "UNASSESSED" else b_k
+            fused = fuse_channels({"K": knowledge, "A": work["A"], "U": work["U"], "S": work["S"]})
+            # Confidence from the strongest OBJECTIVE channel: a passed work sample
+            # is demonstrated performance (HIGH); supervisor-confirmed use lifts a
+            # LOW/UNASSESSED estimate to MEDIUM; a supervisor rating alone is LOW.
+            # The anti-gaming ceilings still apply, so a lenient rater with no
+            # objective evidence behind them cannot lift the level above 2.5.
+            if work["workSampleLevel"]:
+                conf = "HIGH"
+            elif work["appliedLevel"] and conf in ("LOW", "UNASSESSED"):
+                conf = "MEDIUM"
+            elif fused is not None and conf == "UNASSESSED":
+                conf = "LOW"
+            score = 0.0 if fused is None else min(fused, _CONFIDENCE_CEILING[conf])
 
+            # FIX (Bug #1): UNASSESSED → currentLevel = None, never fabricated.
+            # Otherwise the highest FRAC level fully reached. The score is on the
+            # 0-5 level scale (channels are renormalised) and bounded by the
+            # confidence ceiling, so no further rescaling or capping.
+            current_level = None if conf == "UNASSESSED" else max(0, min(5, int(score)))
+
+            channels = {"K": knowledge, "A": work["A"], "U": work["U"], "S": work["S"]}
             results[cid] = {
-                "score":      b_k,
+                "score":      round(score, 3),
+                "knowledgeScore": b_k,
                 "confidence": conf,
                 "currentLevel":   current_level,          # None when UNASSESSED
                 "completedLevel": completed_levels.get(cid, 0),
+                "workSampleLevel": work["workSampleLevel"],   # evidence floor (passed work sample)
+                "appliedLevel":    work["appliedLevel"],      # evidence floor (supervisor-confirmed use)
+                "channels": {k: (round(v, 3) if v is not None else None) for k, v in channels.items()},
+                "completeness": {
+                    "present": [k for k, v in channels.items() if v is not None],
+                    "missing": [k for k, v in channels.items() if v is None],
+                    "weights": CHANNEL_WEIGHTS, "weightsStatus": CHANNEL_WEIGHTS_STATUS,
+                },
+                "peerFeedback": work["peer"],
                 "_evidence": {
                     "verified":   round(vs, 3),
                     "documented": round(ds, 3),
@@ -331,6 +421,9 @@ class BaselineAssembler:
                     "selfReport": round(srs, 3),
                     "education":  round(es, 3),
                     "seniority":  round(sen, 3),
+                    "workSample": round(work["A"] or 0.0, 3),
+                    "utility":    round(work["U"] or 0.0, 3),
+                    "supervisor": round(work["S"] or 0.0, 3),
                 },
             }
         return results

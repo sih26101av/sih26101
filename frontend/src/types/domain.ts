@@ -68,7 +68,19 @@ export interface Course {
 export type EvidenceConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNASSESSED';
 
 /** Which evidence set the displayed level (backend resolve_level). */
-export type LevelBasis = 'evidence' | 'course_completion' | 'self_report' | 'none';
+export type LevelBasis =
+  'evidence' | 'course_completion' | 'work_sample' | 'applied_at_work' | 'self_report' | 'none';
+
+/** SCIL v6 §3 channels: K knowledge · A application (work sample) · U utility (confirmed use) · S supervisor */
+export type EvidenceChannel = 'K' | 'A' | 'U' | 'S';
+
+export interface EvidenceCompleteness {
+  present: EvidenceChannel[];
+  missing: EvidenceChannel[];
+  weights: Record<EvidenceChannel, number>;
+  /** "equal placeholder — pending expert AHP elicitation" */
+  weightsStatus: string;
+}
 
 /** Catalogue FRAC competency that serves a role competency (backend crosswalk). */
 export interface CompetencyCrosswalk {
@@ -119,7 +131,15 @@ export interface SkillGapEntry {
     selfReport: number;
     education: number;
     seniority: number;
+    workSample?: number;
+    utility?: number;
+    supervisor?: number;
   };
+  /** K/A/U/S channel values on the 0–5 scale; null = no evidence in that channel */
+  channels?: Record<EvidenceChannel, number | null> | null;
+  evidenceCompleteness?: EvidenceCompleteness | null;
+  /** number of peer ratings on record — shown for context, never scored */
+  peerFeedback?: number;
 }
 
 export interface SkillGapReport {

@@ -21,8 +21,8 @@ validation against real officials.
 | B2+B1 GSBPM + opportunity | done | `8c8f495` | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
 | B3 ACBP + budget + modality | done | `aaa6356` | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
 | B4 Prerequisite DAG | done | `e9dcdee` | 18 expert edges, cycle-checked with the ladders (cyclic set rejected); gate orders/blocks rungs, unknown levels advisory; data-driven suggestions (OLS + BH-FDR 10% + bootstrap CI) never applied; recovers both planted precedence effects |
-| B5 Measured gain / uplift | done | (B5 commit) | IPW (ATT) uplift per course + shrinkage κ=5 + bootstrap CI; mis-tag flag; all 4 planted zero-uplift courses flagged (and nothing else); r=0.91 vs planted truth (n≥15); flagged courses demoted in pathways; admin effectiveness view |
-| B6 Evidence channels U/S/A | pending | | |
+| B5 Measured gain / uplift | done | `1761b34` | IPW (ATT) uplift per course + shrinkage κ=5 + bootstrap CI; mis-tag flag; all 4 planted zero-uplift courses flagged (and nothing else); r=0.91 vs planted truth (n≥15); flagged courses demoted in pathways; admin effectiveness view |
+| B6 Evidence channels U/S/A | done | (B6 commit) | `workplace_evidence.json` (supervisor w/ leniency+halo, utility + confirmation, 10-competency work samples, peer); K/A/U/S fused with equal 0.25 placeholder weights; work-sample / confirmed-use floors; completeness indicator; peer never scored |
 | B8 Decay + cold start + foresight | pending | | |
 | B7 Item bank + IRT + CAT | pending | | |
 
@@ -219,6 +219,28 @@ Duration by format after Phase A (min / median / p90 / max, hours):
 43. **CI coverage of the planted truth is 80%, not 95%.** The intervals are
     conditional on the fitted propensity model and share control pools. This is
     stated in the doc and not hidden.
+
+44. **K = the existing 6-term baseline.** SCIL v6 §3 names four channels.
+    The old six terms (courses, certificates, quizzes, tenure, education,
+    seniority, self-report) are the knowledge/prior side, so their b_k is
+    channel K. A, U and S are fused with it. With no workplace evidence the
+    fused score equals b_k exactly, so nothing changes for those competencies
+    and the existing tests stay green.
+45. **Channel values on the level scale.**
+    - A: a passed Level-L work sample = L; a failed one = L − 0.5 ("not yet L").
+    - U: the highest course level whose use the supervisor confirmed.
+    - S: the latest rating.
+46. **Floors.** A passed work sample (HIGH) and confirmed use (MEDIUM) are
+    monotone floors in `resolve_level`, like course completion. A supervisor
+    rating is never a floor, because raters are lenient.
+47. **No leniency correction.** Estimating each rater's leniency needs
+    repeated ratings per rater. With the equal placeholder weights, lenient
+    ratings raise fused levels where K is weak; the confidence ceilings bound
+    that when no objective evidence exists. This is documented as a TODO.
+48. **Workplace evidence is served by the mock iGOT side** (APAR / utility
+    survey / work-sample service) and merged per request with the LMS's own
+    `EvidenceLog` rows. It is not written into `auth.db`, so the fixtures stay
+    the single source.
 
 ## Could not do / blocked
 

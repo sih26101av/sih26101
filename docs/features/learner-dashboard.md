@@ -52,7 +52,10 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     APAR-linked mandatory courses carry a "Mandatory (ACBP)" chip (also on the
     matching ladder step), completed mandatory courses are listed, and ladders
     that don't fit ("over budget" / "classroom cap") are listed as continued next
-    quarter.
+    quarter. `EvidenceCompletenessRow` shows which SCIL v6 §3 channels (K/A/U/S)
+    carry evidence (tooltip: value + the equal placeholder weights) and the
+    number of peer ratings ("context only, not scored"); the evidence breakdown
+    adds Work sample / Used at work / Supervisor bars.
   - `CompetencyOverviewTable.tsx` — compact gap table for the overview: domain filter
     chips with live counts, `LevelPips` current vs target, gap chip, priority badge
     (`priorityOf`), per-row "find courses", "show all" toggle.

@@ -62,6 +62,27 @@ ADJACENT_COMPETENCIES: Dict[str, list] = {
 SYNERGY_CAP = 0.15  # maximum bonus from adjacency, regardless of how many fire
 
 
+# ── SCIL v6 §3 evidence channels ──────────────────────────────────────────────
+#   K  Knowledge   — the 6-term baseline b_k below (courses, certificates, quizzes, priors)
+#   A  Application — auto-graded work samples
+#   U  Utility     — "will use within 90 days" + supervisor confirmation of the use
+#   S  Supervisor  — one structured APAR item, 1–5 against the FRAC descriptors
+# PLACEHOLDER WEIGHTS: equal (0.25 each) until an expert AHP elicitation exists.
+# They are NOT fitted or validated; a channel with no evidence is renormalised
+# out, exactly like the 6-term formula. Peer ratings are never a channel.
+CHANNEL_WEIGHTS = {"K": 0.25, "A": 0.25, "U": 0.25, "S": 0.25}
+CHANNEL_WEIGHTS_STATUS = "equal placeholder — pending expert AHP elicitation"
+
+
+def fuse_channels(channels: Dict[str, Optional[float]]) -> Optional[float]:
+    """Weighted mean over the K/A/U/S channels that carry evidence (None → absent)."""
+    present = {k: float(v) for k, v in channels.items() if v is not None and k in CHANNEL_WEIGHTS}
+    if not present:
+        return None
+    total = sum(CHANNEL_WEIGHTS[k] for k in present)
+    return sum(CHANNEL_WEIGHTS[k] * v for k, v in present.items()) / total
+
+
 class CompetencyCalculator:
     WEIGHTS = {
         'verified':     0.45,

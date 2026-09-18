@@ -270,6 +270,26 @@ def test_course_outcomes_are_consistent_with_catalogue_and_roster(data):
     assert min(others) >= 0.2                                                # most courses help
 
 
+def test_workplace_evidence_channels_have_the_planted_properties(data):
+    rows = data["workplace_evidence.json"]["rows"]
+    truth = data["_truth/planted_effects.json"]
+    role = {(u["userId"], c["id"]) for u in data["userdata.json"] for c in u["competencies"]}
+    sup = [r for r in rows if r["evidenceType"] == "SUPERVISOR_RATING"]
+    assert all((r["userId"], r["compId"]) in role and 1 <= r["grantedValue"] <= 5 for r in sup)
+    bias = sum(r["grantedValue"] - truth["trueLevels"][r["userId"]][r["compId"]]["theta"] for r in sup) / len(sup)
+    assert bias > 0.2                                                   # lenient on average
+    ws = [r for r in rows if r["evidenceType"] == "WORK_SAMPLE"]
+    assert {r["compId"] for r in ws} <= set(D.WORK_SAMPLE_TASKS)
+    assert all(r["meta"]["passed"] == (r["meta"]["score"] >= gen.WORK_SAMPLE_PASS) for r in ws)
+    for r in (r for r in rows if r["evidenceType"] == "UTILITY"):
+        if r["meta"]["confirmed"]:
+            assert r["meta"]["willUse"] and r["grantedValue"] == r["meta"]["courseLevel"]
+            assert r["meta"]["due"] <= gen.REF_DATE.isoformat()
+        else:
+            assert r["grantedValue"] == 0
+    assert any(r["evidenceType"] == "PEER_RATING" for r in rows)
+
+
 def test_profile_incomplete_officials_exist_for_unassessed(data):
     incomplete = set(data["_truth/planted_effects.json"]["profileIncomplete"])
     assert len(incomplete) == gen.N_PROFILE_INCOMPLETE

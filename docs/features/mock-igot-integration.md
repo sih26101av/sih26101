@@ -60,6 +60,9 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/course/v1/assessment/outcomes?competencyId=&courseId=` — course
     pre/post θ assessments + non-taker comparison episodes
     (`fetch_course_outcomes()`).
+  - `GET /api/evidence/v1/user/{userId}` — workplace evidence rows
+    (supervisor / utility / work sample / peer), EvidenceLog-shaped
+    (`fetch_user_evidence()`, merged into the baseline per request).
   - `GET /api/cbplan/v1/user/{userId}` — one official's ACBP: the
     organisation-wide + role mandatory (APAR-linked) courses,
     `learningHoursPerQuarter`, `cycle`. Adapter: `fetch_user_cbplan()` (None on

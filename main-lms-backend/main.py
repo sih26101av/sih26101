@@ -249,6 +249,21 @@ async def _learner_competency_state(user_id: str) -> dict:
     finally:
         db_session.close()
 
+    # SCIL v6 §3 workplace channels (supervisor / utility / work sample / peer),
+    # EvidenceLog-style rows from the iGOT side, merged with the LMS's own rows.
+    try:
+        for row in await adapter.fetch_user_evidence(user_id):
+            db_evidence.append({
+                "comp_id":       row.get("compId"),
+                "evidence_type": row.get("evidenceType"),
+                "granted_value": row.get("grantedValue"),
+                "issue_date":    row.get("issueDate"),
+                "source":        row.get("source"),
+                "meta":          row.get("meta") or {},
+            })
+    except Exception:
+        pass
+
     raw_comps = user.get("competencies") or \
                 (user.get("profileDetails") or {}).get("competencies") or []
     seen_ids: set = set()
@@ -294,6 +309,9 @@ async def _learner_competency_state(user_id: str) -> dict:
             "evidenceLevel": resolved["evidenceLevel"],
             "rawScore":      float(bline.get("score", 0.0)),
             "evidence":      bline.get("_evidence", {}),
+            "channels":      bline.get("channels"),       # SCIL v6 §3 K/A/U/S values (None = absent)
+            "completeness":  bline.get("completeness"),
+            "peerFeedback":  bline.get("peerFeedback", 0),
             "catalogueId":   (crosswalks[cid] or {}).get("catalogueId"),
             "crosswalk":     crosswalks[cid],                # None → not in catalogue
             # SCIL v6 §4: how much the official's office works in this
@@ -409,6 +427,9 @@ async def get_skill_gaps_by_user_id(
             "evidence":      row["evidence"],                # per-channel breakdown dict
             "crosswalk":     row["crosswalk"],               # catalogue competency serving it
             "opportunity":   row["opportunity"],             # Low | Medium | High this cycle (or None)
+            "channels":      row["channels"],                # K/A/U/S values, None = no evidence
+            "evidenceCompleteness": row["completeness"],     # present / missing channels + weight status
+            "peerFeedback":  row["peerFeedback"],            # count only — peer ratings are never scored
         })
 
     # Sort: known gaps first (largest gap, lowest score), UNASSESSED last

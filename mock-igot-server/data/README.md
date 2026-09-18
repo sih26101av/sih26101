@@ -56,6 +56,7 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 | `acbp.json` | Annual Capacity Building Plan FY2026-27: org-wide + per-role APAR-linked mandatory courses, learning hours per quarter per official | `GET /api/cbplan/v1/user/{id}` |
 | `prerequisites.json` | 18 expert-seeded prerequisite edges (competency@level → competency@level), acyclic | `GET /api/frac/v1/prerequisites` |
 | `course_outcomes.json` | Platform-wide, anonymised pre/post θ course assessments + non-taker comparison episodes (one record per line) | `GET /api/course/v1/assessment/outcomes` |
+| `workplace_evidence.json` | EvidenceLog-style rows: SUPERVISOR_RATING (lenient + halo), UTILITY (will-use + confirmation), WORK_SAMPLE (auto-graded, 10 competencies), PEER_RATING (never scored) | `GET /api/evidence/v1/user/{id}` |
 | `_truth/planted_effects.json` | **Ground truth for tests only**: latent true levels and planted effects. The server never serves it and the backend never reads it | (not served) |
 | `MANIFEST.json` | Synthetic-data label + hashes | (not served) |
 
@@ -219,6 +220,38 @@ ground truth is in `_truth/planted_effects.json`.
 - **Comparison episodes:** `CONTROLS_PER_COMPETENCY = 60` non-takers per
   competency, with pre ~ U(0.1, 4.9) (spread over all ability levels, so every
   course level has comparable non-takers) and a 30–120-day interval.
+
+### Workplace evidence (B6)
+
+All values below are named constants in `generate_mock_data.py`.
+
+- **Supervisor ratings (`SUPERVISOR_RATING`):**
+  - Each official has one of 4 reporting officers in their office
+    (`supervisors` map).
+  - `SUPERVISOR_COVERAGE = 0.85` of role competencies are rated in the
+    2025-26 APAR cycle (dated May–June 2026).
+  - rating = round(θ + leniency_rater + halo_official + noise), clipped to 1–5,
+    where:
+    - leniency ~ N(`SUPERVISOR_LENIENCY_MEAN = 0.4`, `SUPERVISOR_LENIENCY_SD = 0.3`)
+      per rater;
+    - halo ~ N(0, `SUPERVISOR_HALO_SD = 0.4`), shared by all of an official's
+      ratings;
+    - noise ~ N(0, `SUPERVISOR_NOISE_SD = 0.4`).
+  - Each rater's true leniency is in `_truth/`.
+- **Utility (`UTILITY`)**, one row per completed course in the last 2 years:
+  - "will use within `UTILITY_WINDOW_DAYS = 90`": yes with p .75 for a role
+    competency, .3 otherwise.
+  - Supervisor confirmation (once 90 days have passed): p = .85 / .65 / .35
+    for High / Medium / Low opportunity to practise in the official's office,
+    halved off-role.
+  - `grantedValue` = course level if confirmed, else 0.
+- **Work samples (`WORK_SAMPLE`):** `mockdata/domain.py::WORK_SAMPLE_TASKS`
+  holds 10 competencies × L2–L4.
+  - `WORK_SAMPLE_ATTEMPT_P = 0.5` of eligible officials attempted one at their
+    level or the next.
+  - score = 100·logistic(2.2·(θ − L)) + N(0, 8); pass at `WORK_SAMPLE_PASS = 70`.
+- **Peer ratings (`PEER_RATING`):** on `PEER_RATING_P = 0.15` of role
+  competencies, inflated. Shown for context; the backend never scores them.
 
 ## Deliberate holes and planted cases
 

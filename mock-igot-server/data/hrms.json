@@ -1,0 +1,1425 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "HRMS-style service records: date of birth / joining, superannuation date (age 60, last day of the month), statistical products each official works on. Synthetic."
+ },
+ "asOf": "2026-09-15",
+ "retirementAge": 60,
+ "products": {
+  "NAS": "National Accounts Statistics (GDP)",
+  "CPI": "Consumer Price Index",
+  "IIP": "Index of Industrial Production",
+  "ASI": "Annual Survey of Industries",
+  "PLFS": "Periodic Labour Force Survey",
+  "HCES": "Household Consumption Expenditure Survey",
+  "SDG-NIF": "SDG National Indicator Framework progress report",
+  "EnviStats": "EnviStats India",
+  "Economic Census": "Economic Census"
+ },
+ "productCriticalCompetencies": {
+  "NAS": [
+   "comp_nat_accounts_001",
+   "comp_gdp_nowcast_011",
+   "comp_index_numbers_004"
+  ],
+  "CPI": [
+   "comp_price_stats_003",
+   "comp_index_numbers_004"
+  ],
+  "IIP": [
+   "comp_index_numbers_004",
+   "comp_industry_stats_010"
+  ],
+  "ASI": [
+   "comp_industry_stats_010",
+   "comp_survey_design_002"
+  ],
+  "PLFS": [
+   "comp_survey_design_002",
+   "comp_statistical_sw_030"
+  ],
+  "HCES": [
+   "comp_survey_design_002",
+   "comp_poverty_014"
+  ],
+  "SDG-NIF": [
+   "comp_sdg_monitor_015",
+   "comp_data_viz_019"
+  ],
+  "EnviStats": [
+   "comp_sdg_monitor_015"
+  ],
+  "Economic Census": [
+   "comp_econ_census_007",
+   "comp_survey_design_002"
+  ]
+ },
+ "officials": {
+  "usr_720465595": {
+   "dateOfBirth": "1994-09-28",
+   "dateOfJoining": "2019-07-13",
+   "superannuationDate": "2054-09-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_200142973": {
+   "dateOfBirth": "1985-10-20",
+   "dateOfJoining": "2016-06-28",
+   "superannuationDate": "2045-10-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_674899856": {
+   "dateOfBirth": "1997-03-26",
+   "dateOfJoining": "2021-05-15",
+   "superannuationDate": "2057-03-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_381314639": {
+   "dateOfBirth": "1969-03-18",
+   "dateOfJoining": "1997-08-11",
+   "superannuationDate": "2029-03-31",
+   "products": [
+    "Economic Census",
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_808311398": {
+   "dateOfBirth": "1992-08-03",
+   "dateOfJoining": "2022-07-17",
+   "superannuationDate": "2052-08-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_332956649": {
+   "dateOfBirth": "1988-03-27",
+   "dateOfJoining": "2017-08-11",
+   "superannuationDate": "2048-03-31",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_312468211": {
+   "dateOfBirth": "1984-12-11",
+   "dateOfJoining": "2014-05-15",
+   "superannuationDate": "2044-12-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_779354803": {
+   "dateOfBirth": "1977-05-30",
+   "dateOfJoining": "2000-04-11",
+   "superannuationDate": "2037-05-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_561050563": {
+   "dateOfBirth": "1993-01-19",
+   "dateOfJoining": "2019-07-21",
+   "superannuationDate": "2053-01-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_709315470": {
+   "dateOfBirth": "1973-09-23",
+   "dateOfJoining": "2004-09-14",
+   "superannuationDate": "2033-09-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_567298419": {
+   "dateOfBirth": "1987-08-08",
+   "dateOfJoining": "2016-08-17",
+   "superannuationDate": "2047-08-31",
+   "products": [
+    "Economic Census",
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_791131756": {
+   "dateOfBirth": "1992-12-18",
+   "dateOfJoining": "2023-05-30",
+   "superannuationDate": "2052-12-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_931734840": {
+   "dateOfBirth": "1996-02-09",
+   "dateOfJoining": "2021-08-14",
+   "superannuationDate": "2056-02-29",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_446667253": {
+   "dateOfBirth": "1989-03-29",
+   "dateOfJoining": "2017-03-27",
+   "superannuationDate": "2049-03-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_838650189": {
+   "dateOfBirth": "1976-05-30",
+   "dateOfJoining": "2004-07-25",
+   "superannuationDate": "2036-05-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_401229255": {
+   "dateOfBirth": "1989-06-07",
+   "dateOfJoining": "2019-07-27",
+   "superannuationDate": "2049-06-30",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_819942770": {
+   "dateOfBirth": "1969-08-06",
+   "dateOfJoining": "1996-03-30",
+   "superannuationDate": "2029-08-31",
+   "products": [
+    "Economic Census",
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_514008800": {
+   "dateOfBirth": "1968-10-30",
+   "dateOfJoining": "1997-03-30",
+   "superannuationDate": "2028-10-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_300821686": {
+   "dateOfBirth": "1980-01-14",
+   "dateOfJoining": "2002-09-11",
+   "superannuationDate": "2040-01-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_553750815": {
+   "dateOfBirth": "1997-09-25",
+   "dateOfJoining": "2022-04-17",
+   "superannuationDate": "2057-09-30",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_343164953": {
+   "dateOfBirth": "1987-02-02",
+   "dateOfJoining": "2015-03-27",
+   "superannuationDate": "2047-02-28",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_174576347": {
+   "dateOfBirth": "2000-05-10",
+   "dateOfJoining": "2024-06-23",
+   "superannuationDate": "2060-05-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_118673248": {
+   "dateOfBirth": "1976-04-14",
+   "dateOfJoining": "1999-07-02",
+   "superannuationDate": "2036-04-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_423340207": {
+   "dateOfBirth": "1997-06-14",
+   "dateOfJoining": "2019-06-08",
+   "superannuationDate": "2057-06-30",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_505636313": {
+   "dateOfBirth": "1998-11-21",
+   "dateOfJoining": "2022-08-22",
+   "superannuationDate": "2058-11-30",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_108949508": {
+   "dateOfBirth": "1989-04-19",
+   "dateOfJoining": "2019-07-28",
+   "superannuationDate": "2049-04-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_986342308": {
+   "dateOfBirth": "1990-11-24",
+   "dateOfJoining": "2016-07-24",
+   "superannuationDate": "2050-11-30",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_134506505": {
+   "dateOfBirth": "1994-02-01",
+   "dateOfJoining": "2016-08-31",
+   "superannuationDate": "2054-02-28",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_191910073": {
+   "dateOfBirth": "1986-09-25",
+   "dateOfJoining": "2012-04-07",
+   "superannuationDate": "2046-09-30",
+   "products": [
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_129713590": {
+   "dateOfBirth": "1986-11-26",
+   "dateOfJoining": "2013-05-13",
+   "superannuationDate": "2046-11-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_106391818": {
+   "dateOfBirth": "1972-03-19",
+   "dateOfJoining": "2002-06-11",
+   "superannuationDate": "2032-03-31",
+   "products": [
+    "ASI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_156930079": {
+   "dateOfBirth": "1996-08-29",
+   "dateOfJoining": "2025-04-02",
+   "superannuationDate": "2056-08-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_643103454": {
+   "dateOfBirth": "1980-11-17",
+   "dateOfJoining": "2005-07-23",
+   "superannuationDate": "2040-11-30",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_298435923": {
+   "dateOfBirth": "1997-06-03",
+   "dateOfJoining": "2025-05-24",
+   "superannuationDate": "2057-06-30",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_590788362": {
+   "dateOfBirth": "1976-01-23",
+   "dateOfJoining": "2005-03-28",
+   "superannuationDate": "2036-01-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_477814318": {
+   "dateOfBirth": "1984-08-14",
+   "dateOfJoining": "2007-07-03",
+   "superannuationDate": "2044-08-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_723548418": {
+   "dateOfBirth": "1998-03-20",
+   "dateOfJoining": "2022-04-15",
+   "superannuationDate": "2058-03-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_286828884": {
+   "dateOfBirth": "1977-01-12",
+   "dateOfJoining": "2003-05-16",
+   "superannuationDate": "2037-01-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_505475993": {
+   "dateOfBirth": "1967-07-02",
+   "dateOfJoining": "1997-04-11",
+   "superannuationDate": "2027-07-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_486075687": {
+   "dateOfBirth": "1985-07-01",
+   "dateOfJoining": "2007-05-03",
+   "superannuationDate": "2045-07-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_236571776": {
+   "dateOfBirth": "1994-05-15",
+   "dateOfJoining": "2023-09-15",
+   "superannuationDate": "2054-05-31",
+   "products": [
+    "NAS",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_269504123": {
+   "dateOfBirth": "1991-03-30",
+   "dateOfJoining": "2015-04-23",
+   "superannuationDate": "2051-03-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_380118955": {
+   "dateOfBirth": "1971-09-12",
+   "dateOfJoining": "1997-09-01",
+   "superannuationDate": "2031-09-30",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_614076961": {
+   "dateOfBirth": "1997-03-01",
+   "dateOfJoining": "2025-04-16",
+   "superannuationDate": "2057-03-31",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_939475582": {
+   "dateOfBirth": "1996-08-02",
+   "dateOfJoining": "2018-07-12",
+   "superannuationDate": "2056-08-31",
+   "products": [
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_902595907": {
+   "dateOfBirth": "1984-03-14",
+   "dateOfJoining": "2010-04-11",
+   "superannuationDate": "2044-03-31",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_231400613": {
+   "dateOfBirth": "1991-02-20",
+   "dateOfJoining": "2014-09-09",
+   "superannuationDate": "2051-02-28",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_541129488": {
+   "dateOfBirth": "1992-11-15",
+   "dateOfJoining": "2018-05-18",
+   "superannuationDate": "2052-11-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_572744267": {
+   "dateOfBirth": "1975-12-16",
+   "dateOfJoining": "2004-03-24",
+   "superannuationDate": "2035-12-31",
+   "products": [
+    "ASI",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_671758865": {
+   "dateOfBirth": "1982-01-01",
+   "dateOfJoining": "2011-06-14",
+   "superannuationDate": "2042-01-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_714827309": {
+   "dateOfBirth": "1992-03-14",
+   "dateOfJoining": "2022-03-30",
+   "superannuationDate": "2052-03-31",
+   "products": [
+    "NAS",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_710358959": {
+   "dateOfBirth": "1995-07-04",
+   "dateOfJoining": "2017-07-15",
+   "superannuationDate": "2055-07-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_631425891": {
+   "dateOfBirth": "1989-01-09",
+   "dateOfJoining": "2017-09-07",
+   "superannuationDate": "2049-01-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_828413374": {
+   "dateOfBirth": "1983-01-12",
+   "dateOfJoining": "2005-05-03",
+   "superannuationDate": "2043-01-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_403959566": {
+   "dateOfBirth": "1976-05-05",
+   "dateOfJoining": "2003-04-14",
+   "superannuationDate": "2036-05-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_896763052": {
+   "dateOfBirth": "1993-07-11",
+   "dateOfJoining": "2017-06-26",
+   "superannuationDate": "2053-07-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_997657767": {
+   "dateOfBirth": "1982-01-19",
+   "dateOfJoining": "2006-05-09",
+   "superannuationDate": "2042-01-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_582075743": {
+   "dateOfBirth": "1987-03-09",
+   "dateOfJoining": "2012-06-06",
+   "superannuationDate": "2047-03-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_259341757": {
+   "dateOfBirth": "1976-04-10",
+   "dateOfJoining": "2003-05-07",
+   "superannuationDate": "2036-04-30",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_178398946": {
+   "dateOfBirth": "1974-09-12",
+   "dateOfJoining": "2002-08-07",
+   "superannuationDate": "2034-09-30",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_567818732": {
+   "dateOfBirth": "1975-10-21",
+   "dateOfJoining": "2002-04-15",
+   "superannuationDate": "2035-10-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_399895640": {
+   "dateOfBirth": "1991-01-26",
+   "dateOfJoining": "2014-08-19",
+   "superannuationDate": "2051-01-31",
+   "products": [
+    "HCES",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_277803636": {
+   "dateOfBirth": "1978-02-13",
+   "dateOfJoining": "2000-07-09",
+   "superannuationDate": "2038-02-28",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_107156607": {
+   "dateOfBirth": "1968-07-12",
+   "dateOfJoining": "1998-05-16",
+   "superannuationDate": "2028-07-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_398986845": {
+   "dateOfBirth": "1967-11-04",
+   "dateOfJoining": "1996-04-12",
+   "superannuationDate": "2027-11-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_952762961": {
+   "dateOfBirth": "1980-05-24",
+   "dateOfJoining": "2002-09-02",
+   "superannuationDate": "2040-05-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_403439088": {
+   "dateOfBirth": "1985-06-07",
+   "dateOfJoining": "2010-08-05",
+   "superannuationDate": "2045-06-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_805384990": {
+   "dateOfBirth": "1993-10-17",
+   "dateOfJoining": "2022-08-19",
+   "superannuationDate": "2053-10-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_599006405": {
+   "dateOfBirth": "1990-07-31",
+   "dateOfJoining": "2013-07-29",
+   "superannuationDate": "2050-07-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_158662128": {
+   "dateOfBirth": "1972-12-18",
+   "dateOfJoining": "2000-09-15",
+   "superannuationDate": "2032-12-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_196908109": {
+   "dateOfBirth": "1970-03-22",
+   "dateOfJoining": "1996-07-19",
+   "superannuationDate": "2030-03-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_455947683": {
+   "dateOfBirth": "1999-02-22",
+   "dateOfJoining": "2024-05-26",
+   "superannuationDate": "2059-02-28",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_905215527": {
+   "dateOfBirth": "1985-09-22",
+   "dateOfJoining": "2012-08-04",
+   "superannuationDate": "2045-09-30",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_898309178": {
+   "dateOfBirth": "1985-11-29",
+   "dateOfJoining": "2014-07-05",
+   "superannuationDate": "2045-11-30",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_686887321": {
+   "dateOfBirth": "1978-01-25",
+   "dateOfJoining": "2008-04-18",
+   "superannuationDate": "2038-01-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_322996651": {
+   "dateOfBirth": "1998-11-07",
+   "dateOfJoining": "2024-05-29",
+   "superannuationDate": "2058-11-30",
+   "products": [
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_839805543": {
+   "dateOfBirth": "1991-03-15",
+   "dateOfJoining": "2021-07-09",
+   "superannuationDate": "2051-03-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_114629222": {
+   "dateOfBirth": "1982-05-03",
+   "dateOfJoining": "2012-06-26",
+   "superannuationDate": "2042-05-31",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_873032900": {
+   "dateOfBirth": "1997-09-16",
+   "dateOfJoining": "2020-04-19",
+   "superannuationDate": "2057-09-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_867812836": {
+   "dateOfBirth": "1987-04-05",
+   "dateOfJoining": "2014-08-03",
+   "superannuationDate": "2047-04-30",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_115171420": {
+   "dateOfBirth": "1997-05-13",
+   "dateOfJoining": "2021-07-20",
+   "superannuationDate": "2057-05-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_660834469": {
+   "dateOfBirth": "1981-07-01",
+   "dateOfJoining": "2009-04-08",
+   "superannuationDate": "2041-07-31",
+   "products": [
+    "HCES",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_572112488": {
+   "dateOfBirth": "1977-02-12",
+   "dateOfJoining": "2003-09-16",
+   "superannuationDate": "2037-02-28",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_569486359": {
+   "dateOfBirth": "1988-03-30",
+   "dateOfJoining": "2011-04-21",
+   "superannuationDate": "2048-03-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_664790986": {
+   "dateOfBirth": "1992-04-13",
+   "dateOfJoining": "2017-06-22",
+   "superannuationDate": "2052-04-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_161447023": {
+   "dateOfBirth": "1999-06-24",
+   "dateOfJoining": "2022-03-21",
+   "superannuationDate": "2059-06-30",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_684205193": {
+   "dateOfBirth": "1993-05-22",
+   "dateOfJoining": "2019-04-03",
+   "superannuationDate": "2053-05-31",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_917432212": {
+   "dateOfBirth": "1986-04-10",
+   "dateOfJoining": "2008-06-22",
+   "superannuationDate": "2046-04-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_226395063": {
+   "dateOfBirth": "1970-01-29",
+   "dateOfJoining": "2000-04-15",
+   "superannuationDate": "2030-01-31",
+   "products": [
+    "NAS",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_333566606": {
+   "dateOfBirth": "1990-07-16",
+   "dateOfJoining": "2017-07-07",
+   "superannuationDate": "2050-07-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_313915836": {
+   "dateOfBirth": "1991-10-29",
+   "dateOfJoining": "2015-06-24",
+   "superannuationDate": "2051-10-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_640913819": {
+   "dateOfBirth": "1985-03-18",
+   "dateOfJoining": "2015-03-27",
+   "superannuationDate": "2045-03-31",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_212327318": {
+   "dateOfBirth": "1979-05-01",
+   "dateOfJoining": "2006-05-15",
+   "superannuationDate": "2039-05-31",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_618142267": {
+   "dateOfBirth": "1996-09-22",
+   "dateOfJoining": "2021-05-04",
+   "superannuationDate": "2056-09-30",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_457713985": {
+   "dateOfBirth": "1972-02-08",
+   "dateOfJoining": "1998-05-01",
+   "superannuationDate": "2032-02-29",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_568740794": {
+   "dateOfBirth": "1993-10-24",
+   "dateOfJoining": "2021-05-14",
+   "superannuationDate": "2053-10-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_919312568": {
+   "dateOfBirth": "1970-03-09",
+   "dateOfJoining": "1999-07-24",
+   "superannuationDate": "2030-03-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_755590808": {
+   "dateOfBirth": "1983-07-23",
+   "dateOfJoining": "2013-09-12",
+   "superannuationDate": "2043-07-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_981837331": {
+   "dateOfBirth": "1982-07-09",
+   "dateOfJoining": "2012-04-08",
+   "superannuationDate": "2042-07-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_158531054": {
+   "dateOfBirth": "1980-11-27",
+   "dateOfJoining": "2008-03-29",
+   "superannuationDate": "2040-11-30",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_511749730": {
+   "dateOfBirth": "1993-08-06",
+   "dateOfJoining": "2017-06-25",
+   "superannuationDate": "2053-08-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_462346788": {
+   "dateOfBirth": "1984-09-13",
+   "dateOfJoining": "2008-06-05",
+   "superannuationDate": "2044-09-30",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_235350127": {
+   "dateOfBirth": "1972-05-27",
+   "dateOfJoining": "1996-03-23",
+   "superannuationDate": "2032-05-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_904519313": {
+   "dateOfBirth": "1983-11-05",
+   "dateOfJoining": "2014-08-19",
+   "superannuationDate": "2043-11-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_607792264": {
+   "dateOfBirth": "1981-07-31",
+   "dateOfJoining": "2004-06-13",
+   "superannuationDate": "2041-07-31",
+   "products": [
+    "ASI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_395030606": {
+   "dateOfBirth": "1987-03-02",
+   "dateOfJoining": "2015-07-29",
+   "superannuationDate": "2047-03-31",
+   "products": [
+    "CPI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_471907995": {
+   "dateOfBirth": "2001-05-04",
+   "dateOfJoining": "2025-05-13",
+   "superannuationDate": "2061-05-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_770941214": {
+   "dateOfBirth": "1985-07-27",
+   "dateOfJoining": "2007-09-02",
+   "superannuationDate": "2045-07-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_291794383": {
+   "dateOfBirth": "1972-08-24",
+   "dateOfJoining": "1996-04-01",
+   "superannuationDate": "2032-08-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_290725138": {
+   "dateOfBirth": "1997-11-22",
+   "dateOfJoining": "2026-07-17",
+   "superannuationDate": "2057-11-30",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_754781192": {
+   "dateOfBirth": "1969-07-16",
+   "dateOfJoining": "1997-07-27",
+   "superannuationDate": "2029-07-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_322272362": {
+   "dateOfBirth": "1999-06-17",
+   "dateOfJoining": "2026-03-24",
+   "superannuationDate": "2059-06-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_134706089": {
+   "dateOfBirth": "1971-06-30",
+   "dateOfJoining": "2000-06-09",
+   "superannuationDate": "2031-06-30",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_989388663": {
+   "dateOfBirth": "1982-06-28",
+   "dateOfJoining": "2011-09-13",
+   "superannuationDate": "2042-06-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_861371949": {
+   "dateOfBirth": "1989-12-20",
+   "dateOfJoining": "2016-04-21",
+   "superannuationDate": "2049-12-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_868623785": {
+   "dateOfBirth": "1980-09-24",
+   "dateOfJoining": "2005-06-08",
+   "superannuationDate": "2040-09-30",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_730431863": {
+   "dateOfBirth": "1994-03-21",
+   "dateOfJoining": "2017-03-19",
+   "superannuationDate": "2054-03-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_935386554": {
+   "dateOfBirth": "1991-08-26",
+   "dateOfJoining": "2017-08-20",
+   "superannuationDate": "2051-08-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_893963123": {
+   "dateOfBirth": "1967-01-03",
+   "dateOfJoining": "1997-06-07",
+   "superannuationDate": "2027-01-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_154849742": {
+   "dateOfBirth": "2003-09-21",
+   "dateOfJoining": "2026-05-23",
+   "superannuationDate": "2063-09-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_910202901": {
+   "dateOfBirth": "1973-07-23",
+   "dateOfJoining": "2001-03-24",
+   "superannuationDate": "2033-07-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_295614589": {
+   "dateOfBirth": "1980-12-20",
+   "dateOfJoining": "2004-08-21",
+   "superannuationDate": "2040-12-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_754474303": {
+   "dateOfBirth": "1967-01-03",
+   "dateOfJoining": "1996-04-29",
+   "superannuationDate": "2027-01-31",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_995972094": {
+   "dateOfBirth": "1998-12-01",
+   "dateOfJoining": "2025-03-28",
+   "superannuationDate": "2058-12-31",
+   "products": [
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_856278148": {
+   "dateOfBirth": "1992-02-04",
+   "dateOfJoining": "2020-06-15",
+   "superannuationDate": "2052-02-29",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_876153361": {
+   "dateOfBirth": "1989-05-11",
+   "dateOfJoining": "2015-04-06",
+   "superannuationDate": "2049-05-31",
+   "products": [
+    "HCES",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_886461149": {
+   "dateOfBirth": "1976-01-08",
+   "dateOfJoining": "1998-06-03",
+   "superannuationDate": "2036-01-31",
+   "products": [
+    "ASI",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_929683513": {
+   "dateOfBirth": "1971-04-11",
+   "dateOfJoining": "1999-05-09",
+   "superannuationDate": "2031-04-30",
+   "products": [
+    "HCES",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_164731980": {
+   "dateOfBirth": "1977-02-07",
+   "dateOfJoining": "2006-04-22",
+   "superannuationDate": "2037-02-28",
+   "products": [],
+   "serviceStatus": "in_service"
+  },
+  "usr_304963844": {
+   "dateOfBirth": "1984-02-29",
+   "dateOfJoining": "2012-04-13",
+   "superannuationDate": "2044-02-29",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_377941235": {
+   "dateOfBirth": "1985-12-23",
+   "dateOfJoining": "2016-08-28",
+   "superannuationDate": "2045-12-31",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_555571081": {
+   "dateOfBirth": "1984-11-30",
+   "dateOfJoining": "2007-06-28",
+   "superannuationDate": "2044-11-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_233841187": {
+   "dateOfBirth": "1972-06-24",
+   "dateOfJoining": "2000-05-05",
+   "superannuationDate": "2032-06-30",
+   "products": [
+    "CPI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_486395102": {
+   "dateOfBirth": "1974-08-21",
+   "dateOfJoining": "1998-03-31",
+   "superannuationDate": "2034-08-31",
+   "products": [
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_422868194": {
+   "dateOfBirth": "1985-08-08",
+   "dateOfJoining": "2012-08-02",
+   "superannuationDate": "2045-08-31",
+   "products": [
+    "EnviStats"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_287515566": {
+   "dateOfBirth": "1979-03-23",
+   "dateOfJoining": "2002-04-18",
+   "superannuationDate": "2039-03-31",
+   "products": [
+    "CPI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_254984763": {
+   "dateOfBirth": "1985-10-27",
+   "dateOfJoining": "2010-03-20",
+   "superannuationDate": "2045-10-31",
+   "products": [
+    "IIP"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_375803064": {
+   "dateOfBirth": "1989-04-26",
+   "dateOfJoining": "2018-03-31",
+   "superannuationDate": "2049-04-30",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_298241468": {
+   "dateOfBirth": "1976-03-19",
+   "dateOfJoining": "1999-04-11",
+   "superannuationDate": "2036-03-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_355367302": {
+   "dateOfBirth": "1985-08-01",
+   "dateOfJoining": "2008-08-21",
+   "superannuationDate": "2045-08-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_226507324": {
+   "dateOfBirth": "1992-03-25",
+   "dateOfJoining": "2021-04-28",
+   "superannuationDate": "2052-03-31",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_343873669": {
+   "dateOfBirth": "1981-11-14",
+   "dateOfJoining": "2009-09-09",
+   "superannuationDate": "2041-11-30",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_937451724": {
+   "dateOfBirth": "1991-09-02",
+   "dateOfJoining": "2013-04-22",
+   "superannuationDate": "2051-09-30",
+   "products": [
+    "CPI",
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_518514926": {
+   "dateOfBirth": "1978-09-19",
+   "dateOfJoining": "2001-08-10",
+   "superannuationDate": "2038-09-30",
+   "products": [
+    "PLFS"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_966497057": {
+   "dateOfBirth": "1984-05-23",
+   "dateOfJoining": "2009-04-17",
+   "superannuationDate": "2044-05-31",
+   "products": [
+    "ASI",
+    "HCES"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_662899443": {
+   "dateOfBirth": "1977-12-30",
+   "dateOfJoining": "2002-09-06",
+   "superannuationDate": "2037-12-31",
+   "products": [
+    "ASI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_743221793": {
+   "dateOfBirth": "1993-11-24",
+   "dateOfJoining": "2022-05-17",
+   "superannuationDate": "2053-11-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_987190804": {
+   "dateOfBirth": "1970-09-27",
+   "dateOfJoining": "1999-05-04",
+   "superannuationDate": "2030-09-30",
+   "products": [
+    "Economic Census"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_774436940": {
+   "dateOfBirth": "1970-03-06",
+   "dateOfJoining": "2000-07-08",
+   "superannuationDate": "2030-03-31",
+   "products": [
+    "EnviStats",
+    "SDG-NIF"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_448442536": {
+   "dateOfBirth": "1985-06-09",
+   "dateOfJoining": "2015-07-05",
+   "superannuationDate": "2045-06-30",
+   "products": [
+    "CPI"
+   ],
+   "serviceStatus": "in_service"
+  },
+  "usr_EMP8472": {
+   "dateOfBirth": "1990-05-21",
+   "dateOfJoining": "2018-07-09",
+   "superannuationDate": "2050-05-31",
+   "products": [
+    "NAS"
+   ],
+   "serviceStatus": "in_service"
+  }
+ }
+}

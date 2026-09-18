@@ -167,6 +167,20 @@ class MockIgotAdapter(ILearningPlatformAdapter):
         """GET /api/course/v1/assessment/outcomes — {outcomes[], comparisons[]} pre/post θ records."""
         return await self._get_result("/api/course/v1/assessment/outcomes", timeout=30.0)
 
+    async def fetch_hrms(self) -> Dict[str, Any]:
+        """GET /api/hrms/v1/officials — {officials{userId: DOB, superannuationDate, products}, products, …}."""
+        return await self._get_result("/api/hrms/v1/officials")
+
+    async def fetch_user_evidence(self, user_id: str) -> List[Dict[str, Any]]:
+        """GET /api/evidence/v1/user/{id} — EvidenceLog-style workplace evidence rows ([] on 404)."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/api/evidence/v1/user/{user_id}",
+                                    headers=self._headers, timeout=10.0)
+            if resp.status_code == 404:
+                return []
+            resp.raise_for_status()
+        return (resp.json().get("result") or {}).get("rows") or []
+
     async def fetch_user_cbplan(self, user_id: str) -> Optional[Dict[str, Any]]:
         """GET /api/cbplan/v1/user/{id} — ACBP mandatory courses + learning hours/quarter. None on 404."""
         async with httpx.AsyncClient() as client:

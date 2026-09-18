@@ -9,8 +9,8 @@
  "files": {
   "_truth/planted_effects.json": {
    "synthetic": true,
-   "sha256": "d268ade1e785c6e9da2f4e893a4bb776ace40e7dd9368efecd5c80aff95127cd",
-   "bytes": 102497
+   "sha256": "e32e571b93c928b3f5df0c2c2a7963a53f84205ef13577895418afebe96c4d73",
+   "bytes": 103701
   },
   "acbp.json": {
    "synthetic": true,
@@ -52,6 +52,11 @@
    "sha256": "23c94bfaccaa7a3c16cb4f8846c7ffd4cfa9b9088ed2566149fb4620bedff9e4",
    "bytes": 6789
   },
+  "hrms.json": {
+   "synthetic": true,
+   "sha256": "932f49d79dd2072866fc7420de1f31f097f8a17dc966c9f7c1e0120023e6505b",
+   "bytes": 31661
+  },
   "offices.json": {
    "synthetic": true,
    "sha256": "304ebb247b5fc7409ba58b4505234260b66e48d861e1f3f7e5977619bb53b2b8",
@@ -71,6 +76,11 @@
    "synthetic": true,
    "sha256": "f4066a4a1c1a16e9afcfa0c0089dc3731ae0bd4520da7fe307d575aa90e71c1b",
    "bytes": 491256
+  },
+  "workplace_evidence.json": {
+   "synthetic": true,
+   "sha256": "9ff64ff9ff2073d359ac65192dddce2f872dba4440faba08d6b2b98a309d0e29",
+   "bytes": 370781
   }
  }
 }
