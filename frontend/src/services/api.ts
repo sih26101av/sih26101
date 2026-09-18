@@ -322,11 +322,12 @@ export async function fetchRecommendations(
  */
 export async function fetchLearningPathways(
   userId: string,
-  opts: { competencyId?: string; budgetHours?: number } = {},
+  opts: { competencyId?: string; budgetHours?: number; unbudgeted?: boolean } = {},
 ): Promise<LearningPathwayResponse> {
   const params = new URLSearchParams();
   if (opts.competencyId) params.set('competencyId', opts.competencyId);
   if (opts.budgetHours && opts.budgetHours > 0) params.set('budgetHours', String(opts.budgetHours));
+  if (opts.unbudgeted) params.set('unbudgeted', 'true');
   const qs = params.toString();
   const result = await lmsFetch<{ status: string } & LearningPathwayResponse>(
     `/api/v1/learner/${userId}/pathway${qs ? `?${qs}` : ''}`,

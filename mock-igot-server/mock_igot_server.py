@@ -92,7 +92,7 @@ DB_COMPETENCIES: list[dict] = []     # competencies.json — the iGOT competency
 DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
 # SCIL v6 reference data (data/<file>) — see data/README.md
-REFERENCE_FILES = ["gsbpm_map.json", "offices.json"]
+REFERENCE_FILES = ["gsbpm_map.json", "offices.json", "acbp.json"]
 DB_REF: dict[str, Any] = {}
 
 # Seed data for user / enrolment / content-state lookups
@@ -960,6 +960,35 @@ async def get_office(office_id: str, x_authenticated_user_token: str | None = He
     if office is None:
         return sunbird_err(API_ID, VER, 404, "ERR_OFFICE_NOT_FOUND", f"Office '{office_id}' does not exist.")
     return sunbird_ok(API_ID, VER, {"office": office, "cycle": data["cycle"]})
+
+
+# ─────────────────────────────────────────────────────────────
+# Annual Capacity Building Plan (SCIL v6 §5)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/cbplan/v1/user/{user_id}")
+async def get_user_cbplan(user_id: str, x_authenticated_user_token: str | None = Header(default=None)):
+    """
+    One official's ACBP: APAR-linked mandatory courses (organisation-wide + the
+    role's) and available learning hours per quarter.
+    """
+    API_ID, VER = "api.cbplan.user.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("acbp.json", API_ID, VER)
+    if err:
+        return err
+    official = data["officials"].get(user_id)
+    if official is None:
+        return sunbird_err(API_ID, VER, 404, "ERR_USER_NOT_FOUND", f"No ACBP for user '{user_id}'.")
+    role = data["roles"].get(official["roleId"], {})
+    mandatory = data["organisationMandatory"] + role.get("mandatoryCourses", [])
+    return sunbird_ok(API_ID, VER, {
+        "userId": user_id,
+        "roleId": official["roleId"],
+        "cycle": data["cycle"],
+        "learningHoursPerQuarter": official["learningHoursPerQuarter"],
+        "mandatoryCourses": mandatory,
+    })
 
 
 @app.get("/api/frac/v1/crosswalk")

@@ -64,18 +64,38 @@ one study order across all gaps.
   `optional` (target met → one course further). Completed courses are never
   suggested. Status `ready | partial | no_content | met`; reports `coverageGaps`,
   `unreachableLevels`, `tagReviewFlags`, `message`.
-- `build_study_plan(pathways, budget_hours)` — **Stage 4b**: SCIL v6 §5 greedy —
-  repeatedly take the frontier course with the highest Σ priority × levels covered
-  / hours; a course that is the next rung for two gaps counts for both and advances
-  both (the other pathway's step is swapped to it in place). Ladder order is the
-  prerequisite DAG. With a budget, a course that doesn't fit blocks its ladder
-  (`deferred`). UNASSESSED ladders are not scheduled; they're listed in
-  `diagnostics`. **Opportunity tie-break (SCIL v6 §4):** frontier courses within
-  `OPPORTUNITY_TIE_BAND = 0.10` of the best gain/hour are near-ties; among them the
-  one advancing the gap with the highest `pathway["opportunity"]["level"]` goes
-  first (ordinal only — never a multiplier, never hides a gap). Steps carry
-  `opportunity` and `selectedBy` (see [workforce-insights.md](workforce-insights.md)). **No approximation guarantee is claimed** — the (1−1/e) bound does
-  not hold for ratio-greedy under a budget with precedence constraints.
+- `build_study_plan(pathways, budget_hours, mandatory, completed_ids, in_progress,
+  classroom_cap_hours, prerequisites, current_levels)` — **Stage 4b**, SCIL v6 §5:
+  1. **Mandatory ACBP courses first** (APAR-linked). They are force-included
+     even beyond the budget (`overBudget: true`). A completed one is listed as
+     `status: completed` and not scheduled. A ladder whose next rung a mandatory
+     course satisfies advances with it.
+  2. **Greedy over the frontier.** Repeatedly take the frontier course with the
+     highest Σ priority × levels covered / hours. A course that is the next rung
+     for two gaps counts for both and advances both (the other pathway's step is
+     swapped to it in place). A later rung already in the plan (e.g. a mandatory
+     course) is absorbed for free, so no course is taken twice (`absorb()`).
+     Ladder order is the within-competency prerequisite chain.
+     `_PrerequisiteGate` adds the cross-competency DAG (B4).
+  3. **Blocking.** A course that doesn't fit the budget
+     (`over budget`), or a classroom course that would exceed
+     `classroom_cap_hours` (`classroom cap`), blocks its ladder; the ladder is
+     listed under `deferred` with that reason.
+  4. **Diagnostics.** UNASSESSED ladders are not scheduled; they're listed in
+     `diagnostics`.
+  5. **Opportunity tie-break (SCIL v6 §4).** Frontier courses within
+     `OPPORTUNITY_TIE_BAND = 0.10` of the best gain/hour are near-ties. Among
+     them, the one advancing the gap with the highest
+     `pathway["opportunity"]["level"]` goes first. This is ordinal only: never a
+     multiplier, and it never hides a gap.
+
+  Steps carry `kind` (rung kind or `mandatory`), `mandatory`, `modality`,
+  `opportunity` and `selectedBy` (`gain_per_hour` | `opportunity_tie_break` |
+  `mandatory_acbp`); see [workforce-insights.md](workforce-insights.md).
+  **No approximation guarantee is claimed**: the (1−1/e) bound does not hold for
+  ratio-greedy under a budget with precedence constraints.
+- `CLASSROOM_CAP_HOURS_PER_QUARTER = 30.0` is five 6-hour training days away
+  from the desk per quarter. It applies only to the default quarterly plan.
 - Pydantic outputs: `GapEntry` (+ `confidence`, `catalogueId`, `catalogue_key`),
   `RecommendationResult` (+ `courseLevel`, `tagSupported`).
 - `python -m services.recommendation_service` runs a smoke test on the real
@@ -116,7 +136,14 @@ ordering, course sharing, budget, crosswalk.
                         "competencyName","priorityRank","matchReasons","matchType",
                         "tpacSource","courseLevel","tagSupported","matchReason","tags" }] }
 ```
-`GET /api/v1/learner/{user_id}/pathway?competencyId=&budgetHours=`:
+`GET /api/v1/learner/{user_id}/pathway?competencyId=&budgetHours=&unbudgeted=`.
+The endpoint reads the official's ACBP through
+`MockIgotAdapter.fetch_user_cbplan()`. With no `budgetHours`, the plan is
+**this quarter's**: budget = `learningHoursPerQuarter`, classroom cap = 30 h,
+`budgetSource: "quarterly_hours"`. `budgetHours` overrides the budget
+(`"query"`, no cap). `unbudgeted=true` plans everything (`"none"`). Mandatory
+courses are always passed in, except for single-competency requests, and
+pathway steps get `mandatory: true` when their course is one.
 ```json
 { "status", "officialId",
   "pathways": [{ "competencyId","catalogueCompetencyId","crosswalk","competencyName",
@@ -128,6 +155,10 @@ ordering, course sharing, budget, crosswalk.
                              "levelDescriptor","course","hours","reason",
                              "alternatives","action?" }] }],
   "studyPlan": { "budgetHours","totalHours","diagnostics","deferred","method",
+                 "budgetSource","learningHoursPerQuarter","acbpCycle","overBudget",
+                 "classroomCapHours","classroomHours","prerequisitesApplied",
+                 "mandatory": [{ "courseId","title","competencyId","level","hours",
+                                 "aparLinked","reason","status" }],
                  "steps": [{ "order","courseId","title","provider","isTpac","kind",
                              "hours","cumulativeHours","advances",
                              "opportunity","selectedBy" }] } }

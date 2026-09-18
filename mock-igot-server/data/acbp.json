@@ -1,0 +1,1547 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "Annual Capacity Building Plan FY2026-27: APAR-linked mandatory courses (organisation-wide + per role) and each official's available learning hours per quarter (Mission Karmayogi guidance ≥ 50 h/year)."
+ },
+ "cycle": "FY2026-27",
+ "organisationMandatory": [
+  {
+   "courseId": "do_11336414759508895859",
+   "title": "Introduction to Anonymisation of Microdata",
+   "competencyId": "comp_data_privacy_026",
+   "level": 1,
+   "hours": 1.0,
+   "aparLinked": true,
+   "reason": "Organisation-wide ACBP course (information security and data privacy)"
+  }
+ ],
+ "roles": {
+  "role_capd_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_capd_assistant_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_capd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_capd_director": {
+   "mandatoryCourses": []
+  },
+  "role_capd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dpd_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dpd_assistant_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11351428425497468385",
+     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
+     "competencyId": "comp_big_data_006",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dpd_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11351428425497468385",
+     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
+     "competencyId": "comp_big_data_006",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dpd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dpd_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dpd_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dpd_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11351428425497468385",
+     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
+     "competencyId": "comp_big_data_006",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dqad_additional_director_general": {
+   "mandatoryCourses": []
+  },
+  "role_dqad_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dqad_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dqad_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11336998577183171227",
+     "title": "Practitioner Course in Writing Clear Official Notes",
+     "competencyId": "comp_comm_032",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dqad_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dqad_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_esd_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_esd_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11359781481158028077",
+     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "competencyId": "comp_econ_census_007",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_esd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_esd_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_esd_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_esd_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11359781481158028077",
+     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "competencyId": "comp_econ_census_007",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_esd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11359781481158028077",
+     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "competencyId": "comp_econ_census_007",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_fod_east_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_east_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_fod_east_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_east_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_east_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_north_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_north_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_fod_north_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_fod_north_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_isw_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_isw_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383902057911263557",
+     "title": "Foundations of Industrial Statistics (ASI): Scrutiny and Validation of ASI Returns",
+     "competencyId": "comp_industry_stats_010",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_isw_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_isw_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11336998577183171227",
+     "title": "Practitioner Course in Writing Clear Official Notes",
+     "competencyId": "comp_comm_032",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_isw_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383902057911263557",
+     "title": "Foundations of Industrial Statistics (ASI): Scrutiny and Validation of ASI Returns",
+     "competencyId": "comp_industry_stats_010",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_isw_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383902057911263557",
+     "title": "Foundations of Industrial Statistics (ASI): Scrutiny and Validation of ASI Returns",
+     "competencyId": "comp_industry_stats_010",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_isw_statistical_investigator_grade_i": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383902057911263557",
+     "title": "Foundations of Industrial Statistics (ASI): Scrutiny and Validation of ASI Returns",
+     "competencyId": "comp_industry_stats_010",
+     "level": 2,
+     "hours": 2.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_nad_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nad_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11354705989612512964",
+     "title": "Essentials of National Accounts: Institutional Sector Accounts",
+     "competencyId": "comp_nat_accounts_001",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_nad_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nad_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11364933926796853547",
+     "title": "Applied Change Management: Managing Resistance to Change",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nad_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11354705989612512964",
+     "title": "Essentials of National Accounts: Institutional Sector Accounts",
+     "competencyId": "comp_nat_accounts_001",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_nad_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11354705989612512964",
+     "title": "Essentials of National Accounts: Institutional Sector Accounts",
+     "competencyId": "comp_nat_accounts_001",
+     "level": 2,
+     "hours": 1.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_nssta_additional_director_general": {
+   "mandatoryCourses": []
+  },
+  "role_nssta_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_nssta_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nssta_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11336998577183171227",
+     "title": "Practitioner Course in Writing Clear Official Notes",
+     "competencyId": "comp_comm_032",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nssta_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_nssta_statistical_investigator_grade_i": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_psd_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_psd_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11320457740979450679",
+     "title": "Fundamentals of Price Collection and Quote Validation",
+     "competencyId": "comp_price_stats_003",
+     "level": 2,
+     "hours": 5.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_psd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_psd_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_psd_joint_director": {
+   "mandatoryCourses": []
+  },
+  "role_psd_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11320457740979450679",
+     "title": "Fundamentals of Price Collection and Quote Validation",
+     "competencyId": "comp_price_stats_003",
+     "level": 2,
+     "hours": 5.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_psd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11320457740979450679",
+     "title": "Fundamentals of Price Collection and Quote Validation",
+     "competencyId": "comp_price_stats_003",
+     "level": 2,
+     "hours": 5.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_psd_statistical_investigator_grade_i": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11320457740979450679",
+     "title": "Fundamentals of Price Collection and Quote Validation",
+     "competencyId": "comp_price_stats_003",
+     "level": 2,
+     "hours": 5.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_sdrd_additional_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_sdrd_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_sdrd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11326841448305463102",
+     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 1.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_sdrd_director": {
+   "mandatoryCourses": []
+  },
+  "role_sdrd_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_sdrd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11372675153046877291",
+     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
+     "competencyId": "comp_survey_design_002",
+     "level": 2,
+     "hours": 1.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ssd_additional_director_general": {
+   "mandatoryCourses": []
+  },
+  "role_ssd_assistant_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ssd_deputy_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ssd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11383171926591869234",
+     "title": "Applied Cognitive Biases in Decisions",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 3.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_ssd_director": {
+   "mandatoryCourses": []
+  },
+  "role_ssd_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11311765506151950049",
+     "title": "Practitioner Course in Innovation: Pilots and Experiments",
+     "competencyId": "comp_innov_038",
+     "level": 3,
+     "hours": 2.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_ssd_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ssd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ssd_statistical_investigator_grade_i": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11323476390042336611",
+     "title": "Fundamentals of Data Flows from Line Ministries",
+     "competencyId": "comp_sdg_monitor_015",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  }
+ },
+ "officials": {
+  "usr_720465595": {
+   "roleId": "role_isw_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_200142973": {
+   "roleId": "role_isw_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_674899856": {
+   "roleId": "role_fod_north_senior_statistical_officer",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_381314639": {
+   "roleId": "role_esd_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_808311398": {
+   "roleId": "role_nssta_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_332956649": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_312468211": {
+   "roleId": "role_isw_senior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_779354803": {
+   "roleId": "role_psd_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_561050563": {
+   "roleId": "role_nssta_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_709315470": {
+   "roleId": "role_isw_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_567298419": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_791131756": {
+   "roleId": "role_isw_junior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_931734840": {
+   "roleId": "role_dqad_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_446667253": {
+   "roleId": "role_ssd_deputy_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_838650189": {
+   "roleId": "role_psd_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_401229255": {
+   "roleId": "role_ssd_junior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_819942770": {
+   "roleId": "role_esd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_514008800": {
+   "roleId": "role_dpd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_300821686": {
+   "roleId": "role_nad_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_553750815": {
+   "roleId": "role_ssd_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_343164953": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_174576347": {
+   "roleId": "role_psd_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_118673248": {
+   "roleId": "role_dqad_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_423340207": {
+   "roleId": "role_nad_junior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_505636313": {
+   "roleId": "role_nssta_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_108949508": {
+   "roleId": "role_psd_junior_statistical_officer",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_986342308": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_134506505": {
+   "roleId": "role_isw_junior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_191910073": {
+   "roleId": "role_dpd_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_129713590": {
+   "roleId": "role_fod_east_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_106391818": {
+   "roleId": "role_dpd_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_156930079": {
+   "roleId": "role_isw_senior_statistical_officer",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_643103454": {
+   "roleId": "role_nssta_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_298435923": {
+   "roleId": "role_capd_assistant_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_590788362": {
+   "roleId": "role_nad_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_477814318": {
+   "roleId": "role_isw_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_723548418": {
+   "roleId": "role_sdrd_senior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_286828884": {
+   "roleId": "role_capd_deputy_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_505475993": {
+   "roleId": "role_isw_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_486075687": {
+   "roleId": "role_nssta_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_236571776": {
+   "roleId": "role_capd_senior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_269504123": {
+   "roleId": "role_isw_deputy_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_380118955": {
+   "roleId": "role_esd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_614076961": {
+   "roleId": "role_ssd_senior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_939475582": {
+   "roleId": "role_fod_north_senior_statistical_officer",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_902595907": {
+   "roleId": "role_ssd_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_231400613": {
+   "roleId": "role_nssta_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_541129488": {
+   "roleId": "role_dqad_deputy_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_572744267": {
+   "roleId": "role_dqad_deputy_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_671758865": {
+   "roleId": "role_dqad_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_714827309": {
+   "roleId": "role_capd_assistant_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_710358959": {
+   "roleId": "role_psd_deputy_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_631425891": {
+   "roleId": "role_dqad_senior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_828413374": {
+   "roleId": "role_sdrd_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_403959566": {
+   "roleId": "role_dqad_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_896763052": {
+   "roleId": "role_sdrd_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_997657767": {
+   "roleId": "role_psd_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_582075743": {
+   "roleId": "role_psd_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_259341757": {
+   "roleId": "role_nssta_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_178398946": {
+   "roleId": "role_nad_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_567818732": {
+   "roleId": "role_nad_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_399895640": {
+   "roleId": "role_sdrd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_277803636": {
+   "roleId": "role_isw_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_107156607": {
+   "roleId": "role_nad_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_398986845": {
+   "roleId": "role_isw_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_952762961": {
+   "roleId": "role_psd_deputy_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_403439088": {
+   "roleId": "role_fod_east_joint_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_805384990": {
+   "roleId": "role_nad_junior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_599006405": {
+   "roleId": "role_isw_joint_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_158662128": {
+   "roleId": "role_nssta_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_196908109": {
+   "roleId": "role_ssd_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_455947683": {
+   "roleId": "role_esd_senior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_905215527": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_898309178": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_686887321": {
+   "roleId": "role_nssta_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_322996651": {
+   "roleId": "role_dpd_assistant_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_839805543": {
+   "roleId": "role_ssd_deputy_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_114629222": {
+   "roleId": "role_nssta_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_873032900": {
+   "roleId": "role_psd_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_867812836": {
+   "roleId": "role_ssd_joint_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_115171420": {
+   "roleId": "role_isw_deputy_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_660834469": {
+   "roleId": "role_fod_east_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_572112488": {
+   "roleId": "role_esd_deputy_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_569486359": {
+   "roleId": "role_psd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_664790986": {
+   "roleId": "role_dqad_deputy_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_161447023": {
+   "roleId": "role_nad_senior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_684205193": {
+   "roleId": "role_capd_senior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_917432212": {
+   "roleId": "role_isw_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_226395063": {
+   "roleId": "role_capd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_333566606": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_313915836": {
+   "roleId": "role_dpd_junior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_640913819": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_212327318": {
+   "roleId": "role_dpd_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_618142267": {
+   "roleId": "role_esd_deputy_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_457713985": {
+   "roleId": "role_psd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_568740794": {
+   "roleId": "role_isw_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_919312568": {
+   "roleId": "role_nad_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_755590808": {
+   "roleId": "role_psd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_981837331": {
+   "roleId": "role_nad_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_158531054": {
+   "roleId": "role_dpd_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_511749730": {
+   "roleId": "role_dpd_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_462346788": {
+   "roleId": "role_ssd_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_235350127": {
+   "roleId": "role_isw_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_904519313": {
+   "roleId": "role_dpd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_607792264": {
+   "roleId": "role_dpd_deputy_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_395030606": {
+   "roleId": "role_fod_east_deputy_director",
+   "learningHoursPerQuarter": 26
+  },
+  "usr_471907995": {
+   "roleId": "role_ssd_assistant_director",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_770941214": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_291794383": {
+   "roleId": "role_nad_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_290725138": {
+   "roleId": "role_esd_junior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_754781192": {
+   "roleId": "role_nad_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_322272362": {
+   "roleId": "role_isw_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_134706089": {
+   "roleId": "role_esd_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_989388663": {
+   "roleId": "role_isw_senior_statistical_officer",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_861371949": {
+   "roleId": "role_psd_senior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_868623785": {
+   "roleId": "role_ssd_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_730431863": {
+   "roleId": "role_psd_junior_statistical_officer",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_935386554": {
+   "roleId": "role_fod_east_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_893963123": {
+   "roleId": "role_isw_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_154849742": {
+   "roleId": "role_isw_statistical_investigator_grade_i",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_910202901": {
+   "roleId": "role_ssd_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_295614589": {
+   "roleId": "role_fod_north_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_754474303": {
+   "roleId": "role_capd_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_995972094": {
+   "roleId": "role_ssd_junior_statistical_officer",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_856278148": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_876153361": {
+   "roleId": "role_sdrd_senior_statistical_officer",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_886461149": {
+   "roleId": "role_dqad_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_929683513": {
+   "roleId": "role_sdrd_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_164731980": {
+   "roleId": "role_nssta_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_304963844": {
+   "roleId": "role_psd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_377941235": {
+   "roleId": "role_esd_junior_statistical_officer",
+   "learningHoursPerQuarter": 30
+  },
+  "usr_555571081": {
+   "roleId": "role_dpd_deputy_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_233841187": {
+   "roleId": "role_fod_east_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_486395102": {
+   "roleId": "role_sdrd_additional_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_422868194": {
+   "roleId": "role_ssd_joint_director",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_287515566": {
+   "roleId": "role_fod_east_deputy_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_254984763": {
+   "roleId": "role_esd_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_375803064": {
+   "roleId": "role_fod_east_deputy_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_298241468": {
+   "roleId": "role_fod_north_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_355367302": {
+   "roleId": "role_ssd_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_226507324": {
+   "roleId": "role_dqad_senior_statistical_officer",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_343873669": {
+   "roleId": "role_isw_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_937451724": {
+   "roleId": "role_dqad_joint_director",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_518514926": {
+   "roleId": "role_dqad_deputy_director_general",
+   "learningHoursPerQuarter": 20
+  },
+  "usr_966497057": {
+   "roleId": "role_fod_north_deputy_director",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_662899443": {
+   "roleId": "role_dpd_director",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_743221793": {
+   "roleId": "role_psd_senior_statistical_officer",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_987190804": {
+   "roleId": "role_esd_additional_director_general",
+   "learningHoursPerQuarter": 16
+  },
+  "usr_774436940": {
+   "roleId": "role_ssd_additional_director_general",
+   "learningHoursPerQuarter": 14
+  },
+  "usr_448442536": {
+   "roleId": "role_psd_junior_statistical_officer",
+   "learningHoursPerQuarter": 24
+  },
+  "usr_EMP8472": {
+   "roleId": "role_nad_deputy_director",
+   "learningHoursPerQuarter": 14
+  }
+ }
+}

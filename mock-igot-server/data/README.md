@@ -53,6 +53,7 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 | `frac_crosswalk.json` | iGOT dictionary CID id → catalogue FRAC id, keyword rules, `confirmed: false` for all | `GET /api/frac/v1/crosswalk` |
 | `gsbpm_map.json` | GSBPM v5.1 phases and sub-processes (+ `OA.*` overarching), FRAC competency → sub-processes | `GET /api/gsbpm/v1/map` |
 | `offices.json` | 12 offices: sub-processes run in `FY2026-27-Q2` with officer-hours each, headcount, products | `GET /api/org/v1/offices[/{id}]` |
+| `acbp.json` | Annual Capacity Building Plan FY2026-27: org-wide + per-role APAR-linked mandatory courses, learning hours per quarter per official | `GET /api/cbplan/v1/user/{id}` |
 | `_truth/planted_effects.json` | **Ground truth for tests only**: latent true levels and planted effects. The server never serves it and the backend never reads it | (not served) |
 | `MANIFEST.json` | Synthetic-data label + hashes | (not served) |
 
@@ -158,6 +159,23 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
   phase, so the 80% rule scopes in collection, validation and aggregation first.
 - The GSBPM version is **v5.1** (2019). "5.2" was requested, but its
   sub-process list could not be confirmed.
+
+### ACBP: mandatory courses + learning hours (B3)
+
+- **Organisation-wide mandatory course:** the shortest non-classroom L1 course
+  on `comp_data_privacy_026` (information security awareness).
+- **Role mandatory course:**
+  - Junior and mid tiers: the shortest non-classroom L2 course on the office's
+    lead subject.
+  - Senior and apex tiers: the shortest non-classroom L3 course on the role's
+    first behavioural competency.
+  - Seven roles have no such course, so only the org-wide course applies to them.
+- **`aparLinked: true`** on all mandatory courses.
+- **`learningHoursPerQuarter`:** drawn from `LEARNING_HOURS_BY_TIER`
+  (junior 16–30, mid 14–30, senior 14–24, apex 14–20). Field-office (FOD)
+  staff get 4 h less, with a minimum of 14. Every official therefore has
+  ≥ 56 h a year, above the Mission Karmayogi ≥ 50 h/year guidance
+  (`KARMAYOGI_MIN_HOURS_PER_YEAR`, quoted in the file's `_meta`).
 
 ## Deliberate holes and planted cases
 

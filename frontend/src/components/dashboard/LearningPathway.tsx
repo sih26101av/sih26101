@@ -9,7 +9,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, BookOpen, Briefcase, ChevronDown, ChevronUp, ClipboardCheck, Clock,
+  AlertTriangle, BadgeCheck, BookOpen, Briefcase, ChevronDown, ChevronUp, ClipboardCheck, Clock,
   ListOrdered, PlayCircle, ShieldCheck, Sparkles, TrendingUp,
 } from "lucide-react";
 import type {
@@ -59,6 +59,11 @@ const StepRow: React.FC<{ step: PathwayStep; isLast: boolean }> = ({ step, isLas
       <div className="flex flex-wrap items-center gap-2 mb-1">
         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Step {step.order}</span>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${style.chip}`}>{style.label}</span>
+        {step.mandatory && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+            <BadgeCheck size={10} /> Mandatory (ACBP)
+          </span>
+        )}
         {step.kind !== "diagnostic" && (
           <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
             L{step.fromLevel} → L{step.toLevel}
@@ -149,23 +154,38 @@ export const PathwayLadder: React.FC<{ pathway: LearningPathway }> = ({ pathway 
   );
 };
 
+const DEFER_REASON: Record<string, string> = {
+  "over budget": "doesn't fit this quarter's hours",
+  "classroom cap": "classroom-hours cap for the quarter",
+};
+
 export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> = ({ plan, maxSteps = 5 }) => {
   const [expanded, setExpanded] = React.useState(false);
-  if (plan.steps.length === 0 && plan.diagnostics.length === 0) return null;
+  const [showDeferred, setShowDeferred] = React.useState(false);
+  if (plan.steps.length === 0 && plan.diagnostics.length === 0 && plan.deferred.length === 0) return null;
   const steps = expanded ? plan.steps : plan.steps.slice(0, maxSteps);
+  const quarterly = plan.budgetSource === "quarterly_hours";
+  const doneMandatory = (plan.mandatory ?? []).filter(m => m.status === "completed");
 
   return (
     <div className="mb-6 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <p className="flex items-center gap-2 text-[13px] font-bold text-slate-800 dark:text-slate-100">
-          <ListOrdered size={15} className="text-blue-600 dark:text-blue-400" /> Suggested study order
+          <ListOrdered size={15} className="text-blue-600 dark:text-blue-400" />
+          {quarterly ? "This quarter's study plan" : "Suggested study order"}
         </p>
-        {plan.totalHours > 0 && (
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+        {(plan.totalHours > 0 || plan.budgetHours) && (
+          <span className={`text-[11px] font-semibold ${plan.overBudget ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
             {plan.steps.length} course{plan.steps.length === 1 ? "" : "s"} · {plan.totalHours}h
+            {plan.budgetHours ? ` of ${plan.budgetHours}h${quarterly ? " available this quarter" : " budget"}` : ""}
           </span>
         )}
       </div>
+      {plan.overBudget && (
+        <p className="text-[11px] text-amber-700 dark:text-amber-400 mb-2">
+          Mandatory ACBP courses alone exceed this quarter's learning hours; they are still included first.
+        </p>
+      )}
 
       {plan.diagnostics.length > 0 && (
         <p className="text-[11px] text-violet-700 dark:text-violet-300 mb-2">
@@ -181,8 +201,18 @@ export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> 
             <li key={s.order} className="flex gap-2 text-[12px]">
               <span className="w-5 shrink-0 text-right font-bold text-blue-600 dark:text-blue-400">{s.order}.</span>
               <span className="text-slate-700 dark:text-slate-200">
+                {s.mandatory && (
+                  <span
+                    title={s.reason ?? "APAR-linked mandatory course in your Annual Capacity Building Plan"}
+                    className="mr-1.5 inline-flex items-center gap-1 rounded-full bg-orange-100 px-1.5 py-px text-[9px] font-bold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                  >
+                    <BadgeCheck size={9} /> Mandatory (ACBP)
+                  </span>
+                )}
                 <span className="font-semibold">{s.title}</span>
-                <span className="text-slate-400 dark:text-slate-500"> · {s.hours}h → </span>
+                <span className="text-slate-400 dark:text-slate-500">
+                  {" "}· {s.hours}h{s.modality === "classroom" ? " classroom" : ""}{s.advances.length ? " → " : ""}
+                </span>
                 <span className="text-slate-500 dark:text-slate-400">
                   {s.advances.map(a => `${a.competencyName} L${a.toLevel}`).join(" · ")}
                 </span>
@@ -207,9 +237,36 @@ export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> 
           {expanded ? "Show fewer" : `Show all ${plan.steps.length} courses`}
         </button>
       )}
+      {doneMandatory.length > 0 && (
+        <p className="mt-2 text-[10px] text-emerald-700 dark:text-emerald-400">
+          Mandatory ACBP course{doneMandatory.length > 1 ? "s" : ""} already completed: {doneMandatory.map(m => m.title).join(", ")}.
+        </p>
+      )}
+      {plan.deferred.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setShowDeferred(v => !v)}
+            className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {showDeferred ? "Hide" : "Show"} {plan.deferred.length} path{plan.deferred.length > 1 ? "s" : ""} continued
+            {quarterly ? " next quarter" : " later"}
+          </button>
+          {showDeferred && (
+            <ul className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+              {plan.deferred.map(d => (
+                <li key={d.competencyId}>
+                  {d.competencyName}: {d.remainingSteps} step{d.remainingSteps > 1 ? "s" : ""} · {d.remainingHours}h
+                  <span className="text-slate-400"> ({DEFER_REASON[d.reason] ?? d.reason})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500">
-        Ordered by level gained per hour on your highest-priority gaps; each competency's levels stay in order.
-        Near-ties (within 10%) go to the gap you can practise at work this cycle.
+        Mandatory ACBP courses first; then level gained per hour on your highest-priority gaps, each competency's
+        levels in order. Near-ties (within 10%) go to the gap you can practise at work this cycle.
+        {plan.classroomCapHours ? ` Classroom time is capped at ${plan.classroomCapHours}h per quarter.` : ""}
       </p>
     </div>
   );

@@ -69,6 +69,10 @@ _MIN_STEP_HRS  = 0.1         # floor on hours in gain-per-hour (avoids /0)
 # at work this cycle (higher opportunity) goes first. 10% is well inside the
 # noise of the hour estimates, so the tie-break never overrides a clear winner.
 OPPORTUNITY_TIE_BAND = 0.10
+# Modality mix (SCIL v6 §5): at most 30 classroom hours in one quarter's plan —
+# five 6-hour training days away from the desk. Longer TPAC programmes need a
+# quarter planned around them (they show up as deferred: "classroom cap").
+CLASSROOM_CAP_HOURS_PER_QUARTER = 30.0
 _OPPORTUNITY_RANK  = {"High": 3, "Medium": 2, "Low": 1}
 _OPPORTUNITY_LEVEL = {v: k for k, v in _OPPORTUNITY_RANK.items()}
 _DEFAULT_CATALOG = os.path.join(
@@ -1086,8 +1090,14 @@ class HybridRecommendationEngine:
 
     def build_study_plan(
         self,
-        pathways:     List[Dict[str, Any]],
-        budget_hours: Optional[float] = None,
+        pathways:      List[Dict[str, Any]],
+        budget_hours:  Optional[float] = None,
+        mandatory:     Optional[List[Dict[str, Any]]] = None,
+        completed_ids: Optional[Set[str]] = None,
+        in_progress:   Optional[Dict[str, float]] = None,
+        classroom_cap_hours: Optional[float] = None,
+        prerequisites: Optional[List[Dict[str, Any]]] = None,
+        current_levels: Optional[Dict[str, Optional[int]]] = None,
     ) -> Dict[str, Any]:
         """
         Orders the required rungs of several pathways into one sequence.
@@ -1097,10 +1107,20 @@ class HybridRecommendationEngine:
             Σ_c priority_c × levels_covered_c  /  hours
         summed over every competency it is the next rung for — a course tagged
         at the right level for two gaps counts for both and advances both.
-        Ladder order is the prerequisite DAG: a Level-4 course is never
-        scheduled before the Level-3 rung of the same competency. With a budget,
-        a course that no longer fits blocks its ladder (later rungs depend on
-        it) while other ladders keep going.
+        Ladder order is the within-competency prerequisite chain: a Level-4
+        course is never scheduled before the Level-3 rung of the same
+        competency. With a budget, a course that no longer fits blocks its
+        ladder (later rungs depend on it) while other ladders keep going.
+
+        SCIL v6 §5 constraints:
+          * `mandatory` (ACBP, APAR-linked) courses are force-included FIRST,
+            whatever their gain/hour and even beyond the budget (overBudget is
+            then reported). Completed ones are listed as done; a ladder whose
+            rung a mandatory course satisfies advances with it.
+          * `classroom_cap_hours` caps classroom hours in this plan (modality
+            mix); a classroom course that would exceed it blocks its ladder.
+          * `prerequisites` (cross-competency DAG, see prerequisite_service)
+            keep a rung off the frontier until its prerequisite levels are met.
 
         Opportunity to practise (pathway["opportunity"]["level"], SCIL v6 §4)
         is only an ordinal tie-breaker among frontier courses whose gain/hour is
@@ -1112,6 +1132,8 @@ class HybridRecommendationEngine:
         pathway's step is updated in place to point at the shared course (its
         own pick becomes the first alternative), so plan and pathways agree.
         """
+        completed_ids = set(completed_ids or ())
+        in_progress   = dict(in_progress or {})
         diagnostics: List[Dict[str, Any]] = []
         ladders: List[Dict[str, Any]] = []
         for p in sorted(pathways, key=lambda p: p["priorityScore"], reverse=True):
@@ -1126,24 +1148,108 @@ class HybridRecommendationEngine:
                 continue
             rungs = [s for s in p["steps"] if s["kind"] in ("course", "continue", "stretch")]
             if rungs:
-                ladders.append({"p": p, "rungs": rungs, "ptr": 0, "blocked": False})
+                ladders.append({"p": p, "rungs": rungs, "ptr": 0, "blocked": False, "why": None})
 
+        gate = _PrerequisiteGate(prerequisites, current_levels, ladders)
         plan: List[Dict[str, Any]] = []
-        used = 0.0
+        taken: Dict[str, Dict[str, Any]] = {}      # courseId → plan step
+        totals = {"used": 0.0, "classroom": 0.0}
+
+        def open_ladders() -> List[Dict[str, Any]]:
+            return [l for l in ladders if not l["blocked"] and l["ptr"] < len(l["rungs"])]
+
+        def advance(m: Dict[str, Any], cid: str) -> Dict[str, Any]:
+            rung = m["rungs"][m["ptr"]]
+            if rung["course"]["courseId"] != cid:
+                self._swap_in_shared_course(rung, cid, m["p"]["catalogueCompetencyId"])
+            m["ptr"] += 1
+            return {
+                "competencyId":   m["p"]["competencyId"],
+                "competencyName": m["p"]["competencyName"],
+                "fromLevel":      rung["fromLevel"],
+                "toLevel":        rung["toLevel"],
+                "covers":         rung["covers"],
+            }
+
+        def add_step(cid: str, course: Dict[str, Any], kind: str, hours: float,
+                     advances: List[Dict[str, Any]], **extra: Any) -> None:
+            totals["used"] += hours
+            modality = self._modality(cid)
+            if modality == "classroom":
+                totals["classroom"] += hours
+            step = {
+                "order":           len(plan) + 1,
+                "courseId":        cid,
+                "title":           course["title"],
+                "provider":        course["provider"],
+                "isTpac":          course["isTpac"],
+                "kind":            kind,
+                "hours":           round(hours, 1),
+                "cumulativeHours": round(totals["used"], 1),
+                "advances":        advances,
+                "modality":        modality,
+                "mandatory":       False,
+                **extra,
+            }
+            plan.append(step)
+            taken[cid] = step
+
+        def absorb() -> None:
+            """A ladder whose next rung is a course already in the plan advances for free."""
+            moved = True
+            while moved:
+                moved = False
+                for m in open_ladders():
+                    cid = next((c for c in taken if self._satisfies(c, m)), None)
+                    if cid is not None:
+                        taken[cid]["advances"].append(advance(m, cid))
+                        moved = True
+
+        # 1 ── Mandatory ACBP courses: force-included first ──────────────────
+        mandatory_out: List[Dict[str, Any]] = []
+        for mc in mandatory or []:
+            cid = mc["courseId"]
+            if cid in completed_ids:
+                mandatory_out.append({**mc, "status": "completed"})
+                continue
+            if cid in taken:
+                continue
+            pct   = float(in_progress.get(cid, 0.0))
+            full  = self.course_hours(cid) or float(mc.get("hours") or 0.0)
+            hours = full * (1 - pct / 100.0)
+            advances = [advance(m, cid) for m in open_ladders() if self._satisfies(cid, m)]
+            add_step(cid, self._doc_summary(cid, mc.get("title")), "mandatory", hours, advances,
+                     mandatory=True, selectedBy="mandatory_acbp", opportunity=None,
+                     reason=mc.get("reason") or "Mandatory (ACBP)")
+            mandatory_out.append({**mc, "status": "in_progress" if pct else "scheduled"})
+        absorb()
+
+        # 2 ── Greedy over the ladders' frontier ─────────────────────────────
         while True:
-            active = [l for l in ladders if not l["blocked"] and l["ptr"] < len(l["rungs"])]
+            active = open_ladders()
             if not active:
                 break
-
-            # Frontier = each active ladder's next rung (deduplicated by course).
-            frontier: Dict[str, Dict[str, Any]] = {}
+            eligible = []
             for owner in active:
+                ok, why = gate.check(owner)
+                if ok:
+                    eligible.append(owner)
+                else:
+                    owner["why"] = why
+            if not eligible:
+                for m in active:                       # nothing reachable: waiting on prerequisites
+                    m["blocked"] = True
+                break
+
+            # Frontier = each eligible ladder's next rung (deduplicated by course).
+            frontier: Dict[str, Dict[str, Any]] = {}
+            for owner in eligible:
                 rung = owner["rungs"][owner["ptr"]]
                 frontier.setdefault(rung["course"]["courseId"], rung)
 
             cands = []
             for cid, rung in frontier.items():
-                advances = [m for m in active if self._satisfies(cid, m)]
+                advances = [m for m in eligible if self._satisfies(cid, m)]
                 gain  = sum(m["p"]["priorityScore"] * len(m["rungs"][m["ptr"]]["covers"]) for m in advances)
                 hours = rung["hours"] or 0.0
                 opp   = max((_OPPORTUNITY_RANK.get(((m["p"].get("opportunity") or {}).get("level"))) or 0
@@ -1159,43 +1265,25 @@ class HybridRecommendationEngine:
             floor = by_ratio["key"][0] * (1.0 - OPPORTUNITY_TIE_BAND)
             best = max((c for c in cands if c["key"][0] >= floor),
                        key=lambda c: (c["opp"], c["key"]))
-            best["tieBreak"] = best["cid"] != by_ratio["cid"]
 
-            if budget_hours is not None and used + best["hours"] > budget_hours + 1e-9:
-                # Can't afford it: every ladder whose own next rung IS this course is stuck.
+            blocked_why = None
+            if budget_hours is not None and totals["used"] + best["hours"] > budget_hours + 1e-9:
+                blocked_why = "over budget"
+            elif (classroom_cap_hours is not None and self._modality(best["cid"]) == "classroom"
+                  and totals["classroom"] + best["hours"] > classroom_cap_hours + 1e-9):
+                blocked_why = "classroom cap"
+            if blocked_why:
+                # Can't take it: every ladder whose own next rung IS this course is stuck.
                 for m in active:
                     if m["rungs"][m["ptr"]]["course"]["courseId"] == best["cid"]:
-                        m["blocked"] = True
+                        m["blocked"], m["why"] = True, blocked_why
                 continue
 
-            used += best["hours"]
-            advanced = []
-            for m in best["advances"]:
-                rung = m["rungs"][m["ptr"]]
-                if rung["course"]["courseId"] != best["cid"]:
-                    self._swap_in_shared_course(rung, best["cid"], m["p"]["catalogueCompetencyId"])
-                advanced.append({
-                    "competencyId":   m["p"]["competencyId"],
-                    "competencyName": m["p"]["competencyName"],
-                    "fromLevel":      rung["fromLevel"],
-                    "toLevel":        rung["toLevel"],
-                    "covers":         rung["covers"],
-                })
-                m["ptr"] += 1
-            course = best["rung"]["course"]
-            plan.append({
-                "order":           len(plan) + 1,
-                "courseId":        best["cid"],
-                "title":           course["title"],
-                "provider":        course["provider"],
-                "isTpac":          course["isTpac"],
-                "kind":            best["rung"]["kind"],
-                "hours":           round(best["hours"], 1),
-                "cumulativeHours": round(used, 1),
-                "advances":        advanced,
-                "opportunity":     _OPPORTUNITY_LEVEL.get(best["opp"]),
-                "selectedBy":      "opportunity_tie_break" if best["tieBreak"] else "gain_per_hour",
-            })
+            advanced = [advance(m, best["cid"]) for m in best["advances"]]
+            add_step(best["cid"], best["rung"]["course"], best["rung"]["kind"], best["hours"], advanced,
+                     opportunity=_OPPORTUNITY_LEVEL.get(best["opp"]),
+                     selectedBy="opportunity_tie_break" if best["cid"] != by_ratio["cid"] else "gain_per_hour")
+            absorb()
 
         deferred = [
             {
@@ -1203,21 +1291,39 @@ class HybridRecommendationEngine:
                 "competencyName": l["p"]["competencyName"],
                 "remainingSteps": len(l["rungs"]) - l["ptr"],
                 "remainingHours": round(sum(r["hours"] or 0 for r in l["rungs"][l["ptr"]:]), 1),
-                "reason":         "over budget",
+                "reason":         l["why"] or "over budget",
             }
             for l in ladders if l["ptr"] < len(l["rungs"])
         ]
 
         return {
-            "budgetHours": budget_hours,
-            "totalHours":  round(used, 1),
-            "diagnostics": diagnostics,
-            "steps":       plan,
-            "deferred":    deferred,
-            "method":      ("greedy priority-weighted levels per hour over FRAC level ladders (SCIL v6 §5); "
-                            f"near-ties within {OPPORTUNITY_TIE_BAND:.0%} of the best go to the higher "
+            "budgetHours":       budget_hours,
+            "totalHours":        round(totals["used"], 1),
+            "overBudget":        budget_hours is not None and totals["used"] > budget_hours + 1e-9,
+            "classroomCapHours": classroom_cap_hours,
+            "classroomHours":    round(totals["classroom"], 1),
+            "mandatory":         mandatory_out,
+            "diagnostics":       diagnostics,
+            "steps":             plan,
+            "deferred":          deferred,
+            "prerequisitesApplied": gate.applied,
+            "method":      ("mandatory ACBP courses first; then greedy priority-weighted levels per hour over "
+                            "FRAC level ladders (SCIL v6 §5) within the budget, classroom cap and prerequisite "
+                            f"DAG; near-ties within {OPPORTUNITY_TIE_BAND:.0%} of the best go to the higher "
                             "opportunity to practise (SCIL v6 §4, ordinal only)"),
         }
+
+    def _modality(self, course_id: str) -> Optional[str]:
+        idx = self._by_id.get(course_id)
+        return self._catalog[idx].modality if idx is not None else None
+
+    def _doc_summary(self, course_id: str, title: Optional[str] = None) -> Dict[str, Any]:
+        idx = self._by_id.get(course_id)
+        if idx is None:
+            return {"title": title or course_id, "provider": "iGOT Karmayogi", "isTpac": False}
+        doc = self._catalog[idx]
+        return {"title": doc.name, "provider": doc.creator or doc.channel or "iGOT Karmayogi",
+                "isTpac": doc.is_tpac}
 
     def _satisfies(self, course_id: str, ladder: Dict[str, Any]) -> bool:
         """Does taking `course_id` complete this ladder's next rung?"""
@@ -1248,6 +1354,16 @@ class HybridRecommendationEngine:
         rung["alternatives"] = [own] + [a for a in rung["alternatives"] if a["courseId"] != course_id]
         rung["course"] = alt
         rung["reason"] += " Shared: this course also advances another of your gaps."
+
+
+class _PrerequisiteGate:
+    """Cross-competency prerequisite check for build_study_plan (filled in by B4)."""
+
+    def __init__(self, edges, current_levels, ladders):
+        self.applied: List[Dict[str, Any]] = []
+
+    def check(self, ladder: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+        return True, None
 
 
 # ── Module helpers ─────────────────────────────────────────────────────────────

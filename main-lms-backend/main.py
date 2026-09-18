@@ -14,7 +14,7 @@ On startup: creates users_auth table in auth.db (idempotent).
 """
 
 from routers import competency
-from services.recommendation_service import HybridRecommendationEngine
+from services.recommendation_service import CLASSROOM_CAP_HOURS_PER_QUARTER, HybridRecommendationEngine
 from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -567,6 +567,7 @@ async def get_learning_pathway(
     user_id: str,
     competencyId: str | None = None,
     budgetHours: float | None = Query(default=None, gt=0),
+    unbudgeted: bool = False,
     current_user: UserAuth = Depends(get_current_user),
 ):
     """
@@ -579,7 +580,10 @@ async def get_learning_pathway(
 
     ?competencyId=… returns only that competency's path (and a plan for it).
     ?budgetHours=… caps the plan; ladders that don't fit are listed under
-    studyPlan.deferred.
+    studyPlan.deferred. Without it the plan is THIS QUARTER's plan: the budget
+    is the official's ACBP learning hours per quarter and classroom hours are
+    capped (CLASSROOM_CAP_HOURS_PER_QUARTER). ?unbudgeted=true plans everything.
+    APAR-linked mandatory ACBP courses are always included first (SCIL v6 §5).
     """
     from fastapi import HTTPException
     from services.baseline_assembler import enrollment_course_id, is_completed
@@ -627,7 +631,36 @@ async def get_learning_pathway(
     ]
     for p, r in zip(pathways, rows):
         p["opportunity"] = r["opportunity"]
-    study_plan = _rec_engine.build_study_plan(pathways, budget_hours=budgetHours)
+
+    # ACBP (SCIL v6 §5): mandatory courses + this official's learning hours per quarter.
+    try:
+        cbplan = await adapter.fetch_user_cbplan(user_id)
+    except Exception:
+        cbplan = None
+    mandatory = (cbplan or {}).get("mandatoryCourses") or []
+    quarter_hours = (cbplan or {}).get("learningHoursPerQuarter")
+    if unbudgeted:
+        budget, budget_source, classroom_cap = None, "none", None
+    elif budgetHours is not None:
+        budget, budget_source, classroom_cap = budgetHours, "query", None
+    elif quarter_hours:
+        budget, budget_source = float(quarter_hours), "quarterly_hours"
+        classroom_cap = CLASSROOM_CAP_HOURS_PER_QUARTER
+    else:
+        budget, budget_source, classroom_cap = None, "none", None
+
+    mandatory_ids = {m["courseId"] for m in mandatory}
+    for p in pathways:
+        for s in p["steps"]:
+            s["mandatory"] = bool(s.get("course") and s["course"]["courseId"] in mandatory_ids)
+
+    study_plan = _rec_engine.build_study_plan(
+        pathways, budget_hours=budget, mandatory=mandatory if not competencyId else [],
+        completed_ids=completed_ids, in_progress=in_progress, classroom_cap_hours=classroom_cap,
+    )
+    study_plan["budgetSource"] = budget_source            # quarterly_hours | query | none
+    study_plan["learningHoursPerQuarter"] = quarter_hours
+    study_plan["acbpCycle"] = (cbplan or {}).get("cycle")
     pathways.sort(key=lambda p: (p["status"] == "met", -p["priorityScore"]))
 
     return {

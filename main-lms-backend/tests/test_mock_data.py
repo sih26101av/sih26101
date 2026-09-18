@@ -225,6 +225,23 @@ def test_officials_mostly_study_at_or_just_above_their_level(data):
         assert plant["courseLevel"] >= plant["trueLevel"] + 2
 
 
+def test_acbp_mandatory_courses_are_short_catalogue_courses(data):
+    acbp = data["acbp.json"]
+    courses = {c["identifier"]: c for c in data["course_catalog.json"]}
+    roles = {r["roleId"] for r in data["roles.json"]["roles"]}
+    assert set(acbp["roles"]) == roles
+    mandatory = acbp["organisationMandatory"] + [m for r in acbp["roles"].values() for m in r["mandatoryCourses"]]
+    for m in mandatory:
+        c = courses[m["courseId"]]
+        assert c["modality"] != "classroom" and m["aparLinked"] is True
+        assert any(t["id"] == m["competencyId"] for t in _tags(c))
+    users = {u["userId"]: u for u in data["userdata.json"]}
+    assert set(acbp["officials"]) == set(users)
+    for uid, o in acbp["officials"].items():
+        assert o["roleId"] == users[uid]["jobProfile"]["roleId"]
+        assert o["learningHoursPerQuarter"] * 4 >= gen.KARMAYOGI_MIN_HOURS_PER_YEAR
+
+
 def test_profile_incomplete_officials_exist_for_unassessed(data):
     incomplete = set(data["_truth/planted_effects.json"]["profileIncomplete"])
     assert len(incomplete) == gen.N_PROFILE_INCOMPLETE

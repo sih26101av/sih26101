@@ -101,19 +101,43 @@ def offline_metrics(catalog: list | None = None) -> dict:
     }
 
 
-def _get(url: str, **kw):
-    """GET with retries — the dev backend runs with --reload and may restart mid-run."""
+_AUTH: dict = {}
+
+
+def _login() -> dict:
+    """Admin bearer header; retried while the backend (--reload) restarts."""
+    import time
+    import httpx
+    for attempt in range(12):
+        try:
+            tok = httpx.post(f"{API}/auth/login", data={"username": "admin", "password": "admin123"},
+                             timeout=30).json()["access_token"]
+            _AUTH.update({"Authorization": f"Bearer {tok}"})
+            return _AUTH
+        except (httpx.TransportError, KeyError, ValueError):
+            if attempt == 11:
+                raise
+            time.sleep(10)
+
+
+def _get(url: str, headers: dict | None = None):
+    """GET with retries — the dev backend runs with --reload and may restart
+    mid-run, and the admin access token expires during long runs (→ re-login)."""
     import time
     import httpx
     for attempt in range(6):
         try:
-            resp = httpx.get(url, timeout=180, **kw)
+            resp = httpx.get(url, timeout=180, headers=headers)
+            if resp.status_code == 401 and headers is _AUTH:
+                _login()
+                continue
             resp.raise_for_status()
             return resp.json()
         except (httpx.TransportError, httpx.HTTPStatusError):
             if attempt == 5:
                 raise
             time.sleep(10)
+    raise RuntimeError(f"GET {url} kept failing")
 
 
 def live_metrics(n_users: int = 20) -> dict:
@@ -132,17 +156,7 @@ def live_metrics(n_users: int = 20) -> dict:
     served = [c for u in roster for c in (u.get("competencies") or [])]
     in_cat = sum(1 for c in served if c.get("id") in catalogue_ids)
 
-    import time
-    for attempt in range(12):
-        try:
-            tok = httpx.post(f"{API}/auth/login", data={"username": "admin", "password": "admin123"},
-                             timeout=30).json()["access_token"]
-            break
-        except httpx.TransportError:
-            if attempt == 11:
-                raise
-            time.sleep(10)
-    auth = {"Authorization": f"Bearer {tok}"}
+    auth = _login()
 
     users = [u["userId"] for u in roster][:n_users]
     status_mix = collections.Counter()
@@ -154,7 +168,7 @@ def live_metrics(n_users: int = 20) -> dict:
     for uid in users:
         sg = _get(f"{API}/api/v1/learner/{uid}/skill-gaps", headers=auth)
         rec = _get(f"{API}/api/v1/learner/{uid}/recommendations", headers=auth)
-        pw = _get(f"{API}/api/v1/learner/{uid}/pathway", headers=auth)
+        pw = _get(f"{API}/api/v1/learner/{uid}/pathway?unbudgeted=true", headers=auth)
         dash = {g["competencyId"]: (g["currentLevel"], g["targetLevel"]) for g in sg.get("skillGaps", [])}
         for g in rec.get("skillGaps", []):
             cur, tgt = dash.get(g["competencyId"], (None, None))

@@ -161,6 +161,8 @@ export interface PathwayStep {
   reason: string;
   alternatives: PathwayCourse[];
   action?: 'practice_assessment';
+  /** the course is an APAR-linked mandatory ACBP course */
+  mandatory?: boolean;
 }
 
 export interface LearningPathway {
@@ -188,13 +190,27 @@ export interface LearningPathway {
   opportunity?: PracticeOpportunity | null;
 }
 
+export interface MandatoryCourse {
+  courseId: string;
+  title: string;
+  competencyId: string;
+  level: number;
+  hours: number;
+  aparLinked: boolean;
+  reason: string;
+  status: 'scheduled' | 'in_progress' | 'completed';
+}
+
 export interface StudyPlanStep {
   order: number;
   courseId: string;
   title: string;
   provider: string;
   isTpac: boolean;
-  kind: PathwayStepKind;
+  kind: PathwayStepKind | 'mandatory';
+  mandatory?: boolean;
+  modality?: 'self_paced' | 'virtual_lab' | 'classroom' | null;
+  reason?: string;
   hours: number;
   cumulativeHours: number;
   advances: {
@@ -206,12 +222,20 @@ export interface StudyPlanStep {
   }[];
   opportunity?: OpportunityLevel | null;
   /** 'opportunity_tie_break' → a near-tie on level-per-hour went to the practisable gap */
-  selectedBy?: 'gain_per_hour' | 'opportunity_tie_break';
+  selectedBy?: 'gain_per_hour' | 'opportunity_tie_break' | 'mandatory_acbp';
 }
 
 export interface StudyPlan {
   budgetHours: number | null;
   totalHours: number;
+  /** quarterly_hours → this quarter's plan from the ACBP; query → ?budgetHours; none → unbudgeted */
+  budgetSource?: 'quarterly_hours' | 'query' | 'none';
+  learningHoursPerQuarter?: number | null;
+  acbpCycle?: string | null;
+  overBudget?: boolean;
+  classroomCapHours?: number | null;
+  classroomHours?: number;
+  mandatory?: MandatoryCourse[];
   diagnostics: { competencyId: string; competencyName: string; reason: string }[];
   steps: StudyPlanStep[];
   deferred: {

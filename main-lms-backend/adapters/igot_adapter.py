@@ -159,6 +159,16 @@ class MockIgotAdapter(ILearningPlatformAdapter):
         """GET /api/org/v1/offices — {cycle, offices[{officeId, subprocesses[{id, officerHours}]}]}."""
         return await self._get_result("/api/org/v1/offices")
 
+    async def fetch_user_cbplan(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """GET /api/cbplan/v1/user/{id} — ACBP mandatory courses + learning hours/quarter. None on 404."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/api/cbplan/v1/user/{user_id}",
+                                    headers=self._headers, timeout=10.0)
+            if resp.status_code == 404:
+                return None
+            resp.raise_for_status()
+        return resp.json().get("result") or None
+
     async def fetch_frac_crosswalk(self) -> List[Dict[str, Any]]:
         """GET /api/frac/v1/crosswalk — iGOT dictionary CID id → catalogue FRAC id."""
         async with httpx.AsyncClient() as client:

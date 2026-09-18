@@ -249,6 +249,57 @@ def test_opportunity_never_overrides_a_clear_gain_per_hour_winner(engine):
     assert rs.OPPORTUNITY_TIE_BAND == 0.10
 
 
+# ── ACBP mandatory courses, budget, modality mix (SCIL v6 §5) ─────────────────
+
+_MANDATORY_A1 = {"courseId": "a1", "title": "survey sampling basics", "competencyId": "comp_a",
+                 "hours": 1.0, "aparLinked": True, "reason": "Mandatory (ACBP)"}
+
+
+def test_mandatory_course_goes_first_even_over_budget(engine):
+    pb = engine.build_pathway("comp_b", "Price Index", 0, 1, confidence="HIGH")
+    plan = engine.build_study_plan([pb], budget_hours=0.5, mandatory=[_MANDATORY_A1])
+    assert plan["steps"][0]["courseId"] == "a1" and plan["steps"][0]["mandatory"]
+    assert plan["steps"][0]["kind"] == "mandatory" and plan["steps"][0]["selectedBy"] == "mandatory_acbp"
+    assert plan["overBudget"] is True and plan["mandatory"][0]["status"] == "scheduled"
+    assert plan["deferred"][0]["competencyId"] == "comp_b" and plan["deferred"][0]["reason"] == "over budget"
+
+
+def test_completed_mandatory_course_is_listed_not_rescheduled(engine):
+    pb = engine.build_pathway("comp_b", "Price Index", 0, 1, confidence="HIGH")
+    plan = engine.build_study_plan([pb], mandatory=[_MANDATORY_A1], completed_ids={"a1"})
+    assert plan["mandatory"][0]["status"] == "completed"
+    assert "a1" not in [s["courseId"] for s in plan["steps"]]
+
+
+def test_mandatory_course_advances_its_ladder_and_is_never_taken_twice(engine):
+    pa = engine.build_pathway("comp_a", "Survey Sampling", 0, 2, confidence="HIGH",
+                              completed_ids={"shared"})
+    mandatory_a2 = {**_MANDATORY_A1, "courseId": "a2", "hours": 2.0}   # the L2 rung, forced first
+    plan = engine.build_study_plan([pa], mandatory=[mandatory_a2])
+    ids = [s["courseId"] for s in plan["steps"]]
+    assert ids[0] == "a2" and ids.count("a2") == 1
+    assert ids == ["a2", "a1"]
+    # the L2 rung was absorbed by the already-planned mandatory course
+    assert [a["toLevel"] for a in plan["steps"][0]["advances"]] == [2]
+    assert plan["deferred"] == []
+
+
+def test_classroom_cap_defers_the_ladder(tmp_path, monkeypatch):
+    monkeypatch.setattr(rs, "get_embedder", lambda role=None: _StubEmbedder())
+    cat = [_course("c1", "survey sampling programme", [("comp_a", 1)], hours=3.0, modality="classroom"),
+           _course("p1", "price index numbers", [("comp_b", 1)], hours=1.0, modality="self_paced")]
+    eng = rs.HybridRecommendationEngine(
+        catalog=cat, frac=[_frac("comp_a", "Survey Sampling", "survey sampling"),
+                           _frac("comp_b", "Price Index", "price index numbers")])
+    paths = [eng.build_pathway("comp_a", "Survey Sampling", 0, 1, confidence="HIGH"),
+             eng.build_pathway("comp_b", "Price Index", 0, 1, confidence="HIGH")]
+    plan = eng.build_study_plan(paths, budget_hours=10, classroom_cap_hours=2.0)
+    assert [s["courseId"] for s in plan["steps"]] == ["p1"]
+    assert plan["deferred"] == [{"competencyId": "comp_a", "competencyName": "Survey Sampling",
+                                 "remainingSteps": 1, "remainingHours": 3.0, "reason": "classroom cap"}]
+    assert plan["classroomHours"] == 0.0 and plan["classroomCapHours"] == 2.0
+
+
 # ── Crosswalk: role competency ids outside the catalogue's FRAC set ───────────
 
 def test_crosswalk_exact_semantic_and_rejected(engine):

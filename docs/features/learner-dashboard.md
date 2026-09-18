@@ -47,7 +47,12 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     `OpportunityBadge` ("Opportunity to practise: Low this cycle → queued",
     tooltip = office sub-processes and hours share; SCIL v6 §4, see
     [workforce-insights.md](workforce-insights.md)); `StudyPlanSummary` marks
-    opportunity tie-break picks "practise at work".
+    opportunity tie-break picks "practise at work". By default the plan is
+    "This quarter's study plan" (hours used of the ACBP quarterly budget),
+    APAR-linked mandatory courses carry a "Mandatory (ACBP)" chip (also on the
+    matching ladder step), completed mandatory courses are listed, and ladders
+    that don't fit ("over budget" / "classroom cap") are listed as continued next
+    quarter.
   - `CompetencyOverviewTable.tsx` — compact gap table for the overview: domain filter
     chips with live counts, `LevelPips` current vs target, gap chip, priority badge
     (`priorityOf`), per-row "find courses", "show all" toggle.

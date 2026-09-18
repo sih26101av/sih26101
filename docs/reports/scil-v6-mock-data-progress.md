@@ -18,8 +18,8 @@ validation against real officials.
 | A3 Durations + quality fields | done | `5e646b5` | Seconds; 4 formats; `modality`; ~10% missing per quality field |
 | A4 One catalogue source | done | `5e646b5` | `POST /api/composite/v1/search` → adapter → engine; disk fallback with warning |
 | A5 Enrollments / history | done | `5e646b5` | Status 2 ⇔ 100%; dates over 3 years; 5 planted out-of-order learners |
-| B2+B1 GSBPM + opportunity | done | (B2+B1 commit) | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
-| B3 ACBP + budget + modality | pending | | |
+| B2+B1 GSBPM + opportunity | done | `8c8f495` | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
+| B3 ACBP + budget + modality | done | (B3 commit) | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
 | B4 Prerequisite DAG | pending | | |
 | B5 Measured gain / uplift | pending | | |
 | B6 Evidence channels U/S/A | pending | | |
@@ -148,6 +148,33 @@ Duration by format after Phase A (min / median / p90 / max, hours):
     edit left a worker hung. I killed only that worker process (PID 16684) and
     the reloader started a fresh one. The user's reloader process was not
     touched.
+27. **B3 mandatory course choice.** One organisation-wide course: the shortest
+    non-classroom L1 information-security/data-privacy course. One per role:
+    junior/mid roles get their lead subject at L2; senior/apex roles get their
+    first behavioural competency at L3. Both are always the shortest
+    non-classroom course, since APAR-linked mandatory courses are short online
+    courses in practice. 7 of the 76 roles have no such course, so only the
+    org-wide course applies to them.
+28. **Mandatory courses are force-included even over budget**, and the plan
+    reports `overBudget: true`. "Force-included" was the requirement. They are
+    scheduled first. A later rung that a mandatory course already covers is
+    absorbed, so no course is scheduled twice.
+29. **Default plan = this quarter.** When `budgetHours` is absent, the budget is
+    the ACBP `learningHoursPerQuarter` and the classroom cap applies.
+    `?budgetHours=` gives a custom budget without the cap. `?unbudgeted=true`
+    (new, additive) gives the full plan. This changes the default
+    `/pathway` study plan: long plans are now split into "this quarter" plus
+    "deferred". The frontend was updated to show that.
+30. **Classroom cap = 30 h per quarter** (`CLASSROOM_CAP_HOURS_PER_QUARTER`),
+    i.e. five 6-hour training days away from the desk. A 36–60 h TPAC programme
+    therefore needs a quarter planned around it and shows as deferred with
+    reason `classroom cap`.
+31. **Learning hours per quarter** come from a choice list by tier, with 4 h
+    less for field (FOD) staff and a floor of 14 h (56 h/year ≥ Karmayogi's
+    50 h/year guidance).
+32. **Metrics script.** It re-logs in on 401 (the access token expires during a
+    151-user run) and measures pathways with `?unbudgeted=true`, so the numbers
+    stay comparable with Phase A.
 
 ## Could not do / blocked
 

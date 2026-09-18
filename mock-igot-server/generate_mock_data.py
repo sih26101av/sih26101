@@ -734,6 +734,71 @@ def build_offices(users: list) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Annual Capacity Building Plan: mandatory courses + learning hours (B3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+ACBP_CYCLE = "FY2026-27"
+KARMAYOGI_MIN_HOURS_PER_YEAR = 50     # Mission Karmayogi guidance: ≥ 50 learning hours a year
+LEARNING_HOURS_BY_TIER = {            # available hours per quarter (choices)
+    "TIER4_JUNIOR": [16, 20, 24, 30], "TIER3_MID": [14, 16, 20, 24, 30],
+    "TIER2_SENIOR": [14, 16, 20, 24], "TIER1_APEX": [14, 16, 20],
+}
+ORG_MANDATORY_COMPETENCY = "comp_data_privacy_026"   # information-security awareness, all staff
+
+
+def _mandatory_pick(catalog: list, comp: str, levels: tuple, exclude=()) -> dict | None:
+    """Shortest non-classroom course with `comp` as its primary tag at one of `levels`."""
+    cands = [c for c in catalog if c["modality"] != "classroom" and c["identifier"] not in exclude
+             and any(t["id"] == comp and t.get("primary") and int(t["competencyLevel"][-1]) in levels
+                     for t in course_tags(c))]
+    return min(cands, key=lambda c: (int(c["duration"]), c["identifier"])) if cands else None
+
+
+def _mandatory_entry(course: dict, comp: str, reason: str) -> dict:
+    level = next(int(t["competencyLevel"][-1]) for t in course_tags(course) if t["id"] == comp)
+    return {"courseId": course["identifier"], "title": course["name"], "competencyId": comp,
+            "level": level, "hours": round(course_hours(course), 2), "aparLinked": True, "reason": reason}
+
+
+def build_acbp(roles: list, users: list, catalog: list) -> dict:
+    org_course = _mandatory_pick(catalog, ORG_MANDATORY_COMPETENCY, (1,))
+    org = [_mandatory_entry(org_course, ORG_MANDATORY_COMPETENCY,
+                            "Organisation-wide ACBP course (information security and data privacy)")]
+    type_of = {c[0]: c[2] for c in D.COMPETENCIES}
+    role_plans = {}
+    for role in roles:
+        comps = [c["id"] for c in role["competencies"]]
+        if role["tier"] in ("TIER4_JUNIOR", "TIER3_MID"):
+            comp, levels, why = comps[0], (2,), "Role ACBP course on the office's lead subject"
+        else:
+            comp = next((c for c in comps if type_of[c] == "Behavioural"), comps[0])
+            levels, why = (3,), "Role ACBP course for senior officers"
+        course = _mandatory_pick(catalog, comp, levels, exclude={org_course["identifier"]})
+        role_plans[role["roleId"]] = {
+            "mandatoryCourses": [_mandatory_entry(course, comp, why)] if course else [],
+        }
+    officials = {}
+    for u in users:
+        rng = rng_for(f"acbp:{u['userId']}")
+        tier = u["jobProfile"]["tier"]
+        hours = rng.choice(LEARNING_HOURS_BY_TIER[tier])
+        if u["jobProfile"]["officeId"].startswith("off_fod"):
+            # field staff: survey rounds leave less time, but never below the
+            # Karmayogi floor (14 h/quarter = 56 h/year ≥ 50 h/year)
+            hours = max(14, hours - 4)
+        officials[u["userId"]] = {"roleId": u["jobProfile"]["roleId"], "learningHoursPerQuarter": hours}
+    return {
+        "_meta": meta(f"Annual Capacity Building Plan {ACBP_CYCLE}: APAR-linked mandatory courses (organisation-"
+                      f"wide + per role) and each official's available learning hours per quarter "
+                      f"(Mission Karmayogi guidance ≥ {KARMAYOGI_MIN_HOURS_PER_YEAR} h/year)."),
+        "cycle": ACBP_CYCLE,
+        "organisationMandatory": org,
+        "roles": role_plans,
+        "officials": officials,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Writing
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -774,6 +839,7 @@ def generate() -> dict:
         "frac_crosswalk.json": dumps(build_crosswalk(igot_dictionary)),
         "gsbpm_map.json": dumps(build_gsbpm_map()),
         "offices.json": dumps(build_offices(users)),
+        "acbp.json": dumps(build_acbp(roles, users, catalog)),
         "roles.json": dumps({"_meta": meta("Role (office × designation) competency profiles; requiredLevel "
                                            "drawn from the designation tier."), "roles": roles}),
         "_truth/planted_effects.json": dumps({
