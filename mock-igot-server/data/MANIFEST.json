@@ -37,6 +37,16 @@
    "sha256": "d3c5fa7ffcdd70f45e43fef46968eae1f9d48d19e48c87017ae2c64c70e3c041",
    "bytes": 59136
   },
+  "gsbpm_map.json": {
+   "synthetic": true,
+   "sha256": "23c94bfaccaa7a3c16cb4f8846c7ffd4cfa9b9088ed2566149fb4620bedff9e4",
+   "bytes": 6789
+  },
+  "offices.json": {
+   "synthetic": true,
+   "sha256": "304ebb247b5fc7409ba58b4505234260b66e48d861e1f3f7e5977619bb53b2b8",
+   "bytes": 15730
+  },
   "roles.json": {
    "synthetic": true,
    "sha256": "6206a44a9135f9cf7013f9321278704d1550bb9a8b0a740f45b498182f5a20b3",

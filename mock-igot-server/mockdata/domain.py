@@ -652,3 +652,11 @@ CROSSWALK_RULES = [
     (r"innovat|creativ|design thinking", "comp_innov_038"),
     (r"citizen|service delivery|grievance|customer", "comp_citizen_039"),
 ]
+
+# Sanctioned strength per office (all staff, not just the 151 officials on the
+# platform roster). Drives officer-hours per GSBPM sub-process (B1/B2).
+OFFICE_HEADCOUNT = {
+    "off_nad": 85, "off_psd": 60, "off_esd": 70, "off_isw": 140, "off_ssd": 45, "off_sdrd": 50,
+    "off_fod_north": 420, "off_fod_east": 380, "off_dpd": 110, "off_capd": 40, "off_dqad": 35,
+    "off_nssta": 55,
+}

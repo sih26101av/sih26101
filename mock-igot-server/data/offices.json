@@ -1,0 +1,799 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "Office workload for FY 2026-27 Q2 (Jul–Sep 2026): which GSBPM sub-processes each office runs and the officer-hours spent on each (headcount × 480 h × share)."
+ },
+ "cycle": {
+  "id": "FY2026-27-Q2",
+  "label": "FY 2026-27 Q2 (Jul–Sep 2026)",
+  "hoursPerOfficer": 480
+ },
+ "offices": [
+  {
+   "officeId": "off_nad",
+   "name": "National Accounts Division",
+   "location": "New Delhi",
+   "products": [
+    "NAS"
+   ],
+   "headcount": 85,
+   "rosterOfficials": 18,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.4",
+     "name": "Identify concepts",
+     "officerHours": 1060
+    },
+    {
+     "id": "1.5",
+     "name": "Check data availability",
+     "officerHours": 1730
+    },
+    {
+     "id": "5.1",
+     "name": "Integrate data",
+     "officerHours": 4490
+    },
+    {
+     "id": "5.5",
+     "name": "Derive new variables and units",
+     "officerHours": 3840
+    },
+    {
+     "id": "5.7",
+     "name": "Calculate aggregates",
+     "officerHours": 7440
+    },
+    {
+     "id": "6.1",
+     "name": "Prepare draft outputs",
+     "officerHours": 4970
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 3920
+    },
+    {
+     "id": "6.3",
+     "name": "Interpret and explain outputs",
+     "officerHours": 3530
+    },
+    {
+     "id": "6.5",
+     "name": "Finalise outputs",
+     "officerHours": 1790
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 1410
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 1730
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 1140
+    },
+    {
+     "id": "OA.SM",
+     "name": "Statistical framework management",
+     "officerHours": 1800
+    }
+   ],
+   "totalOfficerHours": 38850
+  },
+  {
+   "officeId": "off_psd",
+   "name": "Price Statistics Division",
+   "location": "New Delhi",
+   "products": [
+    "CPI"
+   ],
+   "headcount": 60,
+   "rosterOfficials": 17,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.5",
+     "name": "Check data availability",
+     "officerHours": 860
+    },
+    {
+     "id": "2.4",
+     "name": "Design frame and sample",
+     "officerHours": 1200
+    },
+    {
+     "id": "4.2",
+     "name": "Set up collection",
+     "officerHours": 1340
+    },
+    {
+     "id": "4.3",
+     "name": "Run collection",
+     "officerHours": 4210
+    },
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 5010
+    },
+    {
+     "id": "5.7",
+     "name": "Calculate aggregates",
+     "officerHours": 5380
+    },
+    {
+     "id": "6.1",
+     "name": "Prepare draft outputs",
+     "officerHours": 3800
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 2970
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 1540
+    },
+    {
+     "id": "7.3",
+     "name": "Manage release of dissemination products",
+     "officerHours": 1090
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 870
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 1190
+    }
+   ],
+   "totalOfficerHours": 29460
+  },
+  {
+   "officeId": "off_esd",
+   "name": "Economic Statistics Division",
+   "location": "New Delhi",
+   "products": [
+    "IIP",
+    "Economic Census"
+   ],
+   "headcount": 70,
+   "rosterOfficials": 16,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "2.3",
+     "name": "Design collection",
+     "officerHours": 1960
+    },
+    {
+     "id": "4.1",
+     "name": "Create frame and select sample",
+     "officerHours": 2720
+    },
+    {
+     "id": "4.2",
+     "name": "Set up collection",
+     "officerHours": 3010
+    },
+    {
+     "id": "4.3",
+     "name": "Run collection",
+     "officerHours": 4660
+    },
+    {
+     "id": "4.4",
+     "name": "Finalise collection",
+     "officerHours": 1900
+    },
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 3540
+    },
+    {
+     "id": "5.7",
+     "name": "Calculate aggregates",
+     "officerHours": 4270
+    },
+    {
+     "id": "6.1",
+     "name": "Prepare draft outputs",
+     "officerHours": 4210
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 3050
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 1860
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 1580
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 1210
+    }
+   ],
+   "totalOfficerHours": 33970
+  },
+  {
+   "officeId": "off_isw",
+   "name": "Industrial Statistics Wing (ASI)",
+   "location": "Kolkata",
+   "products": [
+    "ASI"
+   ],
+   "headcount": 140,
+   "rosterOfficials": 22,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "2.4",
+     "name": "Design frame and sample",
+     "officerHours": 2980
+    },
+    {
+     "id": "4.1",
+     "name": "Create frame and select sample",
+     "officerHours": 4490
+    },
+    {
+     "id": "4.3",
+     "name": "Run collection",
+     "officerHours": 10280
+    },
+    {
+     "id": "4.4",
+     "name": "Finalise collection",
+     "officerHours": 4320
+    },
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 10800
+    },
+    {
+     "id": "5.4",
+     "name": "Edit and impute",
+     "officerHours": 7720
+    },
+    {
+     "id": "5.7",
+     "name": "Calculate aggregates",
+     "officerHours": 9150
+    },
+    {
+     "id": "6.1",
+     "name": "Prepare draft outputs",
+     "officerHours": 5350
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 4080
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 2070
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 2120
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 3360
+    }
+   ],
+   "totalOfficerHours": 66720
+  },
+  {
+   "officeId": "off_ssd",
+   "name": "Social Statistics Division",
+   "location": "New Delhi",
+   "products": [
+    "SDG-NIF",
+    "EnviStats"
+   ],
+   "headcount": 45,
+   "rosterOfficials": 16,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.1",
+     "name": "Identify needs",
+     "officerHours": 1470
+    },
+    {
+     "id": "1.2",
+     "name": "Consult and confirm needs",
+     "officerHours": 980
+    },
+    {
+     "id": "1.5",
+     "name": "Check data availability",
+     "officerHours": 2220
+    },
+    {
+     "id": "5.1",
+     "name": "Integrate data",
+     "officerHours": 2340
+    },
+    {
+     "id": "5.5",
+     "name": "Derive new variables and units",
+     "officerHours": 2300
+    },
+    {
+     "id": "6.1",
+     "name": "Prepare draft outputs",
+     "officerHours": 3510
+    },
+    {
+     "id": "6.3",
+     "name": "Interpret and explain outputs",
+     "officerHours": 3060
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 3620
+    },
+    {
+     "id": "7.4",
+     "name": "Promote dissemination products",
+     "officerHours": 1100
+    },
+    {
+     "id": "OA.MM",
+     "name": "Metadata management",
+     "officerHours": 1010
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 610
+    }
+   ],
+   "totalOfficerHours": 22220
+  },
+  {
+   "officeId": "off_sdrd",
+   "name": "Survey Design & Research Division",
+   "location": "Kolkata",
+   "products": [
+    "PLFS",
+    "HCES"
+   ],
+   "headcount": 50,
+   "rosterOfficials": 7,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.4",
+     "name": "Identify concepts",
+     "officerHours": 1060
+    },
+    {
+     "id": "2.1",
+     "name": "Design outputs",
+     "officerHours": 1580
+    },
+    {
+     "id": "2.2",
+     "name": "Design variable descriptions",
+     "officerHours": 1640
+    },
+    {
+     "id": "2.3",
+     "name": "Design collection",
+     "officerHours": 2550
+    },
+    {
+     "id": "2.4",
+     "name": "Design frame and sample",
+     "officerHours": 4540
+    },
+    {
+     "id": "2.5",
+     "name": "Design processing and analysis",
+     "officerHours": 2580
+    },
+    {
+     "id": "3.1",
+     "name": "Reuse or build collection instruments",
+     "officerHours": 1700
+    },
+    {
+     "id": "5.6",
+     "name": "Calculate weights",
+     "officerHours": 3010
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 2070
+    },
+    {
+     "id": "6.3",
+     "name": "Interpret and explain outputs",
+     "officerHours": 1680
+    },
+    {
+     "id": "8.2",
+     "name": "Conduct evaluation",
+     "officerHours": 1030
+    },
+    {
+     "id": "OA.MM",
+     "name": "Metadata management",
+     "officerHours": 760
+    }
+   ],
+   "totalOfficerHours": 24200
+  },
+  {
+   "officeId": "off_fod_north",
+   "name": "Field Operations Division (Northern Zone)",
+   "location": "Lucknow",
+   "products": [
+    "PLFS",
+    "HCES",
+    "ASI"
+   ],
+   "headcount": 420,
+   "rosterOfficials": 5,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "4.1",
+     "name": "Create frame and select sample",
+     "officerHours": 16940
+    },
+    {
+     "id": "4.2",
+     "name": "Set up collection",
+     "officerHours": 32990
+    },
+    {
+     "id": "4.3",
+     "name": "Run collection",
+     "officerHours": 92730
+    },
+    {
+     "id": "4.4",
+     "name": "Finalise collection",
+     "officerHours": 26770
+    },
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 14980
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 10930
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 8270
+    }
+   ],
+   "totalOfficerHours": 203610
+  },
+  {
+   "officeId": "off_fod_east",
+   "name": "Field Operations Division (Eastern Zone)",
+   "location": "Patna",
+   "products": [
+    "PLFS",
+    "HCES",
+    "CPI"
+   ],
+   "headcount": 380,
+   "rosterOfficials": 8,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "4.1",
+     "name": "Create frame and select sample",
+     "officerHours": 16410
+    },
+    {
+     "id": "4.2",
+     "name": "Set up collection",
+     "officerHours": 27660
+    },
+    {
+     "id": "4.3",
+     "name": "Run collection",
+     "officerHours": 76290
+    },
+    {
+     "id": "4.4",
+     "name": "Finalise collection",
+     "officerHours": 25890
+    },
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 16720
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 10530
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 8350
+    }
+   ],
+   "totalOfficerHours": 181850
+  },
+  {
+   "officeId": "off_dpd",
+   "name": "Data Processing & IT Division",
+   "location": "New Delhi",
+   "products": [
+    "PLFS",
+    "HCES",
+    "ASI"
+   ],
+   "headcount": 110,
+   "rosterOfficials": 12,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "3.1",
+     "name": "Reuse or build collection instruments",
+     "officerHours": 3850
+    },
+    {
+     "id": "3.2",
+     "name": "Reuse or build processing and analysis components",
+     "officerHours": 8320
+    },
+    {
+     "id": "3.4",
+     "name": "Configure workflows",
+     "officerHours": 4530
+    },
+    {
+     "id": "3.5",
+     "name": "Test production systems",
+     "officerHours": 3400
+    },
+    {
+     "id": "3.7",
+     "name": "Finalise production systems",
+     "officerHours": 2130
+    },
+    {
+     "id": "5.1",
+     "name": "Integrate data",
+     "officerHours": 6050
+    },
+    {
+     "id": "5.2",
+     "name": "Classify and code",
+     "officerHours": 5040
+    },
+    {
+     "id": "5.4",
+     "name": "Edit and impute",
+     "officerHours": 4580
+    },
+    {
+     "id": "5.8",
+     "name": "Finalise data files",
+     "officerHours": 4950
+    },
+    {
+     "id": "7.1",
+     "name": "Update output systems",
+     "officerHours": 3960
+    },
+    {
+     "id": "OA.DM",
+     "name": "Data management",
+     "officerHours": 4880
+    }
+   ],
+   "totalOfficerHours": 51690
+  },
+  {
+   "officeId": "off_capd",
+   "name": "Coordination & Publication Division",
+   "location": "New Delhi",
+   "products": [
+    "NAS",
+    "SDG-NIF"
+   ],
+   "headcount": 40,
+   "rosterOfficials": 7,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.1",
+     "name": "Identify needs",
+     "officerHours": 990
+    },
+    {
+     "id": "1.2",
+     "name": "Consult and confirm needs",
+     "officerHours": 1170
+    },
+    {
+     "id": "6.5",
+     "name": "Finalise outputs",
+     "officerHours": 2090
+    },
+    {
+     "id": "7.2",
+     "name": "Produce dissemination products",
+     "officerHours": 3870
+    },
+    {
+     "id": "7.3",
+     "name": "Manage release of dissemination products",
+     "officerHours": 2250
+    },
+    {
+     "id": "7.4",
+     "name": "Promote dissemination products",
+     "officerHours": 2320
+    },
+    {
+     "id": "7.5",
+     "name": "Manage user support",
+     "officerHours": 2980
+    },
+    {
+     "id": "OA.FM",
+     "name": "Financial and procurement management",
+     "officerHours": 1420
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 1590
+    }
+   ],
+   "totalOfficerHours": 18680
+  },
+  {
+   "officeId": "off_dqad",
+   "name": "Data Quality Assurance Division",
+   "location": "New Delhi",
+   "products": [
+    "PLFS",
+    "CPI",
+    "ASI"
+   ],
+   "headcount": 35,
+   "rosterOfficials": 12,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "5.3",
+     "name": "Review and validate",
+     "officerHours": 3260
+    },
+    {
+     "id": "6.2",
+     "name": "Validate outputs",
+     "officerHours": 2960
+    },
+    {
+     "id": "8.1",
+     "name": "Gather evaluation inputs",
+     "officerHours": 1800
+    },
+    {
+     "id": "8.2",
+     "name": "Conduct evaluation",
+     "officerHours": 2620
+    },
+    {
+     "id": "8.3",
+     "name": "Agree an action plan",
+     "officerHours": 1230
+    },
+    {
+     "id": "OA.MM",
+     "name": "Metadata management",
+     "officerHours": 1570
+    },
+    {
+     "id": "OA.QM",
+     "name": "Quality management",
+     "officerHours": 2580
+    }
+   ],
+   "totalOfficerHours": 16020
+  },
+  {
+   "officeId": "off_nssta",
+   "name": "National Statistical Systems Training Academy",
+   "location": "Greater Noida",
+   "products": [],
+   "headcount": 55,
+   "rosterOfficials": 11,
+   "cycle": "FY2026-27-Q2",
+   "subprocesses": [
+    {
+     "id": "1.1",
+     "name": "Identify needs",
+     "officerHours": 1820
+    },
+    {
+     "id": "1.3",
+     "name": "Establish output objectives",
+     "officerHours": 2070
+    },
+    {
+     "id": "7.5",
+     "name": "Manage user support",
+     "officerHours": 2150
+    },
+    {
+     "id": "8.1",
+     "name": "Gather evaluation inputs",
+     "officerHours": 4020
+    },
+    {
+     "id": "8.2",
+     "name": "Conduct evaluation",
+     "officerHours": 5050
+    },
+    {
+     "id": "8.3",
+     "name": "Agree an action plan",
+     "officerHours": 2270
+    },
+    {
+     "id": "OA.FM",
+     "name": "Financial and procurement management",
+     "officerHours": 2070
+    },
+    {
+     "id": "OA.PM",
+     "name": "Strategic, people and programme management",
+     "officerHours": 7130
+    }
+   ],
+   "totalOfficerHours": 26580
+  }
+ ]
+}

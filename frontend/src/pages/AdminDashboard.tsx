@@ -3,7 +3,8 @@
  *
  * Ministry-side dashboard at /admin (role `admin` only).
  *
- * Sections: overview · officials · competencies · analytics · reports.
+ * Sections: overview · officials · competencies · analytics · insights · reports.
+ * `insights` renders components/admin/WorkforceInsights (SCIL v6 admin views).
  * Every figure comes from `useAdminData` (roster → KPIs + shortage heatmap) and
  * `useSkillsData` (FRAC dictionary). The previous version fell back to invented
  * numbers (151 officials, 87% compliance, a static bar chart and a "25k" donut)
@@ -16,7 +17,7 @@ import {
 } from 'recharts';
 import {
   AlertTriangle, BarChart3, BookOpen, CheckCircle2, ChevronLeft, ChevronRight,
-  Database, Download, FileText, LayoutDashboard, RefreshCcw, ShieldCheck,
+  Database, Download, FileText, LayoutDashboard, Lightbulb, RefreshCcw, ShieldCheck,
   SlidersHorizontal, TrendingUp, Users,
 } from 'lucide-react';
 
@@ -31,8 +32,9 @@ import PageHeader from '../components/shell/PageHeader';
 import SectionCard, { SectionAction } from '../components/shell/SectionCard';
 import StatCard from '../components/shell/StatCard';
 import { AshokaChakra } from '../components/gov/GovUI';
+import WorkforceInsights from '../components/admin/WorkforceInsights';
 
-type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'reports';
+type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'insights' | 'reports';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -309,6 +311,7 @@ const AdminDashboard: React.FC = () => {
         { id: 'officials', label: 'Officials', icon: Users, badge: roster.length || undefined },
         { id: 'competencies', label: 'Competencies', icon: BookOpen, badge: skills.length || undefined },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'insights', label: 'Insights', icon: Lightbulb },
         { id: 'reports', label: 'Reports', icon: FileText },
       ],
     },
@@ -319,6 +322,7 @@ const AdminDashboard: React.FC = () => {
     officials:    { title: 'Officials',        subtitle: 'The full NSO roster with competency status from iGOT Karmayogi.' },
     competencies: { title: 'FRAC Competencies',subtitle: 'The competency dictionary that every skill gap is measured against.' },
     analytics:    { title: 'Analytics',        subtitle: 'Shortage concentration and departmental training compliance.' },
+    insights:     { title: 'Workforce Insights', subtitle: 'SCIL v6 views: GSBPM scope, training effectiveness and capability risk (synthetic data).' },
     reports:      { title: 'Reports',          subtitle: 'Export the current view as CSV for offline analysis.' },
   };
 
@@ -692,6 +696,9 @@ const AdminDashboard: React.FC = () => {
           </SectionCard>
         </div>
       )}
+
+      {/* ── Insights (SCIL v6) ─────────────────────────────────────────────── */}
+      {activeTab === 'insights' && <WorkforceInsights />}
 
       {/* ── Reports ───────────────────────────────────────────────────────── */}
       {activeTab === 'reports' && (

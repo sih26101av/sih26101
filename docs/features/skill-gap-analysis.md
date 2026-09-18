@@ -79,10 +79,13 @@ three can never disagree.
 { "userId", "govId", "jobRole", "department", "totalCourses", "completedCourses",
   "skillGaps": [{ "competencyId", "skillName", "domain", "currentLevel",
                   "targetLevel", "gapScore", "confidence", "basis", "evidenceLevel",
-                  "rawScore", "crosswalk",
+                  "rawScore", "crosswalk", "opportunity",
                   "evidence": { "verified","documented","tenure","selfReport",
                                 "education","seniority" } }] }
 ```
+`opportunity` (SCIL v6 §4, `null` when the office is unknown) =
+`{level: Low|Medium|High, share, officerHours, officeId, officeName, cycle,
+subprocesses[]}` — see [workforce-insights.md](workforce-insights.md).
 `currentLevel` and `gapScore` are `null` when UNASSESSED. `basis` ∈
 `evidence | course_completion | self_report | none`; `evidenceLevel` is what the
 evidence alone supports (differs from `currentLevel` only when self-reported).

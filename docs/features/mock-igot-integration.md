@@ -49,6 +49,14 @@ data it serves is **synthetic**: one deterministic generator writes it (see
     FRAC record (`id, competencyType, children, decayClass, gsbpm`).
     `?dictionary=igot` returns the 331-entry CID dictionary instead.
   - `GET /api/frac/v1/crosswalk` — CID → catalogue id, all `confirmed: false`.
+- **SCIL v6 reference endpoints** (`REFERENCE_FILES` → `DB_REF`, 404
+  `ERR_DATA_NOT_LOADED` when a file is missing; see
+  [workforce-insights.md](workforce-insights.md)):
+  - `GET /api/gsbpm/v1/map`
+  - `GET /api/org/v1/offices`
+  - `GET /api/org/v1/offices/{officeId}`
+  - The adapter reads them with `_get_result(path)`, `fetch_gsbpm_map()` and
+    `fetch_offices()`.
 - **Users and enrolments:**
   - `GET /api/user/v2/read/{user_id}`
   - `GET /api/course/v1/user/enrollment/list/{user_id}`

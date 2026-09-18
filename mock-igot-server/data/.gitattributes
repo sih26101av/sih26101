@@ -1,0 +1,3 @@
+# Generated files are compared byte-for-byte by generate_mock_data.py --check
+# and tests/test_mock_data.py, and MANIFEST.json hashes the LF bytes.
+* text eol=lf

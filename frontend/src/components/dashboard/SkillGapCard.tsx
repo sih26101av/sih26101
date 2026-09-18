@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, AlertCircle, BookOpen, Route, HelpCircle } from "lucide-react";
+import { Target, CheckCircle2, AlertCircle, BookOpen, Route, HelpCircle, Briefcase } from "lucide-react";
 import type { SkillGapEntry, CompetencyDomain, LearningPathway, StudyPlan } from "../../types/domain";
 import { fetchLearningPathways } from "../../services/api";
 import { PathwayLadder, StudyPlanSummary } from "./LearningPathway";
@@ -98,6 +98,28 @@ const CONFIDENCE_CONFIG = {
   UNASSESSED: { label: 'No',         bg: 'bg-violet-100 dark:bg-violet-900/30', text: 'text-violet-700 dark:text-violet-300', dot: 'bg-violet-500'  },
 };
 
+// SCIL v6 §4 — opportunity to practise at work this cycle (badge + tie-break only).
+const OPPORTUNITY_STYLE: Record<string, string> = {
+  High:   'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800',
+  Medium: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800',
+  Low:    'bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
+};
+
+const OpportunityBadge: React.FC<{ opportunity: NonNullable<SkillGapEntry['opportunity']>; hasGap: boolean }> = ({ opportunity, hasGap }) => {
+  const { level, share, officeName, cycle, subprocesses } = opportunity;
+  const where = subprocesses.length
+    ? subprocesses.map(s => `${s.id} ${s.name}`).join(', ')
+    : 'none of the GSBPM sub-processes where it is used';
+  const title = `${officeName} spends ${(share * 100).toFixed(0)}% of its officer-hours in ${cycle ?? 'this cycle'} on ${where}. ` +
+    'Used only to order near-equal study steps; it never hides a gap.';
+  return (
+    <span title={title} className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${OPPORTUNITY_STYLE[level]}`}>
+      <Briefcase size={10} />
+      Opportunity to practise: {level} this cycle{level === 'Low' && hasGap ? ' → queued' : ''}
+    </span>
+  );
+};
+
 const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color: string }> = ({ label, value, max = 5, color }) => {
   const pct = Math.min(100, (value / max) * 100);
   return (
@@ -151,6 +173,7 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
             <span className={`w-1.5 h-1.5 rounded-full ${conf.dot}`} />
             {confLabel} Evidence
           </span>
+          {entry.opportunity && <OpportunityBadge opportunity={entry.opportunity} hasGap={hasGap} />}
         </div>
 
         <h3 className="text-slate-900 dark:text-white font-bold text-[15px] leading-snug mb-1.5 transition-colors duration-300">

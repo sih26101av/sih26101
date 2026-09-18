@@ -28,6 +28,7 @@ System design, folder map, data flow and the mermaid-vs-code mismatches:
 | Mock iGOT server + adapter | [docs/features/mock-igot-integration.md](docs/features/mock-igot-integration.md) |
 | Learner dashboard (frontend shell) | [docs/features/learner-dashboard.md](docs/features/learner-dashboard.md) |
 | Admin dashboard | [docs/features/admin-dashboard.md](docs/features/admin-dashboard.md) |
+| SCIL v6 workforce insights (GSBPM scope, opportunity, admin foresight) | [docs/features/workforce-insights.md](docs/features/workforce-insights.md) |
 | Shared multilingual embedder | [docs/features/shared-embedder.md](docs/features/shared-embedder.md) |
 | Ollama/Chroma RAG (disconnected Tier 3) | [docs/features/ollama-knowledge-base.md](docs/features/ollama-knowledge-base.md) |
 

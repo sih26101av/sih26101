@@ -101,10 +101,25 @@ def offline_metrics(catalog: list | None = None) -> dict:
     }
 
 
+def _get(url: str, **kw):
+    """GET with retries — the dev backend runs with --reload and may restart mid-run."""
+    import time
+    import httpx
+    for attempt in range(6):
+        try:
+            resp = httpx.get(url, timeout=180, **kw)
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.TransportError, httpx.HTTPStatusError):
+            if attempt == 5:
+                raise
+            time.sleep(10)
+
+
 def live_metrics(n_users: int = 20) -> dict:
     import httpx
-    roster = httpx.get(f"{MOCK}/api/admin/v1/users", headers=HDR, timeout=30).json()["result"]["users"]
-    frac = httpx.get(f"{MOCK}/api/frac/competencies", headers=HDR, timeout=30).json()["result"]
+    roster = _get(f"{MOCK}/api/admin/v1/users", headers=HDR)["result"]["users"]
+    frac = _get(f"{MOCK}/api/frac/competencies", headers=HDR)["result"]
     catalogue_ids = set()
     try:
         from services.recommendation_service import _DEFAULT_FRAC
@@ -117,8 +132,16 @@ def live_metrics(n_users: int = 20) -> dict:
     served = [c for u in roster for c in (u.get("competencies") or [])]
     in_cat = sum(1 for c in served if c.get("id") in catalogue_ids)
 
-    tok = httpx.post(f"{API}/auth/login", data={"username": "admin", "password": "admin123"},
-                     timeout=30).json()["access_token"]
+    import time
+    for attempt in range(12):
+        try:
+            tok = httpx.post(f"{API}/auth/login", data={"username": "admin", "password": "admin123"},
+                             timeout=30).json()["access_token"]
+            break
+        except httpx.TransportError:
+            if attempt == 11:
+                raise
+            time.sleep(10)
     auth = {"Authorization": f"Bearer {tok}"}
 
     users = [u["userId"] for u in roster][:n_users]
@@ -126,10 +149,12 @@ def live_metrics(n_users: int = 20) -> dict:
     xw_mix = collections.Counter()
     hours, plan_hours, mismatches, gate_violations = [], [], 0, 0
     no_content_comps = collections.Counter()
+    opp_mix = collections.Counter()
+    plan_steps = tie_breaks = 0
     for uid in users:
-        sg = httpx.get(f"{API}/api/v1/learner/{uid}/skill-gaps", headers=auth, timeout=120).json()
-        rec = httpx.get(f"{API}/api/v1/learner/{uid}/recommendations", headers=auth, timeout=120).json()
-        pw = httpx.get(f"{API}/api/v1/learner/{uid}/pathway", headers=auth, timeout=120).json()
+        sg = _get(f"{API}/api/v1/learner/{uid}/skill-gaps", headers=auth)
+        rec = _get(f"{API}/api/v1/learner/{uid}/recommendations", headers=auth)
+        pw = _get(f"{API}/api/v1/learner/{uid}/pathway", headers=auth)
         dash = {g["competencyId"]: (g["currentLevel"], g["targetLevel"]) for g in sg.get("skillGaps", [])}
         for g in rec.get("skillGaps", []):
             cur, tgt = dash.get(g["competencyId"], (None, None))
@@ -142,6 +167,11 @@ def live_metrics(n_users: int = 20) -> dict:
                 gate_violations += 1
         for g in sg.get("skillGaps", []):
             xw_mix[(g.get("crosswalk") or {}).get("method", "none")] += 1
+            if g.get("gapScore"):
+                opp_mix[(g.get("opportunity") or {}).get("level", "none")] += 1
+        for s in pw.get("studyPlan", {}).get("steps", []):
+            plan_steps += 1
+            tie_breaks += s.get("selectedBy") == "opportunity_tie_break"
         for p in pw.get("pathways", []):
             status_mix[p["status"]] += 1
             if p["status"] == "no_content":
@@ -157,6 +187,9 @@ def live_metrics(n_users: int = 20) -> dict:
         "servedInCatalogueShare": round(in_cat / len(served), 3) if served else None,
         "usersSampled": len(users),
         "crosswalkMethodMix": dict(xw_mix),
+        "opportunityMixOnGaps": dict(opp_mix),
+        "studyPlanSteps": plan_steps,
+        "opportunityTieBreaks": tie_breaks,
         "pathwayStatusMix": dict(status_mix),
         "noContentCompetencies": dict(no_content_comps),
         "pathwayTotalHours": {"n": len(hours), "min": min(hours) if hours else None,

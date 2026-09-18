@@ -215,6 +215,40 @@ def test_study_plan_lists_diagnostics_and_skips_unassessed_ladders(engine):
     assert plan["steps"] == [] and plan["diagnostics"][0]["competencyId"] == "comp_b"
 
 
+# ── Opportunity to practise: ordinal tie-breaker only (SCIL v6 §4) ────────────
+
+def _two_level1_ladders(engine, opp_a=None, opp_b=None, hours_b=None):
+    pa = engine.build_pathway("comp_a", "Survey Sampling", 0, 1, confidence="HIGH",
+                              completed_ids={"shared"})
+    pb = engine.build_pathway("comp_b", "Price Index", 0, 1, confidence="HIGH")
+    pa["opportunity"] = {"level": opp_a} if opp_a else None
+    pb["opportunity"] = {"level": opp_b} if opp_b else None
+    if hours_b is not None:
+        pb["steps"][0]["hours"] = hours_b
+    return [pa, pb]
+
+
+def test_opportunity_breaks_near_ties_towards_the_practisable_gap(engine):
+    plain = engine.build_study_plan(_two_level1_ladders(engine))
+    first = plain["steps"][0]["advances"][0]["competencyId"]
+    other = "comp_b" if first == "comp_a" else "comp_a"
+    opp = {first: "Low", other: "High"}
+    plan = engine.build_study_plan(_two_level1_ladders(engine, opp["comp_a"], opp["comp_b"]))
+    assert plan["steps"][0]["advances"][0]["competencyId"] == other
+    assert plan["steps"][0]["selectedBy"] == "opportunity_tie_break"
+    assert plan["steps"][0]["opportunity"] == "High"
+    # never hides a gap: the low-opportunity ladder is still scheduled
+    assert {s["advances"][0]["competencyId"] for s in plan["steps"]} == {"comp_a", "comp_b"}
+
+
+def test_opportunity_never_overrides_a_clear_gain_per_hour_winner(engine):
+    # comp_b's course is 5× longer → far outside the tie band; High opportunity can't pull it forward
+    plan = engine.build_study_plan(_two_level1_ladders(engine, "Low", "High", hours_b=5.0))
+    assert plan["steps"][0]["advances"][0]["competencyId"] == "comp_a"
+    assert plan["steps"][0]["selectedBy"] == "gain_per_hour"
+    assert rs.OPPORTUNITY_TIE_BAND == 0.10
+
+
 # ── Crosswalk: role competency ids outside the catalogue's FRAC set ───────────
 
 def test_crosswalk_exact_semantic_and_rejected(engine):

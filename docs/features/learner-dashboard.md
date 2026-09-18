@@ -43,7 +43,11 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     assessed" section, and — when given `officialId` — fetches
     `/api/v1/learner/{id}/pathway` once to show "Suggested study order" and a
     per-gap "View learning path" ladder (`LearningPathway.tsx`; see
-    [recommendation-engine.md](recommendation-engine.md)).
+    [recommendation-engine.md](recommendation-engine.md)). Every gap carries an
+    `OpportunityBadge` ("Opportunity to practise: Low this cycle → queued",
+    tooltip = office sub-processes and hours share; SCIL v6 §4, see
+    [workforce-insights.md](workforce-insights.md)); `StudyPlanSummary` marks
+    opportunity tie-break picks "practise at work".
   - `CompetencyOverviewTable.tsx` — compact gap table for the overview: domain filter
     chips with live counts, `LevelPips` current vs target, gap chip, priority badge
     (`priorityOf`), per-row "find courses", "show all" toggle.

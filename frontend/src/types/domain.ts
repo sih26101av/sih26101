@@ -74,8 +74,26 @@ export type LevelBasis = 'evidence' | 'course_completion' | 'self_report' | 'non
 export interface CompetencyCrosswalk {
   catalogueId: string;
   catalogueName: string;
-  method: 'exact' | 'semantic_crosswalk';
-  similarity: number;
+  method: 'exact' | 'curated_crosswalk' | 'semantic_crosswalk';
+  /** null for exact / curated mappings */
+  similarity: number | null;
+  /** curated mappings only: has a human confirmed it? */
+  confirmed?: boolean;
+}
+
+/** SCIL v6 §4 — how much the official's office works in this competency's
+ *  GSBPM sub-processes this cycle. Badge + ordinal study-plan tie-break only. */
+export type OpportunityLevel = 'Low' | 'Medium' | 'High';
+
+export interface PracticeOpportunity {
+  level: OpportunityLevel;
+  /** share of the office's officer-hours in the competency's sub-processes */
+  share: number;
+  officerHours: number;
+  officeId: string;
+  officeName: string;
+  cycle: string;
+  subprocesses: { id: string; name: string; officerHours: number }[];
 }
 
 export interface SkillGapEntry {
@@ -92,6 +110,7 @@ export interface SkillGapEntry {
   basis?: LevelBasis;
   evidenceLevel?: number | null;
   crosswalk?: CompetencyCrosswalk | null;
+  opportunity?: PracticeOpportunity | null;
   rawScore?: number;
   evidence?: {
     verified: number;
@@ -166,6 +185,7 @@ export interface LearningPathway {
   coverageGaps: number[];
   unreachableLevels: number[];
   tagReviewFlags: string[];
+  opportunity?: PracticeOpportunity | null;
 }
 
 export interface StudyPlanStep {
@@ -184,6 +204,9 @@ export interface StudyPlanStep {
     toLevel: number;
     covers: number[];
   }[];
+  opportunity?: OpportunityLevel | null;
+  /** 'opportunity_tie_break' → a near-tie on level-per-hour went to the practisable gap */
+  selectedBy?: 'gain_per_hour' | 'opportunity_tie_break';
 }
 
 export interface StudyPlan {

@@ -64,6 +64,13 @@ _NSSTA_BOOST   = 1.25        # multiplier for NSSTA/TPAC courses
 _FALLBACK_DURS = 1.5         # hours if duration field missing/zero
 _MAX_LEVEL     = 5           # FRAC proficiency scale is Level 1..5
 _MIN_STEP_HRS  = 0.1         # floor on hours in gain-per-hour (avoids /0)
+# Study-plan tie band (SCIL v6 §4): frontier courses whose gain/hour is within
+# 10% of the best are treated as near-ties, and the gap the official can practise
+# at work this cycle (higher opportunity) goes first. 10% is well inside the
+# noise of the hour estimates, so the tie-break never overrides a clear winner.
+OPPORTUNITY_TIE_BAND = 0.10
+_OPPORTUNITY_RANK  = {"High": 3, "Medium": 2, "Low": 1}
+_OPPORTUNITY_LEVEL = {v: k for k, v in _OPPORTUNITY_RANK.items()}
 _DEFAULT_CATALOG = os.path.join(
     os.path.dirname(__file__), "..", "..", "mock-igot-server", "data", "course_catalog.json"
 )
@@ -1095,6 +1102,10 @@ class HybridRecommendationEngine:
         a course that no longer fits blocks its ladder (later rungs depend on
         it) while other ladders keep going.
 
+        Opportunity to practise (pathway["opportunity"]["level"], SCIL v6 §4)
+        is only an ordinal tie-breaker among frontier courses whose gain/hour is
+        within OPPORTUNITY_TIE_BAND of the best; it never scales a score.
+
         UNASSESSED competencies are not scheduled — their diagnostic comes
         first (listed under `diagnostics`). Bridge / optional steps are never
         scheduled. When a shared course satisfies another ladder's rung, that
@@ -1130,15 +1141,25 @@ class HybridRecommendationEngine:
                 rung = owner["rungs"][owner["ptr"]]
                 frontier.setdefault(rung["course"]["courseId"], rung)
 
-            best = None
+            cands = []
             for cid, rung in frontier.items():
                 advances = [m for m in active if self._satisfies(cid, m)]
                 gain  = sum(m["p"]["priorityScore"] * len(m["rungs"][m["ptr"]]["covers"]) for m in advances)
                 hours = rung["hours"] or 0.0
+                opp   = max((_OPPORTUNITY_RANK.get(((m["p"].get("opportunity") or {}).get("level"))) or 0
+                             for m in advances), default=0)
                 # ties: more total gain, then shorter, then course id (deterministic)
                 key   = (gain / max(hours, _MIN_STEP_HRS), gain, -hours, cid)
-                if best is None or key > best["key"]:
-                    best = {"key": key, "cid": cid, "hours": hours, "rung": rung, "advances": advances}
+                cands.append({"key": key, "cid": cid, "hours": hours, "rung": rung,
+                              "advances": advances, "opp": opp})
+            by_ratio = max(cands, key=lambda c: c["key"])
+            # SCIL v6 §4: opportunity to practise is an ORDINAL tie-breaker among
+            # candidates within OPPORTUNITY_TIE_BAND of the best gain/hour — never
+            # a multiplier on the score, and it never removes a candidate.
+            floor = by_ratio["key"][0] * (1.0 - OPPORTUNITY_TIE_BAND)
+            best = max((c for c in cands if c["key"][0] >= floor),
+                       key=lambda c: (c["opp"], c["key"]))
+            best["tieBreak"] = best["cid"] != by_ratio["cid"]
 
             if budget_hours is not None and used + best["hours"] > budget_hours + 1e-9:
                 # Can't afford it: every ladder whose own next rung IS this course is stuck.
@@ -1172,6 +1193,8 @@ class HybridRecommendationEngine:
                 "hours":           round(best["hours"], 1),
                 "cumulativeHours": round(used, 1),
                 "advances":        advanced,
+                "opportunity":     _OPPORTUNITY_LEVEL.get(best["opp"]),
+                "selectedBy":      "opportunity_tie_break" if best["tieBreak"] else "gain_per_hour",
             })
 
         deferred = [
@@ -1191,7 +1214,9 @@ class HybridRecommendationEngine:
             "diagnostics": diagnostics,
             "steps":       plan,
             "deferred":    deferred,
-            "method":      "greedy priority-weighted levels per hour over FRAC level ladders (SCIL v6 §5)",
+            "method":      ("greedy priority-weighted levels per hour over FRAC level ladders (SCIL v6 §5); "
+                            f"near-ties within {OPPORTUNITY_TIE_BAND:.0%} of the best go to the higher "
+                            "opportunity to practise (SCIL v6 §4, ordinal only)"),
         }
 
     def _satisfies(self, course_id: str, ladder: Dict[str, Any]) -> bool:

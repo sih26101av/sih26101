@@ -232,6 +232,7 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
     basis:              g.basis,
     evidenceLevel:      g.evidenceLevel ?? null,
     crosswalk:          g.crosswalk ?? null,
+    opportunity:        g.opportunity ?? null,
     rawScore:           g.rawScore,
     evidence:           g.evidence,
   }));
@@ -381,6 +382,34 @@ export async function fetchCompetencies(): Promise<FracCompetency[]> {
   return result.competencies ?? [];
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN INSIGHTS (SCIL v6) — computed on synthetic mock data
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GsbpmScopeReport {
+  cycle: { id?: string; label?: string };
+  officeId: string | null;
+  threshold: number;
+  totalOfficerHours: number;
+  coreShare: number;
+  inScopeCount: number;
+  outOfScopeCount: number;
+  coreSubprocesses: { id: string; name: string; officerHours: number; share: number; cumulativeShare: number }[];
+  competencies: {
+    competencyId: string; competencyName: string; inScope: boolean; subprocesses: string[];
+    coreSubprocesses: string[]; officerHours: number; share: number; reason: string;
+  }[];
+  offices: { officeId: string; name: string; totalOfficerHours: number }[];
+  method: string;
+  dataNote: string;
+}
+
+/** SCIL v6 §1 — 80% officer-hours scoping report (whole NSO, or one office). */
+export async function fetchGsbpmScope(officeId?: string): Promise<GsbpmScopeReport> {
+  const qs = officeId ? `?officeId=${encodeURIComponent(officeId)}` : '';
+  return lmsFetch<GsbpmScopeReport>(`/api/v1/admin/gsbpm/scope${qs}`, 'gsbpm-scope');
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // KARMA POINTS API

@@ -1,0 +1,435 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "GSBPM sub-processes and which FRAC competency is exercised in which sub-process. Sub-process list is GSBPM v5.1 (requested: 5.2 — see the decisions log); OA.* are GSBPM overarching processes, which GSBPM does not number."
+ },
+ "version": "5.1",
+ "phases": {
+  "1": "Specify Needs",
+  "2": "Design",
+  "3": "Build",
+  "4": "Collect",
+  "5": "Process",
+  "6": "Analyse",
+  "7": "Disseminate",
+  "8": "Evaluate",
+  "OA": "Overarching processes"
+ },
+ "subprocesses": {
+  "1.1": {
+   "name": "Identify needs",
+   "phase": "1"
+  },
+  "1.2": {
+   "name": "Consult and confirm needs",
+   "phase": "1"
+  },
+  "1.3": {
+   "name": "Establish output objectives",
+   "phase": "1"
+  },
+  "1.4": {
+   "name": "Identify concepts",
+   "phase": "1"
+  },
+  "1.5": {
+   "name": "Check data availability",
+   "phase": "1"
+  },
+  "1.6": {
+   "name": "Prepare and submit business case",
+   "phase": "1"
+  },
+  "2.1": {
+   "name": "Design outputs",
+   "phase": "2"
+  },
+  "2.2": {
+   "name": "Design variable descriptions",
+   "phase": "2"
+  },
+  "2.3": {
+   "name": "Design collection",
+   "phase": "2"
+  },
+  "2.4": {
+   "name": "Design frame and sample",
+   "phase": "2"
+  },
+  "2.5": {
+   "name": "Design processing and analysis",
+   "phase": "2"
+  },
+  "2.6": {
+   "name": "Design production systems and workflow",
+   "phase": "2"
+  },
+  "3.1": {
+   "name": "Reuse or build collection instruments",
+   "phase": "3"
+  },
+  "3.2": {
+   "name": "Reuse or build processing and analysis components",
+   "phase": "3"
+  },
+  "3.3": {
+   "name": "Reuse or build dissemination components",
+   "phase": "3"
+  },
+  "3.4": {
+   "name": "Configure workflows",
+   "phase": "3"
+  },
+  "3.5": {
+   "name": "Test production systems",
+   "phase": "3"
+  },
+  "3.6": {
+   "name": "Test statistical business process",
+   "phase": "3"
+  },
+  "3.7": {
+   "name": "Finalise production systems",
+   "phase": "3"
+  },
+  "4.1": {
+   "name": "Create frame and select sample",
+   "phase": "4"
+  },
+  "4.2": {
+   "name": "Set up collection",
+   "phase": "4"
+  },
+  "4.3": {
+   "name": "Run collection",
+   "phase": "4"
+  },
+  "4.4": {
+   "name": "Finalise collection",
+   "phase": "4"
+  },
+  "5.1": {
+   "name": "Integrate data",
+   "phase": "5"
+  },
+  "5.2": {
+   "name": "Classify and code",
+   "phase": "5"
+  },
+  "5.3": {
+   "name": "Review and validate",
+   "phase": "5"
+  },
+  "5.4": {
+   "name": "Edit and impute",
+   "phase": "5"
+  },
+  "5.5": {
+   "name": "Derive new variables and units",
+   "phase": "5"
+  },
+  "5.6": {
+   "name": "Calculate weights",
+   "phase": "5"
+  },
+  "5.7": {
+   "name": "Calculate aggregates",
+   "phase": "5"
+  },
+  "5.8": {
+   "name": "Finalise data files",
+   "phase": "5"
+  },
+  "6.1": {
+   "name": "Prepare draft outputs",
+   "phase": "6"
+  },
+  "6.2": {
+   "name": "Validate outputs",
+   "phase": "6"
+  },
+  "6.3": {
+   "name": "Interpret and explain outputs",
+   "phase": "6"
+  },
+  "6.4": {
+   "name": "Apply disclosure control",
+   "phase": "6"
+  },
+  "6.5": {
+   "name": "Finalise outputs",
+   "phase": "6"
+  },
+  "7.1": {
+   "name": "Update output systems",
+   "phase": "7"
+  },
+  "7.2": {
+   "name": "Produce dissemination products",
+   "phase": "7"
+  },
+  "7.3": {
+   "name": "Manage release of dissemination products",
+   "phase": "7"
+  },
+  "7.4": {
+   "name": "Promote dissemination products",
+   "phase": "7"
+  },
+  "7.5": {
+   "name": "Manage user support",
+   "phase": "7"
+  },
+  "8.1": {
+   "name": "Gather evaluation inputs",
+   "phase": "8"
+  },
+  "8.2": {
+   "name": "Conduct evaluation",
+   "phase": "8"
+  },
+  "8.3": {
+   "name": "Agree an action plan",
+   "phase": "8"
+  },
+  "OA.QM": {
+   "name": "Quality management",
+   "phase": "OA"
+  },
+  "OA.MM": {
+   "name": "Metadata management",
+   "phase": "OA"
+  },
+  "OA.DM": {
+   "name": "Data management",
+   "phase": "OA"
+  },
+  "OA.PM": {
+   "name": "Strategic, people and programme management",
+   "phase": "OA"
+  },
+  "OA.FM": {
+   "name": "Financial and procurement management",
+   "phase": "OA"
+  },
+  "OA.SM": {
+   "name": "Statistical framework management",
+   "phase": "OA"
+  }
+ },
+ "competencies": {
+  "comp_nat_accounts_001": [
+   "1.4",
+   "5.1",
+   "5.5",
+   "5.7",
+   "6.1",
+   "6.2",
+   "6.3",
+   "OA.SM"
+  ],
+  "comp_survey_design_002": [
+   "2.3",
+   "2.4",
+   "4.1",
+   "5.6",
+   "6.2"
+  ],
+  "comp_price_stats_003": [
+   "2.4",
+   "4.3",
+   "5.3",
+   "5.7",
+   "6.1",
+   "6.2"
+  ],
+  "comp_index_numbers_004": [
+   "2.5",
+   "5.5",
+   "5.7",
+   "6.2"
+  ],
+  "comp_ml_stats_005": [
+   "3.2",
+   "5.2",
+   "5.4"
+  ],
+  "comp_big_data_006": [
+   "1.5",
+   "4.3",
+   "5.1"
+  ],
+  "comp_econ_census_007": [
+   "2.3",
+   "4.1",
+   "4.2",
+   "4.3",
+   "4.4"
+  ],
+  "comp_dem_analysis_008": [
+   "5.5",
+   "6.1",
+   "6.3"
+  ],
+  "comp_agri_stats_009": [
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_industry_stats_010": [
+   "2.4",
+   "4.3",
+   "5.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_gdp_nowcast_011": [
+   "5.7",
+   "6.1",
+   "6.3"
+  ],
+  "comp_spatial_stat_012": [
+   "2.4",
+   "4.1",
+   "7.2"
+  ],
+  "comp_time_series_013": [
+   "5.5",
+   "6.2",
+   "6.3"
+  ],
+  "comp_poverty_014": [
+   "5.5",
+   "6.1",
+   "6.3"
+  ],
+  "comp_sdg_monitor_015": [
+   "1.1",
+   "1.5",
+   "6.1",
+   "7.2"
+  ],
+  "comp_data_gov_016": [
+   "5.3",
+   "8.2",
+   "OA.QM",
+   "OA.MM",
+   "OA.DM"
+  ],
+  "comp_python_stats_017": [
+   "3.2",
+   "5.3",
+   "5.4",
+   "5.7"
+  ],
+  "comp_r_analytics_018": [
+   "5.4",
+   "5.6",
+   "6.1"
+  ],
+  "comp_data_viz_019": [
+   "7.2",
+   "6.3"
+  ],
+  "comp_report_writing_020": [
+   "6.5",
+   "7.2"
+  ],
+  "comp_procurement_021": [
+   "OA.FM"
+  ],
+  "comp_rtt_022": [
+   "7.5"
+  ],
+  "comp_e_gov_023": [
+   "3.3",
+   "7.1"
+  ],
+  "comp_project_mgmt_024": [
+   "1.6",
+   "2.6",
+   "4.2",
+   "OA.PM"
+  ],
+  "comp_public_fin_025": [
+   "1.6",
+   "OA.FM"
+  ],
+  "comp_data_privacy_026": [
+   "6.4",
+   "5.8",
+   "OA.DM"
+  ],
+  "comp_cloud_infra_027": [
+   "3.4",
+   "3.5",
+   "3.7"
+  ],
+  "comp_api_int_028": [
+   "3.3",
+   "7.1"
+  ],
+  "comp_db_design_029": [
+   "3.2",
+   "5.8",
+   "OA.DM"
+  ],
+  "comp_statistical_sw_030": [
+   "5.4",
+   "5.6",
+   "5.7"
+  ],
+  "comp_strategic_031": [
+   "1.1",
+   "1.3",
+   "8.3",
+   "OA.PM"
+  ],
+  "comp_leadership_032": [
+   "4.3",
+   "OA.PM"
+  ],
+  "comp_comm_032": [
+   "1.2",
+   "7.4",
+   "7.5"
+  ],
+  "comp_prob_solve_033": [
+   "5.3",
+   "6.2",
+   "8.2"
+  ],
+  "comp_integrity_034": [
+   "6.4",
+   "7.3",
+   "OA.QM"
+  ],
+  "comp_change_mgmt_035": [
+   "3.6",
+   "8.3",
+   "OA.PM"
+  ],
+  "comp_collab_036": [
+   "1.2",
+   "4.2",
+   "5.1"
+  ],
+  "comp_decision_037": [
+   "1.6",
+   "6.5",
+   "8.3"
+  ],
+  "comp_innov_038": [
+   "1.5",
+   "3.2",
+   "8.2"
+  ],
+  "comp_citizen_039": [
+   "7.4",
+   "7.5"
+  ]
+ }
+}

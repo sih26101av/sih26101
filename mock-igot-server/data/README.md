@@ -51,6 +51,8 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 | `enrollments.json` | 1,019 enrolments. Status 2 ⇔ 100%, with `completedDate` | `GET /api/course/v1/user/enrollment/list/{id}` |
 | `content_states.json` | Leaf-level progress for **in-progress** enrolments only. Completed ones are derived at request time | `POST /api/course/v1/content/state/read` |
 | `frac_crosswalk.json` | iGOT dictionary CID id → catalogue FRAC id, keyword rules, `confirmed: false` for all | `GET /api/frac/v1/crosswalk` |
+| `gsbpm_map.json` | GSBPM v5.1 phases and sub-processes (+ `OA.*` overarching), FRAC competency → sub-processes | `GET /api/gsbpm/v1/map` |
+| `offices.json` | 12 offices: sub-processes run in `FY2026-27-Q2` with officer-hours each, headcount, products | `GET /api/org/v1/offices[/{id}]` |
 | `_truth/planted_effects.json` | **Ground truth for tests only**: latent true levels and planted effects. The server never serves it and the backend never reads it | (not served) |
 | `MANIFEST.json` | Synthetic-data label + hashes | (not served) |
 
@@ -143,6 +145,19 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 - **Current gaps:** 35% have an in-progress course at true level + 1, and 10%
   have one enrolled but not started.
 - **Extras:** 0–3 general-interest courses at L1–L2.
+
+### GSBPM + office workload (B1 / B2)
+
+- `mockdata/domain.py::GSBPM_MAP` lists each competency's sub-processes. These
+  are hand-designed, e.g. National Accounts → 5.1, 5.5, 5.7, 6.1–6.3, OA.SM.
+- `OFFICES[...]` gives relative sub-process weights per office, and
+  `OFFICE_HEADCOUNT` its sanctioned strength (all staff, not only the 151 on the
+  roster).
+- `officerHours = headcount × HOURS_PER_OFFICER_QUARTER (480) × weight share ×
+  U(0.85, 1.15)`, rounded to 10 h. Field offices (FOD) dominate the 4.x Collect
+  phase, so the 80% rule scopes in collection, validation and aggregation first.
+- The GSBPM version is **v5.1** (2019). "5.2" was requested, but its
+  sub-process list could not be confirmed.
 
 ## Deliberate holes and planted cases
 

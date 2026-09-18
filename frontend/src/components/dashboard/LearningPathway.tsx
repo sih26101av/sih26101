@@ -9,7 +9,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, BookOpen, ChevronDown, ChevronUp, ClipboardCheck, Clock,
+  AlertTriangle, BookOpen, Briefcase, ChevronDown, ChevronUp, ClipboardCheck, Clock,
   ListOrdered, PlayCircle, ShieldCheck, Sparkles, TrendingUp,
 } from "lucide-react";
 import type {
@@ -116,7 +116,7 @@ export const PathwayLadder: React.FC<{ pathway: LearningPathway }> = ({ pathway 
       {pathway.crosswalk?.method === "semantic_crosswalk" && (
         <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2">
           Courses come from the catalogue competency “{pathway.crosswalk.catalogueName}”, matched by name
-          similarity ({pathway.crosswalk.similarity.toFixed(2)}) — not yet confirmed by a reviewer.
+          similarity ({(pathway.crosswalk.similarity ?? 0).toFixed(2)}) — not yet confirmed by a reviewer.
         </p>
       )}
       {pathway.message && (
@@ -186,6 +186,14 @@ export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> 
                 <span className="text-slate-500 dark:text-slate-400">
                   {s.advances.map(a => `${a.competencyName} L${a.toLevel}`).join(" · ")}
                 </span>
+                {s.selectedBy === "opportunity_tie_break" && (
+                  <span
+                    title="Near-tie on levels gained per hour: this gap came first because your office practises it more this cycle."
+                    className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-px text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                  >
+                    <Briefcase size={9} /> practise at work
+                  </span>
+                )}
               </span>
             </li>
           ))}
@@ -201,6 +209,7 @@ export const StudyPlanSummary: React.FC<{ plan: StudyPlan; maxSteps?: number }> 
       )}
       <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500">
         Ordered by level gained per hour on your highest-priority gaps; each competency's levels stay in order.
+        Near-ties (within 10%) go to the gap you can practise at work this cycle.
       </p>
     </div>
   );

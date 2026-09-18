@@ -91,6 +91,10 @@ DB_ROLES: list[dict] = []            # data/roles.json — role competency profi
 DB_COMPETENCIES: list[dict] = []     # competencies.json — the iGOT competency dictionary (CID ids)
 DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
+# SCIL v6 reference data (data/<file>) — see data/README.md
+REFERENCE_FILES = ["gsbpm_map.json", "offices.json"]
+DB_REF: dict[str, Any] = {}
+
 # Seed data for user / enrolment / content-state lookups
 DB_USERS: list[dict] = []
 DB_ENROLLMENTS: list[dict] = []
@@ -126,6 +130,12 @@ async def lifespan(app: FastAPI):
     DB_FRAC = _load_json_from_dir(data_dir, "frac_competencies.json")
     DB_CROSSWALK = _load_json_from_dir(data_dir, "frac_crosswalk.json")
     DB_ROLES = _load_json_from_dir(data_dir, "roles.json").get("roles", [])
+    # SCIL v6 reference datasets (generated, synthetic) — optional files
+    for name in REFERENCE_FILES:
+        try:
+            DB_REF[name] = _load_json_from_dir(data_dir, name)
+        except RuntimeError as exc:
+            print(f"[WARN] {exc}", flush=True)
 
     print("[STARTUP] Loading competencies.json (iGOT dictionary) …", flush=True)
     DB_COMPETENCIES = _load_json("competencies.json")
@@ -904,6 +914,52 @@ async def get_competencies(
         for c in DB_FRAC
     ]
     return sunbird_ok(API_ID, VER, {"count": len(items), "competencies": items})
+
+
+def _ref_or_404(name: str, api_id: str, ver: str):
+    data = DB_REF.get(name)
+    if data is None:
+        return None, sunbird_err(api_id, ver, 404, "ERR_DATA_NOT_LOADED",
+                                 f"data/{name} is not loaded — run generate_mock_data.py.")
+    return data, None
+
+
+# ─────────────────────────────────────────────────────────────
+# GSBPM ontology + office workload (SCIL v6 §1 / §4)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/gsbpm/v1/map")
+async def get_gsbpm_map(x_authenticated_user_token: str | None = Header(default=None)):
+    """GSBPM phases / sub-processes and FRAC competency → sub-processes."""
+    API_ID, VER = "api.gsbpm.map.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("gsbpm_map.json", API_ID, VER)
+    return err or sunbird_ok(API_ID, VER, data)
+
+
+@app.get("/api/org/v1/offices")
+async def get_offices(x_authenticated_user_token: str | None = Header(default=None)):
+    """Offices with the GSBPM sub-processes they run this cycle and officer-hours per sub-process."""
+    API_ID, VER = "api.org.offices.list", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("offices.json", API_ID, VER)
+    if err:
+        return err
+    return sunbird_ok(API_ID, VER, {"count": len(data["offices"]), "cycle": data["cycle"],
+                                    "offices": data["offices"]})
+
+
+@app.get("/api/org/v1/offices/{office_id}")
+async def get_office(office_id: str, x_authenticated_user_token: str | None = Header(default=None)):
+    API_ID, VER = "api.org.office.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("offices.json", API_ID, VER)
+    if err:
+        return err
+    office = next((o for o in data["offices"] if o["officeId"] == office_id), None)
+    if office is None:
+        return sunbird_err(API_ID, VER, 404, "ERR_OFFICE_NOT_FOUND", f"Office '{office_id}' does not exist.")
+    return sunbird_ok(API_ID, VER, {"office": office, "cycle": data["cycle"]})
 
 
 @app.get("/api/frac/v1/crosswalk")

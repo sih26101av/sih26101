@@ -70,7 +70,11 @@ one study order across all gaps.
   both (the other pathway's step is swapped to it in place). Ladder order is the
   prerequisite DAG. With a budget, a course that doesn't fit blocks its ladder
   (`deferred`). UNASSESSED ladders are not scheduled; they're listed in
-  `diagnostics`. **No approximation guarantee is claimed** — the (1−1/e) bound does
+  `diagnostics`. **Opportunity tie-break (SCIL v6 §4):** frontier courses within
+  `OPPORTUNITY_TIE_BAND = 0.10` of the best gain/hour are near-ties; among them the
+  one advancing the gap with the highest `pathway["opportunity"]["level"]` goes
+  first (ordinal only — never a multiplier, never hides a gap). Steps carry
+  `opportunity` and `selectedBy` (see [workforce-insights.md](workforce-insights.md)). **No approximation guarantee is claimed** — the (1−1/e) bound does
   not hold for ratio-greedy under a budget with precedence constraints.
 - Pydantic outputs: `GapEntry` (+ `confidence`, `catalogueId`, `catalogue_key`),
   `RecommendationResult` (+ `courseLevel`, `tagSupported`).
@@ -84,7 +88,8 @@ all reading `_learner_competency_state` — see
 - `get_recommendations_by_user_id` — resolved levels → `calculate_gaps` →
   `get_recommendations(limit_per_gap=3)`.
 - `get_learning_pathway` — `build_pathway` per role competency (catalogue id from
-  the crosswalk, role id echoed back) + `build_study_plan`.
+  the crosswalk, role id echoed back), each pathway gets the row's `opportunity`,
+  then `build_study_plan`.
 
 Frontend: `src/services/api.ts::fetchRecommendations`, `fetchLearningPathways`;
 `components/dashboard/CourseCard.tsx`; `components/dashboard/LearningPathway.tsx`
@@ -118,11 +123,14 @@ ordering, course sharing, budget, crosswalk.
                  "currentLevel","startLevel","targetLevel","gap","priorityScore",
                  "confidence","basis","evidenceLevel","status","needsDiagnostic",
                  "message","totalHours","bridgeHours","coverageGaps",
-                 "unreachableLevels","tagReviewFlags",
+                 "unreachableLevels","tagReviewFlags","opportunity",
                  "steps": [{ "order","kind","fromLevel","toLevel","covers",
                              "levelDescriptor","course","hours","reason",
                              "alternatives","action?" }] }],
-  "studyPlan": { "budgetHours","totalHours","diagnostics","steps","deferred","method" } }
+  "studyPlan": { "budgetHours","totalHours","diagnostics","deferred","method",
+                 "steps": [{ "order","courseId","title","provider","isTpac","kind",
+                             "hours","cumulativeHours","advances",
+                             "opportunity","selectedBy" }] } }
 ```
 Both return `503` if the engine failed to build and `403` for another learner's id.
 

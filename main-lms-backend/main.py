@@ -77,6 +77,11 @@ _rec_engine: HybridRecommendationEngine | None = None
 # Shares the course→comp index from _rec_engine so we don't duplicate it.
 _assembler: BaselineAssembler | None = None
 
+# ── SCIL v6 reference data (GSBPM map, office workload, …) ────────────────────
+from services.reference_data import ReferenceData
+from services import app_state, gsbpm_service
+_ref: ReferenceData = ReferenceData()
+
 
 
 @app.on_event("startup")
@@ -127,6 +132,11 @@ async def _startup():
         _rec_engine = None
         _assembler  = None
 
+    # SCIL v6 reference data (GSBPM map, office workload, …) — adapter, disk fallback.
+    global _ref
+    _ref = await ReferenceData.load(adapter)
+    app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
+
 
 
 
@@ -138,6 +148,8 @@ app.include_router(rag_router,     prefix="/api/v1/rag", tags=["rag"])
 app.include_router(ai_tools_router,prefix="/api/v1/ai",  tags=["ai-tools"])
 app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
 app.include_router(competency.router)
+from routers.insights import router as insights_router
+app.include_router(insights_router)
     
     
 
@@ -249,11 +261,15 @@ async def _learner_competency_state(user_id: str) -> dict:
         if _assembler is not None else {}
     )
 
+    office = _ref.offices.get((user.get("jobProfile") or {}).get("officeId") or "")
+    gsbpm_subs = _ref.gsbpm.get("competencies", {})
+
     rows = []
     for comp in comps:
         cid = comp["id"]
         bline = baseline_results.get(cid, {})
         resolved = resolve_level(bline, _self_reported_level(comp))
+        catalogue_id = (crosswalks[cid] or {}).get("catalogueId") or cid
         rows.append({
             "competencyId":  cid,
             "name":          (comp.get("name") or "").strip(),
@@ -267,6 +283,10 @@ async def _learner_competency_state(user_id: str) -> dict:
             "evidence":      bline.get("_evidence", {}),
             "catalogueId":   (crosswalks[cid] or {}).get("catalogueId"),
             "crosswalk":     crosswalks[cid],                # None → not in catalogue
+            # SCIL v6 §4: how much the official's office works in this
+            # competency's GSBPM sub-processes this cycle (badge + tie-break only)
+            "opportunity":   gsbpm_service.opportunity(office, gsbpm_subs.get(catalogue_id, []),
+                                                       _ref.gsbpm, _ref.cycle),
         })
 
     return {"user": user, "enrollments": enrollments, "competencies": rows}
@@ -375,6 +395,7 @@ async def get_skill_gaps_by_user_id(
             "rawScore":      round(row["rawScore"], 3),
             "evidence":      row["evidence"],                # per-channel breakdown dict
             "crosswalk":     row["crosswalk"],               # catalogue competency serving it
+            "opportunity":   row["opportunity"],             # Low | Medium | High this cycle (or None)
         })
 
     # Sort: known gaps first (largest gap, lowest score), UNASSESSED last
@@ -604,6 +625,8 @@ async def get_learning_pathway(
         )
         for r in rows
     ]
+    for p, r in zip(pathways, rows):
+        p["opportunity"] = r["opportunity"]
     study_plan = _rec_engine.build_study_plan(pathways, budget_hours=budgetHours)
     pathways.sort(key=lambda p: (p["status"] == "met", -p["priorityScore"]))
 

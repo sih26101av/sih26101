@@ -13,12 +13,12 @@ validation against real officials.
 | Item | Status | Commit | Notes |
 |---|---|---|---|
 | Preflight (baseline commit, servers, baseline metrics) | done | `1353c45` | Metrics in `docs/reports/metrics-baseline.json` |
-| A1 One competency id space | done | (Phase A commit) | 100% of served role competencies are catalogue ids; `frac_crosswalk.json` for the 331 CID dictionary |
-| A2 Catalogue that teaches its tags | done | (Phase A commit) | Tag support 100% (597/597); 34/40 full ladders; 6 documented holes |
-| A3 Durations + quality fields | done | (Phase A commit) | Seconds; 4 formats; `modality`; ~10% missing per quality field |
-| A4 One catalogue source | done | (Phase A commit) | `POST /api/composite/v1/search` → adapter → engine; disk fallback with warning |
-| A5 Enrollments / history | done | (Phase A commit) | Status 2 ⇔ 100%; dates over 3 years; 5 planted out-of-order learners |
-| B2+B1 GSBPM + opportunity | pending | | |
+| A1 One competency id space | done | `5e646b5` | 100% of served role competencies are catalogue ids; `frac_crosswalk.json` for the 331 CID dictionary |
+| A2 Catalogue that teaches its tags | done | `5e646b5` | Tag support 100% (597/597); 34/40 full ladders; 6 documented holes |
+| A3 Durations + quality fields | done | `5e646b5` | Seconds; 4 formats; `modality`; ~10% missing per quality field |
+| A4 One catalogue source | done | `5e646b5` | `POST /api/composite/v1/search` → adapter → engine; disk fallback with warning |
+| A5 Enrollments / history | done | `5e646b5` | Status 2 ⇔ 100%; dates over 3 years; 5 planted out-of-order learners |
+| B2+B1 GSBPM + opportunity | done | (B2+B1 commit) | `gsbpm_map.json` + `offices.json`; 80% scope report (13 core sub-processes = 80.8% of hours → 28 in / 12 out); opportunity badge; ordinal tie-break (band 10%) |
 | B3 ACBP + budget + modality | pending | | |
 | B4 Prerequisite DAG | pending | | |
 | B5 Measured gain / uplift | pending | | |
@@ -123,6 +123,31 @@ Duration by format after Phase A (min / median / p90 / max, hours):
     Other files use `indent=1`.
 21. **Metrics script** `main-lms-backend/scripts/mock_data_metrics.py` computes
     every before/after number above, so they are reproducible.
+
+22. **B1/B2 opportunity bands.** High is ≥ 20% of the office's officer-hours in
+    the competency's sub-processes (about a day a week), Medium is ≥ 5%, and
+    Low is anything less. The tie band is `OPPORTUNITY_TIE_BAND = 0.10` of the
+    best gain/hour, which is well inside the noise of hour estimates, so it
+    only reorders near-ties. Opportunity is never a multiplier and never hides
+    a gap.
+23. **Office workload model.** Officer-hours = sanctioned headcount (all staff,
+    not only the 151 platform users) × 480 h per quarter × the office's
+    sub-process weight share × U(0.85, 1.15). The cycle is FY 2026-27 Q2.
+    Behavioural and management competencies map to GSBPM overarching processes
+    (`OA.*`), so they can be scoped too.
+24. **Admin views live in a new "Insights" tab**
+    (`components/admin/WorkforceInsights.tsx`). This keeps AdminDashboard edits
+    minimal; every later Phase B admin panel goes there too. Admin endpoints are
+    in `routers/insights.py`. Singletons are shared through
+    `services/app_state.py`, which avoids a circular import on `main`.
+25. **Reference data loading.** `services/reference_data.py` loads each SCIL v6
+    dataset through the adapter once at startup. It falls back to disk per
+    file, with a warning, the same rule as the catalogue.
+26. **Dev-server note.** `uvicorn --reload` watches all of `main-lms-backend/`,
+    so editing tests or scripts restarts the backend (about 40 s). Once, an
+    edit left a worker hung. I killed only that worker process (PID 16684) and
+    the reloader started a fresh one. The user's reloader process was not
+    touched.
 
 ## Could not do / blocked
 

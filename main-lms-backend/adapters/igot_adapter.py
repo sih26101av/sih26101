@@ -142,6 +142,23 @@ class MockIgotAdapter(ILearningPlatformAdapter):
             resp.raise_for_status()
         return _sunbird_result(resp.json(), "competencies") or []
 
+    async def _get_result(self, path: str, timeout: float = 10.0) -> Dict[str, Any]:
+        """GET a Sunbird endpoint and return its `result` object."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}{path}", headers=self._headers, timeout=timeout)
+            resp.raise_for_status()
+        return resp.json().get("result", {}) or {}
+
+    # ── SCIL v6 reference data ─────────────────────────────────────────────────
+
+    async def fetch_gsbpm_map(self) -> Dict[str, Any]:
+        """GET /api/gsbpm/v1/map — GSBPM sub-processes + competency → sub-processes."""
+        return await self._get_result("/api/gsbpm/v1/map")
+
+    async def fetch_offices(self) -> Dict[str, Any]:
+        """GET /api/org/v1/offices — {cycle, offices[{officeId, subprocesses[{id, officerHours}]}]}."""
+        return await self._get_result("/api/org/v1/offices")
+
     async def fetch_frac_crosswalk(self) -> List[Dict[str, Any]]:
         """GET /api/frac/v1/crosswalk — iGOT dictionary CID id → catalogue FRAC id."""
         async with httpx.AsyncClient() as client:

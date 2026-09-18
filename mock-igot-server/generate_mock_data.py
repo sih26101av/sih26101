@@ -680,6 +680,60 @@ def build_enrollments(users: list, catalog: list, facts: dict) -> tuple[list, di
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# GSBPM ontology + office workload (B1 / B2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+CYCLE_ID = "FY2026-27-Q2"
+CYCLE_LABEL = "FY 2026-27 Q2 (Jul–Sep 2026)"
+HOURS_PER_OFFICER_QUARTER = 480     # ~60 working days × 8 h of productive time per quarter
+
+
+def build_gsbpm_map() -> dict:
+    return {
+        "_meta": meta("GSBPM sub-processes and which FRAC competency is exercised in which sub-process. "
+                      "Sub-process list is GSBPM v5.1 (requested: 5.2 — see the decisions log); OA.* are "
+                      "GSBPM overarching processes, which GSBPM does not number."),
+        "version": "5.1",
+        "phases": D.GSBPM_PHASES,
+        "subprocesses": {sid: {"name": name, "phase": sid.split(".")[0]}
+                         for sid, name in D.GSBPM_SUBPROCESSES.items()},
+        "competencies": {cid: D.GSBPM_MAP[cid] for cid, *_ in D.COMPETENCIES},
+    }
+
+
+def build_offices(users: list) -> dict:
+    rng = rng_for("offices")
+    roster = {}
+    for u in users:
+        roster[u["jobProfile"]["officeId"]] = roster.get(u["jobProfile"]["officeId"], 0) + 1
+    offices = []
+    for oid, name, location, _legacy, products, weights, _core in D.OFFICES:
+        head = D.OFFICE_HEADCOUNT[oid]
+        total_w = sum(weights.values())
+        subs = []
+        for sid in sorted(weights):
+            hours = head * HOURS_PER_OFFICER_QUARTER * weights[sid] / total_w * rng.uniform(0.85, 1.15)
+            subs.append({"id": sid, "name": D.GSBPM_SUBPROCESSES[sid], "officerHours": int(round(hours, -1))})
+        offices.append({
+            "officeId": oid,
+            "name": name,
+            "location": location,
+            "products": products,
+            "headcount": head,
+            "rosterOfficials": roster.get(oid, 0),
+            "cycle": CYCLE_ID,
+            "subprocesses": subs,
+            "totalOfficerHours": sum(s["officerHours"] for s in subs),
+        })
+    return {
+        "_meta": meta(f"Office workload for {CYCLE_LABEL}: which GSBPM sub-processes each office runs and "
+                      f"the officer-hours spent on each (headcount × {HOURS_PER_OFFICER_QUARTER} h × share)."),
+        "cycle": {"id": CYCLE_ID, "label": CYCLE_LABEL, "hoursPerOfficer": HOURS_PER_OFFICER_QUARTER},
+        "offices": offices,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Writing
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -718,6 +772,8 @@ def generate() -> dict:
         "enrollments.json": dumps(enrollments),
         "content_states.json": dumps(states, compact=True),
         "frac_crosswalk.json": dumps(build_crosswalk(igot_dictionary)),
+        "gsbpm_map.json": dumps(build_gsbpm_map()),
+        "offices.json": dumps(build_offices(users)),
         "roles.json": dumps({"_meta": meta("Role (office × designation) competency profiles; requiredLevel "
                                            "drawn from the designation tier."), "roles": roles}),
         "_truth/planted_effects.json": dumps({
