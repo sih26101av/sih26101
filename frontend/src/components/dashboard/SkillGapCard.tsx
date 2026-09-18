@@ -254,6 +254,31 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
 
         <EvidenceCompletenessRow entry={entry} />
 
+        {/* SCIL v6 §2 — belief with dated decay, or the cold-start cohort prior */}
+        {entry.proficiency && (
+          <p
+            className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5"
+            title={`θ ~ N(${entry.proficiency.decayedMu}, ${entry.proficiency.decayedSigma}²). Evidence decays toward the population mean (${entry.proficiency.populationMu}) with a ${entry.proficiency.halfLifeMonths}-month half-life (${entry.proficiency.decayClass} skill).`}
+          >
+            Estimated now: {entry.proficiency.decayedMu.toFixed(1)}{' '}
+            (likely {entry.proficiency.band80[0]}–{entry.proficiency.band80[1]})
+            {entry.proficiency.evidenceAgeMonths != null && ` · newest evidence ${Math.round(entry.proficiency.evidenceAgeMonths)} months old`}
+            {' · '}expected shortfall {entry.proficiency.expectedShortfall.toFixed(1)} level{entry.proficiency.expectedShortfall === 1 ? '' : 's'}
+            {entry.proficiency.refresherRecommended && (
+              <span className="ml-1.5 font-semibold text-amber-600 dark:text-amber-400">· refresher suggested</span>
+            )}
+          </p>
+        )}
+        {unassessed && entry.coldStartPrior && (
+          <p className="text-[10.5px] text-violet-600 dark:text-violet-300 mt-1.5" title={entry.coldStartPrior.reason}>
+            Inferred from role — unassessed: about Level {entry.coldStartPrior.mu.toFixed(1)}{' '}
+            (likely {entry.coldStartPrior.band80[0]}–{entry.coldStartPrior.band80[1]},{' '}
+            {entry.coldStartPrior.source === 'cohort'
+              ? `officials in ${entry.coldStartPrior.cluster}`
+              : 'all officials — cohort prior not used'}). Not used as your level.
+          </p>
+        )}
+
         {/* Evidence breakdown toggle */}
         {evidence && (
           <button

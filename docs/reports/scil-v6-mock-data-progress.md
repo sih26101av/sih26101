@@ -22,8 +22,8 @@ validation against real officials.
 | B3 ACBP + budget + modality | done | `aaa6356` | `acbp.json` (org + role APAR-linked mandatory courses, hours/quarter); mandatory first even over budget; default budget = quarterly hours; classroom cap 30 h/quarter; `?unbudgeted=true` |
 | B4 Prerequisite DAG | done | `e9dcdee` | 18 expert edges, cycle-checked with the ladders (cyclic set rejected); gate orders/blocks rungs, unknown levels advisory; data-driven suggestions (OLS + BH-FDR 10% + bootstrap CI) never applied; recovers both planted precedence effects |
 | B5 Measured gain / uplift | done | `1761b34` | IPW (ATT) uplift per course + shrinkage κ=5 + bootstrap CI; mis-tag flag; all 4 planted zero-uplift courses flagged (and nothing else); r=0.91 vs planted truth (n≥15); flagged courses demoted in pathways; admin effectiveness view |
-| B6 Evidence channels U/S/A | done | (B6 commit) | `workplace_evidence.json` (supervisor w/ leniency+halo, utility + confirmation, 10-competency work samples, peer); K/A/U/S fused with equal 0.25 placeholder weights; work-sample / confirmed-use floors; completeness indicator; peer never scored |
-| B8 Decay + cold start + foresight | pending | | |
+| B6 Evidence channels U/S/A | done | `d2f50f6` | `workplace_evidence.json` (supervisor w/ leniency+halo, utility + confirmation, 10-competency work samples, peer); K/A/U/S fused with equal 0.25 placeholder weights; work-sample / confirmed-use floors; completeness indicator; peer never scored |
+| B8 Decay + cold start + foresight | done | (B8 commit) | `hrms.json`; θ~N(μ,σ²) with two-class dated decay toward population mean (6.5 / 12 mo), expected-shortfall gap, refresher flag; cohort prior (GSBPM phase × tenure band) with divergence check; background workforce snapshot; capability risk / SPOF, 36-month attrition × decay projection, draft TPAC agenda; n<5 suppression |
 | B7 Item bank + IRT + CAT | pending | | |
 
 ## Before / after metrics
@@ -241,6 +241,39 @@ Duration by format after Phase A (min / median / p90 / max, hours):
     survey / work-sample service) and merged per request with the LMS's own
     `EvidenceLog` rows. It is not written into `auth.db`, so the fixtures stay
     the single source.
+
+49. **Decay does not change the displayed level.** The displayed FRAC level stays
+    the monotone floor level; B6 requires `resolve_level` to stay monotone,
+    and decaying it would make finishing a course eventually lower a level.
+    Decay acts on the probabilistic μ/σ layer: the "estimated now" line, the
+    expected-shortfall gap, the refresher flag and the foresight projection.
+50. **Decay clock = newest dated objective evidence**, including the annual
+    supervisor rating. A recent APAR rating therefore refreshes the clock for
+    most competencies (evidence ages are mostly ~4 months). This is defensible
+    because someone observed recent performance, but it limits how much decay
+    shows up today.
+51. **Population prior per competency** = the mean and SD of the fused μ over
+    officials with assessed evidence in the workforce snapshot. The SD floor is
+    0.6. Until the snapshot is built, the defaults are 2.0 ± 1.1.
+52. **The workforce snapshot is built in the background** after startup
+    (~2–3 min for 151 officials against the dev mock, sequential), with an admin
+    refresh endpoint. Endpoints that need it return 503 until it is ready.
+53. **New recruits have no APAR rating or work sample** (generator). Otherwise
+    the workplace evidence made every competency assessed, and cold start was
+    unreachable. This is also more realistic: a new recruit has not been
+    through an appraisal cycle yet.
+54. **Suppression: 1–4 are suppressed, 0 is shown.** A zero identifies nobody
+    and is the most important risk signal. The single-point-of-failure flag is
+    kept, as requested, even though it implies a count of one; the exact
+    counts stay suppressed.
+55. **Foresight constants.** `CAPABLE_LEVEL = 3` (FRAC "independently carries
+    out the work") and `ANNUAL_ATTRITION = 0.03` are placeholders, not
+    measured. There is a 36-month horizon with 6-monthly points and an
+    "attrition only" comparison series.
+56. **The TPAC agenda is drafts only.** Items are generated from four sources
+    (coverage gaps with demand, capability risk, near-zero-uplift courses, new
+    prerequisite suggestions), each `status: "draft"`. Nothing is decided or
+    sent anywhere.
 
 ## Could not do / blocked
 

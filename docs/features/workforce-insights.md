@@ -239,6 +239,107 @@ method, dataNote}`. The backend never reads `_truth/`; recovery is checked in
   sort toggle.
 - Learner ladders show "Low measured uplift" on flagged courses.
 
+## Dated decay, cold start and workforce foresight (SCIL v6 §2 / §11, B8)
+
+### Proficiency belief with dated decay
+
+`services/proficiency_service.py`. The **displayed FRAC level stays the
+monotone evidence-floor level** from `resolve_level`. The probabilistic layer
+sits on top of it:
+- **Belief.** θ ~ N(μ, σ²), with μ = the fused K/A/U/S score and σ by
+  confidence tier: `SIGMA_BY_CONFIDENCE` HIGH 0.45 / MEDIUM 0.7 / LOW 0.95.
+- **Decay clock.** `baseline_assembler._last_evidence_date` gives the newest
+  dated objective evidence: completion, certificate, quiz, work sample,
+  supervisor rating or confirmed use. Tenure, education, self-report and peer
+  ratings are undated.
+- **Two-class decay** (`HALF_LIFE_MONTHS`: accuracy 6.5, procedural 12, class
+  from `frac_competencies.json::decayClass`). λ = 0.5^(age/h);
+  μ_t = μ_pop + λ(μ − μ_pop); σ_t² = λ²σ² + (1−λ²)σ_pop². The belief
+  **relaxes toward the population mean**; it never snaps to zero.
+- **Expected-shortfall gap.** `G = (T−μ)Φ(z) + σφ(z)`.
+- **Refresher.** `refresherRecommended` when the decayed μ is more than
+  `REFRESH_MARGIN = 1.0` level below the displayed level.
+- **Output.** `/skill-gaps` rows carry `proficiency{mu, sigma, decayedMu,
+  decayedSigma, band80, evidenceAgeMonths, decayClass, halfLifeMonths,
+  retention, populationMu, expectedShortfall, refresherRecommended}`.
+
+### Cold start for UNASSESSED competencies
+
+`proficiency_service.cohort_prior`:
+- **Posting cluster.** The office's dominant GSBPM phase (by officer-hours) ×
+  tenure band (`TENURE_BANDS`: 0–5, 6–15, 16+ years).
+- **Prior.** The mean of assessed μ over the cluster, widened by
+  `COHORT_BAND_INFLATION = 1.5`, needs ≥ `COHORT_MIN_N = 5` peers. Otherwise
+  the population prior is used, and a cohort smaller than 5 is suppressed
+  (`cohortN: null`).
+- **Divergence check.** The mean |z| of the official's assessed μ against
+  their cohort; above `DIVERGENCE_Z = 2.0`, pooling is dropped and the
+  population prior is used.
+- **UI.** "Inferred from role — unassessed: about Level 1.7 (likely 0.6–2.9,
+  officials in GSBPM phase 5 × 0–5 y). Not used as your level."
+
+### Workforce snapshot
+
+`main._build_workforce_snapshot` runs every official through
+`_learner_competency_state(annotate=False)`:
+- It starts as a background task after startup (≈ 2–3 min for 151 officials
+  against the dev mock) and can be refreshed with
+  `POST /api/v1/admin/workforce/refresh`.
+- It is stored in `app_state.snapshot`, with status at
+  `GET /api/v1/admin/workforce/status`.
+- It feeds the population / cohort statistics and every foresight view.
+
+### Foresight
+
+`services/workforce_service.py`:
+- **HRMS data.** `data/hrms.json` holds date of birth / joining,
+  superannuation (age 60, last day of the month) and the statistical products
+  each official works on. It is served at `GET /api/hrms/v1/officials`.
+  `PRODUCT_CRITICAL` maps each product to its critical competencies.
+- **`capability_risk`**, per product × critical competency:
+  - team size, capable (displayed level ≥ `CAPABLE_LEVEL = 3`), and capable
+    officials retiring within 36 months;
+  - a `singlePointOfFailure` flag;
+  - a risk band: critical = 0 or 1 capable, or all capable retire; high = < 3
+    capable or ≥ 50% retiring; moderate = < 5; low otherwise.
+- **`foresight`**, at 0, 6, …, 36 months: expected capable = Σ over the team of
+  P(in service at t) × P(θ ≥ 3) with θ decayed from the newest evidence plus t.
+  - In service: before superannuation, × (1 − `ANNUAL_ATTRITION = 0.03`)^years.
+    That rate is a placeholder, not measured.
+  - An "attrition only" series (today's Level-3+ officials who stay) separates
+    the two effects. No new learning is assumed.
+- **`tpac_agenda`** builds draft items for the NSSTA training programme
+  committee:
+  - catalogue coverage holes with demand (officials whose target passes the
+    missing level); high priority if critical to a product or in GSBPM scope;
+  - critical / high capability risks, with the 36-month projection;
+  - near-zero-uplift courses (B5);
+  - new prerequisite suggestions (B4).
+
+  Every item is `status: "draft"`.
+- **Small-cell suppression.** Every count of officials in an aggregate is
+  suppressed when it is 1–4 (`SUPPRESS_BELOW = 5` → `display: "<5"`); 0 is
+  shown. The single-point-of-failure flag is kept because it is the purpose
+  of the view, even though it implies a count of one. That tension is logged
+  in the decisions log.
+
+**Endpoints:** `GET /api/v1/admin/workforce/{status | capability-risk |
+foresight | tpac-agenda}` and `POST /api/v1/admin/workforce/refresh`. Results
+are cached per snapshot in `ReferenceData.cache["workforce"]`.
+
+**UI:** Admin → Insights → "Workforce foresight" has three panels: capability
+risk table (suppressed cells in grey), 36-month table (attrition + decay vs
+attrition only; "declining only" filter), and the draft TPAC agenda.
+
+**What the synthetic data shows:**
+- Capability risk flags NAS (no Level-3+ official in Index Numbers on the
+  team), IIP (none in Industrial Statistics) and Economic Census (a single
+  point of failure in Survey Design) as critical.
+- With the specified 6.5-month accuracy half-life, decay dominates the
+  projection. For CPI price statistics, expected capable officials fall from
+  14 (level-based) to about 5. This is the half-life assumption at work, not
+  a measured forgetting rate.
+
 ## TODOs / limits
 
 - GSBPM **v5.1** sub-process list; "5.2" was requested but could not be

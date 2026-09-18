@@ -238,6 +238,28 @@ def _workplace_channels(rows: List[Dict]) -> Dict[str, Any]:
     }
 
 
+_DATED_EVIDENCE = {"VERIFIED_IGOT", "DOCUMENTED_CERT", "PRACTICE_ASSESSMENT", "WORK_SAMPLE",
+                   "SUPERVISOR_RATING", "UTILITY"}
+
+
+def _last_evidence_date(enrollments: list, tag: str, course_map: Dict[str, Dict[str, Optional[int]]],
+                        rows: List[Dict]) -> Optional[str]:
+    """ISO date of the newest DATED, objective evidence (SCIL v6 §2 decay clock). Tenure,
+    education, self-report and peer ratings are undated priors / context — they don't count."""
+    dates = [str(e.get("completedDate") or e.get("enrolledDate") or "")
+             for e in enrollments
+             if is_completed(e) and tag in course_map.get(enrollment_course_id(e), {})]
+    for r in rows:
+        etype = _row_type(r)
+        if etype not in _DATED_EVIDENCE:
+            continue
+        if etype == "UTILITY" and not (r.get("meta") or {}).get("confirmed"):
+            continue
+        dates.append(_row_date(r))
+    dates = [d for d in dates if d]
+    return max(dates)[:10] if dates else None
+
+
 def _normalise_course_map(course_comp_map: Dict) -> Dict[str, Dict[str, Optional[int]]]:
     """Accept {courseId: {compId: level}} or the legacy {courseId: [compId]}."""
     out: Dict[str, Dict[str, Optional[int]]] = {}
@@ -414,6 +436,8 @@ class BaselineAssembler:
                     "weights": CHANNEL_WEIGHTS, "weightsStatus": CHANNEL_WEIGHTS_STATUS,
                 },
                 "peerFeedback": work["peer"],
+                "lastEvidenceDate": _last_evidence_date(enrollments, tag_id(cid), self._course_comp_map,
+                                                        rows_for(cid)),
                 "_evidence": {
                     "verified":   round(vs, 3),
                     "documented": round(ds, 3),

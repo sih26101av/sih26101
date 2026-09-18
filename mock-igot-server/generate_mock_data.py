@@ -1052,6 +1052,8 @@ def build_workplace_evidence(users: list, enrollments: list, catalog: list, fact
         if sup not in leniency:
             leniency[sup] = round(rng_for(f"leniency:{sup}").gauss(SUPERVISOR_LENIENCY_MEAN, SUPERVISOR_LENIENCY_SD), 3)
         halo = rng.gauss(0, SUPERVISOR_HALO_SD)
+        # new recruits (HRMS sync pending) have had no APAR cycle and no work sample yet
+        new_recruit = u.get("profileStatus") == "HRMS_SYNC_PENDING"
         rated_on = datetime(APAR_CYCLE_END.year, APAR_CYCLE_END.month, APAR_CYCLE_END.day, 9, 0,
                             tzinfo=timezone.utc) + timedelta(days=rng.randint(0, 45))
 
@@ -1059,14 +1061,14 @@ def build_workplace_evidence(users: list, enrollments: list, catalog: list, fact
             cid = comp["id"]
             t = truth[uid][cid]
             # S — supervisor rating: one structured item on the FRAC descriptors, 1–5
-            if rng.random() < SUPERVISOR_COVERAGE:
+            if not new_recruit and rng.random() < SUPERVISOR_COVERAGE:
                 raw = t["theta"] + leniency[sup] + halo + rng.gauss(0, SUPERVISOR_NOISE_SD)
                 rows.append({"userId": uid, "compId": cid, "evidenceType": "SUPERVISOR_RATING",
                              "grantedValue": int(min(5, max(1, round(raw)))), "issueDate": iso(rated_on),
                              "source": "APAR-SPARROW", "meta": {"raterId": sup, "cycle": "2025-26"}})
             # A — auto-graded work sample at the next level (or the current one)
             tasks = D.WORK_SAMPLE_TASKS.get(cid)
-            if tasks and rng.random() < WORK_SAMPLE_ATTEMPT_P:
+            if tasks and not new_recruit and rng.random() < WORK_SAMPLE_ATTEMPT_P:
                 level = min(4, max(2, t["trueLevel"] + (1 if rng.random() < 0.5 else 0)))
                 p = 1 / (1 + math.exp(-2.2 * (t["theta"] - level)))
                 score = int(min(100, max(0, round(100 * p + rng.gauss(0, 8)))))

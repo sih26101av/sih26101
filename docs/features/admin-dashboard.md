@@ -9,7 +9,11 @@ Ministry-side view at `/admin` (role `admin` only), built on the shared `AppShel
   'officials' | 'competencies' | 'analytics' | 'insights' | 'reports'` (state only,
   **no** new routes, so the single `/admin` guard still covers everything).
   - `insights` → `components/admin/WorkforceInsights.tsx`: SCIL v6 views on
-    synthetic data (GSBPM scope, …) — see [workforce-insights.md](workforce-insights.md).
+    synthetic data (banner says so) — `GsbpmScopePanel`, `PrerequisitePanel`,
+    `TrainingEffectivenessPanel`, `CapabilityRiskPanel`, `ForesightPanel`,
+    `TpacAgendaPanel`; each reads one admin endpoint under `/api/v1/admin/…`
+    (`routers/insights.py`) through `useInsight`. Suppressed counts show as
+    "<5". See [workforce-insights.md](workforce-insights.md).
   - `dashboard` → 4 `StatCard`s (total officials, FRAC competencies, training
     compliance, avg missing skills) + `shortageChart` + `deptChart` + "Officials
     Needing Training" + "Data Sources" + the Generate Report banner.

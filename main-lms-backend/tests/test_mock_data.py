@@ -290,6 +290,22 @@ def test_workplace_evidence_channels_have_the_planted_properties(data):
     assert any(r["evidenceType"] == "PEER_RATING" for r in rows)
 
 
+def test_hrms_retirement_dates_and_products_are_consistent(data):
+    from datetime import date as _date
+    hrms = data["hrms.json"]
+    users = {u["userId"]: u for u in data["userdata.json"]}
+    office_products = {o[0]: set(o[4]) for o in D.OFFICES}
+    assert set(hrms["officials"]) == set(users)
+    for uid, h in hrms["officials"].items():
+        dob, sup = _date.fromisoformat(h["dateOfBirth"]), _date.fromisoformat(h["superannuationDate"])
+        assert sup.year == dob.year + gen.RETIREMENT_AGE and sup.month == dob.month
+        assert (sup.replace(day=1) + __import__("datetime").timedelta(days=32)).replace(day=1) \
+            - __import__("datetime").timedelta(days=1) == sup                     # last day of the month
+        assert sup > gen.REF_DATE                                                  # everyone still in service
+        assert set(h["products"]) <= office_products[users[uid]["jobProfile"]["officeId"]]
+    assert set(hrms["productCriticalCompetencies"]) == set(hrms["products"])
+
+
 def test_profile_incomplete_officials_exist_for_unassessed(data):
     incomplete = set(data["_truth/planted_effects.json"]["profileIncomplete"])
     assert len(incomplete) == gen.N_PROFILE_INCOMPLETE

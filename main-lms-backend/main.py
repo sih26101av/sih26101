@@ -79,7 +79,7 @@ _assembler: BaselineAssembler | None = None
 
 # ── SCIL v6 reference data (GSBPM map, office workload, …) ────────────────────
 from services.reference_data import ReferenceData
-from services import app_state, gsbpm_service, prerequisite_service
+from services import app_state, gsbpm_service, prerequisite_service, proficiency_service
 _ref: ReferenceData = ReferenceData()
 
 
@@ -136,6 +136,9 @@ async def _startup():
     global _ref
     _ref = await ReferenceData.load(adapter)
     app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
+    app_state.snapshot_builder = _build_workforce_snapshot
+    import asyncio
+    asyncio.get_running_loop().create_task(_build_workforce_snapshot())
 
     # SCIL v6 §6: measured course uplift from outcome assessments (~1 s), used to
     # flag near-zero-uplift courses in ranking and for the admin effectiveness view.
@@ -203,7 +206,50 @@ def _self_reported_level(comp: dict) -> int:
     return int(m.group()) if m else 0
 
 
-async def _learner_competency_state(user_id: str) -> dict:
+async def _build_workforce_snapshot() -> None:
+    """
+    Every official's resolved competency rows, for the SCIL v6 population /
+    cohort priors and the admin foresight views. Built in the background after
+    startup (≈ 151 officials × 3 mock calls) and on demand from the admin API.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+    app_state.snapshot_status = "building"
+    try:
+        roster = await adapter.fetch_user_roster()
+        snap = {}
+        for entry in roster:
+            uid = entry["userId"]
+            try:
+                state = await _learner_competency_state(uid, annotate=False)
+            except Exception as exc:                        # one bad profile must not stop the rest
+                log.warning("[snapshot] %s skipped: %s", uid, exc)
+                continue
+            user = state["user"]
+            jp = user.get("jobProfile") or {}
+            snap[uid] = {
+                "officeId": jp.get("officeId"),
+                "phase": proficiency_service.office_phase(_ref.offices.get(jp.get("officeId") or "")),
+                "tier": jp.get("tier"),
+                "experienceYears": int(user.get("experienceYears") or 0),
+                "competencies": [
+                    {"catalogueId": r["catalogueId"] or r["competencyId"], "competencyId": r["competencyId"],
+                     "level": r["currentLevel"], "target": r["targetLevel"], "confidence": r["confidence"],
+                     "mu": r["rawScore"], "lastEvidenceDate": r["lastEvidenceDate"],
+                     "decayClass": r["decayClass"]}
+                    for r in state["competencies"]
+                ],
+            }
+        app_state.snapshot = snap
+        app_state.snapshot_status = "ready"
+        _ref.cache.pop("workforce", None)
+        log.info("[snapshot] workforce snapshot ready: %d officials.", len(snap))
+    except Exception as exc:
+        app_state.snapshot_status = f"failed: {exc}"
+        log.error("[snapshot] failed: %s", exc)
+
+
+async def _learner_competency_state(user_id: str, annotate: bool = True) -> dict:
     """
     Profile + enrollments + EvidenceLog → one resolved row per role competency.
 
@@ -318,7 +364,24 @@ async def _learner_competency_state(user_id: str) -> dict:
             # competency's GSBPM sub-processes this cycle (badge + tie-break only)
             "opportunity":   gsbpm_service.opportunity(office, gsbpm_subs.get(catalogue_id, []),
                                                        _ref.gsbpm, _ref.cycle),
+            "lastEvidenceDate": bline.get("lastEvidenceDate"),   # newest dated objective evidence
+            "decayClass":    (_rec_engine._frac_map.get(catalogue_id, {}).get("decayClass", "procedural")
+                              if _rec_engine else "procedural"),
         })
+
+    # SCIL v6 §2: probabilistic belief with dated decay (assessed) or a cohort
+    # prior (UNASSESSED). Needs the workforce snapshot for population / cohort
+    # statistics; until it exists the population defaults are used.
+    if annotate:
+        snap = app_state.snapshot or {}
+        population = proficiency_service.population_stats(snap) if snap else {}
+        for row in rows:
+            row["proficiency"] = proficiency_service.proficiency_state(row, row["decayClass"], population)
+            row["coldStartPrior"] = (
+                proficiency_service.cohort_prior(user_id, row["catalogueId"] or row["competencyId"],
+                                                 snap, population)
+                if row["confidence"] == "UNASSESSED" and snap else None
+            )
 
     return {"user": user, "enrollments": enrollments, "competencies": rows}
 
@@ -430,6 +493,8 @@ async def get_skill_gaps_by_user_id(
             "channels":      row["channels"],                # K/A/U/S values, None = no evidence
             "evidenceCompleteness": row["completeness"],     # present / missing channels + weight status
             "peerFeedback":  row["peerFeedback"],            # count only — peer ratings are never scored
+            "proficiency":   row.get("proficiency"),         # SCIL v6 §2 θ ~ N(μ, σ²) with dated decay
+            "coldStartPrior": row.get("coldStartPrior"),     # UNASSESSED: inferred from role (cohort prior)
         })
 
     # Sort: known gaps first (largest gap, lowest score), UNASSESSED last

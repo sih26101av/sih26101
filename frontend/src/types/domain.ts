@@ -140,6 +140,40 @@ export interface SkillGapEntry {
   evidenceCompleteness?: EvidenceCompleteness | null;
   /** number of peer ratings on record — shown for context, never scored */
   peerFeedback?: number;
+  /** SCIL v6 §2 belief θ ~ N(μ, σ²) with dated decay (assessed competencies) */
+  proficiency?: ProficiencyState | null;
+  /** SCIL v6 §2 cold start for UNASSESSED: cohort prior "inferred from role" */
+  coldStartPrior?: ColdStartPrior | null;
+}
+
+export interface ProficiencyState {
+  mu: number;
+  sigma: number;
+  decayedMu: number;
+  decayedSigma: number;
+  band80: [number, number];
+  evidenceAgeMonths: number | null;
+  decayClass: 'accuracy' | 'procedural';
+  halfLifeMonths: number;
+  retention: number;
+  populationMu: number;
+  /** E[max(0, target − θ)] — expected levels still missing */
+  expectedShortfall: number;
+  refresherRecommended: boolean;
+}
+
+export interface ColdStartPrior {
+  label: string;
+  mu: number;
+  sigma: number;
+  band80: [number, number];
+  cluster: string;
+  source: 'cohort' | 'population';
+  pooled: boolean;
+  /** null when the cohort is smaller than 5 (suppressed) */
+  cohortN: number | null;
+  divergence: number | null;
+  reason: string;
 }
 
 export interface SkillGapReport {

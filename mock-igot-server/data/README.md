@@ -56,6 +56,7 @@ python generate_mock_data.py --check  # exit 1 if a file on disk is stale
 | `acbp.json` | Annual Capacity Building Plan FY2026-27: org-wide + per-role APAR-linked mandatory courses, learning hours per quarter per official | `GET /api/cbplan/v1/user/{id}` |
 | `prerequisites.json` | 18 expert-seeded prerequisite edges (competency@level → competency@level), acyclic | `GET /api/frac/v1/prerequisites` |
 | `course_outcomes.json` | Platform-wide, anonymised pre/post θ course assessments + non-taker comparison episodes (one record per line) | `GET /api/course/v1/assessment/outcomes` |
+| `hrms.json` | HRMS-style records: DOB, joining, superannuation (60, month end), products each official works on; product → critical competencies | `GET /api/hrms/v1/officials` |
 | `workplace_evidence.json` | EvidenceLog-style rows: SUPERVISOR_RATING (lenient + halo), UTILITY (will-use + confirmation), WORK_SAMPLE (auto-graded, 10 competencies), PEER_RATING (never scored) | `GET /api/evidence/v1/user/{id}` |
 | `_truth/planted_effects.json` | **Ground truth for tests only**: latent true levels and planted effects. The server never serves it and the backend never reads it | (not served) |
 | `MANIFEST.json` | Synthetic-data label + hashes | (not served) |
@@ -252,6 +253,24 @@ All values below are named constants in `generate_mock_data.py`.
   - score = 100·logistic(2.2·(θ − L)) + N(0, 8); pass at `WORK_SAMPLE_PASS = 70`.
 - **Peer ratings (`PEER_RATING`):** on `PEER_RATING_P = 0.15` of role
   competencies, inflated. Shown for context; the backend never scores them.
+
+- New recruits (`profileStatus: HRMS_SYNC_PENDING`) have had no APAR cycle and
+  no work sample, so their non-behavioural competencies stay UNASSESSED. This
+  is what exercises the cold-start cohort prior.
+
+### HRMS + decay classes (B8)
+
+- **Ages and dates:**
+  - Age = U(`ENTRY_AGE_RANGE` 22–31) + experience, capped at 59.7, so everyone
+    is in service on `REF_DATE`.
+  - Superannuation = last day of the month of the 60th birthday
+    (`RETIREMENT_AGE`). 9 officials retire within 36 months, 3 within 12.
+- **Products:** 1–2 of the office's statistical products per official (none
+  for NSSTA). `PRODUCT_CRITICAL` in `mockdata/domain.py` lists each product's
+  critical competencies.
+- **Decay classes:** `frac_competencies.json::decayClass` is `accuracy`
+  (methods and tools that go stale) or `procedural` (practised routines and
+  behaviours). It is hand-assigned per competency in `mockdata/domain.py`.
 
 ## Deliberate holes and planted cases
 

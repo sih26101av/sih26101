@@ -116,6 +116,24 @@ JSON MCQs → in-memory `QUIZ_STORE`. Grade (JWT required) → `QuizAttempt`
 `PRACTICE_ASSESSMENT` row → feeds straight back into the baseline formula → also
 POSTs to the mock server's `/competencies/update`.
 
+**SCIL v6 layers** (see `docs/features/workforce-insights.md`). Every input is
+synthetic mock data.
+
+- **Startup.** `ReferenceData.load(adapter)` reads the GSBPM map, office
+  workload, prerequisites, course outcomes and HRMS (disk fallback per file).
+  `uplift_service.estimate_uplift` then gives the engine its measured-uplift
+  flags. A background `_build_workforce_snapshot` runs every official through
+  `_learner_competency_state` for the population / cohort statistics.
+- **Per learner request**, `_learner_competency_state` adds:
+  - workplace evidence rows (`fetch_user_evidence`), fused as K/A/U/S;
+  - `opportunity` from the office's GSBPM sub-processes;
+  - `proficiency` (dated decay) and `coldStartPrior` (UNASSESSED).
+- **`/pathway`** adds the ACBP (`fetch_user_cbplan`: mandatory courses and
+  quarterly budget) and the prerequisite DAG to `build_study_plan`.
+- **Admin views** are in `routers/insights.py` under `/api/v1/admin/…`: GSBPM
+  scope, prerequisites, training effectiveness, capability risk, foresight
+  and the TPAC agenda. They are rendered by `WorkforceInsights.tsx`.
+
 **Chat** (`POST /api/v1/chat`) — frontend posts profile context (gaps, recs, role);
 backend runs regex intercepts → semantic intent classification → templated reply,
 optionally returning `navigate_action(s)` the frontend executes (tab switch,

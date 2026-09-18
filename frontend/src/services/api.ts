@@ -236,6 +236,8 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
     channels:           g.channels ?? null,
     evidenceCompleteness: g.evidenceCompleteness ?? null,
     peerFeedback:       g.peerFeedback ?? 0,
+    proficiency:        g.proficiency ?? null,
+    coldStartPrior:     g.coldStartPrior ?? null,
     rawScore:           g.rawScore,
     evidence:           g.evidence,
   }));
@@ -494,6 +496,66 @@ export async function fetchTrainingEffectiveness(
   return lmsFetch<TrainingEffectivenessReport>(
     `/api/v1/admin/training-effectiveness${qs ? `?${qs}` : ''}`, 'training-effectiveness',
   );
+}
+
+/** A suppressed-aware count: 1–4 officials are shown as "<5". */
+export interface CountCell { value: number | null; suppressed: boolean; display: string }
+
+export interface CapabilityRiskReport {
+  asOf: string;
+  capableLevel: number;
+  horizonMonths: number;
+  suppression: string;
+  products: {
+    productId: string; productName: string; teamSize: CountCell; risk: RiskBand;
+    competencies: {
+      competencyId: string; competencyName: string; teamSize: CountCell; capable: CountCell;
+      retiringWithin36m: CountCell; singlePointOfFailure: boolean; risk: RiskBand; reason: string;
+    }[];
+  }[];
+  dataNote: string;
+}
+
+export type RiskBand = 'critical' | 'high' | 'moderate' | 'low';
+
+export interface ForesightReport {
+  asOf: string;
+  months: number[];
+  capableLevel: number;
+  annualAttrition: number;
+  method: string;
+  suppression: string;
+  series: {
+    productId: string; competencyId: string; competencyName: string; declining: boolean;
+    withDecay: { month: number; expectedCapable: CountCell }[];
+    attritionOnly: { month: number; expectedCapable: CountCell }[];
+  }[];
+  dataNote: string;
+}
+
+export interface TpacAgenda {
+  items: {
+    id: string; type: 'coverage_gap' | 'capability_risk' | 'ineffective_course' | 'prerequisite_review';
+    priority: 'high' | 'medium' | 'low'; title: string; rationale: string; status: 'draft';
+  }[];
+  counts: Record<string, number>;
+  note: string;
+  dataNote: string;
+}
+
+/** SCIL v6 §11 — capability risk per statistical product (counts of 1–4 suppressed). */
+export async function fetchCapabilityRisk(): Promise<CapabilityRiskReport> {
+  return lmsFetch<CapabilityRiskReport>('/api/v1/admin/workforce/capability-risk', 'capability-risk');
+}
+
+/** SCIL v6 §11 — 36-month attrition × decay projection. */
+export async function fetchForesight(): Promise<ForesightReport> {
+  return lmsFetch<ForesightReport>('/api/v1/admin/workforce/foresight', 'foresight');
+}
+
+/** SCIL v6 §11 — draft TPAC agenda items. */
+export async function fetchTpacAgenda(): Promise<TpacAgenda> {
+  return lmsFetch<TpacAgenda>('/api/v1/admin/workforce/tpac-agenda', 'tpac-agenda');
 }
 
 /** SCIL v6 §5 — enforced expert prerequisite DAG + data-driven suggestions (never applied). */

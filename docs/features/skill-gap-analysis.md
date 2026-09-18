@@ -121,7 +121,12 @@ three can never disagree.
                                 "supervisor" } }] }
 ```
 `rawScore` is the fused K/A/U/S score. `basis` also takes `work_sample` and
-`applied_at_work` values.
+`applied_at_work` values. Each row also carries `proficiency` (SCIL v6 §2
+belief θ ~ N(μ, σ²) with dated two-class decay, expected-shortfall gap,
+refresher flag) and, for UNASSESSED rows, `coldStartPrior` (cohort prior
+"inferred from role — unassessed"). See
+[workforce-insights.md](workforce-insights.md). Neither changes the displayed
+level.
 `opportunity` (SCIL v6 §4, `null` when the office is unknown) =
 `{level: Low|Medium|High, share, officerHours, officeId, officeName, cycle,
 subprocesses[]}` — see [workforce-insights.md](workforce-insights.md).

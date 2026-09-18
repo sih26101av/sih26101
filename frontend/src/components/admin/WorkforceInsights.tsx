@@ -7,12 +7,14 @@
  */
 
 import React from 'react';
-import { AlertTriangle, FlaskConical, GitBranch, Layers, Route } from 'lucide-react';
+import { AlertTriangle, FlaskConical, GitBranch, Layers, Route, Telescope } from 'lucide-react';
 
 import SectionCard from '../shell/SectionCard';
 import {
-  fetchGsbpmScope, fetchPrerequisiteDag, fetchTrainingEffectiveness,
-  type GsbpmScopeReport, type PrerequisiteDagReport, type TrainingEffectivenessReport,
+  fetchCapabilityRisk, fetchForesight, fetchGsbpmScope, fetchPrerequisiteDag, fetchTpacAgenda,
+  fetchTrainingEffectiveness,
+  type CapabilityRiskReport, type CountCell, type ForesightReport, type GsbpmScopeReport,
+  type PrerequisiteDagReport, type RiskBand, type TpacAgenda, type TrainingEffectivenessReport,
 } from '../../services/api';
 
 // ─── Small shared helpers ─────────────────────────────────────────────────────
@@ -353,6 +355,159 @@ const TrainingEffectivenessPanel: React.FC = () => {
   );
 };
 
+// ─── Workforce foresight (SCIL v6 §11) ───────────────────────────────────────
+
+const RISK_CHIP: Record<RiskBand, string> = {
+  critical: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  high:     'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  moderate: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300',
+  low:      'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+};
+
+const Cell: React.FC<{ c: CountCell }> = ({ c }) => (
+  <span className={`font-mono ${c.suppressed ? 'text-slate-400' : ''}`}
+        title={c.suppressed ? 'Suppressed: fewer than 5 officials' : undefined}>
+    {c.display}
+  </span>
+);
+
+const CapabilityRiskPanel: React.FC = () => {
+  const { data, error, loading } = useInsight<CapabilityRiskReport>(fetchCapabilityRisk, []);
+  return (
+    <SectionCard
+      title="Capability risk by statistical product"
+      subtitle="Officials at Level 3+ on each competency critical to a product, retirements in 36 months, single points of failure"
+    >
+      <PanelState loading={loading} error={error} />
+      {data && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
+                  <th className="py-2 pr-3 font-semibold">Product</th>
+                  <th className="py-2 pr-3 font-semibold">Critical competency</th>
+                  <th className="py-2 pr-3 font-semibold">Team</th>
+                  <th className="py-2 pr-3 font-semibold">Capable (L{data.capableLevel}+)</th>
+                  <th className="py-2 pr-3 font-semibold">Retire ≤ {data.horizonMonths} mo</th>
+                  <th className="py-2 font-semibold">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.products.flatMap((p) => p.competencies.map((r, i) => (
+                  <tr key={`${p.productId}-${r.competencyId}`} className="border-b border-gov-line/60 align-top dark:border-slate-700/60">
+                    <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">
+                      {i === 0 ? <>{p.productName} <span className="text-[10.5px] text-slate-400">({p.productId})</span></> : ''}
+                    </td>
+                    <td className="py-2 pr-3">{r.competencyName}</td>
+                    <td className="py-2 pr-3"><Cell c={r.teamSize} /></td>
+                    <td className="py-2 pr-3"><Cell c={r.capable} /></td>
+                    <td className="py-2 pr-3"><Cell c={r.retiringWithin36m} /></td>
+                    <td className="py-2">
+                      <span title={r.reason} className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${RISK_CHIP[r.risk]}`}>
+                        {r.singlePointOfFailure ? 'single point of failure' : r.risk}
+                      </span>
+                    </td>
+                  </tr>
+                )))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10.5px] text-slate-400">{data.suppression} As of {data.asOf}.</p>
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
+const ForesightPanel: React.FC = () => {
+  const { data, error, loading } = useInsight<ForesightReport>(fetchForesight, []);
+  const [onlyDeclining, setOnlyDeclining] = React.useState(true);
+  const rows = data ? data.series.filter((s) => !onlyDeclining || s.declining) : [];
+  return (
+    <SectionCard
+      title="36-month foresight — attrition × skill decay"
+      subtitle="Expected capable officials per product and critical competency if no new training happens"
+      action={
+        <label className="flex items-center gap-1.5 text-[12px] text-slate-600 dark:text-slate-300">
+          <input type="checkbox" checked={onlyDeclining} onChange={(e) => setOnlyDeclining(e.target.checked)} />
+          Declining only
+        </label>
+      }
+    >
+      <PanelState loading={loading} error={error} />
+      {data && (
+        <div className="space-y-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
+                  <th className="py-2 pr-3 font-semibold">Product · competency</th>
+                  <th className="py-2 pr-3 font-semibold">Series</th>
+                  {data.months.map((m) => <th key={m} className="py-2 pr-2 text-right font-semibold">{m} mo</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.flatMap((s) => [
+                  <tr key={`${s.productId}-${s.competencyId}-d`} className="align-top">
+                    <td rowSpan={2} className="border-b border-gov-line/60 py-2 pr-3 dark:border-slate-700/60">
+                      <span className="font-medium text-slate-800 dark:text-slate-100">{s.productId}</span>{' '}
+                      <span className="text-slate-500">{s.competencyName}</span>
+                    </td>
+                    <td className="py-1 pr-3 text-[11px] text-slate-500">attrition + decay</td>
+                    {s.withDecay.map((p) => <td key={p.month} className="py-1 pr-2 text-right"><Cell c={p.expectedCapable} /></td>)}
+                  </tr>,
+                  <tr key={`${s.productId}-${s.competencyId}-a`} className="border-b border-gov-line/60 dark:border-slate-700/60">
+                    <td className="py-1 pr-3 text-[11px] text-slate-400">attrition only</td>
+                    {s.attritionOnly.map((p) => <td key={p.month} className="py-1 pr-2 text-right text-slate-400"><Cell c={p.expectedCapable} /></td>)}
+                  </tr>,
+                ])}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10.5px] text-slate-400">{data.method} {data.suppression}</p>
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
+const PRIORITY_CHIP: Record<string, string> = {
+  high: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  medium: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300',
+  low: 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400',
+};
+const AGENDA_TYPE: Record<string, string> = {
+  coverage_gap: 'Coverage gap', capability_risk: 'Capability risk',
+  ineffective_course: 'Course review', prerequisite_review: 'Prerequisite review',
+};
+
+const TpacAgendaPanel: React.FC = () => {
+  const { data, error, loading } = useInsight<TpacAgenda>(fetchTpacAgenda, []);
+  return (
+    <SectionCard title="Draft TPAC agenda" subtitle="Generated drafts for the NSSTA training programme committee — nothing here is decided">
+      <PanelState loading={loading} error={error} empty={!!data && data.items.length === 0} />
+      {data && data.items.length > 0 && (
+        <ol className="space-y-2.5">
+          {data.items.map((i) => (
+            <li key={i.id} className="rounded-lg border border-gov-line p-3 dark:border-slate-700">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[10.5px] text-slate-400">{i.id}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_CHIP[i.priority]}`}>{i.priority}</span>
+                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">{AGENDA_TYPE[i.type]}</span>
+                <span className="text-[10.5px] text-slate-400">· {i.status}</span>
+              </div>
+              <p className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100">{i.title}</p>
+              <p className="mt-0.5 text-[11.5px] text-slate-500 dark:text-slate-400">{i.rationale}</p>
+            </li>
+          ))}
+        </ol>
+      )}
+      {data && <p className="mt-3 text-[10.5px] text-slate-400">{data.note}</p>}
+    </SectionCard>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const WorkforceInsights: React.FC = () => (
@@ -374,6 +529,12 @@ const WorkforceInsights: React.FC = () => (
     </div>
     <PrerequisitePanel />
     <TrainingEffectivenessPanel />
+    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+      <Telescope size={13} /> Workforce foresight
+    </div>
+    <CapabilityRiskPanel />
+    <ForesightPanel />
+    <TpacAgendaPanel />
   </div>
 );
 

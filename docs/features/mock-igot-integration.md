@@ -60,6 +60,9 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/course/v1/assessment/outcomes?competencyId=&courseId=` — course
     pre/post θ assessments + non-taker comparison episodes
     (`fetch_course_outcomes()`).
+  - `GET /api/hrms/v1/officials` — HRMS-style service records + product
+    assignment + product → critical competencies (`fetch_hrms()`, loaded at
+    startup into `ReferenceData.hrms`).
   - `GET /api/evidence/v1/user/{userId}` — workplace evidence rows
     (supervisor / utility / work sample / peer), EvidenceLog-shaped
     (`fetch_user_evidence()`, merged into the baseline per request).

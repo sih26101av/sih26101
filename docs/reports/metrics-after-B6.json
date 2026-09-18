@@ -1,0 +1,106 @@
+{
+  "offline": {
+    "courses": 514,
+    "catalogueCompetencies": 40,
+    "tags": 628,
+    "tagSupportRate": 1.0,
+    "unsupportedTags": 0,
+    "fullLadderCompetencies": 34,
+    "competenciesMissingL1": 0,
+    "competenciesWithHoles": {
+      "comp_gdp_nowcast_011": [
+        5
+      ],
+      "comp_spatial_stat_012": [
+        3
+      ],
+      "comp_procurement_021": [
+        3
+      ],
+      "comp_rtt_022": [
+        5
+      ],
+      "comp_cloud_infra_027": [
+        5
+      ],
+      "comp_citizen_039": [
+        5
+      ]
+    },
+    "durationHours": {
+      "min": 0.5,
+      "median": 6.5,
+      "p90": 42.0,
+      "max": 60.0
+    },
+    "durationHoursByFormat": {
+      "micro_learning": {
+        "n": 79,
+        "min": 0.5,
+        "median": 1.2,
+        "p90": 1.8,
+        "max": 2.0
+      },
+      "nssta_workshop": {
+        "n": 121,
+        "min": 6.5,
+        "median": 12.0,
+        "p90": 15.5,
+        "max": 16.0
+      },
+      "self_paced_course": {
+        "n": 243,
+        "min": 2.0,
+        "median": 5.5,
+        "p90": 7.2,
+        "max": 8.0
+      },
+      "tpac_programme": {
+        "n": 71,
+        "min": 24.0,
+        "median": 54.0,
+        "p90": 60.0,
+        "max": 60.0
+      }
+    }
+  },
+  "live": {
+    "rosterUsers": 151,
+    "fracServed": 40,
+    "servedRoleCompetencies": 869,
+    "servedInCatalogueShare": 1.0,
+    "usersSampled": 20,
+    "crosswalkMethodMix": {
+      "exact": 112
+    },
+    "opportunityMixOnGaps": {
+      "High": 27,
+      "Low": 25,
+      "Medium": 23
+    },
+    "studyPlanSteps": 143,
+    "opportunityTieBreaks": 3,
+    "mandatoryPlanSteps": 39,
+    "prerequisiteEffects": {
+      "advisory": 8
+    },
+    "pathwayStatusMix": {
+      "ready": 75,
+      "met": 37
+    },
+    "noContentCompetencies": {},
+    "pathwayTotalHours": {
+      "n": 75,
+      "min": 0.5,
+      "median": 10.6,
+      "p90": 55.4,
+      "max": 96.0
+    },
+    "studyPlanTotalHours": {
+      "median": 76.35,
+      "max": 210.9
+    },
+    "dashboardVsRecommendationMismatches": 0,
+    "levelGateViolations": 0
+  }
+}

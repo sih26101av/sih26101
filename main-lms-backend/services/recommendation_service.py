@@ -250,6 +250,8 @@ class HybridRecommendationEngine:
                     "description": comp.get("description", ""),
                     "type":        comp.get("competencyType", "Domain"),
                     "levels":      levels,
+                    # SCIL v6 §2 two-class decay (accuracy | procedural), from FRAC data
+                    "decayClass":  comp.get("decayClass", "procedural"),
                 }
             logger.info("[RecEngine] Loaded %d FRAC competencies.", len(self._frac_map))
         except Exception as exc:

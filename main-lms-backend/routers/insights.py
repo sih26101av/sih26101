@@ -82,6 +82,80 @@ async def training_effectiveness(
     }
 
 
+# ── Workforce foresight (SCIL v6 §11) ─────────────────────────────────────────
+
+def _snapshot_or_503():
+    if not app_state.snapshot:
+        raise HTTPException(status_code=503,
+                            detail=f"Workforce snapshot not ready ({app_state.snapshot_status}). Try again shortly.")
+    return app_state.snapshot
+
+
+def _workforce() -> dict:
+    """capability risk + foresight computed once per snapshot."""
+    from services import proficiency_service, workforce_service
+    ref = app_state.ref
+    if "workforce" not in ref.cache:
+        snap = _snapshot_or_503()
+        if not ref.hrms:
+            raise HTTPException(status_code=503, detail="HRMS data not loaded.")
+        names = _frac_names()
+        population = proficiency_service.population_stats(snap)
+        ref.cache["workforce"] = {
+            "risk": workforce_service.capability_risk(snap, ref.hrms, names),
+            "foresight": workforce_service.foresight(snap, ref.hrms, names, population),
+        }
+    return ref.cache["workforce"]
+
+
+@router.get("/workforce/status")
+async def workforce_status(_admin: UserAuth = Depends(require_role("admin"))):
+    snap = app_state.snapshot or {}
+    return {"status": app_state.snapshot_status, "officials": len(snap), "dataNote": SYNTHETIC_NOTE}
+
+
+@router.post("/workforce/refresh")
+async def workforce_refresh(_admin: UserAuth = Depends(require_role("admin"))):
+    """Rebuild the workforce snapshot now (≈ a few seconds)."""
+    if app_state.snapshot_builder is None:
+        raise HTTPException(status_code=503, detail="Snapshot builder not available.")
+    await app_state.snapshot_builder()
+    return await workforce_status(_admin)
+
+
+@router.get("/workforce/capability-risk")
+async def capability_risk(_admin: UserAuth = Depends(require_role("admin"))):
+    """Per statistical product: capable officials per critical competency, retirements within
+    36 months, single-point-of-failure flags. Counts of 1–4 are suppressed."""
+    return {**_workforce()["risk"], "dataNote": SYNTHETIC_NOTE}
+
+
+@router.get("/workforce/foresight")
+async def workforce_foresight(_admin: UserAuth = Depends(require_role("admin"))):
+    """36-month projection of expected capable officials: attrition × dated skill decay."""
+    return {**_workforce()["foresight"], "dataNote": SYNTHETIC_NOTE}
+
+
+@router.get("/workforce/tpac-agenda")
+async def tpac_agenda(_admin: UserAuth = Depends(require_role("admin"))):
+    """Draft TPAC agenda items from coverage gaps, capability risk, near-zero-uplift courses
+    and proposed prerequisites — drafts for the committee, nothing is decided."""
+    from services import workforce_service
+    ref = app_state.ref
+    wf = _workforce()
+    names = _frac_names()
+    if ref.outcomes and "prereq_suggestions" not in ref.cache:
+        ref.cache["prereq_suggestions"] = prerequisite_service.infer_edges(ref.outcomes, ref.prerequisites, names)
+    in_scope = set()
+    if ref.gsbpm and ref.offices:
+        scope = gsbpm_service.scope_report(ref.gsbpm, ref.offices, names=names)
+        in_scope = {c["competencyId"] for c in scope["competencies"] if c["inScope"]}
+    agenda = workforce_service.tpac_agenda(app_state.snapshot, app_state.engine, names, wf["risk"],
+                                           wf["foresight"], ref.cache.get("uplift"),
+                                           ref.cache.get("prereq_suggestions"), in_scope)
+    return {**agenda, "dataNote": SYNTHETIC_NOTE}
+
+
 @router.get("/prerequisites")
 async def prerequisite_dag(_admin: UserAuth = Depends(require_role("admin"))):
     """
