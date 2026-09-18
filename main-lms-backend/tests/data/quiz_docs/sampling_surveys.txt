@@ -1,0 +1,23 @@
+--- Page 1 ---
+Sample Survey Methods for Official Statistics
+
+A census collects information from every unit of the population, whereas a sample survey collects information from a selected subset of units and uses it to draw inferences about the whole population. Sample surveys are cheaper and faster than a census and allow better-trained field staff, which can reduce non-sampling errors.
+
+The sampling frame is the list of all units from which the sample is drawn. An incomplete or outdated sampling frame leads to coverage errors, because some units of the population have no chance of selection.
+
+--- Page 2 ---
+Probability sampling designs
+
+In simple random sampling without replacement, every possible sample of size n has the same probability of being selected, and each unit has an equal chance of inclusion. Stratified sampling divides the population into non-overlapping, internally homogeneous groups called strata and draws an independent sample from each stratum. Stratification improves precision when units within a stratum are similar to one another and different from units in other strata.
+
+Cluster sampling selects groups of units, such as villages or urban blocks, instead of individual units. It reduces travel and listing costs, but it is usually less precise than simple random sampling of the same size because units within a cluster tend to be similar. Multistage sampling selects clusters at the first stage and units within the selected clusters at later stages; the NSS uses villages and urban blocks as first-stage units and households as ultimate-stage units.
+
+--- Page 3 ---
+Errors in surveys
+
+Sampling error arises because only a part of the population is observed; it decreases as the sample size increases. Non-sampling errors arise from sources such as non-response, measurement problems, interviewer bias and processing mistakes, and they do not necessarily decrease with a larger sample. The standard error of an estimator measures its sampling variability. The relative standard error (RSE) is the standard error expressed as a percentage of the estimate; for example, an estimate of 50 with a standard error of 2 has an RSE of 4 per cent.
+
+--- Page 4 ---
+Institutional arrangements
+
+The National Sample Survey Office (NSSO) was established in 1950 to conduct large-scale socio-economic surveys. In 2019 the NSSO and the Central Statistics Office were merged to form the National Statistical Office (NSO). The Periodic Labour Force Survey (PLFS), launched in 2017, provides quarterly estimates of labour force indicators for urban areas and annual estimates for both rural and urban areas.

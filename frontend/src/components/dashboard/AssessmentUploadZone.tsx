@@ -1,13 +1,15 @@
 import React, { useRef, useState } from "react";
 import { Bot, Globe, Paperclip, Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { gradeRagQuiz } from "../../services/api";
 
 interface AssessmentUploadZoneProps {
+  /** @deprecated grading identifies the learner from the JWT; kept for existing callers. */
   userId?: string;
   onQuizPassed?: () => void;
   onViewProgress?: () => void;
 }
 
-const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ userId = 'usr_720465595', onQuizPassed, onViewProgress }) => {
+const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPassed, onViewProgress }) => {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "quiz" | "grading" | "result">("idle");
   const [loadingText, setLoadingText] = useState("");
@@ -39,7 +41,7 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ userId = 'u
       const formData = new FormData();
       formData.append("file", file);
 
-      setTimeout(() => setLoadingText("Gemini generating questions..."), 1500);
+      setTimeout(() => setLoadingText("Writing and cross-checking questions..."), 1500);
 
       const res = await fetch("http://localhost:8000/api/v1/rag/upload", {
         method: "POST",
@@ -77,22 +79,7 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ userId = 'u
     setStatus("grading");
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/rag/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          quiz_id: quizData.quiz_id,
-          answers: answers
-        })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to grade quiz");
-      }
-
-      const data = await res.json();
+      const data = await gradeRagQuiz(quizData.quiz_id, answers);
       setScoreInfo(data);
       setStatus("result");
       

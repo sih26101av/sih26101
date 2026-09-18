@@ -15,11 +15,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, Bot, CheckCircle, FilePlus, File, FileText, History,
-  LayoutDashboard, Link as LinkIcon, Mic, Settings, Timer, Video, X, XCircle,
+  LayoutDashboard, Link as LinkIcon, Mic, Settings, ShieldCheck, Timer, Video, X, XCircle,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
-import { fetchAchievements } from "../services/api";
+import { fetchAchievements, gradeRagQuiz, type QuizGradeResult } from "../services/api";
 import type { Achievement } from "../types/domain";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
@@ -30,6 +30,15 @@ type StudioTab = "new_quiz" | "history" | "settings";
 type Difficulty = "Easy" | "Medium" | "Hard";
 
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+
+// generation.verification from /api/v1/rag/upload
+const VERIFICATION_LABEL: Record<string, string> = {
+  "cross-model": "Every answer verified against your document by two independent AI models",
+  "same-family": "Every answer verified against your document by a second AI model",
+  self: "Every answer re-checked against your document",
+  "gate-only": "Every answer traced to a quote in your document",
+  offline: "Questions built directly from sentences in your document",
+};
 
 const formatDate = (iso: string): string => {
   const d = new Date(iso);
@@ -51,7 +60,7 @@ const AssessmentPage: React.FC = () => {
 
   const [quizData, setQuizData] = useState<any>(null);
   const [answers, setAnswers] = useState<number[]>([]);
-  const [scoreInfo, setScoreInfo] = useState<any>(null);
+  const [scoreInfo, setScoreInfo] = useState<QuizGradeResult | null>(null);
 
   const [activeTab, setActiveTab] = useState<StudioTab>("new_quiz");
   const [selectedFormat, setSelectedFormat] = useState("pdf");
@@ -98,10 +107,10 @@ const AssessmentPage: React.FC = () => {
     if (!file) { setErrorMsg("Please upload a document to proceed."); return; }
     setErrorMsg("");
     setStatus("loading");
-    setLoadingText("Extracting knowledge base...");
+    setLoadingText("Selecting key passages from your document...");
 
-    setTimeout(() => setLoadingText("Generating Q&A pairs..."), 2000);
-    setTimeout(() => setLoadingText("Finalizing assessment..."), 4000);
+    setTimeout(() => setLoadingText("Writing questions grounded in those passages..."), 2500);
+    setTimeout(() => setLoadingText("Cross-checking every answer with a second AI model..."), 6000);
 
     try {
       const formData = new FormData();
@@ -145,18 +154,7 @@ const AssessmentPage: React.FC = () => {
     setStatus("grading");
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/rag/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, quiz_id: quizData.quiz_id, answers }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to grade assessment");
-      }
-
-      const data = await res.json();
+      const data = await gradeRagQuiz(quizData.quiz_id, answers);
       setScoreInfo(data);
       setStatus("result");
       loadHistory(); // a pass writes a new achievement — refresh the record
@@ -471,8 +469,14 @@ const AssessmentPage: React.FC = () => {
             <div>
               <h2 className="mb-1 text-2xl font-bold text-gov-ink dark:text-white">Assessment ready</h2>
               <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                {quizData.questions.length} questions · {difficulty} difficulty
+                {quizData.questions.length} questions · {quizData.generation?.difficulty ?? difficulty} difficulty
               </p>
+              {quizData.generation && (
+                <p className="mt-2 flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400">
+                  <ShieldCheck className="h-4 w-4 text-accent-green" aria-hidden="true" />
+                  {VERIFICATION_LABEL[quizData.generation.verification] ?? "Checked against your document"}
+                </p>
+              )}
             </div>
             <span className="flex items-center gap-2 rounded-lg bg-accent-blue-soft px-4 py-2 font-semibold text-accent-blue dark:bg-sky-900/30 dark:text-sky-300">
               <Timer size={18} aria-hidden="true" /> 20:00
@@ -491,6 +495,11 @@ const AssessmentPage: React.FC = () => {
                 <legend className="mb-5 text-[16.5px] font-semibold text-gov-ink dark:text-slate-100">
                   <span className="mr-3 text-slate-400">{i + 1}.</span>
                   {q.question}
+                  {q.bloom_level && (
+                    <span className="chip ml-2 align-middle bg-accent-blue-soft text-[10.5px] capitalize text-accent-blue dark:bg-sky-900/30 dark:text-sky-300">
+                      {q.bloom_level}
+                    </span>
+                  )}
                 </legend>
                 <div className="space-y-3">
                   {q.options.map((opt: string, optIdx: number) => {
@@ -580,6 +589,51 @@ const AssessmentPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {scoreInfo.review?.length > 0 && (
+            <section className="mt-6 space-y-4 pb-10" aria-label="Answer review">
+              <h3 className="text-lg font-semibold text-gov-ink dark:text-white">Answer review</h3>
+              {scoreInfo.review.map((r, i) => (
+                <article key={i} className="panel p-5 text-left">
+                  <p className="mb-3 flex items-start gap-2 font-semibold text-gov-ink dark:text-slate-100">
+                    {r.is_correct
+                      ? <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-green" aria-label="Correct" />
+                      : <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-rose" aria-label="Incorrect" />}
+                    <span>{i + 1}. {r.question}</span>
+                  </p>
+                  <ul className="mb-3 space-y-1.5 text-[13px]">
+                    {r.options.map((opt, j) => {
+                      const isKey = j === r.correct_answer;
+                      const isMine = j === r.your_answer;
+                      return (
+                        <li
+                          key={j}
+                          className={`rounded-lg border px-3 py-2 ${
+                            isKey
+                              ? "border-accent-green/40 bg-accent-green-soft font-medium text-accent-green dark:bg-emerald-500/10 dark:text-emerald-300"
+                              : isMine
+                                ? "border-accent-rose/40 bg-accent-rose-soft text-accent-rose dark:bg-rose-500/10 dark:text-rose-300"
+                                : "border-gov-line text-slate-600 dark:border-slate-700 dark:text-slate-400"
+                          }`}
+                        >
+                          {opt}
+                          {isKey && <span className="ml-2 text-[11px] font-semibold uppercase">Correct answer</span>}
+                          {isMine && !isKey && <span className="ml-2 text-[11px] font-semibold uppercase">Your answer</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">{r.explanation}</p>
+                  {r.evidence && (
+                    <blockquote className="mt-3 border-l-4 border-gov-blue/40 bg-gov-paper px-3 py-2 text-[12.5px] italic leading-relaxed text-slate-500 dark:border-sky-700 dark:bg-slate-800/50 dark:text-slate-400">
+                      “{r.evidence}”
+                      {r.source && <span className="ml-1 not-italic font-semibold">— {r.source}</span>}
+                    </blockquote>
+                  )}
+                </article>
+              ))}
+            </section>
+          )}
         </div>
       )}
     </AppShell>

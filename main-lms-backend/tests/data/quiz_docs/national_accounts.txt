@@ -1,0 +1,27 @@
+--- Page 1 ---
+Module 3: Fundamentals of National Accounts Statistics
+
+National accounts provide a comprehensive, consistent and integrated set of macroeconomic accounts that describe the economic activity of a country. In India, the National Statistical Office (NSO) under the Ministry of Statistics and Programme Implementation compiles the national accounts following the System of National Accounts 2008 (SNA 2008), the international statistical standard adopted by the United Nations Statistical Commission.
+
+Gross Domestic Product (GDP) is defined as the total value of all final goods and services produced within the domestic territory of a country during a given period, without deducting the consumption of fixed capital. Intermediate goods are excluded from GDP because their value is already embedded in the value of final goods; counting them again would lead to double counting.
+
+--- Page 2 ---
+Approaches to measuring GDP
+
+There are three approaches to estimating GDP. The production approach sums the gross value added by all resident producing units. The income approach sums the compensation of employees, operating surplus, mixed income and consumption of fixed capital, plus net taxes on production. The expenditure approach sums private final consumption expenditure, government final consumption expenditure, gross capital formation and net exports of goods and services.
+
+Gross Value Added (GVA) at basic prices is the value of output minus the value of intermediate consumption, measured at basic prices. GDP is obtained from GVA at basic prices by adding product taxes and subtracting product subsidies. For example, if GVA at basic prices is 200 lakh crore, product taxes are 22 lakh crore and product subsidies are 4 lakh crore, then GDP equals 218 lakh crore.
+
+--- Page 3 ---
+Base year and revisions
+
+The current series of national accounts in India uses 2011-12 as the base year. The base year is revised periodically so that the structure of the economy, the relative prices and the coverage of new activities are reflected accurately. The previous series used 2004-05 as the base year. A base year should be a normal year, free from abnormal events such as droughts, floods or major economic shocks.
+
+Estimates at constant prices remove the effect of price changes and therefore measure real growth. Estimates at current prices reflect both changes in quantity and changes in price. The implicit price deflator is obtained by dividing GDP at current prices by GDP at constant prices and multiplying by 100.
+
+--- Page 4 ---
+Release calendar
+
+The NSO releases the First Advance Estimates of annual GDP around the first week of January, before the Union Budget is presented. Provisional Estimates for the financial year are released at the end of May, together with the quarterly estimate for the fourth quarter. Quarterly GDP estimates are released with a lag of about two months after the end of each quarter.
+
+Net Domestic Product (NDP) is obtained by subtracting the consumption of fixed capital from GDP. Gross National Income (GNI) is equal to GDP plus net primary income received from abroad. When net primary income from abroad is negative, GNI is lower than GDP.

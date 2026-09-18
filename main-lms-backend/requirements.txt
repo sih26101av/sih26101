@@ -60,8 +60,8 @@ pypdf>=4.0.0
 pdfplumber>=0.11.0
 python-pptx>=1.0.0
 
-# ── AI: Gemini (cloud — for quiz MCQ generation) ─────────────────────────────
-google-generativeai>=0.8.0
+# ── AI: Quiz generation (ai/quiz) ────────────────────────────────────────────
+# Groq + Gemini are called over REST with httpx (above) — no vendor SDK needed.
 
 # ── AI: Embedding models (ai/embedder.py) ─────────────────────────────────────
 # chat:    intfloat/multilingual-e5-small  — Gyan intent classification, 8 languages

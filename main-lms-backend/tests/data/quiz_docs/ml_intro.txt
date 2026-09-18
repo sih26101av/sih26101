@@ -1,0 +1,11 @@
+Introduction to Machine Learning for Statistical Offices
+
+Machine learning is a field of artificial intelligence in which algorithms learn patterns from data instead of being programmed with explicit rules. Statistical offices use machine learning to classify survey responses, detect anomalies in administrative data and produce nowcasts.
+
+In supervised learning the model is trained on labelled examples, where each input is paired with a known output. Classification predicts a discrete category, such as the industry code for an establishment, while regression predicts a continuous value, such as household consumption expenditure. In unsupervised learning the data has no labels, and algorithms such as k-means clustering group similar observations together.
+
+Overfitting occurs when a model learns the noise in the training data rather than the underlying pattern, so it performs well on the training data but poorly on new data. Underfitting occurs when a model is too simple to capture the pattern even in the training data. Cross-validation estimates how well a model generalises by repeatedly training it on some folds of the data and testing it on the held-out fold.
+
+Precision is the proportion of predicted positive cases that are actually positive. Recall is the proportion of actual positive cases that the model correctly identifies. If a classifier flags 50 records as errors and 40 of them are true errors, its precision is 80 per cent. The F1 score is the harmonic mean of precision and recall.
+
+Training data that is not representative of the population produces biased models. For this reason, official statistics require that machine learning outputs are validated against a probability sample and that the methods are documented transparently.

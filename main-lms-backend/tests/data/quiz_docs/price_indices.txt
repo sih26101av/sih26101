@@ -1,0 +1,21 @@
+--- Slide 1 ---
+Consumer Price Index: Concepts and Compilation
+Training module for Statistical Officers
+
+--- Slide 2 ---
+A price index is a statistical measure of the relative change in the prices of a fixed basket of goods and services between a base period and a current period. The Consumer Price Index (CPI) measures changes over time in the general level of retail prices of goods and services that households purchase for consumption.
+The NSO compiles CPI-Rural, CPI-Urban and CPI-Combined every month. The current CPI series has 2012 as its base year, with the index for the base year set equal to 100.
+
+--- Slide 3 ---
+Index formula
+The CPI in India is compiled using the Laspeyres formula, which uses base-period quantities (or expenditure shares) as weights. A Laspeyres index tends to overstate the true rise in the cost of living, because it does not allow consumers to substitute away from goods whose prices have risen faster. The Paasche index uses current-period quantities as weights. The Fisher ideal index is the geometric mean of the Laspeyres and Paasche indices.
+
+--- Slide 4 ---
+Weights and inflation
+The weights of the CPI basket are derived from the Consumer Expenditure Survey of 2011-12. Food and beverages carry the largest weight in CPI-Combined, at about 45.86 per cent. Retail inflation for a month is measured as the percentage change in the CPI over the same month of the previous year.
+For example, if CPI-Combined is 180.0 in June of one year and 189.0 in June of the following year, the year-on-year inflation rate is 5.0 per cent.
+
+--- Slide 5 ---
+Uses of the CPI
+The Reserve Bank of India uses CPI-Combined as the nominal anchor for its flexible inflation targeting framework, with a target of 4 per cent and a tolerance band of plus or minus 2 percentage points. CPI is also used to revise dearness allowance for employees and to deflate nominal values into real values.
+The Wholesale Price Index (WPI), compiled by the Office of the Economic Adviser in the Department for Promotion of Industry and Internal Trade, measures price changes at the wholesale level and does not cover services.

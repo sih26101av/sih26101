@@ -403,6 +403,38 @@ export async function awardKarmaEvent(
   );
 }
 
+export interface QuizQuestionReview {
+  question: string;
+  options: string[];
+  your_answer: number | null;
+  correct_answer: number;
+  is_correct: boolean;
+  explanation: string;
+  evidence: string | null;
+  source: string | null;
+}
+
+export interface QuizGradeResult {
+  score: number;
+  passed: boolean;
+  correct_count: number;
+  total_questions: number;
+  message: string;
+  evidenceWritten: boolean | null;
+  review: QuizQuestionReview[];
+}
+
+/**
+ * Grades an Assessment Studio quiz. Needs the JWT — the backend derives the
+ * learner from the token, never from the body.
+ */
+export async function gradeRagQuiz(quizId: string, answers: number[]): Promise<QuizGradeResult> {
+  return lmsFetch('/api/v1/rag/grade', 'rag-grade', {
+    method: 'POST',
+    body: JSON.stringify({ quiz_id: quizId, answers }),
+  });
+}
+
 /**
  * Retroactive CBP +10 claim. Idempotent — safe to call multiple times.
  */

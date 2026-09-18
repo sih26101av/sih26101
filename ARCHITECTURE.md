@@ -26,7 +26,7 @@ Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token─
    │                  ├─ FAISS + BM25 (in-process, built at startup)
    │                  ├─ ONNX INT8 multilingual embedder (singleton)
    │                  ├─ auth.db (SQLite: auth, evidence, quiz attempts, karma)
-   │                  └─ Google Gemini (cloud, quiz MCQ generation)
+   │                  └─ Groq (+ optional Gemini) over REST — quiz MCQ generation + cross-check
    └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
 ```
 
@@ -91,8 +91,11 @@ fusion + TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3), res
 concatenated in gap-priority order.
 
 **Document → quiz → evidence** (`POST /api/v1/rag/upload`, `/grade`)
-Upload → pdfplumber/pypdf/python-pptx extraction → LangChain chunking → Gemini
-JSON MCQs → in-memory `QUIZ_STORE`. Grade (JWT required) → `QuizAttempt`
+Upload → pdfplumber/pypdf/python-pptx extraction → LangChain chunking →
+`ai/quiz.build_quiz` (MMR passage selection → one LLM family writes MCQs →
+deterministic evidence gate → a different family answers blind → keep agreed
+questions; offline extractive fallback) → in-memory `QUIZ_STORE` (answer key never
+sent before grading). Grade (JWT required) → per-question review + `QuizAttempt`
 (unique on userId+quizId) → on first pass writes an `EvidenceLog`
 `PRACTICE_ASSESSMENT` row → feeds straight back into the baseline formula → also
 POSTs to the mock server's `/competencies/update`.
@@ -121,18 +124,20 @@ userIds, so the JWT subject is the canonical identity across the platform.
 
 **Backend** — FastAPI, SQLAlchemy 2, Pydantic v2, httpx, python-jose + bcrypt,
 faiss-cpu, rank-bm25, numpy, onnxruntime-cpu + transformers (or
-sentence-transformers fallback), google-generativeai, langchain-text-splitters,
+sentence-transformers fallback), langchain-text-splitters,
 pdfplumber/pypdf/python-pptx, chromadb + langchain-ollama (disconnected path).
 
 **Frontend** — React 18, TypeScript, Vite 5, React Router 6, Tailwind, Recharts,
 lucide-react. No state library; hooks + context only.
 
 **Models** — `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, ONNX INT8 preferred)
-for both chat intents and course search; Gemini (`GEMINI_MODEL`) for MCQs;
+for both chat intents and course search; Groq `GROQ_MODELS` (GPT-OSS generates,
+Qwen cross-checks) plus optional Gemini for MCQs;
 `llama3.2:3b` via local Ollama for certificate parsing.
 
 **Env vars** (`main-lms-backend/.env`, see `.env.example`): `IGOT_MOCK_BASE_URL`,
-`IGOT_MOCK_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `IGOT_COMPETENCIES_UPDATE_URL`,
+`IGOT_MOCK_TOKEN`, `GROQ_API_KEYS`, `GROQ_MODELS`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
+`IGOT_COMPETENCIES_UPDATE_URL`,
 `OLLAMA_*`, `CHROMA_DB_DIR`, `CHUNK_SIZE`, `CHUNK_OVERLAP`.
 
 ---
@@ -174,7 +179,8 @@ what runs today.
 4. **Factory/Builder for documents not implemented.** No `IDocumentParser`,
    `PdfParser`, `PptParser`, `TextParser`, `DocumentParserFactory`, or
    `AssessmentBuilder`. `routers/rag.py` dispatches on file extension with
-   `if/elif` and builds Pydantic `QuizQuestion` objects inline.
+   `if/elif`; question building lives in `ai/quiz/` (pipeline functions, not
+   an `AssessmentBuilder` class).
 5. **`SkillGapEngine` / `SkillGapReport` don't exist as named classes.** That role
    is played by `BaselineAssembler` + `CompetencyCalculator` + inline logic in
    `main.py`, which produce a JSON payload rather than a `SkillGapReport` type.

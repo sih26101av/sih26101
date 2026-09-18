@@ -6,8 +6,9 @@ MoSPI Skill Intelligence Platform | SIH 2026
 
 Handles document ingestion (PDF, PPT, PPTX, TXT), validates payloads,
 extracts cleaned plain-text using PyPDF / pdfplumber / python-pptx,
-generates exactly 5 MCQs using Google Gemini API with strict JSON schema,
-and provides quiz grading with automatic competency syncing to iGOT.
+generates 5 grounded, cross-model-verified MCQs via ai/quiz (Groq + Gemini,
+offline fallback), and provides quiz grading with automatic competency
+syncing to iGOT.
 ─────────────────────────────────────────────────────────────────────────────
 """
 
@@ -25,11 +26,11 @@ from typing import Optional, Dict, Any, Tuple, List
 
 import httpx
 from dotenv import load_dotenv
-import google.generativeai as genai
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from ai.quiz import QuizBuildError, build_quiz
 from auth.database import SessionLocal, engine, get_db
 from auth.dependencies import get_current_user
 from auth.models import UserAuth
@@ -45,7 +46,7 @@ from models.models import (
 )
 from fastapi import Depends
 
-# Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
+# Load environment variables (GROQ_API_KEYS, GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
 
 # PDF Extraction libraries
@@ -80,10 +81,32 @@ SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt"}
 # =============================================================================
 
 class QuizQuestion(BaseModel):
+    """Full question as stored server-side in QUIZ_STORE (never sent before grading)."""
     question: str = Field(..., description="The quiz question text")
     options: List[str] = Field(..., description="List of 4 multiple-choice options")
     correct_answer: int = Field(..., description="Zero-based index (0, 1, 2, or 3) of the correct option in options")
     explanation: str = Field(..., description="Detailed explanation for why the answer is correct")
+    evidence: Optional[str] = Field(None, description="Verbatim document excerpt that proves the answer")
+    source: Optional[str] = Field(None, description="Page/slide the evidence comes from, when known")
+    bloom_level: Optional[str] = Field(None, description="recall | understand | apply | analyse")
+
+
+class PublicQuizQuestion(BaseModel):
+    """What the learner sees while taking the quiz — no answer key."""
+    question: str
+    options: List[str]
+    bloom_level: Optional[str] = None
+
+
+class QuestionReview(BaseModel):
+    question: str
+    options: List[str]
+    your_answer: Optional[int] = Field(None, description="Submitted option index, or null if unanswered")
+    correct_answer: int
+    is_correct: bool
+    explanation: str
+    evidence: Optional[str] = None
+    source: Optional[str] = None
 
 
 class QuizPayload(BaseModel):
@@ -108,8 +131,9 @@ class DocumentUploadResponse(BaseModel):
     quiz_id: str = Field(..., description="Unique identifier for the generated quiz session")
     filename: str = Field(..., description="Uploaded document filename")
     file_type: str = Field(..., description="Document file type")
-    questions: List[QuizQuestion] = Field(..., description="List of 5 generated multiple choice questions based on document text")
+    questions: List[PublicQuizQuestion] = Field(..., description="Generated questions (answer key withheld until grading)")
     metadata: DocumentMetadata = Field(..., description="Structured metadata of the processed document")
+    generation: Optional[Dict[str, Any]] = Field(None, description="Generator/checker models, verification mode and rejection counts")
 
 
 class GradeRequest(BaseModel):
@@ -135,6 +159,7 @@ class GradeResponse(BaseModel):
     db_updated: Optional[bool] = Field(None, description="Indicates whether the internal SQLite database was updated")
     # FIX (Bug #10): new field — True only on first submission
     evidenceWritten: Optional[bool] = Field(None, description="True if a new EvidenceLog row was written (first submission only)")
+    review: List[QuestionReview] = Field(default_factory=list, description="Per-question answer review with source evidence")
 
 
 
@@ -533,168 +558,46 @@ def _update_internal_db_competency(
 
 
 # =============================================================================
-# GEMINI QUIZ GENERATION HELPER
+# QUIZ GENERATION HELPER (ai/quiz pipeline)
 # =============================================================================
 
-async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None) -> List[QuizQuestion]:
+async def _generate_mcqs_from_text(
+    text: str,
+    chunks: Optional[List[str]] = None,
+    difficulty: str = "Medium",
+    num_questions: int = 5,
+) -> Tuple[List[QuizQuestion], Dict[str, Any]]:
     """
-    Calls Google Gemini API using google-generativeai with GEMINI_API_KEY from .env.
-    Generates exactly 5 MCQs based on the extracted text and chunks, enforcing strict JSON output.
+    Builds grounded MCQs with ai.quiz.build_quiz: one model family writes them,
+    a deterministic gate checks every evidence quote against the document, and a
+    different model family answers each question blind; only agreed questions are
+    kept. Groq keys/models and Gemini fail over to each other, and an extractive
+    offline builder covers the case where every provider is down.
     """
-    load_dotenv()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-
-    if not api_key or api_key in {"your-actual-api-key-here", "YOUR_GEMINI_API_KEY"}:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="GEMINI_API_KEY is not configured in the .env file. Please configure a valid Gemini API key.",
-        )
-
     try:
-        genai.configure(api_key=api_key)
-        
-        configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
-        candidate_models = [configured_model] if configured_model else []
-        for fallback in ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"]:
-            if fallback not in candidate_models:
-                candidate_models.append(fallback)
-
-        if chunks and len(chunks) > 0:
-            formatted_context = "\n\n---\n\n".join(
-                [f"[Document Chunk {idx + 1}/{len(chunks)}]\n{c}" for idx, c in enumerate(chunks[:20])]
-            )
-        else:
-            formatted_context = text[:40000]
-
-        prompt = (
-            "You are an expert assessment and quiz creation engine for the Ministry of Statistics and Programme Implementation (MoSPI).\n"
-            "Generate exactly 5 multiple-choice questions (MCQs) strictly based on the following training document content chunks.\n\n"
-            "Strict Requirements:\n"
-            "1. Generate exactly 5 high-quality questions testing comprehension, core concepts, or statistical procedures described in the text.\n"
-            "2. Each question MUST contain exactly 4 distinct and plausible options.\n"
-            "3. 'correct_answer' MUST be the 0-based integer index of the correct option in the 'options' array (0, 1, 2, or 3).\n"
-            "4. Provide a clear, detailed 'explanation' justifying why the selected option is correct according to the text.\n"
-            "5. Return output conforming strictly to the JSON schema: {\"questions\": [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct_answer\": 0, \"explanation\": \"...\"}]}.\n\n"
-            f"Document Content Chunks:\n\"\"\"\n{formatted_context}\n\"\"\""
-        )
-
-        response = None
-        last_error = None
-
-        for model_name in candidate_models:
-            try:
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    generation_config={
-                        "response_mime_type": "application/json",
-                        "temperature": 0.3,
-                    },
-                )
-                response = await asyncio.to_thread(model.generate_content, prompt)
-                if response and response.text:
-                    break
-            except Exception as ex:
-                logger.warning(f"Gemini model '{model_name}' attempt failed: {ex}")
-                last_error = ex
-                continue
-
-        if not response or not response.text:
-            raise ValueError(f"All Gemini model attempts failed. Last error: {last_error}")
-
-        raw_text = response.text.strip()
-
-        # Clean code fence blocks if returned by model
-        cleaned_text = raw_text
-        if cleaned_text.startswith("```json"):
-            cleaned_text = cleaned_text[7:]
-        elif cleaned_text.startswith("```"):
-            cleaned_text = cleaned_text[3:]
-        if cleaned_text.endswith("```"):
-            cleaned_text = cleaned_text[:-3]
-        cleaned_text = cleaned_text.strip()
-
-        parsed_json = json.loads(cleaned_text)
-        if isinstance(parsed_json, dict) and "questions" in parsed_json:
-            raw_questions = parsed_json["questions"]
-        elif isinstance(parsed_json, list):
-            raw_questions = parsed_json
-        else:
-            raw_questions = [parsed_json]
-
-        normalized_questions: List[QuizQuestion] = []
-        for item in raw_questions:
-            if not isinstance(item, dict):
-                continue
-            
-            q_text = str(item.get("question") or item.get("question_text") or item.get("prompt") or "").strip()
-            if not q_text:
-                continue
-
-            raw_opts = item.get("options") or item.get("choices") or item.get("answers") or []
-            if isinstance(raw_opts, dict):
-                opts = [str(v).strip() for v in raw_opts.values()]
-            elif isinstance(raw_opts, list):
-                opts = [str(o).strip() for o in raw_opts]
-            else:
-                opts = [str(raw_opts).strip()]
-
-            opts = [o for o in opts if o]
-            while len(opts) < 4:
-                opts.append(f"Option {chr(65 + len(opts))}")
-            if len(opts) > 4:
-                opts = opts[:4]
-
-            raw_ans = item.get("correct_answer") if "correct_answer" in item else (item.get("correctAnswer") if "correctAnswer" in item else item.get("answer"))
-            ans_idx = 0
-            if isinstance(raw_ans, int):
-                ans_idx = max(0, min(len(opts) - 1, raw_ans))
-            elif isinstance(raw_ans, str):
-                ans_str = raw_ans.strip().upper()
-                if ans_str in {"A", "B", "C", "D"}:
-                    ans_idx = ord(ans_str) - ord("A")
-                elif ans_str.isdigit():
-                    ans_idx = max(0, min(len(opts) - 1, int(ans_str)))
-                else:
-                    for i, opt in enumerate(opts):
-                        if opt.lower() == raw_ans.strip().lower():
-                            ans_idx = i
-                            break
-
-            explanation = str(
-                item.get("explanation")
-                or item.get("reason")
-                or item.get("justification")
-                or f"Option {chr(65 + ans_idx)} is the correct answer according to the document."
-            ).strip()
-
-            normalized_questions.append(
-                QuizQuestion(
-                    question=q_text,
-                    options=opts,
-                    correct_answer=ans_idx,
-                    explanation=explanation
-                )
-            )
-
-        if not normalized_questions:
-            raise ValueError("No valid questions could be extracted from Gemini response.")
-
-        return normalized_questions
-
-    except HTTPException:
-        raise
-    except json.JSONDecodeError as jde:
-        logger.error(f"JSON decode failure from Gemini response: {jde}")
+        result = await build_quiz(text, chunks or [text], n=num_questions, difficulty=difficulty)
+    except QuizBuildError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Quiz generation failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to parse structured JSON quiz questions from Gemini response: {str(jde)}",
+            detail=f"Quiz generation failed: {exc}",
         )
-    except Exception as e:
-        logger.exception(f"Gemini API generation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini API error during quiz generation: {str(e)}",
+
+    questions = [
+        QuizQuestion(
+            question=c.question,
+            options=c.options,
+            correct_answer=c.correct_answer,
+            explanation=c.explanation or f"The document states: “{c.evidence}”",
+            evidence=c.evidence,
+            source=c.location,
+            bloom_level=c.bloom_level,
         )
+        for c in result.questions
+    ]
+    return questions, result.meta
 
 
 # =============================================================================
@@ -705,30 +608,30 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
     "/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_200_OK,
-    summary="Upload document, extract text, and generate 5 RAG Quiz MCQs with Gemini API",
+    summary="Upload document, extract text, and generate 5 grounded, cross-verified quiz MCQs",
     responses={
-        200: {"description": "Document parsed and 5 MCQs successfully generated via Gemini API."},
+        200: {"description": "Document parsed and MCQs generated and verified."},
         400: {"model": ErrorResponse, "description": "Invalid file format or empty payload."},
         413: {"model": ErrorResponse, "description": "File exceeds maximum size limit."},
-        422: {"model": ErrorResponse, "description": "Unprocessable document or no readable text."},
+        422: {"model": ErrorResponse, "description": "Unprocessable document, no readable text, or too little content for a reliable quiz."},
         500: {"model": ErrorResponse, "description": "Internal server processing or configuration error."},
-        502: {"model": ErrorResponse, "description": "Gemini API error or bad gateway during generation."},
+        502: {"model": ErrorResponse, "description": "Unexpected error during generation."},
     },
 )
 async def upload_document_for_rag(
-    file: UploadFile = File(..., description="Document file to process (.pdf, .ppt, .pptx, .txt)")
+    file: UploadFile = File(..., description="Document file to process (.pdf, .ppt, .pptx, .txt)"),
+    difficulty: str = Form("Medium", description="Easy | Medium | Hard"),
 ) -> DocumentUploadResponse:
     """
     **RAG Document Ingestion & Quiz Generator**
-    
-    - Accepts **PDF**, **PPT/PPTX**, and **TXT** files.
-    - Validates file extension, MIME type, and size constraints (max 25MB).
+
+    - Accepts **PDF**, **PPT/PPTX**, and **TXT** files (max 25MB).
     - Extracts clean plain text with page/slide context using **pdfplumber / PyPDF / python-pptx**.
-    - Calls Google Gemini API using `google-generativeai` with `GEMINI_API_KEY` from `.env`.
-    - Generates exactly **5 MCQs** with strict JSON schema:
-      `{"questions": [{"question": "...", "options": ["A", "B", "C", "D"], "correct_answer": 0, "explanation": "..."}]}`.
-    - Stores generated quiz in-memory with unique `quiz_id` for grading.
-    - Returns the structured quiz payload, quiz_id, and document metadata.
+    - Builds 5 MCQs with `ai.quiz.build_quiz` at the requested difficulty: diverse
+      passages → one model family generates → evidence quotes checked against the
+      document → a second model family answers blind → only agreed questions kept.
+    - Stores the full quiz (with answer key) in-memory under `quiz_id`; the response
+      carries questions and options only.
     """
     # 1. Validate presence of filename
     if not file.filename:
@@ -824,8 +727,8 @@ async def upload_document_for_rag(
     chunks = _chunk_document_text(extracted_text, chunk_size=1000, chunk_overlap=150)
     chunk_count = len(chunks)
 
-    # 7. Generate exactly 5 MCQs via Google Gemini API from text and chunks
-    questions = await _generate_mcqs_from_text(extracted_text, chunks=chunks)
+    # 7. Generate and verify 5 MCQs from the most informative passages
+    questions, generation = await _generate_mcqs_from_text(extracted_text, chunks=chunks, difficulty=difficulty)
 
     # 8. Generate unique quiz ID and store in-memory for subsequent grading
     inferred_skill = _detect_skill_name(text=extracted_text, filename=filename)
@@ -839,6 +742,8 @@ async def upload_document_for_rag(
         "chunk_count": chunk_count,
         "competency_id": "FRAC-STAT-001",
         "skill_name": inferred_skill,
+        "difficulty": generation.get("difficulty", difficulty),
+        "generation": generation,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -864,8 +769,9 @@ async def upload_document_for_rag(
         quiz_id=quiz_id,
         filename=filename,
         file_type=ext,
-        questions=questions,
+        questions=[PublicQuizQuestion(question=q.question, options=q.options, bloom_level=q.bloom_level) for q in questions],
         metadata=metadata,
+        generation=generation,
     )
 
 
@@ -933,12 +839,23 @@ async def grade_quiz(
             detail="No answers provided in submission payload.",
         )
 
-    # 3. Calculate score
+    # 3. Calculate score and build the per-question review
     correct_count = 0
+    review: List[QuestionReview] = []
     for idx, question in enumerate(questions):
-        if idx < len(payload.answers):
-            if payload.answers[idx] == question.correct_answer:
-                correct_count += 1
+        given = payload.answers[idx] if idx < len(payload.answers) else None
+        is_correct = given == question.correct_answer
+        correct_count += is_correct
+        review.append(QuestionReview(
+            question=question.question,
+            options=question.options,
+            your_answer=given if given is not None and 0 <= given < len(question.options) else None,
+            correct_answer=question.correct_answer,
+            is_correct=is_correct,
+            explanation=question.explanation,
+            evidence=question.evidence,
+            source=question.source,
+        ))
 
     score_percentage = round((correct_count / total_questions) * 100.0, 2)
     passed = score_percentage >= 70.0
@@ -948,6 +865,7 @@ async def grade_quiz(
     igot_response_data: Optional[Dict[str, Any]] = None
     db_updated: Optional[bool] = None
     evidence_written: Optional[bool] = None
+    already_recorded = False
     final_level: int = 3
 
     def _grant_value_for_score(score: float) -> float:
@@ -965,6 +883,7 @@ async def grade_quiz(
         if existing_attempt:
             # Re-submission: return score for UX, do NOT write new evidence
             evidence_written = False
+            already_recorded = bool(existing_attempt.evidenceWritten)
             logger.info(
                 "[grade_quiz] Re-submission detected for user=%s quiz=%s — skipping evidence write.",
                 igot_user_id, payload.quiz_id,
@@ -1097,7 +1016,7 @@ async def grade_quiz(
             msg += f" Competency profile updated to Level {final_level}."
         if evidence_written:
             msg += " Practice assessment evidence recorded for skill gap analysis."
-        elif evidence_written is False and not (existing_attempt if 'existing_attempt' in dir() else True):
+        elif already_recorded:
             msg += " (Evidence already recorded from a previous submission.)"
         if synced_to_igot:
             msg += " Synced to iGOT."
@@ -1122,6 +1041,7 @@ async def grade_quiz(
         igot_response   = igot_response_data,
         db_updated      = db_updated,
         evidenceWritten = evidence_written,
+        review          = review,
     )
 
 

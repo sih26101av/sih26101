@@ -1,0 +1,13 @@
+Time Series Analysis for Economic Indicators
+
+A time series is a sequence of observations on a variable recorded at successive, usually equally spaced, points in time, such as monthly industrial production or quarterly GDP. The analysis of a time series usually starts by separating it into components.
+
+The trend is the long-term movement of the series. The seasonal component is a pattern that repeats within a year with a fixed period, for example higher retail sales every festival season. The cyclical component consists of longer, irregular swings associated with business cycles, typically lasting more than a year. The irregular component is the residual random variation that remains after the other components are removed.
+
+In an additive model the observed value equals trend plus seasonal plus cyclical plus irregular components, which is suitable when the size of seasonal fluctuations does not change with the level of the series. In a multiplicative model the components are multiplied, which is suitable when seasonal fluctuations grow in proportion to the level of the series.
+
+Seasonal adjustment removes the seasonal component so that month-to-month movements can be compared. The X-13ARIMA-SEATS program, developed by the United States Census Bureau, is widely used by statistical agencies for seasonal adjustment.
+
+A moving average smooths short-term fluctuations to reveal the trend. A centred 12-month moving average removes a stable monthly seasonal pattern. Year-on-year growth rates compare a period with the same period of the previous year and are therefore not affected by a stable seasonal pattern.
+
+A series is said to be stationary when its mean, variance and autocorrelation structure do not change over time. Many forecasting models, including ARIMA models, require the series to be made stationary first, commonly by differencing. The "I" in ARIMA stands for integrated, which refers to the number of times the series is differenced. The autocorrelation function (ACF) measures the correlation of a series with its own lagged values.
