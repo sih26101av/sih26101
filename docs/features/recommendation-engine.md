@@ -10,20 +10,28 @@ one study order across all gaps.
 `main-lms-backend/services/recommendation_service.py` — `HybridRecommendationEngine`
 (singleton, built once in `main.py::_startup` as `_rec_engine`).
 
-- `__init__(catalog_path, frac_path)` — loads `frac_competencies.json` into
-  `_frac_map` (incl. `levels`: the L1–L5 proficiency descriptors from `children`),
-  parses `course_catalog.json` into `_catalog` + `_comp_index` + `_by_id`, builds
+- `__init__(catalog_path, frac_path, catalog=None, frac=None, crosswalk=None)` —
+  takes the catalogue / FRAC set / crosswalk **as served by the mock iGOT server**
+  (`main._startup` loads them through `MockIgotAdapter`); a list not given is read
+  from the same generated file on disk (`catalog_source` = `adapter` | `disk`).
+  Loads the FRAC set into `_frac_map` (incl. `levels`: the L1–L5 proficiency
+  descriptors from `children`), parses the catalogue into `_catalog` + `_comp_index` + `_by_id`, builds
   BM25 over `title + description`, encodes the corpus with `ai.embedder`, keeps the
   matrix as `_embeddings` and in a `faiss.IndexFlatIP`, and builds the crosswalk
   anchors (`_xw_ids`, `_xw_emb`, `_xw_threshold`).
 - `_parse_catalog` — parses the JSON-string `competencies_v3` tags **including
-  `competencyLevel`** into `_CourseDoc.comp_levels {compId: 1..5}`, duration, TPAC
-  provenance (`verified`/`inferred`/`none`), quality fields kept as `None` if missing.
+  `competencyLevel`** into `_CourseDoc.comp_levels {compId: 1..5}`, duration
+  (`duration` is seconds), `modality` / `fmt`, TPAC provenance (`verified` when
+  `is_tpac: true`, `none` when the catalogue says `is_tpac: false`, `inferred`
+  from the NSSTA creator name only when the field is absent), quality fields kept
+  as `None` if missing.
 - Accessors: `course_comp_levels()` (feeds `BaselineAssembler`),
-  `levels_available(comp)`, `level_descriptor(comp, level)`.
+  `levels_available(comp)`, `level_descriptor(comp, level)`, `course_hours(courseId)`
+  (the learner enrollments endpoint uses it for course hours).
 - `crosswalk(comp_id, name)` — maps a role competency to the catalogue FRAC
-  competency that serves it: `exact` when the id is tagged in the catalogue, else
-  the nearest anchor by name embedding if it beats `_xw_threshold` = the 95th
+  competency that serves it: `exact` when the id is tagged in the catalogue, else an
+  explicit entry in `data/frac_crosswalk.json` → `curated_crosswalk` (with its
+  `confirmed` flag; every rule there is unconfirmed), else the nearest anchor by name embedding if it beats `_xw_threshold` = the 95th
   percentile of similarities between **distinct** FRAC competencies (derived from
   the FRAC set, not tuned) → `semantic_crosswalk` (unconfirmed), else `None`.
 - `calculate_gaps(baselines, targets, names, confidence, catalogue_ids)` —
@@ -126,18 +134,16 @@ channel at its FRAC level — for crosswalked competencies too (`comp_aliases`).
 
 ## TODOs / edge cases
 
-- **Mock data mismatch (mock-igot feature):** the mock server serves role
-  competencies from `userdata.json` (`CID####` ids, 210 broad FRAC names), while
-  the catalogue is tagged with the 40 MoSPI ids from `frac_competencies.json`
-  (which `users.json` uses). The crosswalk maps ~25% of those names (52/210);
-  the rest get `no_content` paths and semantic-fallback recommendations.
-- Mock `competencies_v3` tags look random: 192/403 tags score no closer to their
-  competency than an average untagged course. `tagSupported` / `tagReviewFlags`
-  surface this; they don't hide those courses when nothing better exists.
-- Semantic crosswalk mappings are unconfirmed (e.g. "Institutional Governance →
-  e-Governance Platforms"); SCIL v6 wants a human confirmation queue.
-- The catalogue is read **from disk**, bypassing `MockIgotAdapter`; embeddings are
-  recomputed on every startup (`Course.syllabusVectorEmbedding` unused).
+- Mock data (regenerated, SCIL v6 Phase A): role competencies now use the
+  catalogue ids (100% `exact` crosswalk), tag support is 100% (was 52%), 34/40
+  competencies have a full L1–L5 ladder with documented holes (see
+  `mock-igot-server/data/README.md`), durations are realistic (median 7 h).
+  `tagSupported` / `tagReviewFlags` still guard against mis-tags in real data.
+- Semantic / curated crosswalk mappings are unconfirmed; SCIL v6 wants a human
+  confirmation queue.
+- Embeddings are recomputed on every startup (`Course.syllabusVectorEmbedding`
+  unused). The catalogue is loaded through `MockIgotAdapter` at startup only, so a
+  catalogue change needs a backend restart.
 - Startup failure is swallowed (`_rec_engine = None`) and surfaces as a 503.
 - The 1.25× NSSTA boost applies to any `is_tpac` course while Stage 3 distinguishes
   verified (1.0) from inferred (0.5).

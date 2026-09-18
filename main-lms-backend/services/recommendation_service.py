@@ -148,6 +148,8 @@ class _CourseDoc:
     # "none"     = no TPAC signal found
     tpac_source:      str   = "none"
     corpus_text:      str   = ""   # title + description, lowercased, for BM25
+    modality:         Optional[str] = None   # "self_paced" | "virtual_lab" | "classroom"
+    fmt:              Optional[str] = None   # catalogue `format` (micro_learning, tpac_programme, …)
 
 
 # ── Bayesian shrinkage rating (Bug #5 fix — replaces Wilson lower bound) ───────
@@ -201,12 +203,26 @@ class HybridRecommendationEngine:
         self,
         catalog_path: str = _DEFAULT_CATALOG,
         frac_path:    str = _DEFAULT_FRAC,
+        catalog:      Optional[List[Dict[str, Any]]] = None,
+        frac:         Optional[List[Dict[str, Any]]] = None,
+        crosswalk:    Optional[List[Dict[str, Any]]] = None,
+        crosswalk_path: Optional[str] = None,
     ):
+        """
+        `catalog` / `frac` / `crosswalk` are the lists served by the mock iGOT
+        server (loaded through MockIgotAdapter in main._startup). When a list
+        is not given, the matching file is read from disk instead — the same
+        generated file the mock server serves, so the two cannot drift.
+        """
+        self.catalog_source = "adapter" if catalog is not None else "disk"
         # ── 1. Load FRAC dictionary ────────────────────────────────────────────
         self._frac_map: Dict[str, Dict] = {}   # id → {name, description}
         try:
-            with open(os.path.normpath(frac_path), "r", encoding="utf-8") as f:
-                frac_list = json.load(f)
+            if frac is not None:
+                frac_list = frac
+            else:
+                with open(os.path.normpath(frac_path), "r", encoding="utf-8") as f:
+                    frac_list = json.load(f)
             for comp in frac_list:
                 # children = the FRAC proficiency descriptors, one per level
                 levels = {
@@ -236,8 +252,11 @@ class HybridRecommendationEngine:
         self._untagged_median: Dict[str, float] = {}
 
         try:
-            with open(os.path.normpath(catalog_path), "r", encoding="utf-8") as f:
-                raw_catalog = json.load(f)
+            if catalog is not None:
+                raw_catalog = catalog
+            else:
+                with open(os.path.normpath(catalog_path), "r", encoding="utf-8") as f:
+                    raw_catalog = json.load(f)
             self._parse_catalog(raw_catalog)
             logger.info("[RecEngine] Indexed %d courses.", len(self._catalog))
         except Exception as exc:
@@ -289,6 +308,22 @@ class HybridRecommendationEngine:
         logger.info("[RecEngine] Crosswalk: %d anchors, threshold %.3f.",
                     len(self._xw_ids), self._xw_threshold)
 
+        # Explicit crosswalk (data/frac_crosswalk.json): iGOT dictionary CID id →
+        # catalogue id, each with a `confirmed` flag. Consulted before embeddings.
+        self._xw_curated: Dict[str, Dict[str, Any]] = {}
+        if crosswalk is None:
+            path = crosswalk_path or os.path.join(os.path.dirname(os.path.normpath(catalog_path)),
+                                                  "frac_crosswalk.json")
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    raw_xw = json.load(f)
+                crosswalk = raw_xw.get("mappings", []) if isinstance(raw_xw, dict) else raw_xw
+            except (OSError, ValueError):
+                crosswalk = []
+        for m in crosswalk or []:
+            if m.get("fracId") and m["fracId"] in self._comp_index:
+                self._xw_curated[m["cidId"]] = m
+
     # ── Catalog parser ─────────────────────────────────────────────────────────
 
     def _parse_catalog(self, raw: list) -> None:
@@ -327,6 +362,10 @@ class HybridRecommendationEngine:
             if raw_is_tpac is True:
                 tpac_source = "verified"
                 is_tpac = True
+            elif raw_is_tpac is False:
+                # The catalogue states it explicitly: not TPAC-vetted, whoever made it.
+                tpac_source = "none"
+                is_tpac = False
             else:
                 creator = item.get("creator", "")
                 orgs    = item.get("organisation", [])
@@ -370,6 +409,8 @@ class HybridRecommendationEngine:
                 is_tpac          = is_tpac,
                 tpac_source      = tpac_source,
                 corpus_text      = corpus_text,
+                modality         = item.get("modality"),
+                fmt              = item.get("format"),
             )
             self._catalog.append(doc)
             self._by_id[doc.identifier] = idx
@@ -384,6 +425,11 @@ class HybridRecommendationEngine:
         """{courseId: {compId: FRAC level}} — feeds BaselineAssembler so the
         Verified channel and the candidate filter read the same tags."""
         return {d.identifier: dict(d.comp_levels) for d in self._catalog if d.comp_levels}
+
+    def course_hours(self, course_id: str) -> Optional[float]:
+        """Catalogue duration in hours, or None for a course not in the catalogue."""
+        idx = self._by_id.get(course_id)
+        return self._catalog[idx].duration_hrs if idx is not None else None
 
     def levels_available(self, comp_id: str) -> Set[int]:
         """FRAC levels at which the catalogue has at least one course for comp_id."""
@@ -401,6 +447,8 @@ class HybridRecommendationEngine:
         courses and level ladder should serve it.
 
           * id already tagged in the catalogue → method "exact"
+          * else an explicit entry in data/frac_crosswalk.json → method
+            "curated_crosswalk" (+ its `confirmed` flag)
           * else nearest crosswalk anchor by embedding of the name, accepted
             only above the data-derived threshold → method "semantic_crosswalk"
             (unconfirmed — shown as such; a human should confirm it, SCIL v6 §5)
@@ -409,6 +457,12 @@ class HybridRecommendationEngine:
         if comp_id in self._comp_index:
             return {"catalogueId": comp_id, "method": "exact", "similarity": 1.0,
                     "catalogueName": self._frac_map.get(comp_id, {}).get("name", comp_id)}
+        curated = self._xw_curated.get(comp_id)
+        if curated:
+            fid = curated["fracId"]
+            return {"catalogueId": fid, "method": "curated_crosswalk", "similarity": None,
+                    "confirmed": bool(curated.get("confirmed")),
+                    "catalogueName": self._frac_map.get(fid, {}).get("name", fid)}
         text = (name or "").strip()
         if not text or not self._xw_ids:
             return None

@@ -39,6 +39,8 @@ _CONFIDENCE_RANK = {"UNASSESSED": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3}
 _TIER_SENIORITY = {
     "TIER1_SENIOR": 4.5, "TIER2_UPPER": 3.5, "TIER3_MID": 2.5,
     "TIER4_JUNIOR": 1.5, "TIER5_ENTRY": 0.5,
+    # tier names the iGOT profiles actually carry (same seniority bands)
+    "TIER1_APEX": 4.5, "TIER2_SENIOR": 3.5,
 }
 
 _EDU_RELEVANCE = {

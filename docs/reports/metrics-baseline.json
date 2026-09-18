@@ -1,0 +1,177 @@
+{
+  "offline": {
+    "courses": 200,
+    "catalogueCompetencies": 40,
+    "tags": 403,
+    "tagSupportRate": 0.524,
+    "unsupportedTags": 192,
+    "fullLadderCompetencies": 23,
+    "competenciesMissingL1": 11,
+    "competenciesWithHoles": {
+      "comp_survey_design_002": [
+        1
+      ],
+      "comp_price_stats_003": [
+        2
+      ],
+      "comp_index_numbers_004": [
+        1,
+        4,
+        5
+      ],
+      "comp_big_data_006": [
+        1
+      ],
+      "comp_agri_stats_009": [
+        1
+      ],
+      "comp_industry_stats_010": [
+        5
+      ],
+      "comp_time_series_013": [
+        2
+      ],
+      "comp_data_gov_016": [
+        4
+      ],
+      "comp_python_stats_017": [
+        1,
+        3
+      ],
+      "comp_r_analytics_018": [
+        1
+      ],
+      "comp_procurement_021": [
+        4
+      ],
+      "comp_e_gov_023": [
+        1,
+        5
+      ],
+      "comp_comm_032": [
+        1,
+        5
+      ],
+      "comp_prob_solve_033": [
+        1,
+        4
+      ],
+      "comp_integrity_034": [
+        1
+      ],
+      "comp_collab_036": [
+        5
+      ],
+      "comp_decision_037": [
+        1
+      ]
+    },
+    "durationHours": {
+      "min": 0.1,
+      "median": 0.1,
+      "p90": 1.5,
+      "max": 1.5
+    },
+    "durationHoursByFormat": {
+      "unspecified": {
+        "n": 200,
+        "min": 0.1,
+        "median": 0.1,
+        "p90": 1.5,
+        "max": 1.5
+      }
+    }
+  },
+  "live": {
+    "rosterUsers": 151,
+    "fracServed": 331,
+    "servedRoleCompetencies": 1282,
+    "servedInCatalogueShare": 0.0,
+    "usersSampled": 20,
+    "crosswalkMethodMix": {
+      "semantic_crosswalk": 38,
+      "none": 128
+    },
+    "pathwayStatusMix": {
+      "ready": 19,
+      "met": 59,
+      "no_content": 87,
+      "partial": 1
+    },
+    "noContentCompetencies": {
+      "CID0025": 2,
+      "CID00304": 1,
+      "CID0044": 2,
+      "CID00416": 4,
+      "CID0011": 1,
+      "CID00120": 2,
+      "CID00370": 3,
+      "CID0083": 4,
+      "CID00626": 2,
+      "CID00351": 1,
+      "CID00267": 2,
+      "CID009": 1,
+      "CID00422": 1,
+      "CID0031": 1,
+      "CID0024": 1,
+      "CID00413": 1,
+      "CID00415": 2,
+      "CID00123": 1,
+      "CID00337": 1,
+      "CID00128": 1,
+      "CID00152": 2,
+      "CID00434": 1,
+      "CID0265": 1,
+      "CID00263": 2,
+      "CID00333": 1,
+      "CID00441": 1,
+      "CID00373": 2,
+      "CID0042": 4,
+      "CID00652": 1,
+      "CID01202": 1,
+      "CID106": 1,
+      "CID0815": 1,
+      "CID00317": 1,
+      "CID0247": 1,
+      "CID00439": 1,
+      "CID00297": 1,
+      "CID00622": 2,
+      "CID00335": 1,
+      "CID00455": 2,
+      "CID0822": 2,
+      "CID00670": 1,
+      "CID00499": 2,
+      "CID0037": 2,
+      "CID00475": 1,
+      "CID00112": 1,
+      "CID00361": 1,
+      "CID0827": 3,
+      "CID0038": 1,
+      "CID00617": 1,
+      "CID00628": 1,
+      "CID00655": 1,
+      "CID00509": 1,
+      "CID00639": 1,
+      "CID0028": 1,
+      "CID00369": 1,
+      "CID0279": 1,
+      "CID00457": 1,
+      "CID00624": 1,
+      "CID00635": 1,
+      "CID0085": 1
+    },
+    "pathwayTotalHours": {
+      "n": 20,
+      "min": 0.1,
+      "median": 0.2,
+      "p90": 1.61,
+      "max": 3.1
+    },
+    "studyPlanTotalHours": {
+      "median": 0.1,
+      "max": 3.4
+    },
+    "dashboardVsRecommendationMismatches": 0,
+    "levelGateViolations": 0
+  }
+}

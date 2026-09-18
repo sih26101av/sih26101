@@ -93,25 +93,37 @@ async def _startup():
     from ai.semantic_engine import _ensure_prototypes
     _ensure_prototypes()
 
+    import logging
+    log = logging.getLogger(__name__)
+
+    # One catalogue: rank over exactly what the mock iGOT server serves. If it
+    # is down, fall back to the same generated files on disk (and say so).
+    catalog = frac = crosswalk = None
     try:
-        _rec_engine = HybridRecommendationEngine()
-        import logging
-        logging.getLogger(__name__).info("[startup] HybridRecommendationEngine ready.")
+        catalog   = await adapter.fetch_catalog()
+        frac      = await adapter.fetch_frac_competencies()
+        crosswalk = await adapter.fetch_frac_crosswalk()
+        log.info("[startup] Catalogue loaded from iGOT adapter: %d courses, %d FRAC competencies.",
+                 len(catalog), len(frac))
+    except Exception as exc:
+        catalog = frac = crosswalk = None
+        log.warning("[startup] iGOT mock server unreachable (%s) — loading the catalogue from "
+                    "mock-igot-server/data/*.json on disk instead.", exc)
+
+    try:
+        _rec_engine = HybridRecommendationEngine(catalog=catalog, frac=frac, crosswalk=crosswalk)
+        log.info("[startup] HybridRecommendationEngine ready (catalogue source: %s).",
+                 _rec_engine.catalog_source)
 
         # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
         # on, so the Verified channel credits a completed course at its tagged level.
         course_comp_map = _rec_engine.course_comp_levels()
 
         _assembler = BaselineAssembler(course_comp_map)
-        logging.getLogger(__name__).info(
-            "[startup] BaselineAssembler ready. Mapped %d courses.", len(course_comp_map)
-        )
+        log.info("[startup] BaselineAssembler ready. Mapped %d courses.", len(course_comp_map))
 
     except Exception as exc:
-        import logging
-        logging.getLogger(__name__).error(
-            "[startup] Engine/Assembler failed to initialise: %s", exc
-        )
+        log.error("[startup] Engine/Assembler failed to initialise: %s", exc)
         _rec_engine = None
         _assembler  = None
 
@@ -398,9 +410,16 @@ async def get_enrollments_by_user_id(
         status_label = "Completed" if status_int == 2 else "In Progress" if status_int == 1 else "Not Started"
         leaf = e.get("leafNodesCount", 0) or 1
         progress_pct = e.get("completionPercentage", 0)
-        done_nodes   = int(leaf * progress_pct / 100) if progress_pct else e.get("progress", 0)
-        remaining_hrs = round(max(0, leaf - done_nodes) * 0.5, 1)
-        total_hrs     = round(leaf * 0.5, 1)
+        # Hours from the catalogue `duration` (seconds) when the course is known;
+        # the old rule (0.5 h per leaf module) only as a fallback.
+        catalogue_hrs = _rec_engine.course_hours(e.get("courseId", "")) if _rec_engine else None
+        if catalogue_hrs:
+            total_hrs     = round(catalogue_hrs, 1)
+            remaining_hrs = round(catalogue_hrs * (1 - (progress_pct or 0) / 100.0), 1)
+        else:
+            done_nodes    = int(leaf * progress_pct / 100) if progress_pct else e.get("progress", 0)
+            remaining_hrs = round(max(0, leaf - done_nodes) * 0.5, 1)
+            total_hrs     = round(leaf * 0.5, 1)
 
         enrollments.append({
             "enrollmentId":       f"ENR-{user_id}-{i:03d}",

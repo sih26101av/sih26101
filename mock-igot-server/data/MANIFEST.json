@@ -1,0 +1,51 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "Every file listed here is synthetic, produced by the generator below. List-shaped files keep their original format; this manifest is their synthetic-data label."
+ },
+ "files": {
+  "_truth/planted_effects.json": {
+   "synthetic": true,
+   "sha256": "0ddbf2dfe1183ec88d1709900c561d3d77cae342ed27404b53a82fb41a416f4c",
+   "bytes": 83707
+  },
+  "content_states.json": {
+   "synthetic": true,
+   "sha256": "26c8ae7edcc0238c63d88f02bbf79820b8f42403ba2c42044deab88d9f4ceee7",
+   "bytes": 832560
+  },
+  "course_catalog.json": {
+   "synthetic": true,
+   "sha256": "68c4eb1805dc0013dadefb455cf7d0ba336e9dd4aea4fd87071338d3dc9c8424",
+   "bytes": 732119
+  },
+  "enrollments.json": {
+   "synthetic": true,
+   "sha256": "60f11764ebf7a5e0e7675c0e2f4d8a28f6869c8767f965f4c6ecb607778e5985",
+   "bytes": 683058
+  },
+  "frac_competencies.json": {
+   "synthetic": true,
+   "sha256": "238c4afc4fb4c9ad1159aa7ea8468ab6608246097e2f7989e6544eeabea7d080",
+   "bytes": 64391
+  },
+  "frac_crosswalk.json": {
+   "synthetic": true,
+   "sha256": "d3c5fa7ffcdd70f45e43fef46968eae1f9d48d19e48c87017ae2c64c70e3c041",
+   "bytes": 59136
+  },
+  "roles.json": {
+   "synthetic": true,
+   "sha256": "6206a44a9135f9cf7013f9321278704d1550bb9a8b0a740f45b498182f5a20b3",
+   "bytes": 44894
+  },
+  "userdata.json": {
+   "synthetic": true,
+   "sha256": "ac8c8a0a8d72fb0e4582e13f88447d2651c03a0a5686503dc2c0df5d1b0cfb4b",
+   "bytes": 632808
+  }
+ }
+}

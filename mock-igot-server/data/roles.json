@@ -1,0 +1,2379 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "Role (office × designation) competency profiles; requiredLevel drawn from the designation tier."
+ },
+ "roles": [
+  {
+   "roleId": "role_capd_additional_director_general",
+   "officeId": "off_capd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_capd_assistant_director",
+   "officeId": "off_capd",
+   "designation": "Assistant Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_capd_deputy_director_general",
+   "officeId": "off_capd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_capd_director",
+   "officeId": "off_capd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_capd_senior_statistical_officer",
+   "officeId": "off_capd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_rtt_022",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_additional_director_general",
+   "officeId": "off_dpd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_assistant_director",
+   "officeId": "off_dpd",
+   "designation": "Assistant Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_deputy_director",
+   "officeId": "off_dpd",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_api_int_028",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_deputy_director_general",
+   "officeId": "off_dpd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_director",
+   "officeId": "off_dpd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_api_int_028",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_joint_director",
+   "officeId": "off_dpd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_cloud_infra_027",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dpd_junior_statistical_officer",
+   "officeId": "off_dpd",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_cloud_infra_027",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_additional_director_general",
+   "officeId": "off_dqad",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_deputy_director",
+   "officeId": "off_dqad",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_deputy_director_general",
+   "officeId": "off_dqad",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_director",
+   "officeId": "off_dqad",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_joint_director",
+   "officeId": "off_dqad",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dqad_senior_statistical_officer",
+   "officeId": "off_dqad",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_additional_director_general",
+   "officeId": "off_esd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_deputy_director",
+   "officeId": "off_esd",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_deputy_director_general",
+   "officeId": "off_esd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_director",
+   "officeId": "off_esd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_joint_director",
+   "officeId": "off_esd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_junior_statistical_officer",
+   "officeId": "off_esd",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_esd_senior_statistical_officer",
+   "officeId": "off_esd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_east_additional_director_general",
+   "officeId": "off_fod_east",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_east_deputy_director",
+   "officeId": "off_fod_east",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_collab_036",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_east_deputy_director_general",
+   "officeId": "off_fod_east",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_spatial_stat_012",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_east_director",
+   "officeId": "off_fod_east",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_east_joint_director",
+   "officeId": "off_fod_east",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_spatial_stat_012",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_north_additional_director_general",
+   "officeId": "off_fod_north",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_spatial_stat_012",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_north_deputy_director",
+   "officeId": "off_fod_north",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_agri_stats_009",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_collab_036",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_north_deputy_director_general",
+   "officeId": "off_fod_north",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_privacy_026",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_fod_north_senior_statistical_officer",
+   "officeId": "off_fod_north",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_spatial_stat_012",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_additional_director_general",
+   "officeId": "off_isw",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_deputy_director",
+   "officeId": "off_isw",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_director",
+   "officeId": "off_isw",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_joint_director",
+   "officeId": "off_isw",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_junior_statistical_officer",
+   "officeId": "off_isw",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 1
+    },
+    {
+     "id": "comp_econ_census_007",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_senior_statistical_officer",
+   "officeId": "off_isw",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_collab_036",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_isw_statistical_investigator_grade_i",
+   "officeId": "off_isw",
+   "designation": "Statistical Investigator Grade-I",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 1
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_additional_director_general",
+   "officeId": "off_nad",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_time_series_013",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_deputy_director",
+   "officeId": "off_nad",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_gdp_nowcast_011",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_deputy_director_general",
+   "officeId": "off_nad",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_joint_director",
+   "officeId": "off_nad",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_time_series_013",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_junior_statistical_officer",
+   "officeId": "off_nad",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_gdp_nowcast_011",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_time_series_013",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_citizen_039",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_nad_senior_statistical_officer",
+   "officeId": "off_nad",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_time_series_013",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_additional_director_general",
+   "officeId": "off_nssta",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_deputy_director",
+   "officeId": "off_nssta",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_e_gov_023",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_deputy_director_general",
+   "officeId": "off_nssta",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_procurement_021",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_director",
+   "officeId": "off_nssta",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_joint_director",
+   "officeId": "off_nssta",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_nat_accounts_001",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_nssta_statistical_investigator_grade_i",
+   "officeId": "off_nssta",
+   "designation": "Statistical Investigator Grade-I",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_additional_director_general",
+   "officeId": "off_psd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_deputy_director",
+   "officeId": "off_psd",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_deputy_director_general",
+   "officeId": "off_psd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_director",
+   "officeId": "off_psd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_joint_director",
+   "officeId": "off_psd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_junior_statistical_officer",
+   "officeId": "off_psd",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_collab_036",
+     "requiredLevel": 1
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_senior_statistical_officer",
+   "officeId": "off_psd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_psd_statistical_investigator_grade_i",
+   "officeId": "off_psd",
+   "designation": "Statistical Investigator Grade-I",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_price_stats_003",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_index_numbers_004",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_citizen_039",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_additional_director_general",
+   "officeId": "off_sdrd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_deputy_director",
+   "officeId": "off_sdrd",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_deputy_director_general",
+   "officeId": "off_sdrd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_director",
+   "officeId": "off_sdrd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_joint_director",
+   "officeId": "off_sdrd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_sdrd_senior_statistical_officer",
+   "officeId": "off_sdrd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_survey_design_002",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_statistical_sw_030",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_prob_solve_033",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_additional_director_general",
+   "officeId": "off_ssd",
+   "designation": "Additional Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_assistant_director",
+   "officeId": "off_ssd",
+   "designation": "Assistant Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_deputy_director",
+   "officeId": "off_ssd",
+   "designation": "Deputy Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_collab_036",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_deputy_director_general",
+   "officeId": "off_ssd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_director",
+   "officeId": "off_ssd",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_dem_analysis_008",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_joint_director",
+   "officeId": "off_ssd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_dem_analysis_008",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_junior_statistical_officer",
+   "officeId": "off_ssd",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_dem_analysis_008",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_senior_statistical_officer",
+   "officeId": "off_ssd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_dem_analysis_008",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 2
+    }
+   ]
+  },
+  {
+   "roleId": "role_ssd_statistical_investigator_grade_i",
+   "officeId": "off_ssd",
+   "designation": "Statistical Investigator Grade-I",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_poverty_014",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_dem_analysis_008",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_r_analytics_018",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    }
+   ]
+  }
+ ]
+}

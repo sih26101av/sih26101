@@ -45,8 +45,10 @@ Ministry-side view at `/admin` (role `admin` only), built on the shared `AppShel
 ## Connections
 
 The backend is the single auth-enforcement point — the admin UI never calls port
-8001 directly. Data originates from the mock server's `data/userdata.json` and
-`competencies.json`.
+8001 directly. Data originates from the mock server's generated (synthetic)
+`data/userdata.json` and `data/frac_competencies.json`; the FRAC table now lists
+the 40 catalogue competencies roles are defined in (the 331-entry iGOT CID
+dictionary is still served by the mock at `?dictionary=igot`).
 
 ## TODOs / edge cases
 

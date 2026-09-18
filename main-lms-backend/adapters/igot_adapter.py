@@ -17,6 +17,7 @@ Run the mock server with:
 
 from __future__ import annotations
 
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -93,28 +94,61 @@ class MockIgotAdapter(ILearningPlatformAdapter):
     All responses follow the Sunbird envelope: { result: { ... } }.
     """
 
+    # Page size for catalogue search (the mock caps composite search at 1000).
+    _SEARCH_PAGE = 500
+
     def __init__(self) -> None:
-        self.base_url = "http://localhost:8001"
+        self.base_url = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
         # The mock server accepts any non-empty token value
-        self.token = "mock-api-key-2026"
+        self.token = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
         self._headers = {"x-authenticated-user-token": self.token}
 
     # ── Catalog ────────────────────────────────────────────────────────────────
 
     async def fetch_catalog(self) -> List[Dict[str, Any]]:
         """
-        GET /api/content/read
-        Returns: result.content  — list of Sunbird course objects.
+        The full CBP course catalogue, paged through
+        POST /api/composite/v1/search. Returns: list of Sunbird course objects.
         """
+        return await self.search_catalog({"primaryCategory": ["Course"]})
+
+    async def search_catalog(self, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """
+        POST /api/composite/v1/search — Sunbird composite search, every page.
+        `filters` e.g. {"competencies_v3.id": ["comp_price_stats_003"], "level": [3]}.
+        """
+        out: List[Dict[str, Any]] = []
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"{self.base_url}/api/content/read",
-                headers=self._headers,
-                timeout=10.0,
-            )
+            while True:
+                resp = await client.post(
+                    f"{self.base_url}/api/composite/v1/search",
+                    headers=self._headers,
+                    json={"request": {"filters": filters or {}, "limit": self._SEARCH_PAGE,
+                                      "offset": len(out)}},
+                    timeout=15.0,
+                )
+                resp.raise_for_status()
+                result = resp.json().get("result", {})
+                page = result.get("content") or []
+                out.extend(page)
+                if not page or len(out) >= int(result.get("count") or 0):
+                    return out
+
+    async def fetch_frac_competencies(self) -> List[Dict[str, Any]]:
+        """GET /api/frac/competencies — the catalogue FRAC set incl. L1–L5 descriptors."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/api/frac/competencies",
+                                    headers=self._headers, timeout=10.0)
             resp.raise_for_status()
-        data = resp.json()
-        return _sunbird_result(data, "content") or []
+        return _sunbird_result(resp.json(), "competencies") or []
+
+    async def fetch_frac_crosswalk(self) -> List[Dict[str, Any]]:
+        """GET /api/frac/v1/crosswalk — iGOT dictionary CID id → catalogue FRAC id."""
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{self.base_url}/api/frac/v1/crosswalk",
+                                    headers=self._headers, timeout=10.0)
+            resp.raise_for_status()
+        return _sunbird_result(resp.json(), "mappings") or []
 
     # ── User Profile ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,2658 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "note": "Keyword-rule crosswalk from the iGOT competency dictionary (competencies.json, CID ids) to the 40 catalogue FRAC ids. No mapping has been confirmed by a human reviewer (confirmed=false for all); fracId=null means no rule matched."
+ },
+ "mappings": [
+  {
+   "cidId": "CID001",
+   "cidName": "Budget Analysis",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID0010",
+   "cidName": "Technology roadmapping",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0011",
+   "cidName": "Artificial Intelligence Application",
+   "fracId": "comp_ml_stats_005",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "machine learning|artificial intelligence|\\bai\\b|deep learning"
+  },
+  {
+   "cidId": "CID00112",
+   "cidName": "Standard Operating Procedures Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0012",
+   "cidName": "Change Management",
+   "fracId": "comp_change_mgmt_035",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "change management|adaptab|agility"
+  },
+  {
+   "cidId": "CID00120",
+   "cidName": "Market Research",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00121",
+   "cidName": "Rail Track Inspection",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00123",
+   "cidName": "Rail Track Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00128",
+   "cidName": "Network Systems Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0013",
+   "cidName": "Cyber Security",
+   "fracId": "comp_data_privacy_026",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "privacy|cyber|information security|data protection"
+  },
+  {
+   "cidId": "CID00133",
+   "cidName": "Customer Service Delivery",
+   "fracId": "comp_citizen_039",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "citizen|service delivery|grievance|customer"
+  },
+  {
+   "cidId": "CID00137",
+   "cidName": "Low Voltage Power Systems Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0014",
+   "cidName": "Commitment to the Organisation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00141",
+   "cidName": "High Voltage Power Systems Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00144",
+   "cidName": "Network Planning and Operations",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00148",
+   "cidName": "Escalator and Travelator Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0015",
+   "cidName": "Internet of Things Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00152",
+   "cidName": "Emergency and Security Communication Systems Maintenance",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00154",
+   "cidName": "Crisis Communication and Media Management",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00157",
+   "cidName": "Locomotive Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0016",
+   "cidName": "Emerging Technology",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00164",
+   "cidName": "Security Governance & Risk Compliance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0017",
+   "cidName": "Gender Sensitivity",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00174",
+   "cidName": "Import and Export Documentation Administration",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00177",
+   "cidName": "Financial Planning and Budget Management",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID0018",
+   "cidName": "Crisis Situations Management/Disaster Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00181",
+   "cidName": "Communication Power System Maintenance",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00184",
+   "cidName": "Communication Auxiliary Systems Maintenance",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00186",
+   "cidName": "Communication Backbone System Maintenance",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00189",
+   "cidName": "Technology Application",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0019",
+   "cidName": "Impact measurement",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00205",
+   "cidName": "Service Branding and Coaching",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00208",
+   "cidName": "Environment and Social Governance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0021",
+   "cidName": "Project Planning",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00212",
+   "cidName": "Customer Relationship Management",
+   "fracId": "comp_citizen_039",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "citizen|service delivery|grievance|customer"
+  },
+  {
+   "cidId": "CID00215",
+   "cidName": "Infrastructure Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00219",
+   "cidName": "IT Standards",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0022",
+   "cidName": "Project Risk Identification",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00221",
+   "cidName": "Legal Drafting and Writing",
+   "fracId": "comp_report_writing_020",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "report writing|drafting|noting|writing"
+  },
+  {
+   "cidId": "CID00222",
+   "cidName": "Human Resource Policies and Legislation Framework Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00223",
+   "cidName": "Management Decision Making",
+   "fracId": "comp_decision_037",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "decision"
+  },
+  {
+   "cidId": "CID00224",
+   "cidName": "Human Resource Practices Implementation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00225",
+   "cidName": "Financial Statements Review",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00234",
+   "cidName": "Data Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00236",
+   "cidName": "Emerging Technology Synthesis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00237",
+   "cidName": "Data Management",
+   "fracId": "comp_data_gov_016",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "data governance|data quality|quality assurance|data management|metadata"
+  },
+  {
+   "cidId": "CID00238",
+   "cidName": "Public Health Ethics",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID0024",
+   "cidName": "Environmental Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00249",
+   "cidName": "Business Needs Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0025",
+   "cidName": "Scenario Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00251",
+   "cidName": "Financial Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00252",
+   "cidName": "Financial Management",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID00254",
+   "cidName": "Financial Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00255",
+   "cidName": "Design Thinking Practice",
+   "fracId": "comp_innov_038",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "innovat|creativ|design thinking"
+  },
+  {
+   "cidId": "CID00256",
+   "cidName": "Financial Reporting",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00258",
+   "cidName": "Financial Statements Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00259",
+   "cidName": "Digital Marketing",
+   "fracId": "comp_e_gov_023",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "e-governance|e-office|digital|e-gov"
+  },
+  {
+   "cidId": "CID0026",
+   "cidName": "Data collection and analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00260",
+   "cidName": "Financial Transactions",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00261",
+   "cidName": "Digital Technology Environment Scanning",
+   "fracId": "comp_e_gov_023",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "e-governance|e-office|digital|e-gov"
+  },
+  {
+   "cidId": "CID00263",
+   "cidName": "Digital Technology Adoption and Innovation",
+   "fracId": "comp_e_gov_023",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "e-governance|e-office|digital|e-gov"
+  },
+  {
+   "cidId": "CID00264",
+   "cidName": "Inquiry-based Instruction",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00266",
+   "cidName": "Digital Course Development",
+   "fracId": "comp_e_gov_023",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "e-governance|e-office|digital|e-gov"
+  },
+  {
+   "cidId": "CID00267",
+   "cidName": "Flight Deck Communications",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID0027",
+   "cidName": "Environmental Impact Assessment",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00272",
+   "cidName": "Product Marketing and Branding",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0028",
+   "cidName": "Public Sector Transformation and Innovation",
+   "fracId": "comp_innov_038",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "innovat|creativ|design thinking"
+  },
+  {
+   "cidId": "CID00281",
+   "cidName": "Qualitative Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00282",
+   "cidName": "Project Management",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00284",
+   "cidName": "Regulatory Compliance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00285",
+   "cidName": "Regulatory and Legal Advisory",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00286",
+   "cidName": "Risk Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00287",
+   "cidName": "Regulatory Compliance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00289",
+   "cidName": "Regulatory Risk Assessment",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00290",
+   "cidName": "Strategic Human Resource Management",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00291",
+   "cidName": "Strategic Service Excellence",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00294",
+   "cidName": "Project Management",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00295",
+   "cidName": "Professional and Business Ethics",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID00297",
+   "cidName": "Public Health Resource Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID003",
+   "cidName": "Project Resource Planning",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID0030",
+   "cidName": "Institutional Governance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00304",
+   "cidName": "Trainborne Automatic Train Control Equipment Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00305",
+   "cidName": "Travel Information System Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00306",
+   "cidName": "Monitoring and Surveillance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00307",
+   "cidName": "Infrastructure Strategy",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID0031",
+   "cidName": "Programme Implementation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00314",
+   "cidName": "Human Factors Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00317",
+   "cidName": "Public Health Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00318",
+   "cidName": "Education for Health and Wellbeing - Programme Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00320",
+   "cidName": "Operational Risk Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00322",
+   "cidName": "Organisational Culture Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00323",
+   "cidName": "Knowledge Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00324",
+   "cidName": "Organisational Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00325",
+   "cidName": "Marketing Strategy Development",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00327",
+   "cidName": "Organisational Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00329",
+   "cidName": "Organisational Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0033",
+   "cidName": "Self-Confidence",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00333",
+   "cidName": "Performance Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00334",
+   "cidName": "Procurement",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00335",
+   "cidName": "Policy Implementation and Revision",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00337",
+   "cidName": "Train Supervisory System Maintenance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00339",
+   "cidName": "Networking",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID0034",
+   "cidName": "Voluntary Exit Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00343",
+   "cidName": "Environmental Audits (EA)",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00346",
+   "cidName": "Microeconomics",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0035",
+   "cidName": "Workplace Learning Delivery",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00351",
+   "cidName": "Transport Management System Administration",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00353",
+   "cidName": "Account Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00354",
+   "cidName": "Procurement",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00355",
+   "cidName": "Audit and Compliance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0036",
+   "cidName": "Attention to Detail",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00360",
+   "cidName": "Benchmarking",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00361",
+   "cidName": "Learning and Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00364",
+   "cidName": "Budgeting",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID00366",
+   "cidName": "Capital Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00368",
+   "cidName": "Capital Expenditure and Investment Evaluation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00369",
+   "cidName": "Planning and Coordination",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID0037",
+   "cidName": "Technology Integration",
+   "fracId": "comp_api_int_028",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "\\bapi\\b|interoperab|integration"
+  },
+  {
+   "cidId": "CID00370",
+   "cidName": "Desire for Knowledge",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00372",
+   "cidName": "Problem Solving",
+   "fracId": "comp_prob_solve_033",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "problem solving|critical thinking|analytical thinking|reasoning"
+  },
+  {
+   "cidId": "CID00373",
+   "cidName": "Developing Others",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00374",
+   "cidName": "Self Awareness and Self Control",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00375",
+   "cidName": "Climate Finance",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID00377",
+   "cidName": "Team-Working",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00378",
+   "cidName": "Business Operational Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00379",
+   "cidName": "Property and Infrastructural Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0038",
+   "cidName": "Taking Accountability",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00381",
+   "cidName": "Coaching and Mentoring",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00383",
+   "cidName": "Data Sharing",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00385",
+   "cidName": "Data Visualisation",
+   "fracId": "comp_data_viz_019",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "visuali|dashboard"
+  },
+  {
+   "cidId": "CID00387",
+   "cidName": "Audit Frameworks",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00393",
+   "cidName": "Financial Transactions",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00395",
+   "cidName": "Leadership Development",
+   "fracId": "comp_leadership_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "leadership|team management|people management|leading"
+  },
+  {
+   "cidId": "CID00397",
+   "cidName": "Data Collection and Preparation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00398",
+   "cidName": "Data Governance-IT",
+   "fracId": "comp_data_gov_016",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "data governance|data quality|quality assurance|data management|metadata"
+  },
+  {
+   "cidId": "CID00400",
+   "cidName": "Contract Management",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00401",
+   "cidName": "Cargo Loading and Unloading Administration",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00402",
+   "cidName": "Data Governance-Learning",
+   "fracId": "comp_data_gov_016",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "data governance|data quality|quality assurance|data management|metadata"
+  },
+  {
+   "cidId": "CID00403",
+   "cidName": "Crisis Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00404",
+   "cidName": "Unit Load Devices Operations",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00405",
+   "cidName": "Data Management",
+   "fracId": "comp_data_gov_016",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "data governance|data quality|quality assurance|data management|metadata"
+  },
+  {
+   "cidId": "CID00406",
+   "cidName": "Cyber Risk Management",
+   "fracId": "comp_data_privacy_026",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "privacy|cyber|information security|data protection"
+  },
+  {
+   "cidId": "CID00407",
+   "cidName": "Data Mining and Modelling",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00408",
+   "cidName": "Data Analytics System Design",
+   "fracId": "comp_r_analytics_018",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "statistical analysis|data analy|analytics|econometric"
+  },
+  {
+   "cidId": "CID00409",
+   "cidName": "Data Storytelling and Visualisation",
+   "fracId": "comp_data_viz_019",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "visuali|dashboard"
+  },
+  {
+   "cidId": "CID0041",
+   "cidName": "Technology-enabled Learning Delivery",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00410",
+   "cidName": "Data Analytics",
+   "fracId": "comp_r_analytics_018",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "statistical analysis|data analy|analytics|econometric"
+  },
+  {
+   "cidId": "CID00411",
+   "cidName": "Livelihoods Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00412",
+   "cidName": "Gender Equality",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00413",
+   "cidName": "Sustainable Energy Infrastructure Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00414",
+   "cidName": "Forestry Livelihood Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00415",
+   "cidName": "Climate-Resilient Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00416",
+   "cidName": "Tax Computation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00418",
+   "cidName": "Cash Flow Reporting",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00419",
+   "cidName": "Tax Controversy Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0042",
+   "cidName": "People First",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00421",
+   "cidName": "Change Management",
+   "fracId": "comp_change_mgmt_035",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "change management|adaptab|agility"
+  },
+  {
+   "cidId": "CID00422",
+   "cidName": "Sustainability Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00428",
+   "cidName": "Taxation Laws",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0043",
+   "cidName": "Strategic Thinking",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00431",
+   "cidName": "Conflict Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00434",
+   "cidName": "Tax Implications",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00435",
+   "cidName": "Food Waste Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00436",
+   "cidName": "Gender-sensitive Disaster Risk Management (DRM)",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00438",
+   "cidName": "Data Analytics",
+   "fracId": "comp_r_analytics_018",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "statistical analysis|data analy|analytics|econometric"
+  },
+  {
+   "cidId": "CID00439",
+   "cidName": "Climate Change and Health",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0044",
+   "cidName": "Rail Operations Control Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00441",
+   "cidName": "Cybersecurity",
+   "fracId": "comp_data_privacy_026",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "privacy|cyber|information security|data protection"
+  },
+  {
+   "cidId": "CID00442",
+   "cidName": "Security Strategy",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00444",
+   "cidName": "Data and Statistical Analytics",
+   "fracId": "comp_r_analytics_018",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "statistical analysis|data analy|analytics|econometric"
+  },
+  {
+   "cidId": "CID00445",
+   "cidName": "Succession Planning",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00447",
+   "cidName": "Data Ethics",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID0045",
+   "cidName": "Organisational Awareness",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00450",
+   "cidName": "Health Strategy Plans",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00451",
+   "cidName": "Scientific Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00452",
+   "cidName": "Health Programme Evaluation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00453",
+   "cidName": "Health Project Management (PM)",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00455",
+   "cidName": "Policy Implementation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00456",
+   "cidName": "Policy Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00457",
+   "cidName": "Regulatory Policy",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00458",
+   "cidName": "Policy Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00459",
+   "cidName": "Public Financial Management (PFM)",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID0046",
+   "cidName": "Rail Operations Enhancement Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00460",
+   "cidName": "Management of Public Organisations",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00461",
+   "cidName": "Resource Allocation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00462",
+   "cidName": "Policy Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00463",
+   "cidName": "Policy Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00464",
+   "cidName": "Policy Stakeholder Engagement",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00466",
+   "cidName": "Gender and Energy",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00467",
+   "cidName": "Public Health Systems",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00472",
+   "cidName": "Conduct and Behaviour Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00475",
+   "cidName": "Customer Relationship Management Operations",
+   "fracId": "comp_citizen_039",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "citizen|service delivery|grievance|customer"
+  },
+  {
+   "cidId": "CID00482",
+   "cidName": "Technology and Systems Application",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00484",
+   "cidName": "Technology Infrastructure Management and Integration",
+   "fracId": "comp_api_int_028",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "\\bapi\\b|interoperab|integration"
+  },
+  {
+   "cidId": "CID00486",
+   "cidName": "Technology Road Mapping",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0049",
+   "cidName": "Leading Others",
+   "fracId": "comp_leadership_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "leadership|team management|people management|leading"
+  },
+  {
+   "cidId": "CID00490",
+   "cidName": "Workplace Optimisation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00493",
+   "cidName": "Learning Research Data Analysis",
+   "fracId": "comp_r_analytics_018",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "statistical analysis|data analy|analytics|econometric"
+  },
+  {
+   "cidId": "CID00495",
+   "cidName": "Research and Information Synthesis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00496",
+   "cidName": "Strategy Planning",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00499",
+   "cidName": "Health Promotion",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0050",
+   "cidName": "Integrity",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID00500",
+   "cidName": "Ethics",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID00501",
+   "cidName": "Industry Networking",
+   "fracId": "comp_industry_stats_010",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "industrial statist|\\bindustr"
+  },
+  {
+   "cidId": "CID00504",
+   "cidName": "Job Analysis and Evaluation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00505",
+   "cidName": "Labour Relations Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00506",
+   "cidName": "Financial Acumen",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00507",
+   "cidName": "Group Dynamics Facilitation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00508",
+   "cidName": "Health and Wellness Programme Management",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00509",
+   "cidName": "Human Resource Service Quality Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00510",
+   "cidName": "Human Resource Systems Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00511",
+   "cidName": "Employee Communication Management",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00512",
+   "cidName": "Employee Engagement Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00513",
+   "cidName": "Employee Mobility Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00514",
+   "cidName": "Employee Relationship Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00515",
+   "cidName": "Employer Branding",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00517",
+   "cidName": "Digital Marketing and Communication",
+   "fracId": "comp_e_gov_023",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "e-governance|e-office|digital|e-gov"
+  },
+  {
+   "cidId": "CID00518",
+   "cidName": "Diversity and Inclusion Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00519",
+   "cidName": "Drafting",
+   "fracId": "comp_report_writing_020",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "report writing|drafting|noting|writing"
+  },
+  {
+   "cidId": "CID0053",
+   "cidName": "Risk Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0055",
+   "cidName": "Recruitment Channel Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00559",
+   "cidName": "Integrated Finance Division",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID00560",
+   "cidName": "Public Procurement of Goods",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00566",
+   "cidName": "Geoinfromatics",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0057",
+   "cidName": "Research Findings Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00602",
+   "cidName": "Public Procurement of Works",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00604",
+   "cidName": "Public Procurement of Services",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00605",
+   "cidName": "Public Procurement through Government e-Market Place (GeM)",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00617",
+   "cidName": "Developing Others / People Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00618",
+   "cidName": "Change Management",
+   "fracId": "comp_change_mgmt_035",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "change management|adaptab|agility"
+  },
+  {
+   "cidId": "CID00619",
+   "cidName": "Office Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00620",
+   "cidName": "Handling Parliamentary Proceedings",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00621",
+   "cidName": "Noting and Drafting",
+   "fracId": "comp_report_writing_020",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "report writing|drafting|noting|writing"
+  },
+  {
+   "cidId": "CID00622",
+   "cidName": "Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID00623",
+   "cidName": "Logical Thinking ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00624",
+   "cidName": "Conflict Management ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00626",
+   "cidName": " People First / Citizen Centricity",
+   "fracId": "comp_citizen_039",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "citizen|service delivery|grievance|customer"
+  },
+  {
+   "cidId": "CID00627",
+   "cidName": "Decision Making",
+   "fracId": "comp_decision_037",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "decision"
+  },
+  {
+   "cidId": "CID00628",
+   "cidName": "Delegation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00629",
+   "cidName": "Drive for Results",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00631",
+   "cidName": "External/Org Awareness ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00632",
+   "cidName": "Initiative and Drive",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00633",
+   "cidName": "Innovation and Creativity",
+   "fracId": "comp_innov_038",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "innovat|creativ|design thinking"
+  },
+  {
+   "cidId": "CID00634",
+   "cidName": "Leading Others",
+   "fracId": "comp_leadership_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "leadership|team management|people management|leading"
+  },
+  {
+   "cidId": "CID00635",
+   "cidName": "Networking and Partnerships",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID00636",
+   "cidName": "Planning and Organizing",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00637",
+   "cidName": "Problem Solving",
+   "fracId": "comp_prob_solve_033",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "problem solving|critical thinking|analytical thinking|reasoning"
+  },
+  {
+   "cidId": "CID00638",
+   "cidName": "Resourcefulness ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00639",
+   "cidName": "Seeking Information/ Desire for Knowledge",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00640",
+   "cidName": "Self-Awareness",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00641",
+   "cidName": "Self-Confidence",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00642",
+   "cidName": "Strategic Orientation",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID00643",
+   "cidName": "Knowledge Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00644",
+   "cidName": "Regulatory Compliance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00645",
+   "cidName": "Scheme Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00646",
+   "cidName": "Policy management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00647",
+   "cidName": "Project Management",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID00649",
+   "cidName": "Adherence to Vigilance Guidelines",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00652",
+   "cidName": "Workplace health and safety",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00653",
+   "cidName": "Budget Management",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID00654",
+   "cidName": "Process Optimization",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00655",
+   "cidName": "Public Service Transformation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00657",
+   "cidName": "Monitoring and Evaluation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00658",
+   "cidName": "Environment, Sustainability and Governance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00659",
+   "cidName": "Information security",
+   "fracId": "comp_data_privacy_026",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "privacy|cyber|information security|data protection"
+  },
+  {
+   "cidId": "CID00660",
+   "cidName": "Learning and Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00663",
+   "cidName": "Goverment E Marketplace (GeM)",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00665",
+   "cidName": "Goverment E Marketplace (GeM)",
+   "fracId": "comp_procurement_021",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "procurement|tender|contract|\\bgem\\b|purchase"
+  },
+  {
+   "cidId": "CID00670",
+   "cidName": "Control of Pollution",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID00671",
+   "cidName": "Waste management and Resource Efficiency",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0073",
+   "cidName": "Learning Technology Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0075",
+   "cidName": "Conceptual Thinking",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0076",
+   "cidName": "Initiative and Drive",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0077",
+   "cidName": "Organisational Impact Analysis",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0078",
+   "cidName": "Performance Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0079",
+   "cidName": "Organisational Change Management",
+   "fracId": "comp_change_mgmt_035",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "change management|adaptab|agility"
+  },
+  {
+   "cidId": "CID008",
+   "cidName": "Project Administration",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID0082",
+   "cidName": "Organisation Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0083",
+   "cidName": "Seeking Information",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0085",
+   "cidName": "Learning and Development Programme Management",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID0087",
+   "cidName": "Learning Solution Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0089",
+   "cidName": "Learning Experience Evaluation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID009",
+   "cidName": "Budgeting",
+   "fracId": "comp_public_fin_025",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "budget|financial management|public finance|fiscal|finance"
+  },
+  {
+   "cidId": "CID0091",
+   "cidName": "Learning and Development Strategy",
+   "fracId": "comp_strategic_031",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "strateg|vision"
+  },
+  {
+   "cidId": "CID0092",
+   "cidName": "Learning Experience Delivery",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0093",
+   "cidName": "Consultation and Consensus Building",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0094",
+   "cidName": "Decision Making",
+   "fracId": "comp_decision_037",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "decision"
+  },
+  {
+   "cidId": "CID0095",
+   "cidName": "Delegation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0096",
+   "cidName": "Result Orientation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID01202",
+   "cidName": "Public Health Communication",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID0247",
+   "cidName": "People First",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0249",
+   "cidName": "Organisational Awareness",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0250",
+   "cidName": "Leading Others",
+   "fracId": "comp_leadership_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "leadership|team management|people management|leading"
+  },
+  {
+   "cidId": "CID0252",
+   "cidName": "Integrity ",
+   "fracId": "comp_integrity_034",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "integrity|ethic|values|probity"
+  },
+  {
+   "cidId": "CID0253",
+   "cidName": "Self-Confidence",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0254",
+   "cidName": "Attention to Detail ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0258",
+   "cidName": "Taking Accountability",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0261",
+   "cidName": "Consultation and Consensus Building",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0262",
+   "cidName": "Decision Making",
+   "fracId": "comp_decision_037",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "decision"
+  },
+  {
+   "cidId": "CID0263",
+   "cidName": "Empathy",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0265",
+   "cidName": "Result Orientation",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0266",
+   "cidName": "Conceptual Thinking",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0272",
+   "cidName": "Seeking Information",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0279",
+   "cidName": "Planning and Coordination ",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID0280",
+   "cidName": "Desire for Knowledge ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0787",
+   "cidName": "Planning and coordination",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID0791",
+   "cidName": "Gender Sensitivity",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0798",
+   "cidName": "Data Storytelling and Visualisation",
+   "fracId": "comp_data_viz_019",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "visuali|dashboard"
+  },
+  {
+   "cidId": "CID0806",
+   "cidName": "Planning and coordination",
+   "fracId": "comp_collab_036",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "collaborat|teamwork|interpersonal|networking|coordination"
+  },
+  {
+   "cidId": "CID0814",
+   "cidName": "Gender and Energy",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0815",
+   "cidName": "Public Health Systems",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0822",
+   "cidName": "Policy Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0827",
+   "cidName": "Policy Development ",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0849",
+   "cidName": "Institutional Governance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID0871",
+   "cidName": "Stakeholder Management",
+   "fracId": "comp_comm_032",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "communicat|stakeholder|presentation|public speaking"
+  },
+  {
+   "cidId": "CID0872",
+   "cidName": "Project Administration",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID0885",
+   "cidName": "Project Resource Planning",
+   "fracId": "comp_project_mgmt_024",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "project management|programme management|project"
+  },
+  {
+   "cidId": "CID101",
+   "cidName": "Climate Change Policy Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID102",
+   "cidName": "Prevention of Gender-based Violence (G-BV)",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID104",
+   "cidName": "Gender-sensitive Disaster Risk Management (DRM)",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID105",
+   "cidName": "Gender Equality",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID106",
+   "cidName": "Livelihoods Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID1063",
+   "cidName": "Innovation Management",
+   "fracId": "comp_innov_038",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "innovat|creativ|design thinking"
+  },
+  {
+   "cidId": "CID107",
+   "cidName": "Forestry Livelihood Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID1074",
+   "cidName": "Organisational Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID108",
+   "cidName": "Sustainable Energy Infrastructure Design",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID109",
+   "cidName": "Climate-Resilient Development",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID20139",
+   "cidName": "Rail Operations Enhancement Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID2016",
+   "cidName": "Data Management",
+   "fracId": "comp_data_gov_016",
+   "confirmed": false,
+   "method": "keyword_rule",
+   "rule": "data governance|data quality|quality assurance|data management|metadata"
+  },
+  {
+   "cidId": "CID2029",
+   "cidName": "Environment and Social Governance",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  },
+  {
+   "cidId": "CID2041",
+   "cidName": "Knowledge Management",
+   "fracId": null,
+   "confirmed": false,
+   "method": "none",
+   "rule": null
+  }
+ ]
+}

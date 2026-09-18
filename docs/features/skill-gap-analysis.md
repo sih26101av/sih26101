@@ -42,7 +42,8 @@ three can never disagree.
     result is `confidence: LOW, basis: "self_report"` and the pathway adds a
     diagnostic first. Returns `{level, confidence, basis, evidenceLevel}`.
   - Helpers: `is_completed`, `enrollment_course_id`, `_tenure_score`,
-    `_education_score` (`_EDU_RELEVANCE`), `_TIER_SENIORITY`, `_map_category`.
+    `_education_score` (`_EDU_RELEVANCE`), `_TIER_SENIORITY` (also maps the tier
+    names profiles actually carry: `TIER1_APEX`, `TIER2_SENIOR`), `_map_category`.
   - `PRACTICE_ASSESSMENT` evidence rows are read through the *documented* channel.
 - `main-lms-backend/main.py`
   - `_learner_competency_state(user_id)` — profile + enrollments + `EvidenceLog` →

@@ -235,6 +235,35 @@ def test_crosswalked_competency_gets_a_ladder_under_its_own_id(engine):
     assert recs[0].competencyId == "CID0001" and recs[0].courseLevel == 2
 
 
+def test_curated_crosswalk_is_used_before_embeddings(tmp_path, monkeypatch):
+    monkeypatch.setattr(rs, "get_embedder", lambda role=None: _StubEmbedder())
+    eng = rs.HybridRecommendationEngine(
+        catalog=CATALOG,
+        frac=[_frac("comp_a", "Survey Sampling", "survey sampling design estimation"),
+              _frac("comp_b", "Price Index", "price index numbers inflation")],
+        crosswalk=[{"cidId": "CID0100", "fracId": "comp_b", "confirmed": False},
+                   {"cidId": "CID0101", "fracId": None, "confirmed": False}],
+    )
+    xw = eng.crosswalk("CID0100", "Survey Sampling Design")   # the name alone would say comp_a
+    assert xw["catalogueId"] == "comp_b" and xw["method"] == "curated_crosswalk"
+    assert xw["confirmed"] is False
+    assert eng.crosswalk("CID0101", "Survey Sampling Design")["method"] == "semantic_crosswalk"
+    assert eng.catalog_source == "adapter"
+
+
+def test_explicit_non_tpac_flag_is_not_overridden_by_creator_name(tmp_path, monkeypatch):
+    monkeypatch.setattr(rs, "get_embedder", lambda role=None: _StubEmbedder())
+    nssta = "National Statistical Systems Training Academy (NSSTA)"
+    cat = [
+        {**_course("t1", "survey sampling programme", [("comp_a", 3)]), "creator": nssta, "is_tpac": True},
+        {**_course("t2", "survey sampling workshop", [("comp_a", 3)]), "creator": nssta, "is_tpac": False},
+        {**_course("t3", "survey sampling legacy", [("comp_a", 3)]), "creator": nssta},
+    ]
+    eng = rs.HybridRecommendationEngine(catalog=cat, frac=[_frac("comp_a", "Survey Sampling", "survey")])
+    src = {d.identifier: d.tpac_source for d in eng._catalog}
+    assert src == {"t1": "verified", "t2": "none", "t3": "inferred"}
+
+
 def test_uncatalogued_competency_reports_no_content(engine):
     p = engine.build_pathway("CID0002", "Gardening Club", 1, 3, confidence="HIGH")
     assert p["status"] == "no_content" and p["message"]

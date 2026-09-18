@@ -1,0 +1,4722 @@
+{
+ "_meta": {
+  "synthetic": true,
+  "generator": "mock-igot-server/generate_mock_data.py",
+  "seed": 20260918,
+  "referenceDate": "2026-09-15",
+  "note": "GROUND TRUTH for tests and recovery checks only. The mock server never serves this file and the backend never reads it."
+ },
+ "overclaimers": [
+  "usr_106391818",
+  "usr_129713590",
+  "usr_158531054",
+  "usr_226507324",
+  "usr_313915836",
+  "usr_457713985",
+  "usr_568740794",
+  "usr_607792264",
+  "usr_754781192",
+  "usr_770941214",
+  "usr_828413374",
+  "usr_856278148",
+  "usr_966497057",
+  "usr_995972094"
+ ],
+ "profileIncomplete": [
+  "usr_154849742",
+  "usr_290725138",
+  "usr_322272362"
+ ],
+ "outOfOrder": [
+  {
+   "userId": "usr_200142973",
+   "competencyId": "comp_industry_stats_010",
+   "courseId": "do_11335342404120121844",
+   "courseLevel": 4,
+   "trueLevel": 2
+  },
+  {
+   "userId": "usr_986342308",
+   "competencyId": "comp_survey_design_002",
+   "courseId": "do_11372046119679950077",
+   "courseLevel": 4,
+   "trueLevel": 2
+  },
+  {
+   "userId": "usr_298435923",
+   "competencyId": "comp_nat_accounts_001",
+   "courseId": "do_11390540476619321758",
+   "courseLevel": 4,
+   "trueLevel": 2
+  },
+  {
+   "userId": "usr_107156607",
+   "competencyId": "comp_project_mgmt_024",
+   "courseId": "do_11344886463082982495",
+   "courseLevel": 4,
+   "trueLevel": 2
+  },
+  {
+   "userId": "usr_158531054",
+   "competencyId": "comp_big_data_006",
+   "courseId": "do_11353397685422744539",
+   "courseLevel": 4,
+   "trueLevel": 2
+  }
+ ],
+ "zeroUpliftCourses": [
+  "do_11323476390042336611",
+  "do_11328885625274834952",
+  "do_11363751793697672490",
+  "do_11379911329280409962"
+ ],
+ "trueLevels": {
+  "usr_720465595": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.422,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.771,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.373,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 0,
+    "theta": 0.585,
+    "target": 3
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.434,
+    "target": 3
+   }
+  },
+  "usr_200142973": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.658,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.412,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 3,
+    "theta": 3.153,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 3,
+    "theta": 3.312,
+    "target": 3
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.88,
+    "target": 3
+   }
+  },
+  "usr_674899856": {
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.805,
+    "target": 3
+   },
+   "comp_spatial_stat_012": {
+    "trueLevel": 2,
+    "theta": 2.661,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.39,
+    "target": 2
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.112,
+    "target": 2
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 3,
+    "theta": 3.609,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.101,
+    "target": 4
+   }
+  },
+  "usr_381314639": {
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.547,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 5,
+    "theta": 5.38,
+    "target": 5
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.772,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.596,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 4,
+    "theta": 4.872,
+    "target": 4
+   }
+  },
+  "usr_808311398": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.588,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.748,
+    "target": 2
+   },
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.733,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.744,
+    "target": 2
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.104,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 0,
+    "theta": 0.435,
+    "target": 2
+   }
+  },
+  "usr_332956649": {
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.589,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.749,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.207,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.759,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.569,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.433,
+    "target": 2
+   }
+  },
+  "usr_312468211": {
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.663,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.364,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.145,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.774,
+    "target": 4
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.308,
+    "target": 4
+   }
+  },
+  "usr_779354803": {
+   "comp_price_stats_003": {
+    "trueLevel": 4,
+    "theta": 4.651,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.617,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.36,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.389,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.4,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.468,
+    "target": 5
+   }
+  },
+  "usr_561050563": {
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.313,
+    "target": 3
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 0,
+    "theta": 0.65,
+    "target": 2
+   },
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.253,
+    "target": 4
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 1,
+    "theta": 1.76,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.697,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.746,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 0,
+    "theta": 0.527,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 0,
+    "theta": 0.244,
+    "target": 3
+   }
+  },
+  "usr_709315470": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.452,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.656,
+    "target": 5
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.456,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 2,
+    "theta": 2.322,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.29,
+    "target": 3
+   }
+  },
+  "usr_567298419": {
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.409,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.618,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 5,
+    "theta": 5.334,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.385,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.359,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.273,
+    "target": 2
+   }
+  },
+  "usr_791131756": {
+   "comp_industry_stats_010": {
+    "trueLevel": 0,
+    "theta": 0.772,
+    "target": 1
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.852,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.132,
+    "target": 2
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.212,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.391,
+    "target": 2
+   }
+  },
+  "usr_931734840": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.106,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.5,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.642,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.258,
+    "target": 3
+   }
+  },
+  "usr_446667253": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.858,
+    "target": 2
+   },
+   "comp_poverty_014": {
+    "trueLevel": 1,
+    "theta": 1.273,
+    "target": 2
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.196,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.146,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.294,
+    "target": 4
+   }
+  },
+  "usr_838650189": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.14,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.726,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 1,
+    "theta": 1.636,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 5,
+    "theta": 5.37,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.58,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 5,
+    "theta": 5.725,
+    "target": 5
+   }
+  },
+  "usr_401229255": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 1,
+    "theta": 1.899,
+    "target": 2
+   },
+   "comp_poverty_014": {
+    "trueLevel": 2,
+    "theta": 2.832,
+    "target": 2
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 0,
+    "theta": 0.399,
+    "target": 2
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 2,
+    "theta": 2.579,
+    "target": 3
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 3,
+    "theta": 3.374,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.856,
+    "target": 2
+   }
+  },
+  "usr_819942770": {
+   "comp_econ_census_007": {
+    "trueLevel": 5,
+    "theta": 5.147,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.367,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.482,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.375,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.853,
+    "target": 5
+   }
+  },
+  "usr_514008800": {
+   "comp_big_data_006": {
+    "trueLevel": 2,
+    "theta": 2.323,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 5,
+    "theta": 5.184,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.683,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.655,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.214,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.441,
+    "target": 5
+   }
+  },
+  "usr_300821686": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.277,
+    "target": 5
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.744,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 1,
+    "theta": 1.347,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.334,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.161,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.372,
+    "target": 5
+   }
+  },
+  "usr_553750815": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 0,
+    "theta": 0.32,
+    "target": 3
+   },
+   "comp_poverty_014": {
+    "trueLevel": 1,
+    "theta": 1.283,
+    "target": 2
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 2,
+    "theta": 2.749,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.279,
+    "target": 2
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 2,
+    "theta": 2.442,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.803,
+    "target": 3
+   }
+  },
+  "usr_343164953": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 0,
+    "theta": 0.563,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 2,
+    "theta": 2.489,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.331,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.75,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 5,
+    "theta": 5.515,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.725,
+    "target": 2
+   }
+  },
+  "usr_174576347": {
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.281,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.73,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.475,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.829,
+    "target": 3
+   },
+   "comp_citizen_039": {
+    "trueLevel": 1,
+    "theta": 1.16,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.639,
+    "target": 3
+   }
+  },
+  "usr_118673248": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.257,
+    "target": 4
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.751,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.281,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 4,
+    "theta": 4.621,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.478,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.205,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.323,
+    "target": 4
+   }
+  },
+  "usr_423340207": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.472,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 2,
+    "theta": 2.765,
+    "target": 2
+   },
+   "comp_time_series_013": {
+    "trueLevel": 3,
+    "theta": 3.273,
+    "target": 3
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.243,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 1,
+    "theta": 1.626,
+    "target": 2
+   },
+   "comp_citizen_039": {
+    "trueLevel": 1,
+    "theta": 1.126,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.597,
+    "target": 3
+   }
+  },
+  "usr_505636313": {
+   "comp_survey_design_002": {
+    "trueLevel": 0,
+    "theta": 0.343,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.232,
+    "target": 2
+   },
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.275,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 0,
+    "theta": 0.68,
+    "target": 2
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.275,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.634,
+    "target": 2
+   }
+  },
+  "usr_108949508": {
+   "comp_price_stats_003": {
+    "trueLevel": 4,
+    "theta": 4.389,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.427,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.869,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 0,
+    "theta": 0.813,
+    "target": 2
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 0,
+    "theta": 0.138,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.631,
+    "target": 2
+   },
+   "comp_collab_036": {
+    "trueLevel": 1,
+    "theta": 1.391,
+    "target": 1
+   }
+  },
+  "usr_986342308": {
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.833,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.666,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.861,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.188,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 3,
+    "theta": 3.148,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.641,
+    "target": 2
+   }
+  },
+  "usr_134506505": {
+   "comp_industry_stats_010": {
+    "trueLevel": 1,
+    "theta": 1.27,
+    "target": 1
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 0,
+    "theta": 0.242,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 0,
+    "theta": 0.257,
+    "target": 2
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 0,
+    "theta": 0.735,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.373,
+    "target": 2
+   }
+  },
+  "usr_191910073": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.446,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 3,
+    "theta": 3.638,
+    "target": 4
+   },
+   "comp_cloud_infra_027": {
+    "trueLevel": 3,
+    "theta": 3.211,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.161,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.375,
+    "target": 4
+   }
+  },
+  "usr_129713590": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.253,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 0,
+    "theta": 0.616,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.262,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.175,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.842,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 2,
+    "theta": 2.244,
+    "target": 3
+   }
+  },
+  "usr_106391818": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.431,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 2,
+    "theta": 2.497,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.824,
+    "target": 4
+   },
+   "comp_api_int_028": {
+    "trueLevel": 1,
+    "theta": 1.867,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.332,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.749,
+    "target": 4
+   }
+  },
+  "usr_156930079": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.184,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.14,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.51,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.428,
+    "target": 4
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.113,
+    "target": 4
+   }
+  },
+  "usr_643103454": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.625,
+    "target": 5
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.461,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.178,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 4,
+    "theta": 4.694,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.626,
+    "target": 4
+   }
+  },
+  "usr_298435923": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 4,
+    "theta": 4.364,
+    "target": 3
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.432,
+    "target": 4
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 2,
+    "theta": 2.388,
+    "target": 3
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 1,
+    "theta": 1.691,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 1,
+    "theta": 1.457,
+    "target": 2
+   },
+   "comp_decision_037": {
+    "trueLevel": 0,
+    "theta": 0.895,
+    "target": 3
+   }
+  },
+  "usr_590788362": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.226,
+    "target": 5
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.615,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.404,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.559,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.852,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.218,
+    "target": 5
+   }
+  },
+  "usr_477814318": {
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.612,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.752,
+    "target": 5
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.141,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.527,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.784,
+    "target": 3
+   }
+  },
+  "usr_723548418": {
+   "comp_survey_design_002": {
+    "trueLevel": 5,
+    "theta": 5.486,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.114,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 1,
+    "theta": 1.305,
+    "target": 3
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 0,
+    "theta": 0.798,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.356,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 3,
+    "theta": 3.337,
+    "target": 4
+   }
+  },
+  "usr_286828884": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 5,
+    "theta": 5.244,
+    "target": 5
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.486,
+    "target": 5
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 3,
+    "theta": 3.192,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.898,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.842,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.498,
+    "target": 5
+   }
+  },
+  "usr_505475993": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.378,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 5,
+    "theta": 5.685,
+    "target": 5
+   },
+   "comp_db_design_029": {
+    "trueLevel": 5,
+    "theta": 5.285,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.777,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.471,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.84,
+    "target": 5
+   }
+  },
+  "usr_486075687": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.174,
+    "target": 5
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 1,
+    "theta": 1.888,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.871,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.78,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.307,
+    "target": 4
+   }
+  },
+  "usr_236571776": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.633,
+    "target": 3
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.364,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.766,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.287,
+    "target": 4
+   },
+   "comp_rtt_022": {
+    "trueLevel": 3,
+    "theta": 3.283,
+    "target": 4
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 0,
+    "theta": 0.587,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.358,
+    "target": 4
+   }
+  },
+  "usr_269504123": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.827,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.357,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.551,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.825,
+    "target": 3
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.365,
+    "target": 3
+   }
+  },
+  "usr_380118955": {
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.511,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.857,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.204,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.401,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.157,
+    "target": 5
+   }
+  },
+  "usr_614076961": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 1,
+    "theta": 1.296,
+    "target": 3
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 4,
+    "theta": 4.446,
+    "target": 3
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 4,
+    "theta": 4.115,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.112,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.712,
+    "target": 2
+   }
+  },
+  "usr_939475582": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.388,
+    "target": 3
+   },
+   "comp_spatial_stat_012": {
+    "trueLevel": 1,
+    "theta": 1.622,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.131,
+    "target": 2
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.598,
+    "target": 2
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 3,
+    "theta": 3.245,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.503,
+    "target": 4
+   }
+  },
+  "usr_902595907": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 5,
+    "theta": 5.107,
+    "target": 5
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 3,
+    "theta": 3.424,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 2,
+    "theta": 2.585,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 2,
+    "theta": 2.633,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.719,
+    "target": 5
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.326,
+    "target": 4
+   }
+  },
+  "usr_231400613": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.319,
+    "target": 4
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.619,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 4,
+    "theta": 4.867,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.34,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 2,
+    "theta": 2.167,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.176,
+    "target": 4
+   }
+  },
+  "usr_541129488": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.207,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.372,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.188,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 0,
+    "theta": 0.525,
+    "target": 3
+   }
+  },
+  "usr_572744267": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.186,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 4,
+    "theta": 4.661,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.694,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.218,
+    "target": 4
+   }
+  },
+  "usr_671758865": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.775,
+    "target": 4
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.387,
+    "target": 4
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.255,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.511,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 2,
+    "theta": 2.249,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.406,
+    "target": 4
+   }
+  },
+  "usr_714827309": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 0,
+    "theta": 0.134,
+    "target": 3
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 1,
+    "theta": 1.447,
+    "target": 4
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 3,
+    "theta": 3.158,
+    "target": 3
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 1,
+    "theta": 1.558,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 0,
+    "theta": 0.761,
+    "target": 2
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.445,
+    "target": 3
+   }
+  },
+  "usr_710358959": {
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.821,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 1,
+    "theta": 1.624,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.417,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.159,
+    "target": 3
+   }
+  },
+  "usr_631425891": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.879,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 0,
+    "theta": 0.296,
+    "target": 2
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.763,
+    "target": 3
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.398,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.408,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.73,
+    "target": 3
+   }
+  },
+  "usr_828413374": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.625,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 4,
+    "theta": 4.857,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.103,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.569,
+    "target": 5
+   }
+  },
+  "usr_403959566": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.192,
+    "target": 4
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.676,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 5,
+    "theta": 5.371,
+    "target": 5
+   },
+   "comp_comm_032": {
+    "trueLevel": 4,
+    "theta": 4.539,
+    "target": 3
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.507,
+    "target": 3
+   }
+  },
+  "usr_896763052": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.44,
+    "target": 3
+   },
+   "comp_poverty_014": {
+    "trueLevel": 1,
+    "theta": 1.786,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 3,
+    "theta": 3.696,
+    "target": 3
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 1,
+    "theta": 1.357,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 0,
+    "theta": 0.39,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.536,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.723,
+    "target": 4
+   }
+  },
+  "usr_997657767": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.599,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 5,
+    "theta": 5.567,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.844,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.405,
+    "target": 4
+   }
+  },
+  "usr_582075743": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.707,
+    "target": 5
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.582,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.118,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.55,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.702,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.821,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.457,
+    "target": 4
+   }
+  },
+  "usr_259341757": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.364,
+    "target": 4
+   },
+   "comp_procurement_021": {
+    "trueLevel": 2,
+    "theta": 2.625,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.261,
+    "target": 5
+   },
+   "comp_strategic_031": {
+    "trueLevel": 5,
+    "theta": 5.102,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.806,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 5,
+    "theta": 5.508,
+    "target": 4
+   }
+  },
+  "usr_178398946": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.699,
+    "target": 5
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.445,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 3,
+    "theta": 3.66,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.624,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.512,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.219,
+    "target": 5
+   }
+  },
+  "usr_567818732": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.134,
+    "target": 5
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.675,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.697,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.61,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.638,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.104,
+    "target": 5
+   }
+  },
+  "usr_399895640": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.495,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.643,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 3,
+    "theta": 3.75,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.448,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.261,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.643,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.594,
+    "target": 4
+   }
+  },
+  "usr_277803636": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.547,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.22,
+    "target": 5
+   },
+   "comp_db_design_029": {
+    "trueLevel": 4,
+    "theta": 4.416,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.492,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.616,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 5,
+    "theta": 5.671,
+    "target": 5
+   }
+  },
+  "usr_107156607": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 5,
+    "theta": 5.626,
+    "target": 4
+   },
+   "comp_time_series_013": {
+    "trueLevel": 2,
+    "theta": 2.858,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.264,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.216,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.444,
+    "target": 4
+   }
+  },
+  "usr_398986845": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.784,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.891,
+    "target": 5
+   },
+   "comp_db_design_029": {
+    "trueLevel": 4,
+    "theta": 4.648,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.28,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.261,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.606,
+    "target": 5
+   }
+  },
+  "usr_952762961": {
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.879,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 4,
+    "theta": 4.442,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.279,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.578,
+    "target": 4
+   }
+  },
+  "usr_403439088": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.497,
+    "target": 4
+   },
+   "comp_spatial_stat_012": {
+    "trueLevel": 4,
+    "theta": 4.652,
+    "target": 5
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.771,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.601,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.44,
+    "target": 3
+   }
+  },
+  "usr_805384990": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 0,
+    "theta": 0.179,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 2,
+    "theta": 2.34,
+    "target": 2
+   },
+   "comp_time_series_013": {
+    "trueLevel": 2,
+    "theta": 2.186,
+    "target": 3
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.736,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 1,
+    "theta": 1.533,
+    "target": 2
+   },
+   "comp_citizen_039": {
+    "trueLevel": 2,
+    "theta": 2.575,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.759,
+    "target": 3
+   }
+  },
+  "usr_599006405": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.874,
+    "target": 4
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.277,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.715,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.872,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.28,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.556,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 5,
+    "theta": 5.505,
+    "target": 5
+   }
+  },
+  "usr_158662128": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.742,
+    "target": 5
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.544,
+    "target": 5
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 5,
+    "theta": 5.867,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 5,
+    "theta": 5.714,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.242,
+    "target": 5
+   }
+  },
+  "usr_196908109": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.131,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.823,
+    "target": 5
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 4,
+    "theta": 4.505,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 5,
+    "theta": 5.894,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.203,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.82,
+    "target": 5
+   }
+  },
+  "usr_455947683": {
+   "comp_econ_census_007": {
+    "trueLevel": 5,
+    "theta": 5.279,
+    "target": 4
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 1,
+    "theta": 1.205,
+    "target": 2
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 3,
+    "theta": 3.106,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.689,
+    "target": 3
+   },
+   "comp_db_design_029": {
+    "trueLevel": 3,
+    "theta": 3.669,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.706,
+    "target": 2
+   }
+  },
+  "usr_905215527": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.397,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 2,
+    "theta": 2.263,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 0,
+    "theta": 0.326,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.136,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.63,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 0,
+    "theta": 0.213,
+    "target": 2
+   }
+  },
+  "usr_898309178": {
+   "comp_econ_census_007": {
+    "trueLevel": 0,
+    "theta": 0.32,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 1,
+    "theta": 1.418,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.539,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.398,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 3,
+    "theta": 3.394,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 0,
+    "theta": 0.462,
+    "target": 2
+   }
+  },
+  "usr_686887321": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.891,
+    "target": 5
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.161,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.38,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.616,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.365,
+    "target": 4
+   }
+  },
+  "usr_322996651": {
+   "comp_big_data_006": {
+    "trueLevel": 1,
+    "theta": 1.168,
+    "target": 3
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.491,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 1,
+    "theta": 1.529,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 2,
+    "theta": 2.296,
+    "target": 3
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.425,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 0,
+    "theta": 0.678,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.25,
+    "target": 2
+   }
+  },
+  "usr_839805543": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 1,
+    "theta": 1.224,
+    "target": 2
+   },
+   "comp_poverty_014": {
+    "trueLevel": 3,
+    "theta": 3.452,
+    "target": 2
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 3,
+    "theta": 3.839,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.226,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.311,
+    "target": 4
+   }
+  },
+  "usr_114629222": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.893,
+    "target": 4
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.45,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 3,
+    "theta": 3.322,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.7,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 1,
+    "theta": 1.241,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.18,
+    "target": 4
+   }
+  },
+  "usr_873032900": {
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.302,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.526,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.416,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.858,
+    "target": 3
+   }
+  },
+  "usr_867812836": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 4,
+    "theta": 4.792,
+    "target": 5
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 3,
+    "theta": 3.43,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 3,
+    "theta": 3.389,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 2,
+    "theta": 2.307,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.481,
+    "target": 5
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.129,
+    "target": 4
+   }
+  },
+  "usr_115171420": {
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.538,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.645,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.861,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.831,
+    "target": 3
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.379,
+    "target": 3
+   }
+  },
+  "usr_660834469": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.5,
+    "target": 5
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.876,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.629,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 1,
+    "theta": 1.656,
+    "target": 3
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.444,
+    "target": 4
+   }
+  },
+  "usr_572112488": {
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.723,
+    "target": 5
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 4,
+    "theta": 4.867,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.456,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.536,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.725,
+    "target": 4
+   }
+  },
+  "usr_569486359": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.798,
+    "target": 5
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.618,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.538,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.814,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.328,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.27,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 5,
+    "theta": 5.79,
+    "target": 4
+   }
+  },
+  "usr_664790986": {
+   "comp_survey_design_002": {
+    "trueLevel": 0,
+    "theta": 0.236,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.192,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 3,
+    "theta": 3.709,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.683,
+    "target": 3
+   }
+  },
+  "usr_161447023": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.271,
+    "target": 4
+   },
+   "comp_time_series_013": {
+    "trueLevel": 2,
+    "theta": 2.145,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.51,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.884,
+    "target": 2
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.154,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.818,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.222,
+    "target": 3
+   }
+  },
+  "usr_684205193": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.711,
+    "target": 3
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.199,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.27,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.337,
+    "target": 4
+   },
+   "comp_rtt_022": {
+    "trueLevel": 3,
+    "theta": 3.27,
+    "target": 4
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 0,
+    "theta": 0.232,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.873,
+    "target": 4
+   }
+  },
+  "usr_917432212": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.597,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.351,
+    "target": 5
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.158,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.365,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.864,
+    "target": 3
+   }
+  },
+  "usr_226395063": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 4,
+    "theta": 4.223,
+    "target": 5
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 3,
+    "theta": 3.727,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.137,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.233,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.44,
+    "target": 5
+   }
+  },
+  "usr_333566606": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.633,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 2,
+    "theta": 2.24,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.684,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.569,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.107,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 0,
+    "theta": 0.868,
+    "target": 2
+   }
+  },
+  "usr_313915836": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.775,
+    "target": 3
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.639,
+    "target": 3
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 0,
+    "theta": 0.629,
+    "target": 3
+   },
+   "comp_cloud_infra_027": {
+    "trueLevel": 1,
+    "theta": 1.131,
+    "target": 3
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.725,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.104,
+    "target": 3
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.523,
+    "target": 2
+   }
+  },
+  "usr_640913819": {
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.232,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.712,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.325,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.273,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 4,
+    "theta": 4.571,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.243,
+    "target": 2
+   }
+  },
+  "usr_212327318": {
+   "comp_big_data_006": {
+    "trueLevel": 4,
+    "theta": 4.774,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 4,
+    "theta": 4.545,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 4,
+    "theta": 4.71,
+    "target": 4
+   },
+   "comp_api_int_028": {
+    "trueLevel": 2,
+    "theta": 2.31,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.262,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.702,
+    "target": 4
+   }
+  },
+  "usr_618142267": {
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.665,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.767,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.767,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 2,
+    "theta": 2.729,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.674,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 0,
+    "theta": 0.372,
+    "target": 2
+   }
+  },
+  "usr_457713985": {
+   "comp_price_stats_003": {
+    "trueLevel": 4,
+    "theta": 4.138,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.78,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.548,
+    "target": 5
+   },
+   "comp_strategic_031": {
+    "trueLevel": 2,
+    "theta": 2.239,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.255,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.753,
+    "target": 4
+   }
+  },
+  "usr_568740794": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.569,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.368,
+    "target": 4
+   },
+   "comp_db_design_029": {
+    "trueLevel": 3,
+    "theta": 3.815,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.279,
+    "target": 3
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.591,
+    "target": 3
+   }
+  },
+  "usr_919312568": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.871,
+    "target": 4
+   },
+   "comp_time_series_013": {
+    "trueLevel": 4,
+    "theta": 4.548,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.643,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.329,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.565,
+    "target": 4
+   }
+  },
+  "usr_755590808": {
+   "comp_price_stats_003": {
+    "trueLevel": 5,
+    "theta": 5.4,
+    "target": 5
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.495,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.513,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.674,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.52,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.729,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.19,
+    "target": 4
+   }
+  },
+  "usr_981837331": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.602,
+    "target": 4
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.882,
+    "target": 3
+   },
+   "comp_time_series_013": {
+    "trueLevel": 5,
+    "theta": 5.475,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.345,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.808,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 5,
+    "theta": 5.568,
+    "target": 5
+   }
+  },
+  "usr_158531054": {
+   "comp_big_data_006": {
+    "trueLevel": 2,
+    "theta": 2.232,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 3,
+    "theta": 3.538,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 5,
+    "theta": 5.786,
+    "target": 4
+   },
+   "comp_api_int_028": {
+    "trueLevel": 2,
+    "theta": 2.716,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.493,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.791,
+    "target": 4
+   }
+  },
+  "usr_511749730": {
+   "comp_big_data_006": {
+    "trueLevel": 1,
+    "theta": 1.657,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.622,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 0,
+    "theta": 0.659,
+    "target": 3
+   },
+   "comp_api_int_028": {
+    "trueLevel": 2,
+    "theta": 2.741,
+    "target": 3
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.202,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 0,
+    "theta": 0.697,
+    "target": 2
+   }
+  },
+  "usr_462346788": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.806,
+    "target": 4
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 2,
+    "theta": 2.714,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.166,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.439,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.575,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.253,
+    "target": 5
+   }
+  },
+  "usr_235350127": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.495,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 4,
+    "theta": 4.625,
+    "target": 5
+   },
+   "comp_db_design_029": {
+    "trueLevel": 4,
+    "theta": 4.415,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.765,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.323,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.878,
+    "target": 5
+   }
+  },
+  "usr_904519313": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.219,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 4,
+    "theta": 4.215,
+    "target": 4
+   },
+   "comp_cloud_infra_027": {
+    "trueLevel": 3,
+    "theta": 3.479,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.615,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.707,
+    "target": 4
+   }
+  },
+  "usr_607792264": {
+   "comp_big_data_006": {
+    "trueLevel": 4,
+    "theta": 4.447,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 5,
+    "theta": 5.546,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.274,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.454,
+    "target": 3
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.478,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.482,
+    "target": 5
+   }
+  },
+  "usr_395030606": {
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.454,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.753,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.31,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 0,
+    "theta": 0.197,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 0,
+    "theta": 0.886,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 1,
+    "theta": 1.121,
+    "target": 3
+   }
+  },
+  "usr_471907995": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 0,
+    "theta": 0.614,
+    "target": 2
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 1,
+    "theta": 1.641,
+    "target": 2
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.543,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 2,
+    "theta": 2.479,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 3,
+    "theta": 3.839,
+    "target": 4
+   }
+  },
+  "usr_770941214": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.179,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 3,
+    "theta": 3.808,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.443,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.823,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 1,
+    "theta": 1.415,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 0,
+    "theta": 0.25,
+    "target": 2
+   }
+  },
+  "usr_291794383": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.743,
+    "target": 4
+   },
+   "comp_time_series_013": {
+    "trueLevel": 3,
+    "theta": 3.396,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 2,
+    "theta": 2.55,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.466,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.366,
+    "target": 4
+   }
+  },
+  "usr_290725138": {
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.638,
+    "target": 2
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.463,
+    "target": 2
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 1,
+    "theta": 1.621,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.587,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.646,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.868,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.794,
+    "target": 2
+   }
+  },
+  "usr_754781192": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 4,
+    "theta": 4.618,
+    "target": 4
+   },
+   "comp_time_series_013": {
+    "trueLevel": 3,
+    "theta": 3.8,
+    "target": 4
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 3,
+    "theta": 3.858,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.781,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 4,
+    "theta": 4.218,
+    "target": 4
+   }
+  },
+  "usr_322272362": {
+   "comp_industry_stats_010": {
+    "trueLevel": 1,
+    "theta": 1.127,
+    "target": 3
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.357,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.733,
+    "target": 3
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.107,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.562,
+    "target": 3
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 1,
+    "theta": 1.49,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 0,
+    "theta": 0.345,
+    "target": 1
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.159,
+    "target": 3
+   }
+  },
+  "usr_134706089": {
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.625,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.668,
+    "target": 5
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 4,
+    "theta": 4.203,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.202,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.286,
+    "target": 4
+   }
+  },
+  "usr_989388663": {
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.548,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.538,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 4,
+    "theta": 4.152,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.7,
+    "target": 4
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.7,
+    "target": 4
+   }
+  },
+  "usr_861371949": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.329,
+    "target": 4
+   },
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.882,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.276,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.247,
+    "target": 3
+   }
+  },
+  "usr_868623785": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 2,
+    "theta": 2.458,
+    "target": 4
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 3,
+    "theta": 3.636,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.504,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.785,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.846,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.857,
+    "target": 5
+   }
+  },
+  "usr_730431863": {
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.304,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 0,
+    "theta": 0.662,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.74,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.188,
+    "target": 2
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 1,
+    "theta": 1.692,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 0,
+    "theta": 0.638,
+    "target": 2
+   },
+   "comp_collab_036": {
+    "trueLevel": 2,
+    "theta": 2.629,
+    "target": 1
+   }
+  },
+  "usr_935386554": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.828,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.568,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 3,
+    "theta": 3.731,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 3,
+    "theta": 3.316,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.151,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 0,
+    "theta": 0.149,
+    "target": 3
+   }
+  },
+  "usr_893963123": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.661,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 5,
+    "theta": 5.196,
+    "target": 5
+   },
+   "comp_db_design_029": {
+    "trueLevel": 3,
+    "theta": 3.85,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.683,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.77,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 4,
+    "theta": 4.668,
+    "target": 5
+   }
+  },
+  "usr_154849742": {
+   "comp_industry_stats_010": {
+    "trueLevel": 1,
+    "theta": 1.158,
+    "target": 3
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.349,
+    "target": 2
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.518,
+    "target": 3
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.467,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.27,
+    "target": 3
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 1,
+    "theta": 1.542,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.181,
+    "target": 1
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.374,
+    "target": 3
+   }
+  },
+  "usr_910202901": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.342,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 4,
+    "theta": 4.755,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.441,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.888,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.311,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.658,
+    "target": 4
+   }
+  },
+  "usr_295614589": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.801,
+    "target": 4
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.489,
+    "target": 3
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 5,
+    "theta": 5.346,
+    "target": 5
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 3,
+    "theta": 3.564,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.307,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.349,
+    "target": 4
+   }
+  },
+  "usr_754474303": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.654,
+    "target": 4
+   },
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.247,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.126,
+    "target": 4
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 3,
+    "theta": 3.742,
+    "target": 3
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.831,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 2,
+    "theta": 2.825,
+    "target": 3
+   }
+  },
+  "usr_995972094": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 0,
+    "theta": 0.612,
+    "target": 2
+   },
+   "comp_poverty_014": {
+    "trueLevel": 1,
+    "theta": 1.483,
+    "target": 2
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 1,
+    "theta": 1.823,
+    "target": 2
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 1,
+    "theta": 1.465,
+    "target": 3
+   },
+   "comp_data_viz_019": {
+    "trueLevel": 0,
+    "theta": 0.542,
+    "target": 2
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.511,
+    "target": 2
+   }
+  },
+  "usr_856278148": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 3,
+    "theta": 3.568,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 3,
+    "theta": 3.369,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.425,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.832,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.232,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.787,
+    "target": 2
+   }
+  },
+  "usr_876153361": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.642,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.133,
+    "target": 3
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 1,
+    "theta": 1.378,
+    "target": 3
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 0,
+    "theta": 0.863,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 3,
+    "theta": 3.64,
+    "target": 4
+   },
+   "comp_integrity_034": {
+    "trueLevel": 2,
+    "theta": 2.471,
+    "target": 4
+   }
+  },
+  "usr_886461149": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.829,
+    "target": 4
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 4,
+    "theta": 4.475,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.319,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 3,
+    "theta": 3.356,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.766,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.83,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 2,
+    "theta": 2.595,
+    "target": 4
+   }
+  },
+  "usr_929683513": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.595,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 5,
+    "theta": 5.614,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 3,
+    "theta": 3.733,
+    "target": 3
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.702,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 2,
+    "theta": 2.875,
+    "target": 3
+   }
+  },
+  "usr_164731980": {
+   "comp_survey_design_002": {
+    "trueLevel": 5,
+    "theta": 5.685,
+    "target": 4
+   },
+   "comp_procurement_021": {
+    "trueLevel": 1,
+    "theta": 1.883,
+    "target": 3
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.367,
+    "target": 5
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.511,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.257,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.717,
+    "target": 4
+   }
+  },
+  "usr_304963844": {
+   "comp_price_stats_003": {
+    "trueLevel": 4,
+    "theta": 4.712,
+    "target": 5
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.212,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.713,
+    "target": 3
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 4,
+    "theta": 4.157,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 5,
+    "theta": 5.388,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 2,
+    "theta": 2.657,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.359,
+    "target": 4
+   }
+  },
+  "usr_377941235": {
+   "comp_econ_census_007": {
+    "trueLevel": 2,
+    "theta": 2.627,
+    "target": 2
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 0,
+    "theta": 0.726,
+    "target": 2
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 3,
+    "theta": 3.346,
+    "target": 3
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 1,
+    "theta": 1.708,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.84,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.47,
+    "target": 2
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 1,
+    "theta": 1.176,
+    "target": 2
+   }
+  },
+  "usr_555571081": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.324,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.156,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 0,
+    "theta": 0.58,
+    "target": 3
+   },
+   "comp_api_int_028": {
+    "trueLevel": 2,
+    "theta": 2.745,
+    "target": 3
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.56,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 0,
+    "theta": 0.659,
+    "target": 2
+   }
+  },
+  "usr_233841187": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.259,
+    "target": 4
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.866,
+    "target": 5
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 2,
+    "theta": 2.856,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.452,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 4,
+    "theta": 4.109,
+    "target": 5
+   }
+  },
+  "usr_486395102": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.608,
+    "target": 4
+   },
+   "comp_r_analytics_018": {
+    "trueLevel": 4,
+    "theta": 4.724,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.251,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 3,
+    "theta": 3.718,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.23,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.7,
+    "target": 4
+   }
+  },
+  "usr_422868194": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 4,
+    "theta": 4.713,
+    "target": 5
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 3,
+    "theta": 3.503,
+    "target": 4
+   },
+   "comp_poverty_014": {
+    "trueLevel": 3,
+    "theta": 3.241,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 4,
+    "theta": 4.869,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.422,
+    "target": 5
+   },
+   "comp_comm_032": {
+    "trueLevel": 2,
+    "theta": 2.624,
+    "target": 4
+   }
+  },
+  "usr_287515566": {
+   "comp_survey_design_002": {
+    "trueLevel": 3,
+    "theta": 3.809,
+    "target": 5
+   },
+   "comp_spatial_stat_012": {
+    "trueLevel": 4,
+    "theta": 4.847,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 4,
+    "theta": 4.329,
+    "target": 5
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 2,
+    "theta": 2.455,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.713,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 2,
+    "theta": 2.668,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.734,
+    "target": 4
+   }
+  },
+  "usr_254984763": {
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.38,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 3,
+    "theta": 3.784,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.876,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 2,
+    "theta": 2.866,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.686,
+    "target": 5
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.45,
+    "target": 4
+   }
+  },
+  "usr_375803064": {
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.581,
+    "target": 3
+   },
+   "comp_econ_census_007": {
+    "trueLevel": 1,
+    "theta": 1.217,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.432,
+    "target": 4
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 1,
+    "theta": 1.138,
+    "target": 3
+   },
+   "comp_prob_solve_033": {
+    "trueLevel": 2,
+    "theta": 2.505,
+    "target": 3
+   },
+   "comp_collab_036": {
+    "trueLevel": 1,
+    "theta": 1.748,
+    "target": 3
+   }
+  },
+  "usr_298241468": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.783,
+    "target": 5
+   },
+   "comp_spatial_stat_012": {
+    "trueLevel": 3,
+    "theta": 3.164,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 2,
+    "theta": 2.579,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 2,
+    "theta": 2.311,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.813,
+    "target": 4
+   }
+  },
+  "usr_355367302": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 3,
+    "theta": 3.226,
+    "target": 4
+   },
+   "comp_dem_analysis_008": {
+    "trueLevel": 3,
+    "theta": 3.176,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.59,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 4,
+    "theta": 4.66,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.617,
+    "target": 4
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.222,
+    "target": 5
+   }
+  },
+  "usr_226507324": {
+   "comp_survey_design_002": {
+    "trueLevel": 1,
+    "theta": 1.808,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 0,
+    "theta": 0.229,
+    "target": 2
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.302,
+    "target": 3
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 1,
+    "theta": 1.842,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.532,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.171,
+    "target": 3
+   }
+  },
+  "usr_343873669": {
+   "comp_industry_stats_010": {
+    "trueLevel": 2,
+    "theta": 2.493,
+    "target": 4
+   },
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.212,
+    "target": 5
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 3,
+    "theta": 3.521,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 4,
+    "theta": 4.55,
+    "target": 4
+   },
+   "comp_comm_032": {
+    "trueLevel": 3,
+    "theta": 3.485,
+    "target": 3
+   }
+  },
+  "usr_937451724": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.803,
+    "target": 4
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 4,
+    "theta": 4.387,
+    "target": 4
+   },
+   "comp_industry_stats_010": {
+    "trueLevel": 5,
+    "theta": 5.861,
+    "target": 5
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.461,
+    "target": 4
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.897,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 3,
+    "theta": 3.631,
+    "target": 4
+   }
+  },
+  "usr_518514926": {
+   "comp_survey_design_002": {
+    "trueLevel": 4,
+    "theta": 4.649,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 4,
+    "theta": 4.205,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 3,
+    "theta": 3.393,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.877,
+    "target": 4
+   }
+  },
+  "usr_966497057": {
+   "comp_survey_design_002": {
+    "trueLevel": 2,
+    "theta": 2.633,
+    "target": 4
+   },
+   "comp_agri_stats_009": {
+    "trueLevel": 2,
+    "theta": 2.216,
+    "target": 3
+   },
+   "comp_data_privacy_026": {
+    "trueLevel": 2,
+    "theta": 2.334,
+    "target": 3
+   },
+   "comp_e_gov_023": {
+    "trueLevel": 4,
+    "theta": 4.593,
+    "target": 4
+   },
+   "comp_collab_036": {
+    "trueLevel": 3,
+    "theta": 3.755,
+    "target": 3
+   },
+   "comp_integrity_034": {
+    "trueLevel": 3,
+    "theta": 3.273,
+    "target": 3
+   }
+  },
+  "usr_662899443": {
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.775,
+    "target": 4
+   },
+   "comp_ml_stats_005": {
+    "trueLevel": 3,
+    "theta": 3.236,
+    "target": 4
+   },
+   "comp_python_stats_017": {
+    "trueLevel": 3,
+    "theta": 3.466,
+    "target": 4
+   },
+   "comp_api_int_028": {
+    "trueLevel": 1,
+    "theta": 1.594,
+    "target": 3
+   },
+   "comp_innov_038": {
+    "trueLevel": 3,
+    "theta": 3.679,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 2,
+    "theta": 2.582,
+    "target": 4
+   }
+  },
+  "usr_743221793": {
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.451,
+    "target": 4
+   },
+   "comp_big_data_006": {
+    "trueLevel": 3,
+    "theta": 3.774,
+    "target": 4
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.851,
+    "target": 3
+   },
+   "comp_comm_032": {
+    "trueLevel": 1,
+    "theta": 1.382,
+    "target": 3
+   }
+  },
+  "usr_987190804": {
+   "comp_econ_census_007": {
+    "trueLevel": 3,
+    "theta": 3.719,
+    "target": 4
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.836,
+    "target": 4
+   },
+   "comp_statistical_sw_030": {
+    "trueLevel": 3,
+    "theta": 3.263,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 2,
+    "theta": 2.198,
+    "target": 4
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.105,
+    "target": 5
+   }
+  },
+  "usr_774436940": {
+   "comp_sdg_monitor_015": {
+    "trueLevel": 4,
+    "theta": 4.146,
+    "target": 4
+   },
+   "comp_public_fin_025": {
+    "trueLevel": 4,
+    "theta": 4.34,
+    "target": 5
+   },
+   "comp_project_mgmt_024": {
+    "trueLevel": 4,
+    "theta": 4.587,
+    "target": 5
+   },
+   "comp_leadership_032": {
+    "trueLevel": 4,
+    "theta": 4.282,
+    "target": 5
+   },
+   "comp_change_mgmt_035": {
+    "trueLevel": 3,
+    "theta": 3.14,
+    "target": 4
+   },
+   "comp_strategic_031": {
+    "trueLevel": 5,
+    "theta": 5.851,
+    "target": 5
+   }
+  },
+  "usr_448442536": {
+   "comp_price_stats_003": {
+    "trueLevel": 2,
+    "theta": 2.594,
+    "target": 3
+   },
+   "comp_index_numbers_004": {
+    "trueLevel": 2,
+    "theta": 2.569,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 1,
+    "theta": 1.804,
+    "target": 2
+   },
+   "comp_db_design_029": {
+    "trueLevel": 1,
+    "theta": 1.824,
+    "target": 2
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 2,
+    "theta": 2.51,
+    "target": 2
+   },
+   "comp_integrity_034": {
+    "trueLevel": 1,
+    "theta": 1.221,
+    "target": 2
+   },
+   "comp_collab_036": {
+    "trueLevel": 0,
+    "theta": 0.339,
+    "target": 1
+   }
+  },
+  "usr_EMP8472": {
+   "comp_nat_accounts_001": {
+    "trueLevel": 2,
+    "theta": 2.79,
+    "target": 3
+   },
+   "comp_gdp_nowcast_011": {
+    "trueLevel": 3,
+    "theta": 3.123,
+    "target": 3
+   },
+   "comp_price_stats_003": {
+    "trueLevel": 1,
+    "theta": 1.856,
+    "target": 3
+   },
+   "comp_data_gov_016": {
+    "trueLevel": 3,
+    "theta": 3.354,
+    "target": 4
+   },
+   "comp_report_writing_020": {
+    "trueLevel": 3,
+    "theta": 3.807,
+    "target": 4
+   },
+   "comp_decision_037": {
+    "trueLevel": 1,
+    "theta": 1.843,
+    "target": 2
+   }
+  }
+ }
+}

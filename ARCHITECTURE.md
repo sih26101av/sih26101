@@ -30,9 +30,12 @@ Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token─
    └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
 ```
 
-The backend reads `mock-igot-server/data/course_catalog.json` **directly from
-disk** at startup for the recommendation index, and calls port 8001 over HTTP for
-everything user-specific.
+At startup the backend loads the course catalogue, FRAC set and crosswalk from
+port 8001 through `MockIgotAdapter` (`POST /api/composite/v1/search`), falling
+back to the same generated files in `mock-igot-server/data/` with a logged
+warning when the mock is down. Everything user-specific is fetched over HTTP per
+request. All mock data is synthetic and comes from one deterministic generator,
+`mock-igot-server/generate_mock_data.py`.
 
 ---
 
@@ -53,8 +56,10 @@ everything user-specific.
 ### `mock-igot-server/` — external-system simulator
 `mock_igot_server.py` (v4, Sunbird envelopes, in-memory stores loaded in `lifespan`)
 is the server actually used. `main.py` is an older simple mock kept alongside.
-Data: `courses.json`, `courses_1.json`, `competencies.json`, `jobprofiles.json`
-(root) and `data/{userdata,enrollments,content_states,course_catalog,frac_competencies}.json`.
+`generate_mock_data.py` (+ `mockdata/`) is the one seeded generator for everything
+in `data/` (see `data/README.md`). Root `competencies.json` (iGOT CID dictionary)
+and `jobprofiles.json` are still served; `courses.json` / `courses_1.json` are
+unused reference exports.
 
 ### `frontend/src/`
 | Path | Responsibility |
