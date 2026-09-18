@@ -167,6 +167,10 @@ class MockIgotAdapter(ILearningPlatformAdapter):
         """GET /api/course/v1/assessment/outcomes — {outcomes[], comparisons[]} pre/post θ records."""
         return await self._get_result("/api/course/v1/assessment/outcomes", timeout=30.0)
 
+    async def fetch_item_bank(self) -> Dict[str, Any]:
+        """GET /api/assessment/v1/itembank — 2PL items incl. answer keys (server side only)."""
+        return await self._get_result("/api/assessment/v1/itembank", timeout=30.0)
+
     async def fetch_hrms(self) -> Dict[str, Any]:
         """GET /api/hrms/v1/officials — {officials{userId: DOB, superannuationDate, products}, products, …}."""
         return await self._get_result("/api/hrms/v1/officials")

@@ -1172,6 +1172,74 @@ def build_hrms(users: list) -> dict:
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Item bank (B7): 2PL MCQ items per competency × level + response logs.
+# Parameters are SIMULATED, not calibrated on real respondents.
+# ─────────────────────────────────────────────────────────────────────────────
+
+ITEMS_PER_LEVEL = 3                    # 3 × 5 levels = 15 items per competency (the CAT maximum)
+ITEM_A_RANGE = (0.8, 2.0)              # discrimination on the level scale
+ITEM_B_SD = 0.35                       # difficulty b ~ N(level − 0.5, 0.35)
+RESPONSES_PER_OFFICIAL = 8             # synthetic response log size
+BLOOM = {1: "Remember", 2: "Understand", 3: "Apply", 4: "Analyse", 5: "Evaluate"}
+STEMS = {
+    1: "Which statement correctly describes {topic} in {short}?",
+    2: "What is the main purpose of {topic} in {short} work?",
+    3: "You must apply {topic} to a new {short} dataset. Which step comes first?",
+    4: "A {short} estimate built with {topic} disagrees with a related series. What is the most likely cause?",
+    5: "Two approaches to {topic} give different {short} results. Which criterion should decide between them?",
+}
+
+
+def build_item_bank(users: list, facts: dict) -> dict:
+    rng = rng_for("itembank")
+    items = []
+    for cid, _name, _ctype, _decay, _desc, topics in D.COMPETENCIES:
+        short = D.SHORT_NAMES[cid]
+        for level in range(1, 6):
+            for k in range(ITEMS_PER_LEVEL):
+                topic = topics[(level * ITEMS_PER_LEVEL + k) % len(topics)]
+                others = [t for t in topics if t != topic]
+                distractors = rng.sample(others, 3)
+                options = [f"The standard treatment of {topic}"] + [f"The treatment of {d}" for d in distractors]
+                order = list(range(4))
+                rng.shuffle(order)
+                items.append({
+                    "itemId": f"it_{cid[5:]}_L{level}_{k + 1}",
+                    "competencyId": cid, "level": level, "bloom": BLOOM[level],
+                    "stem": STEMS[level].format(topic=topic, short=short),
+                    "options": [options[i] for i in order],
+                    "answerIndex": order.index(0),
+                    "a": round(rng.uniform(*ITEM_A_RANGE), 3),
+                    "b": round(level - 0.5 + rng.gauss(0, ITEM_B_SD), 3),
+                    "calibration": "synthetic",
+                })
+    by_comp: dict = {}
+    for it in items:
+        by_comp.setdefault(it["competencyId"], []).append(it)
+
+    rrng = rng_for("itembank:responses")
+    responses = []
+    for u in users:
+        comp = rrng.choice(u["competencies"])["id"]
+        theta = facts["truth"][u["userId"]][comp]["theta"]
+        for it in rrng.sample(by_comp[comp], RESPONSES_PER_OFFICIAL):
+            p = 1 / (1 + math.exp(-it["a"] * (theta - it["b"])))
+            responses.append({"learnerId": u["userId"], "itemId": it["itemId"],
+                              "correct": int(rrng.random() < p),
+                              "date": ref_minus(rrng.uniform(5, 400)).date().isoformat()})
+    return {
+        "_meta": meta("MCQ item bank with 2PL parameters (a = discrimination, b = difficulty on the FRAC level "
+                      "scale) and Bloom level, plus response logs simulated FROM THOSE SAME PARAMETERS. "
+                      "Calibrated on synthetic data — demo only. Stems/options are placeholders. No accuracy "
+                      "metric computed on these responses means anything: it would be circular."),
+        "model": "2PL: P(correct | theta) = 1 / (1 + exp(-a (theta - b)))",
+        "calibration": "synthetic — demo only",
+        "items": items,
+        "responses": responses,
+    }
+
+
 def zlib_short(text: str) -> int:
     return int(hashlib.sha1(text.encode()).hexdigest()[:8], 16)
 
@@ -1236,6 +1304,7 @@ def generate() -> dict:
         "course_outcomes.json": dumps_records(outcomes, ("outcomes", "comparisons")),
         "workplace_evidence.json": dumps_records(workplace, ("rows",)),
         "hrms.json": dumps(build_hrms(users)),
+        "item_bank.json": dumps_records(build_item_bank(users, facts), ("items", "responses")),
         "roles.json": dumps({"_meta": meta("Role (office × designation) competency profiles; requiredLevel "
                                            "drawn from the designation tier."), "roles": roles}),
         "_truth/planted_effects.json": dumps({

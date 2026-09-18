@@ -185,6 +185,7 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
   const [inputValue, setInputValue] = useState('');
   const [hasUnread, setHasUnread]   = useState(true);
   const inputRef                    = useRef<HTMLTextAreaElement>(null);
+  const panelRef                    = useRef<HTMLDivElement>(null);
 
   // The conversation's language. Seeded from the page and kept in step with the
   // header EN/हिंदी switch, but it can go further than the page can (Telugu,
@@ -257,6 +258,7 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
     <>
       {/* ── Chat Panel ────────────────────────────────────────────────── */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="Gyan AI assistant"
         className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
@@ -288,7 +290,7 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
             </p>
           </div>
 
-          <LanguageMenu value={chatLang} onChange={changeChatLanguage} />
+          <LanguageMenu value={chatLang} onChange={changeChatLanguage} chatPanelRef={panelRef} />
 
           <button
             onClick={() => setIsOpen(false)}

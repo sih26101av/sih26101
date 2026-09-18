@@ -16,6 +16,18 @@ interface LoginPageProps {
   onClose?: () => void;
 }
 
+// Quick-fill demo credentials for the login form.
+// Passwords shown here are the seeded default with its first letter capitalised
+// (e.g. default "pankaj56" -> "Pankaj56") — the password each account should be
+// changed to via the forced change-password flow, not necessarily what is live
+// in the database today. Clicking a card only fills the fields; it does not
+// submit, so it never masks a real login failure.
+const QUICK_LOGINS: { label: string; designation: string; username: string; password: string }[] = [
+  { label: 'Admin',  designation: 'Platform Administrator',     username: 'admin',          password: 'Admin123' },
+  { label: 'Shikha',  designation: 'Deputy Director',            username: 'usr_720465595',  password: 'Shikha95' },
+  { label: 'Pankaj',  designation: 'Junior Statistical Officer',  username: 'usr_791131756',  password: 'Pankaj56' },
+];
+
 const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
   const navigate         = useNavigate();
   const location         = useLocation();
@@ -29,6 +41,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
 
   // Where to go after login if redirected from a protected route
   const from = (location.state as any)?.from?.pathname ?? null;
+
+  const fillQuickLogin = (username: string, quickPassword: string) => {
+    setError('');
+    setUsername(username);
+    setPassword(quickPassword);
+    setShowPass(true);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +127,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
 
           <div className="p-8 pt-6">
           <h2 className="font-serif text-[22px] font-bold text-gov-ink dark:text-white mb-1">Official Sign-In <span className="text-[14px] font-sans font-semibold text-slate-400" lang="hi">· अधिकारी लॉगिन</span></h2>
-          <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-6">Use your iGOT Karmayogi user ID to access your dashboard.</p>
+          <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-4">Use your iGOT Karmayogi user ID to access your dashboard.</p>
+
+          {/* Demo quick-fill credentials — fills the form only, does not submit */}
+          <div className="mb-6">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Quick Demo Sign-In</div>
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_LOGINS.map(q => (
+                <button
+                  key={q.username}
+                  type="button"
+                  onClick={() => fillQuickLogin(q.username, q.password)}
+                  className="text-left px-2.5 py-2 rounded-lg border border-gov-line dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-gov-saffron/10 hover:border-gov-saffron transition-colors"
+                  title={`${q.username} · ${q.designation}`}
+                >
+                  <div className="text-[12px] font-bold text-gov-ink dark:text-white truncate">{q.label}</div>
+                  <div className="text-[9.5px] text-slate-400 truncate">{q.designation}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Username */}

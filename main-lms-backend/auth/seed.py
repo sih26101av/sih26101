@@ -19,8 +19,8 @@ What it does
    Example: userId="usr_720465595", firstName="Gabriel" → password "gabriel95"
 4. Bcrypt-hashes every password and inserts a UserAuth row with:
        role="learner", must_change_password=True
-5. Inserts one hardcoded admin:
-       username="admin", password="admin123" (hashed), role="admin",
+5. Inserts one admin:
+       username="admin", password=$SEED_ADMIN_PASSWORD (default "admin123", hashed), role="admin",
        must_change_password=False
 6. Skips rows that already exist (idempotent — safe to re-run).
 
@@ -38,6 +38,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from auth.database import AuthBase, SessionLocal, engine
+from models.models import Base as DomainBase
 from auth.models import UserAuth
 from auth.security import hash_password
 
@@ -47,7 +48,8 @@ load_dotenv()
 IGOT_BASE_URL: str = os.getenv("IGOT_MOCK_BASE_URL", "http://localhost:8001")
 IGOT_TOKEN: str = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
 ADMIN_USERNAME: str = "admin"
-ADMIN_PASSWORD: str = "admin123"
+# Override in .env for any shared/deployed DB; the default is demo-only.
+ADMIN_PASSWORD: str = os.getenv("SEED_ADMIN_PASSWORD", "admin123")
 
 
 def _derive_password(first_name: str, user_id: str) -> str:
@@ -145,8 +147,10 @@ def _seed_admin(db: Session) -> bool:
 
 def main() -> None:
     # 1. Ensure table exists
+    print(f"[seed] Target DB: {engine.url.render_as_string(hide_password=True)}")
     print("[seed] Creating users_auth table if not exists …")
     AuthBase.metadata.create_all(bind=engine)
+    DomainBase.metadata.create_all(bind=engine)
 
     # 2. Fetch officials from mock server
     officials = _fetch_officials()
@@ -165,10 +169,10 @@ def main() -> None:
     print("=" * 60)
     print(f"  Officials inserted : {inserted}")
     print(f"  Officials skipped  : {skipped} (already existed)")
-    print(f"  Admin user         : {'CREATED (admin / admin123)' if admin_created else 'already existed'}")
+    print(f"  Admin user         : {'CREATED (username: admin)' if admin_created else 'already existed'}")
     print("=" * 60)
     print("\n  Default password formula: lowercase(firstName) + last 2 digits of userId")
-    print("  Example: Gabriel / usr_720465595 → password: gabriel95")
+    print("  Example: Gabriel / usr_720465595 -> password: gabriel95")
     print("\n  All seeded learners have must_change_password=True.\n")
 
 

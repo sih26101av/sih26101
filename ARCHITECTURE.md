@@ -25,7 +25,7 @@ Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token─
    │                  │
    │                  ├─ FAISS + BM25 (in-process, built at startup)
    │                  ├─ ONNX INT8 multilingual embedder (singleton)
-   │                  ├─ auth.db (SQLite: auth, evidence, quiz attempts, karma)
+   │                  ├─ Neon Postgres via DATABASE_URL (auth, evidence, quiz attempts, karma; SQLite auth.db fallback)
    │                  └─ Google Gemini (cloud, quiz MCQ generation)
    └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
 ```
@@ -82,7 +82,7 @@ unused reference exports.
 competency endpoints below share `main.py::_learner_competency_state` and are
 self-or-admin only (`_ensure_can_view`).
 1. `MockIgotAdapter.fetch_user_by_id` + `fetch_user_enrollments` → :8001
-2. `EvidenceLog` rows for that iGOT userId → `auth.db`
+2. `EvidenceLog` rows for that iGOT userId → auth DB (Neon)
 3. `HybridRecommendationEngine.crosswalk` maps each role competency to the
    catalogue FRAC competency that serves it (exact id, or unconfirmed name match)
 4. `BaselineAssembler.compute_for_user` gathers 6 evidence channels (completed
@@ -143,7 +143,10 @@ scroll, theme, language, login modal).
 
 ## 4. Persistence
 
-Single SQLite file `main-lms-backend/auth.db` (gitignored, auto-created at startup):
+One shared **Neon Postgres** database (`DATABASE_URL` in `main-lms-backend/.env`;
+see `docs/features/auth-and-rbac.md`) so every teammate/deployment has the same users.
+Falls back to SQLite `main-lms-backend/auth.db` when `DATABASE_URL` is unset. Tables
+are auto-created at startup (`create_all`, no migrations):
 - `users_auth` — `AuthBase` (auth/models.py)
 - Everything else — `Base` (models/models.py): domain tables from the UML,
   plus `evidence_log`, `quiz_attempts`, `karma_events`, `karma_monthly_usage`

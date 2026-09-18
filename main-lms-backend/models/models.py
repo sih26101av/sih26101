@@ -253,7 +253,7 @@ class KarmaEvent(Base):
     __tablename__ = "karma_events"
 
     eventId       = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    userId        = Column(String, ForeignKey("users.uuid"), nullable=False)
+    userId        = Column(String, nullable=False, index=True)  # iGOT userId (no FK — see EvidenceLog)
     eventType     = Column(Enum(KarmaEventType), nullable=False)
     pointsAwarded = Column(Integer, nullable=False, default=0)
     courseId      = Column(String, nullable=True)   # optional course reference
@@ -269,7 +269,7 @@ class KarmaMonthlyUsage(Base):
     __tablename__ = "karma_monthly_usage"
 
     id                = Column(Integer, primary_key=True, autoincrement=True)
-    userId            = Column(String, ForeignKey("users.uuid"), nullable=False)
+    userId            = Column(String, nullable=False, index=True)  # iGOT userId (no FK — see EvidenceLog)
     year              = Column(Integer, nullable=False)
     month             = Column(Integer, nullable=False)   # 1–12
     nonCbpCompletions = Column(Integer, nullable=False, default=0)

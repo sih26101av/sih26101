@@ -216,6 +216,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [lang, setLang]             = useState<ChatLanguage>('en');
   const [hasUnread, setHasUnread]   = useState(true);
   const inputRef                    = useRef<HTMLTextAreaElement>(null);
+  const chatPanelRef                = useRef<HTMLDivElement>(null);
 
   const { theme, toggleTheme } = useTheme();
   const copy = chatCopy(lang);
@@ -277,6 +278,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     <>
       {/* ── Chat Panel ────────────────────────────────────────────────────── */}
       <div
+        ref={chatPanelRef}
         role="dialog"
         aria-label="Gyan AI assistant"
         className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
@@ -312,7 +314,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             </p>
           </div>
 
-          <LanguageMenu value={lang} onChange={setLang} />
+          <LanguageMenu value={lang} onChange={setLang} chatPanelRef={chatPanelRef} />
 
           {/* Minimize */}
           <button

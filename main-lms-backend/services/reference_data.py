@@ -38,6 +38,8 @@ class ReferenceData:
         self.outcomes: List[Dict[str, Any]] = []        # course pre/post assessments
         self.comparisons: List[Dict[str, Any]] = []     # non-taker comparison episodes
         self.hrms: Dict[str, Any] = {}                  # {officials{userId: …}, products, productCriticalCompetencies}
+        self.item_bank: Dict[str, List[Dict[str, Any]]] = {}   # competencyId → 2PL items (with keys)
+        self.item_bank_calibration: str = ""
         self.sources: Dict[str, str] = {}          # dataset → "adapter" | "disk" | "missing"
         self.cache: Dict[str, Any] = {}            # derived analytics computed once per process
 
@@ -76,6 +78,12 @@ class ReferenceData:
             ref.prerequisite_check = {k: check[k] for k in ("cycle", "rejected", "invalid")} | {"received": len(raw)}
             if check["rejected"]:
                 logger.error("[reference] prerequisite edges REJECTED — cycle: %s", " → ".join(check["cycle"]))
+        bank = await ref._load("itemBank", adapter.fetch_item_bank, "item_bank.json")
+        if bank:
+            ref.item_bank = {}
+            for item in bank.get("items", []):
+                ref.item_bank.setdefault(item["competencyId"], []).append(item)
+            ref.item_bank_calibration = bank.get("calibration", "synthetic — demo only")
         hrms = await ref._load("hrms", adapter.fetch_hrms, "hrms.json")
         if hrms:
             ref.hrms = {k: v for k, v in hrms.items() if k != "_meta"}

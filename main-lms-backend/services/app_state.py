@@ -19,3 +19,5 @@ ref: ReferenceData = ReferenceData()  # SCIL v6 reference datasets
 snapshot: Optional[Dict[str, Dict[str, Any]]] = None
 snapshot_status: str = "not built"
 snapshot_builder: Optional[Callable[[], Awaitable[None]]] = None
+# main._learner_competency_state (async, userId → resolved rows) for routers
+competency_state: Optional[Callable[[str], Awaitable[Dict[str, Any]]]] = None

@@ -306,6 +306,22 @@ def test_hrms_retirement_dates_and_products_are_consistent(data):
     assert set(hrms["productCriticalCompetencies"]) == set(hrms["products"])
 
 
+def test_item_bank_is_labelled_synthetic_and_covers_every_level(data):
+    bank = data["item_bank.json"]
+    assert "synthetic" in bank["calibration"] and "circular" in bank["_meta"]["note"]
+    by_comp = collections.defaultdict(list)
+    for it in bank["items"]:
+        by_comp[it["competencyId"]].append(it)
+        assert 0 <= it["answerIndex"] < len(it["options"]) == 4 and it["calibration"] == "synthetic"
+        assert gen.ITEM_A_RANGE[0] <= it["a"] <= gen.ITEM_A_RANGE[1]
+        assert it["bloom"] == gen.BLOOM[it["level"]]
+    assert len(by_comp) == 40
+    for items in by_comp.values():
+        assert sorted(collections.Counter(i["level"] for i in items).items()) == [(l, gen.ITEMS_PER_LEVEL) for l in range(1, 6)]
+    ids = {i["itemId"] for i in bank["items"]}
+    assert len(ids) == len(bank["items"]) and all(r["itemId"] in ids for r in bank["responses"])
+
+
 def test_profile_incomplete_officials_exist_for_unassessed(data):
     incomplete = set(data["_truth/planted_effects.json"]["profileIncomplete"])
     assert len(incomplete) == gen.N_PROFILE_INCOMPLETE

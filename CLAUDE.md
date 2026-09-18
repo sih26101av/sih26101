@@ -66,6 +66,8 @@ python -m ai.seed_knowledge      # optional: seed ChromaDB (needs local Ollama)
 - **Env:** backend config lives in `main-lms-backend/.env` (see `.env.example`).
   `.env*` is gitignored except the example. Frontend base URLs are currently hardcoded
   to `http://localhost:8000`.
+- **DB:** auth/evidence/karma live in shared Neon Postgres (`DATABASE_URL` in
+  `main-lms-backend/.env`); `auth.db` is only the offline fallback.
 - **Data:** `auth.db`, `chroma_db/`, `temp_uploads/`, `ai/.cache/` are generated and
   gitignored. Mock datasets under `mock-igot-server/` are committed fixtures — treat
   them as read-only unless the task is about data generation.

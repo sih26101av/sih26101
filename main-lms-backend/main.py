@@ -10,7 +10,7 @@ Responsibilities
   AFTER a request has been authenticated/authorised here.
 • Never stores auth data on the mock server; never proxies raw tokens.
 
-On startup: creates users_auth table in auth.db (idempotent).
+On startup: creates users_auth table in the auth DB (Neon Postgres, or SQLite auth.db fallback) (idempotent).
 """
 
 from routers import competency
@@ -89,7 +89,7 @@ async def _startup():
     """Create users_auth table and karma tables if they don't exist yet."""
     global _rec_engine, _assembler
     AuthBase.metadata.create_all(bind=engine)
-    # Create karma tables (KarmaEvent, KarmaMonthlyUsage) in the same auth.db
+    # Create karma tables (KarmaEvent, KarmaMonthlyUsage) in the same auth DB
     from models.models import Base as DomainBase
     DomainBase.metadata.create_all(bind=engine)
 
@@ -137,6 +137,7 @@ async def _startup():
     _ref = await ReferenceData.load(adapter)
     app_state.engine, app_state.assembler, app_state.ref = _rec_engine, _assembler, _ref
     app_state.snapshot_builder = _build_workforce_snapshot
+    app_state.competency_state = _learner_competency_state
     import asyncio
     asyncio.get_running_loop().create_task(_build_workforce_snapshot())
 
@@ -166,6 +167,8 @@ app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
 app.include_router(competency.router)
 from routers.insights import router as insights_router
 app.include_router(insights_router)
+from routers.diagnostic import router as diagnostic_router
+app.include_router(diagnostic_router)
     
     
 

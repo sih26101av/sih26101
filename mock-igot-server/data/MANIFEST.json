@@ -57,6 +57,11 @@
    "sha256": "932f49d79dd2072866fc7420de1f31f097f8a17dc966c9f7c1e0120023e6505b",
    "bytes": 31661
   },
+  "item_bank.json": {
+   "synthetic": true,
+   "sha256": "c8b8a6db4d66aaf043b6a2ea4ed644889babd782a0da8f014262f50f6b68f917",
+   "bytes": 421180
+  },
   "offices.json": {
    "synthetic": true,
    "sha256": "304ebb247b5fc7409ba58b4505234260b66e48d861e1f3f7e5977619bb53b2b8",

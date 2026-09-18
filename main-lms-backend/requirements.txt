@@ -54,6 +54,7 @@ bcrypt>=4.1.0
 
 # ── Database ──────────────────────────────────────────────────────────────────
 sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9     # Postgres driver for the shared Neon DB (DATABASE_URL)
 
 # ── Document parsing (for quiz + knowledge upload) ────────────────────────────
 pypdf>=4.0.0

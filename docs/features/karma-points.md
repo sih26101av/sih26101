@@ -43,13 +43,12 @@ cap on non-CBP completions, and a login streak.
 ## Connections
 
 Seeds itself from `MockIgotAdapter.fetch_user_enrollments`. Rendered in the learner
-dashboard's right sidebar. Shares `auth.db` with auth and evidence tables.
+dashboard's right sidebar. Shares the auth DB engine (Neon Postgres, see `auth-and-rbac.md`) with auth and evidence tables.
 
 ## TODOs / edge cases
 
-- `KarmaEvent.userId` / `KarmaMonthlyUsage.userId` declare a FK to `users.uuid`, but
-  the router writes **iGOT userIds**. This only works because SQLite does not enforce
-  foreign keys by default — the FK should be dropped like it was on `EvidenceLog`.
+- `KarmaEvent.userId` / `KarmaMonthlyUsage.userId` store **iGOT userIds** with no FK
+  (dropped when the DB moved to Postgres, which enforces FKs — same as `EvidenceLog`).
 - Nothing awards karma automatically: passing a quiz or completing a course does not
   fire an event unless the frontend calls the award endpoint (see the missing
   Observer/EventBus in `ARCHITECTURE.md` §7).

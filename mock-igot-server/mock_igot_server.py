@@ -93,7 +93,7 @@ DB_JOB_PROFILES: list[dict] = []     # jobprofiles.json  — NCO job roles
 
 # SCIL v6 reference data (data/<file>) — see data/README.md
 REFERENCE_FILES = ["gsbpm_map.json", "offices.json", "acbp.json", "prerequisites.json",
-                   "course_outcomes.json", "workplace_evidence.json", "hrms.json"]
+                   "course_outcomes.json", "workplace_evidence.json", "hrms.json", "item_bank.json"]
 DB_REF: dict[str, Any] = {}
 
 # Seed data for user / enrolment / content-state lookups
@@ -1000,6 +1000,29 @@ async def get_assessment_outcomes(
     comparisons = [c for c in data["comparisons"] if not comp or c["competencyId"] == comp]
     return sunbird_ok(API_ID, VER, {"scale": data.get("scale"), "count": len(outcomes),
                                     "outcomes": outcomes, "comparisons": comparisons})
+
+
+@app.get("/api/assessment/v1/itembank")
+async def get_item_bank(request: Request, x_authenticated_user_token: str | None = Header(default=None)):
+    """
+    2PL MCQ item bank (a, b on the FRAC level scale, Bloom level, answer key).
+    Server-to-server only — the LMS backend never sends answer keys or item
+    parameters to the browser. CALIBRATED ON SYNTHETIC DATA — demo only.
+    ?competencyId= filters; ?responses=true adds the synthetic response log.
+    """
+    API_ID, VER = "api.assessment.itembank.read", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("item_bank.json", API_ID, VER)
+    if err:
+        return err
+    comp = request.query_params.get("competencyId")
+    items = [i for i in data["items"] if not comp or i["competencyId"] == comp]
+    result = {"model": data.get("model"), "calibration": data.get("calibration"),
+              "count": len(items), "items": items}
+    if request.query_params.get("responses") == "true":
+        ids = {i["itemId"] for i in items}
+        result["responses"] = [r for r in data["responses"] if r["itemId"] in ids]
+    return sunbird_ok(API_ID, VER, result)
 
 
 @app.get("/api/hrms/v1/officials")
