@@ -1,13 +1,13 @@
 # Graph Report - SIH_IGot  (2026-09-19)
 
 ## Corpus Check
-- 214 files · ~4,904,357 words
+- 214 files · ~4,905,207 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: (none) 5, .css 1, .example 1)
 
 ## Summary
-- 2150 nodes · 4866 edges · 119 communities (84 shown, 35 thin omitted)
-- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 529 edges (avg confidence: 0.94)
+- 2152 nodes · 4901 edges · 121 communities (86 shown, 35 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 564 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
@@ -18,45 +18,45 @@
 ## Community Hubs (Navigation)
 - ReplyContext
 - AssessmentPage.tsx
-- karma.py
 - Code
+- router.py
 - package.json
 - _get
-- competency.py
+- os
 - ChatWidget.tsx
-- main_backup.py
+- karma.py
 - KarmaRewardsView.tsx
 - AdminDashboard.tsx
-- Media (Video / Audio / YouTube) → Evidence-Cited Quiz
+- useLearnerDashboard.ts
 - baseline_assembler.py
-- UserAuth
+- insights.py
 - pipeline.py
-- mock_igot_server.py
-- LandingPage.tsx
+- BaseModel
+- useScreenReader.ts
 - What You Must Do When Invoked
 - .build_study_plan
 - test_pathway.py
 - domain.ts
 - extractors.py
 - media_io.py
-- Architecture — MoSPI AI Skill Intelligence Platform (SIH 2026)
+- opportunity
 - compilerOptions
 - ai_tools.py
 - 🇮🇳 MoSPI Skill Intelligence Platform
 - media_quiz.py
-- Ollama RAG Knowledge Base (Tier 3 — disconnected)
+- test_proficiency_foresight.py
 - _warm_up
 - CompetencyCalculator
 - react
-- models/models.py
+- chatbot.py
 - proficiency_service.py
 - seed.py
 - speech.d.ts
 - graphify reference: extra exports and benchmark
 - resolve_level
-- os
+- 3. Core data flow
 - compilerOptions
-- BaselineAssembler
+- _normalise_course_map
 - graphify reference: query, path, explain
 - CLAUDE.md
 - main-lms-backend/main.py
@@ -68,24 +68,24 @@
 - rag.py
 - .claude/CLAUDE.md
 - extraction-spec.md
-- LearnerDashboard.tsx
-- EvidenceLog
+- DashboardCreator
+- test_chat_messages.py
 - estimate_uplift
-- diagnostic.py
+- UserAuth
 - MockIgotAdapter
 - test_irt.py
 - api.ts
-- Code
+- probe.py
 - generate_mock_data.py
 - engine
-- Any
-- QuizAttempt
-- Code
+- ILearningPlatformAdapter
+- workforce_service.py
+- LearnerDashboard.tsx
 - get_enriched_courses
 - faker
 - services_chat_messages
 - services_chat_messages_context
-- HybridRecommendationEngine
+- Any
 - _sunbird_result
 - bn.py
 - en.py
@@ -96,28 +96,30 @@
 - or_.py
 - ta.py
 - te.py
-- language_service.py
-- grade_quiz
-- chatbot.py
+- Code
+- test_reply_regression.py
+- chat_actions.py
 - mock-igot-server/main.py
-- 3. Core data flow
+- Any
 - _user_enrolments
-- ._score_candidates
-- Workforce Insights (SCIL v6 — GSBPM scope, opportunity, admin foresight)
-- lifespan
-- RAG Document → Quiz Generator & Grading
+- HybridRecommendationEngine
+- .fetch_frac_competencies
+- mock_igot_server.py
+- test_chat_endpoint.py
 - CourseRecommendation
-- ._quality_score
+- Code
 - recommendation_service.py
-- json
+- mock_data_metrics.py
 - Code
 - authApi.ts
-- router.py
-- question_gen.py
+- 1. Runtime topology
+- _PrerequisiteGate
+- Dated decay, cold start and workforce foresight (SCIL v6 §2 / §11, B8)
+- dependencies.py
+- _resolve_competency_state
 - Decisions log (made without the user)
-- Timeline
+- decay
 - health
-- .fetch_catalog
 - google_generativeai
 - langchain_text_splitters
 - mockdata
@@ -132,171 +134,171 @@
 ## God Nodes (most connected - your core abstractions)
 1. `_get()` - 64 edges
 2. `UserAuth` - 61 edges
-3. `react` - 43 edges
-4. `HybridRecommendationEngine` - 39 edges
-5. `MockIgotAdapter` - 38 edges
-6. `Code` - 37 edges
-7. `ReplyContext` - 30 edges
-8. `Code` - 30 edges
-9. `Timeline` - 29 edges
-10. `lucide-react` - 27 edges
+3. `Code` - 46 edges
+4. `react` - 43 edges
+5. `HybridRecommendationEngine` - 39 edges
+6. `MockIgotAdapter` - 38 edges
+7. `Code` - 37 edges
+8. `ReplyContext` - 30 edges
+9. `Code` - 30 edges
+10. `Timeline` - 29 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Code` --references--> `MonthlyCapBar()`  [INFERRED]
-  docs/features/karma-points.md → frontend/src/components/dashboard/RightSidebar.tsx
 - `Code` --references--> `StatTone`  [INFERRED]
   docs/features/learner-dashboard.md → frontend/src/components/shell/StatCard.tsx
 - `Code` --references--> `StudioTab`  [INFERRED]
   docs/features/rag-quiz-generator.md → frontend/src/pages/AssessmentPage.tsx
-- `Code` --references--> `SidebarHelp()`  [INFERRED]
-  docs/features/learner-dashboard.md → frontend/src/pages/LearnerDashboard.tsx
-- `Code` --references--> `SidebarArt()`  [INFERRED]
-  docs/features/learner-dashboard.md → frontend/src/pages/LearnerDashboard.tsx
+- `7. Mismatches between the mermaid diagram and the code` --references--> `SkillGapReport`  [INFERRED]
+  ARCHITECTURE.md → frontend/src/types/domain.ts
+- `Code` --references--> `KarmaLevel`  [INFERRED]
+  docs/features/karma-points.md → frontend/src/types/domain.ts
+- `Code` --references--> `KarmaToday`  [INFERRED]
+  docs/features/karma-points.md → frontend/src/types/domain.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (119 total, 35 thin omitted)
+## Communities (121 total, 35 thin omitted)
 
 ### Community 0 - "ReplyContext"
-Cohesion: 0.06
-Nodes (68): fastapi_testclient, functools, importlib, Flat numeric profile features from skill-gap dicts ({skillName, domain,…, vectorize_profile(), chat(), ChatHistoryItem, ChatRequest (+60 more)
+Cohesion: 0.16
+Nodes (19): importlib, Flat numeric profile features from skill-gap dicts ({skillName, domain,…, vectorize_profile(), Any, Everything a reply template may personalise, built once per chat request., ReplyContext, _by_page(), _gap_lines() (+11 more)
 
 ### Community 1 - "AssessmentPage.tsx"
-Cohesion: 0.11
-Nodes (30): CONTENT_LABEL, MediaAnalysisCard(), MediaAnswerReview(), pct(), QuestionEvidence(), SOURCE_LABEL, YoutubeLinkInput(), PageHeader() (+22 more)
+Cohesion: 0.12
+Nodes (29): Code, AssessmentPage, CONTENT_LABEL, MediaAnalysisCard(), MediaAnswerReview(), pct(), QuestionEvidence(), SOURCE_LABEL (+21 more)
 
-### Community 2 - "karma.py"
-Cohesion: 0.05
-Nodes (62): Code, KarmaEvent, KarmaEventType, KarmaMonthlyUsage, Immutable ledger entry — one row per karma point award event., Rolling monthly counter for non-CBP COURSE_COMPLETION events. Enforces the…, admin_adjust_karma(), AdminAdjustRequest (+54 more)
+### Community 2 - "Code"
+Cohesion: 0.06
+Nodes (49): Code, Connections, In / out, Karma Points (gamification), Rules (`RULES` in `karma_engine.py`, served by `GET /karma/rules`), TODOs / edge cases, _create_schema(), _create() (+41 more)
 
-### Community 3 - "Code"
+### Community 3 - "router.py"
 Cohesion: 0.08
-Nodes (39): bcrypt, Code, TokenBridge(), mapRole(), registerLogoutCallback(), setApiToken(), hashlib, jose (+31 more)
+Nodes (47): bcrypt, datetime, Code, TokenBridge(), registerLogoutCallback(), setApiToken(), hashlib, jose (+39 more)
 
 ### Community 4 - "package.json"
 Cohesion: 0.05
-Nodes (43): dependencies, lucide-react, react, react-dom, react-router-dom, recharts, devDependencies, autoprefixer (+35 more)
+Nodes (42): dependencies, lucide-react, react, react-dom, react-router-dom, recharts, devDependencies, autoprefixer (+34 more)
 
 ### Community 5 - "_get"
 Cohesion: 0.13
-Nodes (37): _get(), GET with retries — the dev backend runs with --reload and may restart mid-run,…, get_admin_roster(), get_assessment_outcomes(), get_competencies(), get_course_catalog(), get_crosswalk(), get_gsbpm_map() (+29 more)
+Nodes (36): _get(), GET with retries — the dev backend runs with --reload and may restart mid-run,…, get_assessment_outcomes(), get_competencies(), get_course_catalog(), get_crosswalk(), get_gsbpm_map(), get_hrms_officials() (+28 more)
 
-### Community 6 - "competency.py"
-Cohesion: 0.11
-Nodes (20): datetime, Code, Noticed but out of scope (not fixed), CertificateUploadZone(), calculate_baseline(), EvidencePayload, BaseModel, post (+12 more)
+### Community 6 - "os"
+Cohesion: 0.13
+Nodes (16): asyncio, Code, CertificateUploadZone(), adapters/igot_adapter.py — iGOT Platform Adapter…, FILE: ai/rag_engine.py…, FILE: main-lms-backend/routers/competency.py…, services/app_state.py — process-wide singletons built in main._warm_up…, CertificateExtractionResult (+8 more)
 
 ### Community 7 - "ChatWidget.tsx"
-Cohesion: 0.09
-Nodes (43): Code, GyanBot(), GyanHero(), LanguageMenu(), LanguageMenuProps, CAPABILITIES, ChatWidget(), MessageBubble() (+35 more)
+Cohesion: 0.08
+Nodes (47): `frontend/src/`, GyanBot(), GyanHero(), LanguageMenu(), LanguageMenuProps, CAPABILITIES, ChatWidget(), MessageBubble() (+39 more)
 
-### Community 8 - "main_backup.py"
-Cohesion: 0.09
-Nodes (25): fastapi_middleware_cors, get_achievements(), get_achievements_by_user_id(), get_admin_roster(), get_enrollments(), get_enrollments_by_user_id(), get_profile_by_user_id(), get_recommendations() (+17 more)
+### Community 8 - "karma.py"
+Cohesion: 0.19
+Nodes (22): fastapi_concurrency, admin_adjust_karma(), AdminAdjustRequest, _assert_self_or_admin(), award_karma_event(), _award_response(), CbpClaimRequest, claim_cbp_bonus() (+14 more)
 
 ### Community 9 - "KarmaRewardsView.tsx"
 Cohesion: 0.10
-Nodes (28): KarmaCard(), milestones, MilestoneStep, MonthlyCapBar(), PassbookRow(), PILL_ORDER, RightSidebarProps, EVENT_META (+20 more)
+Nodes (22): KarmaCard(), milestones, MilestoneStep, PassbookRow(), PILL_ORDER, RightSidebarProps, EVENT_META, formatPoints() (+14 more)
 
 ### Community 10 - "AdminDashboard.tsx"
-Cohesion: 0.13
-Nodes (25): Code, AdminDashboard, StatCard(), AdminKPIs, AdminRosterRow, GAP_COLORS, HeatmapEntry, levelToNumber() (+17 more)
+Cohesion: 0.09
+Nodes (32): Code, AdminDashboard, SectionAction(), SectionCard(), SectionCardProps, StatCard(), StatCardProps, StatTone (+24 more)
 
-### Community 11 - "Media (Video / Audio / YouTube) → Evidence-Cited Quiz"
-Cohesion: 0.22
-Nodes (8): In / out, Media (Video / Audio / YouTube) → Evidence-Cited Quiz, Pipeline, Setup, TODOs / edge cases, Verification, YouTube, reject()
+### Community 11 - "useLearnerDashboard.ts"
+Cohesion: 0.11
+Nodes (20): Connections, In / out, Learner Dashboard (frontend shell), TODOs / edge cases, CareerCard(), MilestoneStepper(), RightSidebar(), _cache (+12 more)
 
 ### Community 12 - "baseline_assembler.py"
 Cohesion: 0.15
 Nodes (25): Code, rows_for(), tag_id(), _education_score(), enrollment_course_id(), is_completed(), _last_evidence_date(), _map_category() (+17 more)
 
-### Community 13 - "UserAuth"
-Cohesion: 0.12
-Nodes (25): AuthBase, Returns a FastAPI dependency that checks the current user's role. Example:…, require_role(), UserAuth, capability_risk(), _frac_names(), gsbpm_scope(), prerequisite_dag() (+17 more)
+### Community 13 - "insights.py"
+Cohesion: 0.14
+Nodes (19): capability_risk(), _frac_names(), prerequisite_dag(), post, routers/insights.py — admin-only SCIL v6 workforce insights Every number here…, Rebuild the workforce snapshot now (≈ a few seconds)., Per statistical product: capable officials per critical competency, retirements…, 36-month projection of expected capable officials: attrition × dated skill… (+11 more)
 
 ### Community 14 - "pipeline.py"
-Cohesion: 0.09
-Nodes (32): csv, main(), FILE: scripts/eval_media_quiz.py…, caption_regions(), needs_vlm(), fact_check(), _match(), protect_terms() (+24 more)
+Cohesion: 0.07
+Nodes (46): Interpreter guard for subcommands, csv, dataclasses, main(), FILE: scripts/eval_media_quiz.py…, build_chunks(), Chunk, Evidence (+38 more)
 
-### Community 15 - "mock_igot_server.py"
-Cohesion: 0.08
-Nodes (36): exception_handler, field_validator, HTTPException, CompetencyOut, CompositeSearchRequest, ContentStateRequest, _course_by_id(), CourseOut (+28 more)
+### Community 15 - "BaseModel"
+Cohesion: 0.10
+Nodes (22): field_validator, CompetencyOut, CompositeSearchRequest, ContentStateRequest, _course_by_id(), CourseOut, EnrolPayload, get_content_state() (+14 more)
 
-### Community 16 - "LandingPage.tsx"
-Cohesion: 0.14
-Nodes (20): Visual design system (shared by every page), AshokaChakra(), CountUp(), GovEmblem(), Reveal(), useInView(), StatCardProps, StatTone (+12 more)
+### Community 16 - "useScreenReader.ts"
+Cohesion: 0.53
+Nodes (5): chunkText(), extractReadableText(), isHidden(), ScreenReader, useScreenReader()
 
 ### Community 17 - "What You Must Do When Invoked"
 Cohesion: 0.08
 Nodes (23): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents) (+15 more)
 
 ### Community 18 - ".build_study_plan"
-Cohesion: 0.13
-Nodes (13): _diagnostic_step(), absorb(), add_step(), advance(), open_ladders(), _PrerequisiteGate, Any, Orders the required rungs of several pathways into one sequence. SCIL v6 §5… (+5 more)
+Cohesion: 0.25
+Nodes (6): absorb(), add_step(), advance(), open_ladders(), Orders the required rungs of several pathways into one sequence. SCIL v6 §5…, Does taking `course_id` complete this ladder's next rung?
 
 ### Community 19 - "test_pathway.py"
-Cohesion: 0.09
-Nodes (23): _edge(), _gap(), _kinds_levels(), Skill-gap levels + level-aware recommendations + learning pathways. Runs on a…, _resolved(), test_already_met_prerequisite_changes_nothing(), test_beginner_gets_next_levels_in_order_never_advanced_or_basic(), test_completed_never_suggested_and_in_progress_is_continued() (+15 more)
+Cohesion: 0.08
+Nodes (25): _edge(), _gap(), _kinds_levels(), Skill-gap levels + level-aware recommendations + learning pathways. Runs on a…, _resolved(), test_already_met_prerequisite_changes_nothing(), test_beginner_gets_next_levels_in_order_never_advanced_or_basic(), test_completed_never_suggested_and_in_progress_is_continued() (+17 more)
 
 ### Community 20 - "domain.ts"
-Cohesion: 0.04
-Nodes (52): DEFER_REASON, KIND_STYLE, formatDate(), ProfileHeader(), ProfileHeaderProps, TAGLINE, ProgressViewProps, Props (+44 more)
+Cohesion: 0.06
+Nodes (37): DEFER_REASON, KIND_STYLE, PathwayLadder(), formatDate(), ProfileHeader(), ProfileHeaderProps, TAGLINE, AppliedPrerequisite (+29 more)
 
 ### Community 21 - "extractors.py"
-Cohesion: 0.10
-Nodes (32): capabilities(), JSONResponse, add_captions(), flush(), _budget(), describe_keyframes(), guarded(), run_batch() (+24 more)
+Cohesion: 0.07
+Nodes (48): base64, functools, capabilities(), JSONResponse, flush(), _budget(), caption_regions(), describe_keyframes() (+40 more)
 
 ### Community 22 - "media_io.py"
 Cohesion: 0.13
 Nodes (24): Caption, _change(), download_youtube(), fetch(), is_youtube_url(), Keyframe, load_audio(), MediaInputError (+16 more)
 
-### Community 23 - "Architecture — MoSPI AI Skill Intelligence Platform (SIH 2026)"
-Cohesion: 0.25
-Nodes (7): 2. Folder map, 4. Persistence, 5. Tech stack, 6. Design patterns actually implemented, Architecture — MoSPI AI Skill Intelligence Platform (SIH 2026), `main-lms-backend/` — FastAPI orchestrator, `mock-igot-server/` — external-system simulator
+### Community 23 - "opportunity"
+Cohesion: 0.18
+Nodes (15): gsbpm_scope(), SCIL v6 §1 — the 80% officer-hours scoping report (whole NSO, or one office)., opportunity(), Any, services/gsbpm_service.py — GSBPM scoping (SCIL v6 §1) + opportunity to…, Opportunity to practise a competency in the official's office this cycle (SCIL…, Which competencies are in scope under the officer-hours rule, and why., scope_report() (+7 more)
 
 ### Community 24 - "compilerOptions"
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleResolution, noEmit (+10 more)
 
 ### Community 25 - "ai_tools.py"
-Cohesion: 0.10
-Nodes (31): Code, dotenv, is_ollama_available(), Fast, synchronous check — just hits the Ollama /api/tags endpoint. Returns True…, FILE: ai/seed_knowledge.py…, Embeds all baseline knowledge into ChromaDB., seed(), add_documents_from_file() (+23 more)
+Cohesion: 0.07
+Nodes (41): Code, Connections, In / out, Ollama RAG Knowledge Base (Tier 3 — disconnected), TODOs / edge cases, dotenv, io, build_system_prompt() (+33 more)
 
 ### Community 26 - "🇮🇳 MoSPI Skill Intelligence Platform"
 Cohesion: 0.11
 Nodes (17): 🧠 AI Models Required, 🛠️ API Reference, 🏗️ Architecture, 🔑 Environment Variables, 🤖 Gyan AI Chat — How It Works, 🇮🇳 MoSPI Skill Intelligence Platform, 📁 Project Structure, 🚀 Quick Start (First-Time Setup) (+9 more)
 
 ### Community 27 - "media_quiz.py"
-Cohesion: 0.21
-Nodes (16): fastapi_responses, importlib_util, MediaMetadata, MediaQuizQuestion, MediaQuizResponse, _process(), BaseModel, post (+8 more)
+Cohesion: 0.27
+Nodes (13): importlib_util, MediaMetadata, MediaQuizQuestion, MediaQuizResponse, _process(), BaseModel, post, UploadFile (+5 more)
 
-### Community 28 - "Ollama RAG Knowledge Base (Tier 3 — disconnected)"
-Cohesion: 0.22
-Nodes (8): Connections, In / out, Ollama RAG Knowledge Base (Tier 3 — disconnected), TODOs / edge cases, build_system_prompt(), generate_chat_response(), Runs the full RAG pipeline: 1. Retrieve top-k relevant document chunks from…, Builds a rich system prompt that grounds the LLM in the user's live context.…
+### Community 28 - "test_proficiency_foresight.py"
+Cohesion: 0.21
+Nodes (15): cohort_prior(), population_stats(), Cohort prior for an UNASSESSED competency, with the divergence check., comp → (μ_pop, σ_pop, n) over officials with assessed evidence on it., _hrms(), _official(), SCIL v6 §2 dated decay / expected-shortfall / cold start, and §11 workforce…, _snap() (+7 more)
 
 ### Community 29 - "_warm_up"
-Cohesion: 0.10
-Nodes (20): AbstractEventLoop, 1. Runtime topology, Connections, Gyan — Multilingual Chat Assistant, In / out, TODOs / edge cases, Connections, In / out (+12 more)
+Cohesion: 0.18
+Nodes (11): AbstractEventLoop, Workforce snapshot, _build_workforce_snapshot(), Everything slow, off the request path, on the "warm-up" thread's own loop so…, Every official's resolved competency rows, for the SCIL v6 population / cohort…, _warm_up(), _snapshot_after_schema(), Any (+3 more)
 
 ### Community 30 - "CompetencyCalculator"
 Cohesion: 0.22
 Nodes (8): CompetencyCalculator, datetime, FILE: main-lms-backend/services/competency_service.py…, Synergy bonus scoped strictly to the ADJACENT_COMPETENCIES table. Only adjacent…, Calculates the baseline score (b_k) and returns (score, confidence_tag).…, Maps FRAC types from the JSON to calculation categories., test_missing_channels_do_not_drag_the_score_to_zero(), math
 
 ### Community 31 - "react"
-Cohesion: 0.09
-Nodes (22): App(), AssessmentPage, DashboardRedirect(), ProtectedRoute(), ProtectedRouteProps, AuthContext, AuthContextType, AuthUser (+14 more)
+Cohesion: 0.10
+Nodes (35): Visual design system (shared by every page), App(), DashboardRedirect(), AshokaChakra(), CountUp(), GovEmblem(), Reveal(), useInView() (+27 more)
 
-### Community 32 - "models/models.py"
-Cohesion: 0.16
-Nodes (22): 7. Mismatches between the mermaid diagram and the code, Base, enum, SkillGapReport, Admin, Assessment, AssessmentSkillMapping, BaseUser (+14 more)
+### Community 32 - "chatbot.py"
+Cohesion: 0.33
+Nodes (15): ChatResponse, _intent_response(), _intercept(), FILE: routers/chatbot.py Multilingual AI Learning Assistant — Gyan (ज्ञान)…, Deterministic handling of English commands the classifier has historically…, _response(), _theme_action(), _ui_action_response() (+7 more)
 
 ### Community 33 - "proficiency_service.py"
-Cohesion: 0.07
-Nodes (57): Cold start for UNASSESSED competencies, Dated decay, cold start and workforce foresight (SCIL v6 §2 / §11, B8), Foresight, Proficiency belief with dated decay, iGOT profile competencyLevel ('Level 3') → 3; missing → 0 (no claim)., Profile + enrollments + EvidenceLog → one resolved row per role competency.…, _resolve_competency_state(), _self_reported_level() (+49 more)
+Cohesion: 0.17
+Nodes (17): cluster_of(), expected_shortfall(), months_between(), office_phase(), _phi(), _Phi(), proficiency_state(), Any (+9 more)
 
 ### Community 34 - "seed.py"
-Cohesion: 0.20
-Nodes (14): httpx, hash_password(), Return a bcrypt hash of the plain-text password., _derive_password(), _fetch_officials(), main(), Session, auth/seed.py… (+6 more)
+Cohesion: 0.14
+Nodes (17): auth/database.py…, auth/models.py…, hash_password(), Return a bcrypt hash of the plain-text password., _derive_password(), _fetch_officials(), main(), Session (+9 more)
 
 ### Community 35 - "speech.d.ts"
 Cohesion: 0.20
@@ -307,32 +309,28 @@ Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
 ### Community 37 - "resolve_level"
-Cohesion: 0.28
-Nodes (15): Single source of truth for an official's level on one competency. Every…, resolve_level(), _assess(), SCIL v6 §3 evidence channels K/A/U/S (knowledge, application, utility,…, _row(), test_confirmed_use_is_a_floor_unconfirmed_is_not(), test_failed_work_sample_is_evidence_but_not_a_floor(), test_knowledge_only_score_is_unchanged() (+7 more)
+Cohesion: 0.25
+Nodes (17): BaselineAssembler, Single source of truth for an official's level on one competency. Every…, resolve_level(), _assess(), SCIL v6 §3 evidence channels K/A/U/S (knowledge, application, utility,…, _row(), test_confirmed_use_is_a_floor_unconfirmed_is_not(), test_failed_work_sample_is_evidence_but_not_a_floor() (+9 more)
 
-### Community 38 - "os"
-Cohesion: 0.15
-Nodes (13): asyncio, base64, logging, FILE: ai/rag_engine.py…, scripts/quantize_model.py…, services/app_state.py — process-wide singletons built in main._warm_up…, FILE: services/media_quiz/llm.py…, services/reference_data.py — SCIL v6 reference datasets Loaded ONCE at startup… (+5 more)
+### Community 38 - "3. Core data flow"
+Cohesion: 0.18
+Nodes (12): 3. Core data flow, _ensure_can_view(), get_learning_pathway(), get_recommendations_by_user_id(), get_skill_gaps_by_user_id(), _learner_competency_state(), A learner may only read their own competency data; admins may read anyone's., Memoised _resolve_competency_state. Concurrent callers (the dashboard's /skill-… (+4 more)
 
 ### Community 39 - "compilerOptions"
 Cohesion: 0.25
 Nodes (7): compilerOptions, allowSyntheticDefaultImports, composite, module, moduleResolution, skipLibCheck, include
-
-### Community 40 - "BaselineAssembler"
-Cohesion: 0.20
-Nodes (8): Connections, BaselineAssembler, _normalise_course_map(), Accept {courseId: {compId: level}} or the legacy {courseId: [compId]}., {courseId: {compId: FRAC level}} — feeds BaselineAssembler so the Verified…, The old `requiredLevel - 1` cap made every evidence-backed gap permanent., test_completion_evidence_follows_the_crosswalk(), test_evidence_can_close_a_gap()
 
 ### Community 41 - "graphify reference: query, path, explain"
 Cohesion: 0.33
 Nodes (5): For /graphify explain, For /graphify path, graphify reference: query, path, explain, Step 0 — Constrained query expansion (REQUIRED before traversal), Step 1 — Traversal
 
 ### Community 42 - "CLAUDE.md"
-Cohesion: 0.22
-Nodes (8): Admin Dashboard, Connections, In / out, TODOs / edge cases, Connections, In / out, Mock iGOT Karmayogi Integration (Adapter + mock server + mock data), TODOs / edge cases
+Cohesion: 0.05
+Nodes (33): CLAUDE.md — index & router, Feature index, graphify, How to use these docs, Run commands, Admin Dashboard, Connections, In / out (+25 more)
 
 ### Community 43 - "main-lms-backend/main.py"
-Cohesion: 0.07
-Nodes (35): _ensure_can_view(), get_achievements_by_user_id(), get_admin_roster(), get_enrollments_by_user_id(), get_frac_competencies(), get_learning_pathway(), get_profile_by_user_id(), get_recommendations_by_user_id() (+27 more)
+Cohesion: 0.06
+Nodes (42): fastapi_middleware_cors, get_achievements(), get_achievements_by_user_id(), get_admin_roster(), get_enrollments_by_user_id(), get_profile_by_user_id(), get_recommendations_by_user_id(), get_skill_gaps_by_user_id() (+34 more)
 
 ### Community 44 - "graphify reference: add a URL and watch a folder"
 Cohesion: 0.50
@@ -343,32 +341,32 @@ Cohesion: 0.50
 Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify reference: commit hook and native CLAUDE.md integration
 
 ### Community 46 - "test_mock_data.py"
-Cohesion: 0.06
-Nodes (17): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only, Any, _read_disk(), data(), files(), fixture (+9 more)
+Cohesion: 0.07
+Nodes (15): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only, data(), files(), fixture, Mock-data generator (mock-igot-server/generate_mock_data.py): determinism, one…, _tags() (+7 more)
 
 ### Community 49 - "rag.py"
-Cohesion: 0.15
-Nodes (27): Code, _chunk_document_text(), _clean_text(), DocumentMetadata, DocumentUploadResponse, ErrorResponse, _extract_pdf(), _extract_pptx() (+19 more)
+Cohesion: 0.05
+Nodes (74): 7. Mismatches between the mermaid diagram and the code, Base, Conventions, Authentication & RBAC, Connections, In / out, Shared database (Neon), TODOs / edge cases (+66 more)
 
-### Community 58 - "LearnerDashboard.tsx"
-Cohesion: 0.08
-Nodes (26): LearnerDashboard, COLORS, LearningSnapshot(), Props, MyCoursesView(), MyCoursesViewProps, ProgressView(), AppShell() (+18 more)
+### Community 58 - "DashboardCreator"
+Cohesion: 0.16
+Nodes (4): AdminDashboardCreator, DashboardCreator, OfficialDashboardCreator, TrainerDashboardCreator
 
-### Community 60 - "EvidenceLog"
-Cohesion: 0.15
-Nodes (13): Certificate / Resume Evidence Extraction, Connections, In / out, TODOs / edge cases, Connections, In / out, Karma Points (gamification), TODOs / edge cases (+5 more)
+### Community 60 - "test_chat_messages.py"
+Cohesion: 0.23
+Nodes (11): Loads a language's template table on first use ("or" lives in or_.py; `or` is a…, templates(), _alternatives(), _fields(), parametrize, Catalogue completeness: every language has every template, placeholders are…, test_every_intent_renders(), test_placeholders_match_english() (+3 more)
 
 ### Community 61 - "estimate_uplift"
-Cohesion: 0.06
-Nodes (57): Cross-competency prerequisite DAG (SCIL v6 §5, B4), opportunity(), Any, services/gsbpm_service.py — GSBPM scoping (SCIL v6 §1) + opportunity to…, Opportunity to practise a competency in the official's office this cycle (SCIL…, Which competencies are in scope under the officer-hours rule, and why., scope_report(), _sp_name() (+49 more)
+Cohesion: 0.08
+Nodes (43): find_cycle(), infer_edges(), _node(), _norm_sf(), _ols(), Any, ndarray, services/prerequisite_service.py — cross-competency prerequisite DAG (SCIL v6… (+35 more)
 
-### Community 62 - "diagnostic.py"
-Cohesion: 0.20
-Nodes (14): get_current_user(), Session, Decodes the Bearer JWT, looks up the user in auth.db. Raises HTTP 401 for any…, answer(), AnswerBody, BaseModel, post, routers/diagnostic.py — adaptive "check your level" diagnostic (SCIL v6 §2,… (+6 more)
+### Community 62 - "UserAuth"
+Cohesion: 0.11
+Nodes (25): AuthBase, get_db(), Yields a database session and ensures it is closed after the request., UserAuth, get_enrollments(), get_recommendations(), get_skill_gaps(), Skill Gap Engine: dynamically computes competency gaps from iGOT history.… (+17 more)
 
 ### Community 63 - "MockIgotAdapter"
-Cohesion: 0.17
-Nodes (8): MockIgotAdapter, Forget every cached read for this user., GET a Sunbird endpoint and return its `result` object., GET /api/frac/v1/prerequisites — {count, edges[]} expert-seeded prerequisite…, GET /api/course/v1/assessment/outcomes — {outcomes[], comparisons[]} pre/post θ…, GET /api/assessment/v1/itembank — 2PL items incl. answer keys (server side…, GET /api/hrms/v1/officials — {officials{userId: DOB, superannuationDate,…, Calls the Sunbird-compliant mock iGOT server (mock_igot_server.py) on port 8001…
+Cohesion: 0.11
+Nodes (15): Cross-competency prerequisite DAG (SCIL v6 §5, B4), GSBPM scope — the 80% officer-hours rule (SCIL v6 §1), TODOs / limits, Workforce Insights (SCIL v6 — GSBPM scope, opportunity, admin foresight), MockIgotAdapter, Forget every cached read for this user., The full CBP course catalogue, paged through POST /api/composite/v1/search.…, POST /api/composite/v1/search — Sunbird composite search, every page. `filters`… (+7 more)
 
 ### Community 64 - "test_irt.py"
 Cohesion: 0.13
@@ -376,143 +374,155 @@ Nodes (23): DiagnosticSessions, fisher_information(), laplace_posterior(), next_
 
 ### Community 65 - "api.ts"
 Cohesion: 0.08
-Nodes (37): AGENDA_TYPE, CapabilityRiskPanel(), ForesightPanel(), GsbpmScopePanel(), pct(), PrerequisitePanel(), PRIORITY_CHIP, RISK_CHIP (+29 more)
+Nodes (43): AGENDA_TYPE, CapabilityRiskPanel(), ForesightPanel(), GsbpmScopePanel(), pct(), PrerequisitePanel(), PRIORITY_CHIP, RISK_CHIP (+35 more)
 
-### Community 66 - "Code"
-Cohesion: 0.23
-Nodes (12): Code, VideoScan, get_ocr(), probe(), ProbeResult, ndarray, FILE: services/media_quiz/probe.py…, `regions` — precomputed speech spans (e.g. from YouTube captions) instead of… (+4 more)
+### Community 66 - "probe.py"
+Cohesion: 0.26
+Nodes (11): VideoScan, get_ocr(), probe(), ProbeResult, ndarray, FILE: services/media_quiz/probe.py…, `regions` — precomputed speech spans (e.g. from YouTube captions) instead of…, Shared RapidOCR engine (PaddleOCR det/cls/rec models on ONNX Runtime). (+3 more)
 
 ### Community 67 - "generate_mock_data.py"
 Cohesion: 0.07
 Nodes (58): _batch(), build_acbp(), build_catalog(), build_crosswalk(), build_enrollments(), build_frac(), build_gsbpm_map(), build_hrms() (+50 more)
 
 ### Community 68 - "engine"
-Cohesion: 0.14
-Nodes (17): on_event, Create users_auth table if it doesn't exist yet., _startup(), _create_schema(), _create(), Create users_auth and the karma/evidence tables if missing (idempotent)., migrate_karma_schema(), Idempotent upgrade for databases created before the daily-cap rework: adds… (+9 more)
+Cohesion: 0.19
+Nodes (13): Reference data loading, on_event, Create users_auth table if it doesn't exist yet., _startup(), _course(), engine(), _frac(), fixture (+5 more)
 
-### Community 69 - "Any"
-Cohesion: 0.17
-Nodes (10): ILearningPlatformAdapter, ABC, Any, adapters/igot_adapter.py — iGOT Platform Adapter…, Interface for external learning platform integration. All concrete adapters…, Return the full CBP course catalog., Return learning history for a user (legacy, by govId or userId)., Return the full user roster (all officials). (+2 more)
+### Community 69 - "ILearningPlatformAdapter"
+Cohesion: 0.10
+Nodes (15): 2. Folder map, 4. Persistence, 5. Tech stack, 6. Design patterns actually implemented, Architecture — MoSPI AI Skill Intelligence Platform (SIH 2026), `main-lms-backend/` — FastAPI orchestrator, `mock-igot-server/` — external-system simulator, ILearningPlatformAdapter (+7 more)
 
-### Community 70 - "QuizAttempt"
-Cohesion: 0.25
-Nodes (8): CLAUDE.md — index & router, Conventions, Feature index, graphify, How to use these docs, Run commands, QuizAttempt, Persists every MCQ-quiz submission BEFORE evidence is written. UniqueConstraint…
+### Community 70 - "workforce_service.py"
+Cohesion: 0.31
+Nodes (13): _as_date(), capability_risk(), cell(), foresight(), _level(), _p_capable(), Any, date (+5 more)
 
-### Community 71 - "Code"
-Cohesion: 0.07
-Nodes (42): `frontend/src/`, Code, Connections, In / out, Learner Dashboard (frontend shell), TODOs / edge cases, Code, Opportunity to practise (SCIL v6 §4) (+34 more)
+### Community 71 - "LearnerDashboard.tsx"
+Cohesion: 0.06
+Nodes (49): Code, Opportunity to practise (SCIL v6 §4), LearnerDashboard, AssessmentUploadZone(), AssessmentUploadZoneProps, CompetencyOverviewTable(), LevelPips(), priorityOf() (+41 more)
 
 ### Community 72 - "get_enriched_courses"
 Cohesion: 0.33
 Nodes (7): composite_search(), _course_tags(), _enriched_view(), get_enriched_courses(), _matches_filters(), Sunbird-style filters: each key → value or list of accepted values., The catalogue in the older "enriched" shape. Query params:…
 
-### Community 76 - "HybridRecommendationEngine"
-Cohesion: 0.19
-Nodes (8): _fmt_levels(), HybridRecommendationEngine, One rung of a ladder. Finishing an in-progress course beats starting a new one., Singleton — built ONCE at app startup. Holds FAISS index + BM25 corpus in…, {courseId: title, primary competency, format, rating, enrolments} for analytics…, FRAC levels at which the catalogue has at least one course for comp_id., Computes and prioritizes skill gaps. priority_k = gap_k * (target_k / 5.0)…, Step-by-step path for one competency: one course per FRAC level from current+1…
+### Community 76 - "Any"
+Cohesion: 0.16
+Nodes (13): Measured uplift → coverage learning + training effectiveness (SCIL v6 §6, B5), _course_summary(), _diagnostic_step(), _fmt_levels(), _interleave_by_level(), Any, BaseModel, One rung of a ladder. Finishing an in-progress course beats starting a new one. (+5 more)
 
 ### Community 77 - "_sunbird_result"
-Cohesion: 0.22
-Nodes (6): fetch(), GET /api/frac/competencies — the catalogue FRAC set incl. L1–L5 descriptors., GET /api/frac/v1/crosswalk — iGOT dictionary CID id → catalogue FRAC id., GET /api/admin/v1/users Returns: result.users — full list of officials., Safely drill into a Sunbird envelope: data['result']['key1']['key2']..., _sunbird_result()
+Cohesion: 0.29
+Nodes (5): fetch(), GET /api/frac/v1/crosswalk — iGOT dictionary CID id → catalogue FRAC id., GET /api/admin/v1/users Returns: result.users — full list of officials., Safely drill into a Sunbird envelope: data['result']['key1']['key2']..., _sunbird_result()
 
-### Community 87 - "language_service.py"
-Cohesion: 0.24
-Nodes (11): detect_chat_language(), detect_chat_variant(), detect_chat_variant_or_none(), _devanagari_language(), Small, offline language routing for Gyan chat. This deliberately does *not* use…, Supported ISO 639-1 code for a chat message., The variant the *text itself* signals, or None when it carries no signal. Plain…, Internal language variant: en, hi (Devanagari), hi_latn (romanized Hindi), mr,… (+3 more)
+### Community 87 - "Code"
+Cohesion: 0.12
+Nodes (21): Code, classify_intent(), low_confidence_threshold(), Returns (best_intent, confidence). ("general", 0.0) if the embedder is…, chat(), detect_intent_keyword(), post, Multilingual AI Learning Assistant — Gyan (ज्ञान). (+13 more)
 
-### Community 88 - "grade_quiz"
-Cohesion: 0.17
-Nodes (10): Authentication & RBAC, Connections, In / out, Shared database (Neon), TODOs / edge cases, _detect_skill_name(), grade_quiz(), post (+2 more)
+### Community 88 - "test_reply_regression.py"
+Cohesion: 0.30
+Nodes (10): ChatHistoryItem, ChatRequest, BaseModel, RecommendationContext, SkillGapContext, sample_request(), parametrize, English and Hinglish replies must match the pre-catalogue output, except… (+2 more)
 
-### Community 89 - "chatbot.py"
-Cohesion: 0.09
-Nodes (30): difflib, is_embedder_ready(), model_name(), Non-blocking check — True only if the role's model is already loaded., classify_intent(), _correct_tokens(), _ensure_prototypes(), is_semantic_engine_ready() (+22 more)
+### Community 89 - "chat_actions.py"
+Cohesion: 0.50
+Nodes (4): detect_ui_actions(), _mentions(), Detect website theme / language changes requested in any supported chat…, Returns (theme, language): theme in {"dark", "light", "toggle"}, language in…
 
 ### Community 90 - "mock-igot-server/main.py"
 Cohesion: 0.12
 Nodes (21): contextlib, enroll_user(), EnrollRequest, get_catalog(), get_frac_dictionary(), get_job_profiles(), get_user_history(), health() (+13 more)
 
-### Community 91 - "3. Core data flow"
-Cohesion: 0.11
-Nodes (17): 3. Core data flow, AsyncClient, AI Course Recommendation Engine + Learning Pathways, In / out, TODOs / edge cases, fetch(), fetch(), fetch() (+9 more)
+### Community 91 - "Any"
+Cohesion: 0.17
+Nodes (12): AsyncClient, fetch(), fetch(), fetch(), Any, Pooled client for the running loop — no new TCP connection per call., TTL memo for one user's read. Concurrent callers share one in-flight request;…, GET /api/evidence/v1/user/{id} — EvidenceLog-style workplace evidence rows ([]… (+4 more)
 
 ### Community 92 - "_user_enrolments"
-Cohesion: 0.50
-Nodes (4): legacy_user_history(), Merge seed enrolments with any runtime mutations., ICatalogSync.fetchUserHistory() — consumed by MockIgotPlatformAdapter., _user_enrolments()
-
-### Community 93 - "._score_candidates"
-Cohesion: 0.16
-Nodes (12): _course_summary(), GapEntry, _interleave_by_level(), BaseModel, ndarray, The id whose FRAC tags / levels / official text drive retrieval., Best course of each level (ascending), then the second-best of each, … Input…, (query embedding, BM25 scores over the whole corpus), cached. (+4 more)
-
-### Community 94 - "Workforce Insights (SCIL v6 — GSBPM scope, opportunity, admin foresight)"
-Cohesion: 0.33
-Nodes (5): Measured uplift → coverage learning + training effectiveness (SCIL v6 §6, B5), Reference data loading, TODOs / limits, Workforce Insights (SCIL v6 — GSBPM scope, opportunity, admin foresight), Attach per-course measured uplift (uplift_service.estimate_uplift) — SCIL v6 §6.
-
-### Community 95 - "lifespan"
-Cohesion: 0.33
-Nodes (7): lifespan(), _load_json(), _load_json_from_dir(), Any, FastAPI, Load all datasets into memory once at startup, so no request touches the file…, Load a JSON file from ROOT_DIR. Raises RuntimeError on missing file.
-
-### Community 96 - "RAG Document → Quiz Generator & Grading"
 Cohesion: 0.40
-Nodes (4): Connections, In / out, RAG Document → Quiz Generator & Grading, TODOs / edge cases
+Nodes (5): get_admin_roster(), legacy_user_history(), Merge seed enrolments with any runtime mutations., ICatalogSync.fetchUserHistory() — consumed by MockIgotPlatformAdapter., _user_enrolments()
+
+### Community 93 - "HybridRecommendationEngine"
+Cohesion: 0.17
+Nodes (12): Before / after metrics, GapEntry, HybridRecommendationEngine, ndarray, Singleton — built ONCE at app startup. Holds FAISS index + BM25 corpus in…, FRAC levels at which the catalogue has at least one course for comp_id., Computes and prioritizes skill gaps. priority_k = gap_k * (target_k / 5.0)…, (query embedding, BM25 scores over the whole corpus), cached. (+4 more)
+
+### Community 94 - ".fetch_frac_competencies"
+Cohesion: 0.18
+Nodes (10): Noticed but out of scope (not fixed), GET /api/frac/competencies — the catalogue FRAC set incl. L1–L5 descriptors., calculate_baseline(), EvidencePayload, BaseModel, post, UploadFile, Calculates the skill baseline score b_k ∈ [0, 5] using the locked 6-term… (+2 more)
+
+### Community 95 - "mock_igot_server.py"
+Cohesion: 0.11
+Nodes (22): exception_handler, fastapi_responses, HTTPException, health(), http_exc_handler(), legacy_catalog(), legacy_frac(), legacy_job_profiles() (+14 more)
+
+### Community 96 - "test_chat_endpoint.py"
+Cohesion: 0.36
+Nodes (9): fastapi_testclient, _chat(), parametrize, End-to-end /chat behaviour per language through the real multilingual…, test_dark_mode_action(), test_my_courses_navigation(), test_recommendations(), test_skill_gaps() (+1 more)
 
 ### Community 97 - "CourseRecommendation"
 Cohesion: 0.23
 Nodes (10): ChatWidgetProps, CourseCard(), CourseCardProps, getSourceStyle(), MatchScoreBarProps, SOURCE_STYLES, matches(), Props (+2 more)
 
-### Community 98 - "._quality_score"
-Cohesion: 0.50
-Nodes (3): Bayesian shrinkage toward global prior mean. Returns None if either input is…, quality = 0.35*completion_n + 0.35*rating_n + 0.20*pop_n + 0.10*tpac_flag FIX…, _shrunk_rating()
+### Community 98 - "Code"
+Cohesion: 0.13
+Nodes (11): Code, Connections, _CourseDoc, _parse_level(), The id whose FRAC tags / levels / official text drive retrieval., Bayesian shrinkage toward global prior mean. Returns None if either input is…, Level 3' / 3 / '3' → 3; anything outside 1..5 → None., {courseId: {compId: FRAC level}} — feeds BaselineAssembler so the Verified… (+3 more)
 
 ### Community 99 - "recommendation_service.py"
-Cohesion: 0.09
-Nodes (24): Code, _Embedder, encode_cached(), get_embedder(), _load(), onnx_model_dir(), _OnnxEmbedder, ndarray (+16 more)
+Cohesion: 0.06
+Nodes (47): difflib, Code, json, logging, _Embedder, encode_cached(), get_embedder(), is_embedder_ready() (+39 more)
 
-### Community 100 - "json"
-Cohesion: 0.14
-Nodes (16): argparse, collections, io, json, load_eval(), main(), Benchmark Gyan's intent classifier on the held-out multilingual set. python…, live_metrics() (+8 more)
+### Community 100 - "mock_data_metrics.py"
+Cohesion: 0.13
+Nodes (14): argparse, collections, httpx, Benchmark Gyan's intent classifier on the held-out multilingual set. python…, live_metrics(), _login(), main(), offline_metrics() (+6 more)
 
 ### Community 101 - "Code"
-Cohesion: 0.22
-Nodes (8): Code, GSBPM scope — the 80% officer-hours rule (SCIL v6 §1), _competencies(), _prof_detail(), GET /api/gsbpm/v1/map — GSBPM sub-processes + competency → sub-processes., GET /api/org/v1/offices — {cycle, offices[{officeId, subprocesses[{id,…, Safely read a field from profileDetails.professionalDetails[0]., Return the competencies list from profileDetails.competencies.
+Cohesion: 0.29
+Nodes (6): Code, _competencies(), _prof_detail(), GET /api/hrms/v1/officials — {officials{userId: DOB, superannuationDate,…, Safely read a field from profileDetails.professionalDetails[0]., Return the competencies list from profileDetails.competencies.
 
 ### Community 102 - "authApi.ts"
-Cohesion: 0.31
-Nodes (10): AuthProvider(), changePassword(), extractError(), getMe(), login(), LoginResponse, logout(), refresh() (+2 more)
+Cohesion: 0.27
+Nodes (11): AuthProvider(), mapRole(), changePassword(), extractError(), getMe(), login(), LoginResponse, logout() (+3 more)
 
-### Community 106 - "router.py"
-Cohesion: 0.14
-Nodes (19): fastapi, fastapi_security, get_db(), auth/database.py…, Yields a database session and ensures it is closed after the request., auth/dependencies.py…, auth/models.py…, get_me() (+11 more)
+### Community 103 - "1. Runtime topology"
+Cohesion: 0.25
+Nodes (8): 1. Runtime topology, AI Course Recommendation Engine + Learning Pathways, In / out, TODOs / edge cases, on_event, Return at once so uvicorn binds the port; schema + warm-up run in the…, _readiness_gate(), _startup()
 
-### Community 107 - "question_gen.py"
-Cohesion: 0.24
-Nodes (17): Chunk, fmt_ts(), gemini_json(), ollama_vision_json(), parse_json(), Any, _chunk_pass(), _coerce() (+9 more)
+### Community 104 - "_PrerequisiteGate"
+Cohesion: 0.33
+Nodes (3): _PrerequisiteGate, Cross-competency prerequisite DAG for build_study_plan (SCIL v6 §5, B4). A rung…, Edges that changed or annotate the plan: ordered (waited, then met), blocked,…
+
+### Community 105 - "Dated decay, cold start and workforce foresight (SCIL v6 §2 / §11, B8)"
+Cohesion: 0.50
+Nodes (4): Cold start for UNASSESSED competencies, Dated decay, cold start and workforce foresight (SCIL v6 §2 / §11, B8), Foresight, Proficiency belief with dated decay
+
+### Community 106 - "dependencies.py"
+Cohesion: 0.18
+Nodes (10): fastapi, fastapi_security, get_current_user(), Session, auth/dependencies.py…, Decodes the Bearer JWT, looks up the user in auth.db. Raises HTTP 401 for any…, Returns a FastAPI dependency that checks the current user's role. Example:…, require_role() (+2 more)
+
+### Community 107 - "_resolve_competency_state"
+Cohesion: 0.50
+Nodes (4): iGOT profile competencyLevel ('Level 3') → 3; missing → 0 (no claim)., Profile + enrollments + EvidenceLog → one resolved row per role competency.…, _resolve_competency_state(), _self_reported_level()
 
 ### Community 108 - "Decisions log (made without the user)"
-Cohesion: 0.20
-Nodes (7): Before / after metrics, Could not do / blocked, Decisions log (made without the user), SCIL v6 — mock data + blocked features: progress report, Status, Catalogue duration in hours, or None for a course not in the catalogue., Median cosine between the competency query and the courses NOT tagged with it —…
+Cohesion: 0.29
+Nodes (5): Could not do / blocked, Decisions log (made without the user), SCIL v6 — mock data + blocked features: progress report, Status, Catalogue duration in hours, or None for a course not in the catalogue.
 
-### Community 110 - "Timeline"
-Cohesion: 0.14
-Nodes (9): Interpreter guard for subcommands, dataclasses, build_chunks(), Evidence, _make_chunk(), FILE: services/media_quiz/evidence.py…, slide_windows: [{"t_start", "t_end", "evidence_ids": [ocr/vlm ids of that…, _tag() (+1 more)
+### Community 109 - "decay"
+Cohesion: 0.50
+Nodes (4): decay(), (μ_t, σ_t, λ) — relax the belief toward the population prior as evidence ages., test_accuracy_skills_decay_faster_than_procedural(), test_decay_relaxes_toward_the_population_mean_not_zero()
 
 ## Knowledge Gaps
-- **256 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+251 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 811 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **253 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+248 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 809 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `UserAuth` connect `UserAuth` to `seed.py`, `Code`, `karma.py`, `main_backup.py`, `router.py`, `main-lms-backend/main.py`, `rag.py`, `grade_quiz`, `diagnostic.py`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
-- **Why does `Code` connect `Code` to `seed.py`, `engine`, `KarmaRewardsView.tsx`, `router.py`, `UserAuth`, `grade_quiz`?**
-  _High betweenness centrality (0.052) - this node is a cross-community bridge._
-- **Why does `Code` connect `ChatWidget.tsx` to `ReplyContext`, `engine`, `language_service.py`, `chatbot.py`, `_warm_up`?**
-  _High betweenness centrality (0.052) - this node is a cross-community bridge._
+- **Why does `UserAuth` connect `UserAuth` to `seed.py`, `router.py`, `3. Core data flow`, `karma.py`, `dependencies.py`, `main-lms-backend/main.py`, `insights.py`, `rag.py`, `opportunity`?**
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+- **Why does `Code` connect `Code` to `chatbot.py`, `recommendation_service.py`, `engine`, `ChatWidget.tsx`, `CLAUDE.md`, `test_reply_regression.py`?**
+  _High betweenness centrality (0.050) - this node is a cross-community bridge._
+- **Why does `Code` connect `Code` to `api.ts`, `karma.py`, `KarmaRewardsView.tsx`, `useLearnerDashboard.ts`, `rag.py`, `domain.ts`, `Any`, `UserAuth`?**
+  _High betweenness centrality (0.050) - this node is a cross-community bridge._
 - **Are the 47 inferred relationships involving `UserAuth` (e.g. with `Code` and `get_current_user()`) actually correct?**
   _`UserAuth` has 47 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 45 inferred relationships involving `Code` (e.g. with `KarmaCard()` and `formatPoints()`) actually correct?**
+  _`Code` has 45 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 4 inferred relationships involving `HybridRecommendationEngine` (e.g. with `7. Mismatches between the mermaid diagram and the code` and `Code`) actually correct?**
   _`HybridRecommendationEngine` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _256 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `ReplyContext` be split into smaller, more focused modules?**
-  _Cohesion score 0.058333333333333334 - nodes in this community are weakly interconnected._
+  _253 weakly-connected nodes found - possible documentation gaps or missing edges._

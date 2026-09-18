@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "main-lms-backend/routers/karma.py": {
-    "mtime": 1789759873.6279507,
-    "seen": 1789760121.222628,
-    "ast_hash": "f5b3006ee30b9020143d50266b5226a5",
+    "mtime": 1789760181.92911,
+    "seen": 1789760254.2272449,
+    "ast_hash": "d88198f4568fef04083224fc6480e329",
     "semantic_hash": ""
   },
   "main-lms-backend/routers/rag.py": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "ARCHITECTURE.md": {
-    "mtime": 1789757687.5547593,
-    "seen": 1789757730.8743641,
-    "ast_hash": "a529306beb929b88cb9686f3fc3361e3",
+    "mtime": 1789760238.7814882,
+    "seen": 1789760254.2516313,
+    "ast_hash": "8464f51968ca776ad32de81c6fbb4676",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -594,15 +594,15 @@
     "semantic_hash": ""
   },
   "docs/features/karma-points.md": {
-    "mtime": 1789740217.8223383,
-    "seen": 1789740253.3100402,
-    "ast_hash": "cc8f0e668f10bc4f1b72e9e5c73c754c",
+    "mtime": 1789760222.0597322,
+    "seen": 1789760254.2530549,
+    "ast_hash": "f91c99fd5f20dcb333186d8c12ea0beb",
     "semantic_hash": ""
   },
   "docs/features/learner-dashboard.md": {
-    "mtime": 1789759121.8401978,
-    "seen": 1789759174.9509807,
-    "ast_hash": "ed19869b429f5b41d1c97b82888ae70b",
+    "mtime": 1789760238.7289188,
+    "seen": 1789760254.253058,
+    "ast_hash": "8165da33ecde40e98f357bbef6113497",
     "semantic_hash": ""
   },
   "docs/features/mock-igot-integration.md": {
@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "docs/features/rag-quiz-generator.md": {
-    "mtime": 1789756470.9523244,
-    "seen": 1789756595.2658286,
-    "ast_hash": "6594609e098fd413741d8e48a17a2fb2",
+    "mtime": 1789760238.72992,
+    "seen": 1789760254.2538269,
+    "ast_hash": "4bff360d52b315039fa15056e649bba0",
     "semantic_hash": ""
   },
   "docs/features/recommendation-engine.md": {
