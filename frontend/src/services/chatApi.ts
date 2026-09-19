@@ -11,6 +11,7 @@
  */
 
 import type { SkillGapEntry, CourseRecommendation } from '../types/domain';
+import { API_BASE_URL } from '../config';
 
 /** Mirrors the backend: `SUPPORTED_CHAT_LANGUAGES` plus `hi_latn` (romanized
  *  Hindi), which is a reply *variant* rather than an ISO language. */
@@ -308,7 +309,7 @@ export async function sendChatMessage(
   };
 
   try {
-    const res = await fetch('/api/v1/chat', {
+    const res = await fetch(`${API_BASE_URL}/api/v1/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

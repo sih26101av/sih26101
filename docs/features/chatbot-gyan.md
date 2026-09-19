@@ -37,7 +37,7 @@ Backend:
 - `main-lms-backend/ai/embedder.py` — shared singleton, see `shared-embedder.md`.
 
 Frontend:
-- `src/services/chatApi.ts` — posts to `/api/v1/chat` (Vite proxies `/api` → :8000);
+- `src/services/chatApi.ts` — posts to `${API_BASE_URL}/api/v1/chat` (`src/config.ts`; a bare `/api/...` path breaks on Vercel);
   on any failure falls back to a **client-side** reply engine (`detectLanguage`,
   `detectIntent`, `buildLocalReply`) so the widget never appears dead.
 - `src/hooks/useChatEngine.ts` — message state, typing delay, executes `theme` and
