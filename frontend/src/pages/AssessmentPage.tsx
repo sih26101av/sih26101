@@ -22,7 +22,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight, Bot, CheckCircle, FilePlus, File, FileText, History,
+  ArrowRight, Bot, BookOpen, CheckCircle, FilePlus, File, FileText, History,
   LayoutDashboard, Link as LinkIcon, Mic, Settings, Timer, Video, X, XCircle,
 } from "lucide-react";
 
@@ -37,9 +37,20 @@ import { MEDIA_ACCEPT, generateMediaQuiz, generateYoutubeQuiz, isMediaFile, isYo
 import SectionCard from "../components/shell/SectionCard";
 import { DifficultyChip, QuizQuestionReview, QuizRecommendations, SkillImpactCard } from "../components/assessment/QuizSkillImpact";
 import QuizQuestionInput, { TYPE_LABEL, emptyAnswer, isAnswered, type QuizLang } from "../components/assessment/QuizQuestionInput";
+import LearningChat from "../components/assessment/LearningChat";
+import { startLearningSession, type LearningStartResponse } from "../services/learningApi";
+import { consumePendingStudioUpload } from "../services/pendingStudioUpload";
 
-type StudioTab = "new_quiz" | "history" | "settings";
+type StudioTab = "new_quiz" | "history" | "settings" | "learning";
 type Difficulty = "Easy" | "Medium" | "Hard";
+
+/** Cosmetic only — which upload-format chip to highlight for a file Gyan hands off. */
+const guessUploadFormat = (f: File): string => {
+  if (isMediaFile(f)) {
+    return /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|wma)$/i.test(f.name) ? "audio" : "video";
+  }
+  return /\.docx?$/i.test(f.name) ? "word" : "pdf";
+};
 
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
 const QUESTION_TYPES: QuizQuestionType[] = ["mcq", "true_false", "multi_select", "fill_blank", "numeric"];
@@ -76,6 +87,11 @@ const AssessmentPage: React.FC = () => {
   const [quizData, setQuizData] = useState<any>(null);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [scoreInfo, setScoreInfo] = useState<QuizGradeResult | null>(null);
+
+  // ── Learning Mode: NotebookLM-style study chat over the same upload ───────
+  const [learningSession, setLearningSession] = useState<LearningStartResponse | null>(null);
+  const [learningLoading, setLearningLoading] = useState(false);
+  const [learningError, setLearningError] = useState("");
 
   const [activeTab, setActiveTab] = useState<StudioTab>("new_quiz");
   const [selectedFormat, setSelectedFormat] = useState("pdf");
@@ -121,12 +137,13 @@ const AssessmentPage: React.FC = () => {
 
   const triggerFileInput = () => inputRef.current?.click();
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (fileOverride?: File) => {
+    const activeFile = fileOverride ?? file;
     // Video / audio / YouTube go to the media pipeline (services/mediaQuizApi.ts).
     const useYoutube = selectedFormat === "text" && youtubeUrl.trim() !== "";
     if (useYoutube && !isYoutubeUrl(youtubeUrl)) { setErrorMsg("Please paste a valid YouTube link."); return; }
-    if (!file && !useYoutube) { setErrorMsg("Please upload a document to proceed."); return; }
-    const isMedia = useYoutube || (file !== null && isMediaFile(file));
+    if (!activeFile && !useYoutube) { setErrorMsg("Please upload a document to proceed."); return; }
+    const isMedia = useYoutube || (activeFile !== null && isMediaFile(activeFile));
     setErrorMsg("");
     setStatus("loading");
     if (isMedia) {
@@ -137,7 +154,7 @@ const AssessmentPage: React.FC = () => {
       try {
         const data = useYoutube
           ? await generateYoutubeQuiz(youtubeUrl, difficulty)
-          : await generateMediaQuiz(file as File, difficulty);
+          : await generateMediaQuiz(activeFile as File, difficulty);
         setQuizData(data);
         setAnswers(data.questions.map((q: DocQuizQuestion) => emptyAnswer(q)));
         setDisplayLang("en");
@@ -156,7 +173,7 @@ const AssessmentPage: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file as File);
+      formData.append("file", activeFile as File);
       formData.append("user_id", userId);
       formData.append("difficulty", difficulty);
       formData.append("num_questions", String(numQuestions));
@@ -184,6 +201,37 @@ const AssessmentPage: React.FC = () => {
       setStatus("idle");
     }
   };
+
+  const startLearning = useCallback(async (f: File) => {
+    setLearningLoading(true);
+    setLearningError("");
+    try {
+      setLearningSession(await startLearningSession(f));
+    } catch (err: any) {
+      console.error(err);
+      setLearningError(err.message || "Could not start a study session from this document.");
+    } finally {
+      setLearningLoading(false);
+    }
+  }, []);
+
+  // Gyan hands off an already-uploaded document here (see services/pendingStudioUpload.ts) —
+  // the learner asked for a quiz or to study it, so pick up right where they left the chat.
+  useEffect(() => {
+    const pending = consumePendingStudioUpload();
+    if (!pending) return;
+    if (pending.mode === "learn") {
+      setActiveTab("learning");
+      void startLearning(pending.file);
+    } else {
+      setFile(pending.file);
+      setSelectedFormat(guessUploadFormat(pending.file));
+      setErrorMsg("");
+      void handleGenerate(pending.file);
+    }
+    // Runs once, on mount — consumePendingStudioUpload() clears the hand-off after reading it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setAnswer = (qIndex: number, value: QuizAnswer) => {
     setAnswers((cur) => cur.map((a, i) => (i === qIndex ? value : a)));
@@ -234,6 +282,7 @@ const AssessmentPage: React.FC = () => {
       items: [
         { id: "dashboard", label: "Back to Dashboard", icon: LayoutDashboard },
         { id: "new_quiz", label: "New Assessment", icon: FilePlus },
+        { id: "learning", label: "Learning Mode", icon: BookOpen },
         { id: "history", label: "History", icon: History, badge: history.length || undefined },
         { id: "settings", label: "Settings", icon: Settings },
       ],
@@ -242,6 +291,7 @@ const AssessmentPage: React.FC = () => {
 
   const META: Record<StudioTab, { title: string; subtitle: string }> = {
     new_quiz: { title: "Assessment Studio", subtitle: "Generate a competency-tagged assessment from any NSO training document." },
+    learning: { title: "Learning Mode", subtitle: "Study any uploaded document in a grounded chat — NotebookLM-style, with source citations." },
     history:  { title: "Assessment History", subtitle: "Every RAG assessment on your verified achievement record." },
     settings: { title: "Studio Settings", subtitle: "Preferences for assessment generation." },
   };
@@ -364,7 +414,7 @@ const AssessmentPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                  <button type="button" onClick={handleGenerate} className="gov-btn-primary !px-6 !py-3">
+                  <button type="button" onClick={() => handleGenerate()} className="gov-btn-primary !px-6 !py-3">
                     <Bot size={16} /> Generate Assessment
                   </button>
 
@@ -451,6 +501,16 @@ const AssessmentPage: React.FC = () => {
                 )}
               </SectionCard>
             </>
+          )}
+
+          {activeTab === "learning" && (
+            <LearningChat
+              session={learningSession}
+              loading={learningLoading}
+              error={learningError}
+              onUpload={(f) => { void startLearning(f); }}
+              onReset={() => { setLearningSession(null); setLearningError(""); }}
+            />
           )}
 
           {(activeTab === "new_quiz" || activeTab === "history") && (

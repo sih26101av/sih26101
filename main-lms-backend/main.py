@@ -37,6 +37,7 @@ from models.domain import (
 from routers.chatbot import router as chatbot_router
 from routers.rag import router as rag_router
 from routers.media_quiz import router as media_quiz_router
+from routers.learning_mode import router as learning_mode_router
 from routers.ai_tools import router as ai_tools_router
 from routers.karma import router as karma_router
 import httpx
@@ -305,6 +306,7 @@ app.include_router(auth_router,    prefix="/auth",       tags=["auth"])
 app.include_router(chatbot_router, prefix="/api/v1",     tags=["chatbot"])
 app.include_router(rag_router,     prefix="/api/v1/rag", tags=["rag"])
 app.include_router(media_quiz_router, prefix="/api/v1/rag/media", tags=["media-quiz"])
+app.include_router(learning_mode_router, prefix="/api/v1/rag/learning", tags=["learning-mode"])
 app.include_router(ai_tools_router,prefix="/api/v1/ai",  tags=["ai-tools"])
 app.include_router(karma_router,   prefix="/api/v1",     tags=["karma"])
 app.include_router(competency.router)

@@ -14,7 +14,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X, Send, Bot, ChevronDown, ChevronRight, Mic, MicOff, Navigation,
-  Target, GraduationCap, TrendingUp, ClipboardCheck, Lightbulb, AudioLines, Landmark,
+  Target, GraduationCap, TrendingUp, ClipboardCheck, Lightbulb, AudioLines, Landmark, Paperclip,
 } from 'lucide-react';
 import type { SkillGapEntry, CourseRecommendation } from '../../types/domain';
 import type { ChatLanguage, NavigateAction } from '../../services/chatApi';
@@ -25,6 +25,13 @@ import { GyanBot, GyanHero } from '../chat/GyanAvatar';
 import LanguageMenu from '../chat/LanguageMenu';
 import { AshokaChakra } from '../gov/GovUI';
 import { chatCopy, languageOption, type ChatCopy } from '../../i18n/chatLanguages';
+import { setPendingStudioUpload, type StudioMode } from '../../services/pendingStudioUpload';
+
+// A document is already attached in the chat — read the reply as a mode pick
+// instead of sending it to the (offline, document-blind) chat backend.
+const QUIZ_INTENT_RE = /\b(quiz|test|assess|question|mcq|exam)\b/i;
+const LEARN_INTENT_RE = /\b(learn|study|understand|explain|summar|notes?|teach)\b/i;
+const STUDIO_ACCEPT = '.pdf,.docx,.pptx,.txt';
 
 // ─── Capability cards — each sends a real prompt to the engine ───────────────
 // `label` / `ask` are keys into the per-language copy table, so a new language
@@ -215,7 +222,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [lang, setLang]             = useState<ChatLanguage>('en');
   const [hasUnread, setHasUnread]   = useState(true);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const inputRef                    = useRef<HTMLTextAreaElement>(null);
+  const attachInputRef              = useRef<HTMLInputElement>(null);
   const chatPanelRef                = useRef<HTMLDivElement>(null);
 
   const { theme, toggleTheme } = useTheme();
@@ -241,6 +250,34 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const activeGapsCount = skillGaps.filter(g => g.gap > 0).length;
 
+  // ── Document hand-off to the Assessment Studio (quiz / Learning Mode) ──────
+  // Gyan stays offline (no API key), so it never reads the file itself — it
+  // only carries it to the Studio, which already has GEMINI_API_KEY wired up.
+  const handleAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setPendingFile(f);
+    e.target.value = '';
+  };
+
+  const startStudio = useCallback((mode: StudioMode) => {
+    if (!pendingFile) return;
+    setPendingStudioUpload(pendingFile, mode);
+    setPendingFile(null);
+    onNavigate?.({
+      type: 'redirect',
+      target: '/assessment',
+      label: mode === 'quiz' ? 'Assessment Studio' : 'Assessment Studio — Learning Mode',
+    });
+  }, [pendingFile, onNavigate]);
+
+  const sendWithAttachment = useCallback((text: string) => {
+    if (pendingFile) {
+      if (QUIZ_INTENT_RE.test(text)) { startStudio('quiz'); return; }
+      if (LEARN_INTENT_RE.test(text)) { startStudio('learn'); return; }
+    }
+    handleSend(text);
+  }, [pendingFile, startStudio, handleSend]);
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 300);
@@ -258,7 +295,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend(inputValue);
+      sendWithAttachment(inputValue);
       setInputValue('');
     }
   };
@@ -267,10 +304,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     setInputValue(text);
     // Auto-send after brief delay so user can see what was recognized
     setTimeout(() => {
-      handleSend(text);
+      sendWithAttachment(text);
       setInputValue('');
     }, 800);
-  }, [handleSend]);
+  }, [sendWithAttachment]);
 
   const canSend = Boolean(inputValue.trim()) && !isTyping;
 
@@ -385,6 +422,38 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Attached-document banner — attach → pick quiz or Learning Mode → Assessment Studio */}
+        {pendingFile && (
+          <div className="animate-bubble-in mx-3.5 mb-3 flex flex-col gap-2 rounded-2xl border border-gov-sky/25 bg-gradient-to-br from-[#eef4ff] to-white p-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Paperclip size={13} className="flex-shrink-0 text-gov-blue" />
+              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-gov-navy">{pendingFile.name}</span>
+              <button
+                onClick={() => setPendingFile(null)}
+                aria-label="Remove attached document"
+                className="rounded-md p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500">What should I do with this document?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => startStudio('quiz')}
+                className="flex-1 rounded-xl bg-gradient-to-br from-gov-navy to-gov-blue py-1.5 text-[11px] font-bold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+              >
+                📝 Generate a quiz
+              </button>
+              <button
+                onClick={() => startStudio('learn')}
+                className="flex-1 rounded-xl border border-gov-blue/30 bg-white py-1.5 text-[11px] font-bold text-gov-navy shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+              >
+                📖 Help me study this
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Confirmation Banner */}
         {pendingNav && (
           <NavConfirmBanner
@@ -401,8 +470,25 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             <Landmark size={64} strokeWidth={1} />
           </div>
 
+          <input
+            ref={attachInputRef}
+            type="file"
+            className="hidden"
+            accept={STUDIO_ACCEPT}
+            aria-label="Attach a document for a quiz or Learning Mode"
+            onChange={handleAttach}
+          />
+
           <div className="relative flex items-end gap-1.5 rounded-[22px] border border-slate-200 bg-slate-50/80 py-1.5 pl-4 pr-1.5
             transition-all duration-200 focus-within:border-gov-blue/40 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(47,111,191,0.10)]">
+            <button
+              onClick={() => attachInputRef.current?.click()}
+              title="Attach a document (quiz or Learning Mode)"
+              aria-label="Attach a document"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-slate-400 transition-all hover:bg-white hover:text-gov-navy hover:shadow-sm"
+            >
+              <Paperclip size={16} />
+            </button>
             <textarea
               ref={inputRef}
               value={inputValue}
@@ -420,7 +506,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             />
             <VoiceButton lang={lang} onResult={onVoiceResult} />
             <button
-              onClick={() => { handleSend(inputValue); setInputValue(''); }}
+              onClick={() => { sendWithAttachment(inputValue); setInputValue(''); }}
               disabled={!canSend}
               aria-label="Send message"
               className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-white transition-all duration-200

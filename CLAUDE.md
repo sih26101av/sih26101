@@ -23,6 +23,7 @@ System design, folder map, data flow and the mermaid-vs-code mismatches:
 | AI course recommendations (FAISS + BM25 + RRF) | [docs/features/recommendation-engine.md](docs/features/recommendation-engine.md) |
 | RAG document → quiz + grading → evidence | [docs/features/rag-quiz-generator.md](docs/features/rag-quiz-generator.md) |
 | Video / audio / YouTube → evidence-cited quiz | [docs/features/media-quiz-generator.md](docs/features/media-quiz-generator.md) |
+| Learning Mode (NotebookLM-style study chat) | [docs/features/learning-mode.md](docs/features/learning-mode.md) |
 | Gyan chatbot (semantic + template tiers) | [docs/features/chatbot-gyan.md](docs/features/chatbot-gyan.md) |
 | Karma points / gamification | [docs/features/karma-points.md](docs/features/karma-points.md) |
 | Certificate → FRAC evidence extraction | [docs/features/certificate-evidence-extraction.md](docs/features/certificate-evidence-extraction.md) |

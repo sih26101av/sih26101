@@ -61,7 +61,7 @@ request. All mock data is synthetic and comes from one deterministic generator,
 | `adapters/` | `ILearningPlatformAdapter` port + `MockIgotAdapter` HTTP adapter to port 8001 |
 | `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (certificate → FRAC: Gemini, else OCR + e5), `media_quiz/` (probe → route → evidence timeline → cited MCQs) |
 | `ai/` | `embedder.py` (shared ONNX/sentence-transformers singleton), `semantic_engine.py` (chatbot intent classifier), `rag_engine.py` + `vector_store.py` + `seed_knowledge.py` (Ollama/ChromaDB — **disconnected**, Tier 3) |
-| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `competency.py` (certificate upload + admin verification, baseline calc), `career.py` (next-role career readiness, level disputes), `recommendation_feedback.py` (clicks / enrolments / thumbs), `diagnostic.py` (adaptive level check), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload), `insights.py` (SCIL v6 admin views), `admin_console.py` (admin KPIs / roster pages / trends / assignments / nudges / emerging skills / system health / CSV exports) |
+| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `learning_mode.py` (NotebookLM-style study chat over an uploaded document, mounted at `/api/v1/rag/learning`), `competency.py` (certificate upload + admin verification, baseline calc), `career.py` (next-role career readiness, level disputes), `recommendation_feedback.py` (clicks / enrolments / thumbs), `diagnostic.py` (adaptive level check), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload), `insights.py` (SCIL v6 admin views), `admin_console.py` (admin KPIs / roster pages / trends / assignments / nudges / emerging skills / system health / CSV exports) |
 | `models/` | `models.py` (SQLAlchemy domain + evidence/quiz/karma tables), `domain.py` (Pydantic response schemas) |
 | `scripts/` | `download_model.py` (build step: ONNX exports → `ai/.cache/onnx/`, pre-warms `ai/.cache/emb/`), `quantize_model.py` (legacy `model_int8.onnx`), `eval_intents.py` |
 
@@ -183,6 +183,15 @@ synthetic mock data.
 backend runs regex intercepts → semantic intent classification → templated reply,
 optionally returning `navigate_action(s)` the frontend executes (tab switch,
 scroll, theme, language, login modal).
+
+**Chat → Assessment Studio hand-off** — Gyan stays offline (no LLM key), so it
+never reads an attached document itself. The learner attaches a file in the
+chat widget and picks "Generate a quiz" or "Help me study this"; the frontend
+stores the `File` in a module singleton (`services/pendingStudioUpload.ts`) and
+sends a `redirect` `navigate_action` to `/assessment`. On mount, the Assessment
+Studio consumes that singleton and either auto-runs `/api/v1/rag/upload` (quiz)
+or `/api/v1/rag/learning/start` (Learning Mode) — the learner never re-uploads.
+See `docs/features/chatbot-gyan.md` and `docs/features/learning-mode.md`.
 
 ---
 

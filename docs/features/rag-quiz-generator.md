@@ -317,6 +317,10 @@ The id was checked against the key's ListModels on 2026-09-19. The old
   - trainer-check flags;
   - the calibration note.
 - `src/pages/AssessmentPage.tsx`:
+  - A fourth sidebar tab, `"learning"`, renders `LearningChat.tsx` — see
+    `docs/features/learning-mode.md`. On mount, the page calls
+    `consumePendingStudioUpload()` once to pick up a document Gyan already
+    uploaded (`docs/features/chatbot-gyan.md`).
   - The generation panel has the question count (3/5/8/10/15/20), type chips
     and a language choice (English / हिंदी / Bilingual). The Settings tab
     repeats the type defaults.
@@ -369,6 +373,16 @@ The adaptive diagnostic writes the same row type.
 Video, audio and YouTube sources use `routers/media_quiz.py` (see
 `media-quiz-generator.md`). Those quizzes land in this router's `QUIZ_STORE` as
 plain MCQs, so `/grade` handles them, calibration included.
+
+**Learning Mode** (`routers/learning_mode.py`, `docs/features/learning-mode.md`)
+is a sibling mode in the same Assessment Studio page: the same upload, but a
+grounded study chat instead of a quiz. It imports this router's extraction
+helpers (`_extract_pdf`, `_extract_pptx`, `_extract_txt`, `_clean_text`,
+`_chunk_document_text`) and `services/doc_quiz/generate.locate_chunks`
+directly, so it stays in lock-step with any extraction change here without
+duplicating it. `AssessmentPage.tsx`'s `handleGenerate` takes an optional file
+override so Gyan's document hand-off (`docs/features/chatbot-gyan.md`) can
+call it right after mount without waiting for `file` state to commit.
 
 The document pipeline reuses the media pipeline's pieces:
 - `llm.gemini_json` and `DEFAULT_GEMINI_MODEL`;

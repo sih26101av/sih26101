@@ -96,6 +96,25 @@ Frontend:
   global `:focus-visible` rule in `index.css` paints a saffron **ring**, which
   `focus:outline-none` does not suppress, so without this the input showed a yellow
   box on top of the pill's own `focus-within` treatment.
+- **Document attach → Assessment Studio hand-off.** `ChatWidget.tsx` (dashboard
+  widget only, not `HomeChatWidget`) has a paperclip button next to the mic
+  (`accept=".pdf,.docx,.pptx,.txt"`, hidden `<input type="file">`). Gyan never
+  reads the file — it stays fully offline/no-API-key by design — it only
+  carries it to the Assessment Studio, which has `GEMINI_API_KEY` wired up.
+  Attaching a file shows a banner above the input bar with two buttons,
+  **"📝 Generate a quiz"** and **"📖 Help me study this"** (Learning Mode). If
+  the learner types instead of tapping a button, a local regex
+  (`QUIZ_INTENT_RE` / `LEARN_INTENT_RE`) reads the message for intent; an
+  ambiguous message falls through to the normal `/api/v1/chat` call (the
+  banner stays up so the learner can still pick explicitly). Picking a mode
+  calls `setPendingStudioUpload(file, mode)`
+  (`services/pendingStudioUpload.ts`, a plain module singleton — a `File`
+  can't survive `sessionStorage` or router `state` across a lazy-loaded
+  route) and fires a synthetic `{type: "redirect", target: "/assessment"}`
+  through the existing `onNavigate` prop, reusing `LearnerDashboard.tsx`'s
+  existing `"redirect"` handling. `AssessmentPage.tsx` consumes the singleton
+  on mount and auto-starts quiz generation or Learning Mode with that file —
+  see `docs/features/learning-mode.md`.
 
 ## In / out
 
