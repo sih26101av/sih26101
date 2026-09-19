@@ -157,6 +157,7 @@ _BUILDERS: dict[str, Callable[[ReplyContext, Translator], str]] = {
 _STATIC_INTENTS = frozenset({
     "how_are_you", "bot_identity", "concept_skill_gap", "gratitude", "last_assessment", "achievements",
     "navigation_dashboard", "navigation_my_courses", "navigation_progress", "navigation_ai_quiz",
+    "navigation_skill_gap", "navigation_recommendations", "navigation_certificates", "navigation_karma",
     "navigation_profile", "about_platform", "about_mospi", "statistics_gdp", "statistics_cpi",
     "statistics_sampling", "statistics_frac", "out_of_scope", "ui_action_request", "farewell",
 })

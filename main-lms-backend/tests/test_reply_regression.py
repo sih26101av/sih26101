@@ -19,6 +19,7 @@ OLD_TO_VARIANT = {"en": "en", "hi": "hi_latn"}
 INTENTIONAL_HANDLER_CHANGES = {
     "bot_identity": "claimed '50+ languages'; now names the 8 supported ones",
     "ui_action_request": "said it cannot change theme/language; the router now performs those actions",
+    "navigation_quiz": "pointed to a Dashboard card that no longer exists; now the Assessment Studio sidebar section",
 }
 
 INTENTIONAL_ENDPOINT_CHANGES = {

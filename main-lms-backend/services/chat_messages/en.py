@@ -120,19 +120,12 @@ T = {
         '   A timeline of your RAG Quiz results (with scores) and External Certifications.'
     ),
     'navigation_ai_quiz': (
-        '**How to use the AI Assessment Generator:**\n'
-        '\n'
-        'This feature is on the **Dashboard tab**, in the right panel (bottom card).\n'
-        '\n'
-        'Steps:\n'
-        '1. Go to the **Dashboard tab** (click Dashboard icon in top navbar)\n'
-        "2. Find the **'AI Assessment Generator'** card on the right side\n"
-        "   (Bot icon, subtitle: 'RAG Document-to-Quiz Pipeline')\n"
-        '3. Type your topic or query in the text box\n'
-        "4. (Optional) Click **'Attach document'** to upload a .pdf / .pptx / .txt file\n"
-        "5. Click the **'Generate Assessment'** button\n"
-        '\n'
-        "💡 Attaching a document produces more accurate MCQs as the AI generates questions directly from your document's content."
+        "**Assessment Studio** 🤖 — in the left sidebar.\n"
+        "\n"
+        "There you can:\n"
+        "• Upload a PDF, DOCX, PPTX or TXT file, or a video, audio file or YouTube link\n"
+        "• Generate an AI quiz from it — passing it adds evidence to your competency levels\n"
+        "• Use **Learning Mode** to study the material with Gyan first"
     ),
     'navigation_profile': (
         '**Profile, Password & Navigation options:**\n'
@@ -406,4 +399,27 @@ T = {
     'theme_name.light': "Light",
     'language_name.hi': "Hindi",
     'language_name.en': "English",
+    'navigation_skill_gap': (
+        "**Skill-Gap Centre** 🎯 — in the left sidebar.\n"
+        "\n"
+        "There you can:\n"
+        "• See every competency: your current level vs the level your role needs\n"
+        "• Check the evidence behind each level, and use **'Disagree with this level?'** to recheck it\n"
+        "• Follow a suggested learning path and this quarter's study plan"
+    ),
+    'navigation_recommendations': (
+        "**Recommendations** ✨ — in the left sidebar.\n"
+        "\n"
+        "There you'll find AI-ranked courses for your skill gaps, each with the reasons it was matched. Filter by competency to focus on one gap."
+    ),
+    'navigation_certificates': (
+        "**Certificates** 📜 — in the left sidebar.\n"
+        "\n"
+        "Upload a course certificate there. AI reads it and matches it to your FRAC competencies, and after review it counts as evidence for your levels. You can also track the status of your submissions."
+    ),
+    'navigation_karma': (
+        "**Karma & Rewards** 🏆 — in the left sidebar.\n"
+        "\n"
+        "There you can see your Karma points, how you earn them (courses, quizzes, daily check-ins) and your points history."
+    ),
 }

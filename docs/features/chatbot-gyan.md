@@ -24,6 +24,17 @@ Backend:
        `_generate_template_response`.
     4. **Tier 3** Ollama RAG — commented out, marked `REVERT_OLLAMA`.
   - `GET /chat/mode` — reports which engine is live (frontend badge).
+  - **Sidebar navigation.** `_DASHBOARD_NAV` maps an intent to a `tab` action
+    whose `target` is a `LearnerDashboard` `TabType` id: `navigation_dashboard`,
+    `_my_courses`, `_skill_gap` (Skill-Gap Centre), `_recommendations`,
+    `_ai_quiz` (Assessment Studio → `assessments`), `_certificates`, `_progress`,
+    `_karma`. Each has prototype phrases in all 9 `ai/intent_corpus/*.json` and a
+    reply in all 9 `services/chat_messages/*.py`. The Latin keyword fallback lists
+    these nav patterns **before** `skill_gaps`/`recommend`, and they require a
+    navigation verb or a section word, so "what are my skill gaps" still answers in
+    chat. Nav phrases that echo informational ones ("show recommended courses" vs
+    "show ongoing courses") steal intents — check `scripts/eval_intents.py`
+    (baseline 84.6% macro) and `tests/test_chat_endpoint.py::test_sidebar_section_navigation`.
   - Helpers `_fmt_gaps`, `_fmt_recs`, `_top_gap` render profile context into markdown.
 - `main-lms-backend/ai/semantic_engine.py`
   - `INTENT_CORPUS` — prototype phrases per intent in English, Hinglish and

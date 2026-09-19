@@ -125,21 +125,12 @@ T = {
         '   External Certifications, date ke saath.'
     ),
     'navigation_ai_quiz': (
-        '**AI Assessment Generator** kaise use karein:\n'
-        '\n'
-        'Yeh feature **Dashboard tab** par right panel mein neeche dikhta hai.\n'
-        '\n'
-        'Steps:\n'
-        '1. **Dashboard tab** par jayein (top navbar → Dashboard icon)\n'
-        "2. Right side pe **'AI Assessment Generator'** card dhundhein\n"
-        "   (Bot icon ke saath, subtitle: 'RAG Document-to-Quiz Pipeline')\n"
-        '3. Text box mein apna query/topic type karein\n'
-        "4. (Optional) **'Attach document'** par click karke\n"
-        '   .pdf / .pptx / .txt file attach karein\n'
-        "5. **'Generate Assessment'** button click karein\n"
-        '\n'
-        '💡 File upload se zyada accurate MCQs milte hain kyunki\n'
-        'AI document ke content se questions banata hai.'
+        "**Assessment Studio** 🤖 — left sidebar mein hai.\n"
+        "\n"
+        "Wahan aap:\n"
+        "• PDF, DOCX, PPTX ya TXT file, ya video, audio file ya YouTube link upload kar sakte hain\n"
+        "• Usse AI quiz bana sakte hain — pass karne par ye aapke competency levels mein evidence ban jaata hai\n"
+        "• Pehle **Learning Mode** mein Gyan ke saath material padh sakte hain"
     ),
     'navigation_profile': (
         '**Profile, Password aur Logout** kaise karein:\n'
@@ -407,4 +398,27 @@ T = {
     'theme_name.light': "Light",
     'language_name.hi': "Hindi",
     'language_name.en': "English",
+    'navigation_skill_gap': (
+        "**Skill-Gap Centre** 🎯 — left sidebar mein hai.\n"
+        "\n"
+        "Wahan aap:\n"
+        "• Har competency dekh sakte hain: aapka current level aur aapke role ke liye zaroori level\n"
+        "• Har level ke peeche ka evidence dekh sakte hain, aur **'Disagree with this level?'** se level dobara check kar sakte hain\n"
+        "• Suggested learning path aur is quarter ka study plan dekh sakte hain"
+    ),
+    'navigation_recommendations': (
+        "**Recommendations** ✨ — left sidebar mein hai.\n"
+        "\n"
+        "Wahan aapke skill gaps ke liye AI se rank kiye gaye courses milenge, har course ke saath uska match reason bhi. Kisi ek gap par focus karne ke liye competency se filter karein."
+    ),
+    'navigation_certificates': (
+        "**Certificates** 📜 — left sidebar mein hai.\n"
+        "\n"
+        "Wahan apna course certificate upload karein. AI use padhkar aapki FRAC competencies se match karta hai, aur review ke baad ye aapke levels ke liye evidence ban jaata hai. Aap apne submissions ka status bhi dekh sakte hain."
+    ),
+    'navigation_karma': (
+        "**Karma & Rewards** 🏆 — left sidebar mein hai.\n"
+        "\n"
+        "Wahan aap apne Karma points dekh sakte hain, ye kaise milte hain (courses, quizzes, daily check-in), aur apne points ki history."
+    ),
 }

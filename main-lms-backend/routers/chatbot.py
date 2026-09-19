@@ -92,6 +92,16 @@ class ChatResponse(BaseModel):
 
 _INTENTS = {
     "greeting":            r'\b(hi|hello|hey|namaste|namaskar|hie|good\s*(morning|evening|afternoon)|sup)\b',
+    # Sidebar sections — before skill_gaps/recommend so "open the skill gap centre"
+    # navigates while "what are my skill gaps" still answers in chat.
+    "navigation_skill_gap": r'\b(skill[\s-]*gap\s*(centre|center|tab|page|section)|gap\s*(centre|center)'
+                            r'|(open|go\s*to|take\s*me\s*to|navigate\s*to)\s+(the\s+)?skill[\s-]*gaps?\s*(centre|center|tab|page|section)?$)',
+    "navigation_my_courses": r'\b(my\s*courses|enrolled\s*courses|course\s*list|course\s*tab)\b',
+    "navigation_recommendations": r'\b(recommendations?\s*(tab|page|section)'
+                                  r'|(open|go\s*to|take\s*me\s*to|navigate\s*to)\s+(the\s+)?recommendations?\b)',
+    "navigation_ai_quiz":  r'\b(assessment\s*studio|quiz\s*generator|(open|go\s*to|take\s*me\s*to)\s+(the\s+)?(assessments?|quiz)\b)',
+    "navigation_certificates": r'\b(certificates?|certification)\b',
+    "navigation_karma":    r'\b(karma|rewards?)\b',
     "skill_gaps":          r'\b(gap|gaps|skill\s*gap|missing|weak|improve|kya\s*gap|kitna\s*gap|deficiency|lacking|kahan\s*weak)\b',
     "recommend":           r'\b(recommend|suggest|course|courses|kya\s*padhu|kya\s*lu|kya\s*seekhu|pathway|next|start|begin|enroll|kaunsa)\b',
     "progress":            r'\b(progress|how\s*am\s*i|doing|achievement|score|result|kitna\s*seekha|kahan\s*tak)\b',
@@ -101,7 +111,6 @@ _INTENTS = {
     "navigation_about":    r'\b(about\s*section|about\s*us|about\s*page|about\s*mospi|about\s*platform|scroll\s*to\s*about|take.*about)\b',
     "navigation_contact":  r'\b(contact|contact\s*section|reach\s*out|contact\s*us|contact\s*tab)\b',
     "navigation_home":     r'\b(home\s*page|landing\s*page|go\s*(to\s*)?home|take.*home|back\s*(to\s*)?home|homepage|scroll\s*to\s*top|back\s*to\s*top|top\s*of\s*page|ghar\s*jao)\b',
-    "navigation_my_courses": r'\b(my\s*courses|enrolled\s*courses|course\s*list|course\s*tab)\b',
     "navigation_progress": r'\b(progress\s*tab|show.*progress|radar\s*chart|achievement\s*history)\b',
     "navigation_dashboard": r'\b(dashboard\s*tab|go\s*to\s*dashboard|open\s*dashboard)\b',
     "ui_action_request":   r'\b(dark\s*mode|light\s*mode|theme|toggle\s*theme|change.*language|switch.*language|language.*hindi|hindi.*language|language.*english|font\s*size|accessibility)\b',
@@ -140,12 +149,17 @@ _HOME_NAV = {
     "navigation_home":     {"type": "scroll", "target": "#home",     "label": "Home (top)"},
 }
 
+# Targets are LearnerDashboard's TabType ids (its tabMap also accepts aliases).
 _DASHBOARD_NAV = {
-    "navigation_my_courses": {"type": "tab",      "target": "my-courses", "label": "My Courses tab"},
-    "navigation_progress":   {"type": "tab",      "target": "progress",   "label": "Progress tab"},
-    "navigation_dashboard":  {"type": "tab",      "target": "dashboard",  "label": "Dashboard tab"},
-    "navigation_ai_quiz":    {"type": "tab",      "target": "dashboard",  "label": "AI Quiz Generator (Dashboard)"},
-    "navigation_home":       {"type": "redirect", "target": "/",          "label": "Landing Page"},
+    "navigation_dashboard":       {"type": "tab",      "target": "dashboard",       "label": "Dashboard tab"},
+    "navigation_my_courses":      {"type": "tab",      "target": "my-courses",      "label": "My Courses tab"},
+    "navigation_skill_gap":       {"type": "tab",      "target": "skill-gap",       "label": "Skill-Gap Centre"},
+    "navigation_recommendations": {"type": "tab",      "target": "recommendations", "label": "Recommendations"},
+    "navigation_ai_quiz":         {"type": "tab",      "target": "assessments",     "label": "Assessment Studio"},
+    "navigation_certificates":    {"type": "tab",      "target": "certificates",    "label": "Certificates"},
+    "navigation_progress":        {"type": "tab",      "target": "progress",        "label": "Progress tab"},
+    "navigation_karma":           {"type": "tab",      "target": "karma",           "label": "Karma & Rewards"},
+    "navigation_home":            {"type": "redirect", "target": "/",               "label": "Landing Page"},
 }
 
 # Intercept scroll keyword -> (intent whose reply describes it, #anchor)

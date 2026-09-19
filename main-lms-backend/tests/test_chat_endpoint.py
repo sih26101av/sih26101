@@ -71,3 +71,27 @@ def test_dark_mode_action(variant):
     body = _chat(QUERIES[variant][3])
     assert body["navigate_action"]["type"] == "theme"
     assert body["navigate_action"]["target"] == "dark"
+
+
+# Every learner sidebar section is reachable from chat (targets = LearnerDashboard TabType ids).
+SIDEBAR_QUERIES = [
+    ("open the skill gap centre", "skill-gap"),
+    ("go to the recommendations tab", "recommendations"),
+    ("open assessment studio", "assessments"),
+    ("where do I upload my certificate", "certificates"),
+    ("show my karma points", "karma"),
+    ("skill gap centre kholo", "skill-gap"),
+    ("असेसमेंट स्टूडियो खोलो", "assessments"),
+    ("मेरे कितने कर्मा अंक हैं", "karma"),
+]
+
+
+@pytest.mark.parametrize("message,target", SIDEBAR_QUERIES)
+def test_sidebar_section_navigation(message, target):
+    action = _chat(message)["navigate_action"]
+    assert action and action["type"] == "tab" and action["target"] == target
+
+
+@pytest.mark.parametrize("message", ["what are my skill gaps", "recommend me a course"])
+def test_questions_answer_in_chat_without_navigating(message):
+    assert _chat(message)["navigate_action"] is None

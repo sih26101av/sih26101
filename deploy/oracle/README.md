@@ -14,10 +14,12 @@ Only Caddy is exposed to the internet. Ports 8000 and 8001 stay on localhost.
 
 1. **Compute → Instances → Create instance.**
    - Image: **Canonical Ubuntu 24.04** (or 22.04).
-   - Shape: **Ampere VM.Standard.A1.Flex**, **2 OCPU / 12 GB** (the whole Always Free
-     allowance; 1 / 6 also works). The ONNX embedders need about 2 GB, so the 1 GB AMD
-     micro shape is too small. Free-tier instances idle for 7 days can be reclaimed;
-     a Pay As You Go account avoids that and is still ₹0 within the free limits.
+   - Shape: **Ampere VM.Standard.A1.Flex**, **2 OCPU / 8 GB** (Always Free allows up to
+     2 / 12). The ONNX embedders need about 2 GB, so the 1 GB AMD micro shape is too small.
+   - Why 8 GB, not 12: Oracle reclaims free-tier instances when CPU, network **and**
+     memory all stay under 20% for 7 days. The app idles at ~2 GB, which is ~18% of 12 GB
+     but ~25% of 8 GB. Resize via Stop → Edit shape → Start. A Pay As You Go account
+     is exempt from reclamation and is still ₹0 within the free limits.
    - Upload or download the SSH key.
 2. **Networking → your VCN → Security List → Add Ingress Rules:** source `0.0.0.0/0`,
    TCP, destination ports **80** and **443**.

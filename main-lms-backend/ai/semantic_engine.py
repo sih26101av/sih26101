@@ -75,6 +75,7 @@ _NAV_VOCAB = [
     "recommend", "recommendation", "pathway", "learning",
     "navigate", "how", "where", "help", "find", "access", "open", "go to",
     "tab", "section", "button", "panel",
+    "centre", "studio", "certificate", "certificates", "rewards", "recommendations",
     "great", "thanks", "good", "bye", "yes", "okay",
 ]
 

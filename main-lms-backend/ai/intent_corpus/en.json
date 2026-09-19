@@ -242,7 +242,7 @@
     "take me to ai assessment",
     "pdf quiz",
     "create assessment"
-  ],
+  , "open assessment studio", "go to assessment studio", "take me to the assessment studio", "where is assessment studio", "open the quiz generator page"],
   "navigation_profile": [
     "how do I change my password",
     "where is change password",
@@ -457,5 +457,9 @@
     "when did world war happen",
     "what is the capital of france",
     "tell me something funny"
-  ]
+  ],
+  "navigation_skill_gap": ["open skill gap centre", "go to the skill gap centre", "take me to skill gap centre", "where is the skill gap centre", "open the skill-gap page", "show the skill gap section", "navigate to skill gap centre", "skill gap tab"],
+  "navigation_recommendations": ["open recommendations", "go to the recommendations tab", "take me to recommendations", "where is the recommendations section", "open recommended courses page", "navigate to recommendations", "show the recommendations page"],
+  "navigation_certificates": ["open certificates", "go to certificates section", "where do I upload my certificate", "how to upload a certificate", "take me to certificates", "show my submitted certificates", "add a course certificate"],
+  "navigation_karma": ["open karma and rewards", "go to karma section", "how many karma points do I have", "show my karma points", "where are my rewards", "take me to karma and rewards", "karma points history"]
 }
