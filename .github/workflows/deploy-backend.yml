@@ -1,0 +1,46 @@
+# Pushes to main that touch the backend or mock server redeploy the Oracle VM.
+# Needs repo secrets ORACLE_HOST (VM public IP) and ORACLE_SSH_KEY (private key
+# whose public half is in the VM's ~/.ssh/authorized_keys). See deploy/oracle/README.md.
+name: Deploy backend (Oracle)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "main-lms-backend/**"
+      - "mock-igot-server/**"
+      - "deploy/oracle/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Update and restart on the VM
+        env:
+          HOST: ${{ secrets.ORACLE_HOST }}
+          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "ubuntu@$HOST" \
+            "bash ~/sih26101/deploy/oracle/update.sh"
+
+      - name: Wait until the API is ready
+        env:
+          HOST: ${{ secrets.ORACLE_HOST }}
+        run: |
+          # Warm-up (embedders, engine) takes a minute or two after a restart.
+          for i in $(seq 1 40); do
+            body=$(curl -s --max-time 10 "https://$(echo "$HOST" | tr . -).sslip.io/health" || true)
+            echo "$body" | grep -q '"ready":true' && { echo "Ready: $body"; exit 0; }
+            sleep 10
+          done
+          echo "API not ready after ~7 minutes. Check: journalctl -u lms-backend" && exit 1

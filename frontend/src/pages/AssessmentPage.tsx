@@ -40,6 +40,7 @@ import QuizQuestionInput, { TYPE_LABEL, emptyAnswer, isAnswered, type QuizLang }
 import LearningChat from "../components/assessment/LearningChat";
 import { startLearningSession, type LearningStartResponse } from "../services/learningApi";
 import { consumePendingStudioUpload } from "../services/pendingStudioUpload";
+import { API_BASE_URL } from "../config";
 
 type StudioTab = "new_quiz" | "history" | "settings" | "learning";
 type Difficulty = "Easy" | "Medium" | "Hard";
@@ -180,7 +181,7 @@ const AssessmentPage: React.FC = () => {
       formData.append("question_types", questionTypes.join(","));
       formData.append("language", quizLanguage);
 
-      const res = await fetch("http://localhost:8000/api/v1/rag/upload", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/rag/upload`, {
         method: "POST",
         body: formData,
       });

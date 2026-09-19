@@ -41,9 +41,10 @@ import type {
   DiagnosticView,
 } from '../types/domain';
 import { refresh } from './authApi';
+import { API_BASE_URL } from '../config';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
-const LMS_BASE_URL  = 'http://localhost:8000';
+const LMS_BASE_URL  = API_BASE_URL;
 
 // ── Module-level token store (written by AuthContext on login/refresh) ──────────
 let _accessToken: string | null = null;

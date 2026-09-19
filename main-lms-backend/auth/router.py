@@ -18,6 +18,7 @@ Only its SHA-256 hash is stored in the database (refresh_token_hash column).
 This means even if the DB is compromised, attackers cannot forge sessions.
 """
 
+import os
 from datetime import timedelta
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
@@ -43,6 +44,10 @@ router = APIRouter()
 
 _REFRESH_COOKIE_NAME = "refresh_token"
 _REFRESH_COOKIE_MAX_AGE = REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60  # seconds
+# Local dev: plain HTTP, same site → Strict. A frontend on another site (Vercel →
+# API host) needs COOKIE_SAMESITE=none, which browsers only accept with Secure.
+_COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "strict").lower()
+_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "1" if _COOKIE_SAMESITE == "none" else "0") == "1"
 
 
 def _set_refresh_cookie(response: Response, raw_token: str) -> None:
@@ -52,8 +57,8 @@ def _set_refresh_cookie(response: Response, raw_token: str) -> None:
         value=raw_token,
         max_age=_REFRESH_COOKIE_MAX_AGE,
         httponly=True,
-        secure=False,   # Set True in production (requires HTTPS)
-        samesite="strict",
+        secure=_COOKIE_SECURE,
+        samesite=_COOKIE_SAMESITE,
         path="/auth",   # Scoped to /auth/* so the cookie is not sent on every API call
     )
 
@@ -64,7 +69,8 @@ def _clear_refresh_cookie(response: Response) -> None:
         key=_REFRESH_COOKIE_NAME,
         path="/auth",
         httponly=True,
-        samesite="strict",
+        secure=_COOKIE_SECURE,
+        samesite=_COOKIE_SAMESITE,
     )
 
 

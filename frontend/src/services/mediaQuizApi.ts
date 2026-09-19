@@ -9,7 +9,9 @@
  * report (route, probe, evidence, validator, fact-check) feeds MediaAnalysisCard.
  */
 
-const MEDIA_BASE_URL = "http://localhost:8000/api/v1/rag/media";
+import { API_BASE_URL } from '../config';
+
+const MEDIA_BASE_URL = `${API_BASE_URL}/api/v1/rag/media`;
 
 export const MEDIA_VIDEO_EXTS = [".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4v", ".mpeg", ".mpg", ".3gp"];
 export const MEDIA_AUDIO_EXTS = [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".oga", ".opus", ".flac", ".wma"];

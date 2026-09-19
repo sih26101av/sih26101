@@ -86,14 +86,16 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=_readiness_gate)
 # ── CORS ───────────────────────────────────────────────────────────────────────
 # Tightened from allow_origins=["*"] to explicit frontend origin so that
 # httpOnly cookies are accepted (credentials require a non-wildcard origin).
+# Deployed frontends (e.g. the Vercel URL) are added via CORS_ORIGINS, comma-separated.
+_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",   # Vite default dev server port
+    "http://127.0.0.1:5173",
+] + [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",   # Vite default dev server port
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,   # Required for cookies to be sent cross-origin
     allow_methods=["*"],
     allow_headers=["*"],

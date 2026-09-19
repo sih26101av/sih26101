@@ -9,7 +9,9 @@
  * in-memory session key, not tied to a user.
  */
 
-const LEARNING_BASE_URL = "http://localhost:8000/api/v1/rag/learning";
+import { API_BASE_URL } from '../config';
+
+const LEARNING_BASE_URL = `${API_BASE_URL}/api/v1/rag/learning`;
 
 export interface LearningMetadata {
   filename: string;

@@ -13,7 +13,9 @@
  *   parsed from the FastAPI detail field.
  */
 
-const AUTH_BASE = 'http://localhost:8000';
+import { API_BASE_URL } from '../config';
+
+const AUTH_BASE = API_BASE_URL;
 
 // ── Response shapes ────────────────────────────────────────────────────────────
 

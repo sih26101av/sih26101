@@ -1,0 +1,13 @@
+# Replace API_DOMAIN with your API hostname, e.g. api.example.in or
+# 140-238-10-20.sslip.io (your public IP with dashes). Caddy fetches and
+# renews the Let's Encrypt certificate automatically.
+API_DOMAIN {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000 {
+		# Quiz generation and media uploads can take minutes.
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+}

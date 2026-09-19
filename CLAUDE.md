@@ -66,15 +66,20 @@ python -m ai.seed_knowledge      # optional: seed ChromaDB (needs local Ollama)
 - **Layering:** the browser talks only to port 8000; port 8001 is reached through
   `MockIgotAdapter` or an admin-guarded proxy. Add new external calls behind the adapter.
 - **Env:** backend config lives in `main-lms-backend/.env` (see `.env.example`).
-  `.env*` is gitignored except the example. Frontend base URLs are currently hardcoded
-  to `http://localhost:8000`.
+  `.env*` is gitignored except the example. The frontend reads its backend origin
+  from `VITE_API_BASE_URL` via `frontend/src/config.ts` (default `http://localhost:8000`)
+  — never hardcode a URL elsewhere.
+- **Deploy:** backend + mock server on an Oracle Cloud VM (systemd + Caddy HTTPS,
+  files and steps in `deploy/oracle/`), frontend on Vercel (`frontend/vercel.json`).
+  Cross-site auth needs `CORS_ORIGINS` and `COOKIE_SAMESITE=none` in the backend `.env`.
 - **DB:** auth/evidence/karma live in shared Neon Postgres (`DATABASE_URL` in
   `main-lms-backend/.env`); `auth.db` is only the offline fallback.
 - **Data:** `auth.db`, `chroma_db/`, `temp_uploads/`, `ai/.cache/` are generated and
   gitignored. Mock datasets under `mock-igot-server/` are committed fixtures — treat
   them as read-only unless the task is about data generation.
 - **Ports:** 8001 mock, 8000 backend, 5173 frontend (CORS on the backend is pinned to
-  3000/5173 with credentials enabled — a wildcard origin breaks the refresh cookie).
+  3000/5173 plus `CORS_ORIGINS`, with credentials enabled — a wildcard origin breaks
+  the refresh cookie).
 - **Folders:** `node/`, `node-v20.17.0-win-x64/`, `node.zip` are a vendored Node runtime;
   ignore them. `main-lms-backend/main_backup.py`, `_*.txt`, `_h.py` and
   `mock-igot-server/main.py` are legacy leftovers — do not build on them.

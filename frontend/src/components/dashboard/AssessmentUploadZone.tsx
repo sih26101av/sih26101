@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Bot, Globe, Paperclip, Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { gradeQuiz } from "../../services/api";
+import { API_BASE_URL } from "../../config";
 import type { DocQuizQuestion, QuizAnswer } from "../../services/api";
 import QuizQuestionInput, { emptyAnswer, isAnswered } from "../assessment/QuizQuestionInput";
 
@@ -44,7 +45,7 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
 
       setTimeout(() => setLoadingText("Gemini generating questions..."), 1500);
 
-      const res = await fetch("http://localhost:8000/api/v1/rag/upload", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/rag/upload`, {
         method: "POST",
         body: formData,
       });
