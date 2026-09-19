@@ -25,7 +25,7 @@ from typing import Optional, Dict, Any, Tuple, List
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from auth.database import SessionLocal, engine, get_db
@@ -42,6 +42,8 @@ from models.models import (
     QuizAttempt,
 )
 from fastapi import Depends
+from services import app_state
+from services import practice_assessment as pa
 
 # Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
@@ -69,6 +71,7 @@ class QuizQuestion(BaseModel):
     options: List[str] = Field(..., description="List of 4 multiple-choice options")
     correct_answer: int = Field(..., description="Zero-based index (0, 1, 2, or 3) of the correct option in options")
     explanation: str = Field(..., description="Detailed explanation for why the answer is correct")
+    difficulty: Optional[str] = Field(None, description="Easy | Medium | Hard — drives the difficulty-aware skill update at grading")
 
 
 class QuizPayload(BaseModel):
@@ -122,6 +125,12 @@ class GradeResponse(BaseModel):
     evidenceWritten: Optional[bool] = Field(None, description="True if a new EvidenceLog row was written (first submission only)")
     karmaAwarded: Optional[int] = Field(None, description="Karma Points earned by this submission (first pass only)")
     karmaNote: Optional[str] = Field(None, description="Why fewer / no karma points were awarded (daily cap, limit)")
+    # Quiz ↔ skill-gap connection (services/practice_assessment.py)
+    difficulty: Optional[str] = Field(None, description="Target difficulty the quiz was generated at")
+    weighted_score: Optional[float] = Field(None, description="Difficulty-weighted % (Hard = 2x Easy)")
+    skillImpact: Optional[Dict[str, Any]] = Field(None, description="Linked role competency, practice ability and skill score/level before → after")
+    questionReview: Optional[List[Dict[str, Any]]] = Field(None, description="Per-question result with difficulty, your answer, correct answer, explanation (missed first)")
+    recommendations: Optional[Dict[str, Any]] = Field(None, description="Next difficulty, focus topics, courses for the linked competency")
 
 
 
@@ -173,6 +182,7 @@ QUIZ_STORE: Dict[str, Dict[str, Any]] = {
         "filename": "sample_mospi_overview.pdf",
         "competency_id": "FRAC-STAT-001",
         "skill_name": "National Accounts & Official Statistics",
+        "difficulty": "Medium",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 }
@@ -539,11 +549,24 @@ def _update_internal_db_competency(
 # GEMINI QUIZ GENERATION HELPER
 # =============================================================================
 
-async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None) -> List[QuizQuestion]:
+_DIFFICULTY_GUIDE = {
+    "Easy":   "recall and recognition — facts, definitions and terms stated directly in the text; clearly wrong distractors",
+    "Medium": "understanding and application — explain, compare, or apply a stated procedure to a simple case",
+    "Hard":   "analysis and evaluation — multi-step reasoning, interpreting results, choosing between methods, "
+              "spotting an error; all distractors plausible to a partially-prepared reader",
+}
+_DIFFICULTY_MIX = {"Easy": "3 Easy and 2 Medium", "Medium": "1 Easy, 3 Medium and 1 Hard", "Hard": "1 Medium and 4 Hard"}
+
+
+async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None,
+                                   difficulty: str = "Medium") -> List[QuizQuestion]:
     """
     Calls Google Gemini API using google-generativeai with GEMINI_API_KEY from .env.
     Generates exactly 5 MCQs based on the extracted text and chunks, enforcing strict JSON output.
+    `difficulty` (Easy | Medium | Hard) sets the question mix; each question is
+    tagged with its own difficulty, which the grader uses to weight the skill update.
     """
+    difficulty = pa.normalise_difficulty(difficulty)
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
@@ -579,7 +602,10 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
             "2. Each question MUST contain exactly 4 distinct and plausible options.\n"
             "3. 'correct_answer' MUST be the 0-based integer index of the correct option in the 'options' array (0, 1, 2, or 3).\n"
             "4. Provide a clear, detailed 'explanation' justifying why the selected option is correct according to the text.\n"
-            "5. Return output conforming strictly to the JSON schema: {\"questions\": [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct_answer\": 0, \"explanation\": \"...\"}]}.\n\n"
+            f"5. Target difficulty: {difficulty}. Write {_DIFFICULTY_MIX[difficulty]} question(s), where "
+            f"Easy = {_DIFFICULTY_GUIDE['Easy']}; Medium = {_DIFFICULTY_GUIDE['Medium']}; Hard = {_DIFFICULTY_GUIDE['Hard']}.\n"
+            "6. Tag every question with its own \"difficulty\": \"Easy\", \"Medium\" or \"Hard\" (honestly — it weights the learner's score).\n"
+            "7. Return output conforming strictly to the JSON schema: {\"questions\": [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct_answer\": 0, \"explanation\": \"...\", \"difficulty\": \"Medium\"}]}.\n\n"
             f"Document Content Chunks:\n\"\"\"\n{formatted_context}\n\"\"\""
         )
 
@@ -677,7 +703,8 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
                     question=q_text,
                     options=opts,
                     correct_answer=ans_idx,
-                    explanation=explanation
+                    explanation=explanation,
+                    difficulty=pa.normalise_difficulty(item.get("difficulty") or item.get("level"), difficulty),
                 )
             )
 
@@ -721,7 +748,8 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
     },
 )
 async def upload_document_for_rag(
-    file: UploadFile = File(..., description="Document file to process (.pdf, .ppt, .pptx, .txt)")
+    file: UploadFile = File(..., description="Document file to process (.pdf, .ppt, .pptx, .txt)"),
+    difficulty: str = Form("Medium", description="Easy | Medium | Hard — question mix and grading weights"),
 ) -> DocumentUploadResponse:
     """
     **RAG Document Ingestion & Quiz Generator**
@@ -830,7 +858,8 @@ async def upload_document_for_rag(
     chunk_count = len(chunks)
 
     # 7. Generate exactly 5 MCQs via Google Gemini API from text and chunks
-    questions = await _generate_mcqs_from_text(extracted_text, chunks=chunks)
+    difficulty = pa.normalise_difficulty(difficulty)
+    questions = await _generate_mcqs_from_text(extracted_text, chunks=chunks, difficulty=difficulty)
 
     # 8. Generate unique quiz ID and store in-memory for subsequent grading
     inferred_skill = _detect_skill_name(text=extracted_text, filename=filename)
@@ -842,8 +871,11 @@ async def upload_document_for_rag(
         "extracted_text": extracted_text[:4000],
         "chunks": chunks,
         "chunk_count": chunk_count,
-        "competency_id": "FRAC-STAT-001",
+        # No hardcoded FRAC id any more: /grade links the quiz to the learner's
+        # own role competency (practice_assessment.link_competency).
+        "competency_id": None,
         "skill_name": inferred_skill,
+        "difficulty": difficulty,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -865,7 +897,7 @@ async def upload_document_for_rag(
 
     return DocumentUploadResponse(
         status="success",
-        message=f"Successfully chunked ({chunk_count} chunks) and generated {len(questions)} quiz questions from {filename}.",
+        message=f"Successfully chunked ({chunk_count} chunks) and generated {len(questions)} {difficulty}-level quiz questions from {filename}.",
         quiz_id=quiz_id,
         filename=filename,
         file_type=ext,
@@ -874,11 +906,135 @@ async def upload_document_for_rag(
     )
 
 
+def _question_difficulties(quiz: Dict[str, Any]) -> List[str]:
+    """Per-question difficulty: the question's own tag, else the quiz's target difficulty."""
+    quiz_difficulty = pa.normalise_difficulty(quiz.get("difficulty"))
+    return [pa.normalise_difficulty(getattr(q, "difficulty", None), quiz_difficulty)
+            for q in quiz.get("questions", [])]
+
+
+def _row_snapshot(row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    if not row:
+        return {}
+    level, target = row.get("currentLevel"), row.get("targetLevel")
+    return {
+        "level": level,
+        "score": round(float(row.get("rawScore") or 0.0), 3),
+        "confidence": row.get("confidence"),
+        "basis": row.get("basis"),
+        "targetLevel": target,
+        "gap": (max(0, int(target) - int(level)) if level is not None and target is not None else None),
+    }
+
+
+def _record_attempt(
+    user_id: str, quiz_id: str, quiz: Dict[str, Any], answers: List[int], score: float, weighted: float,
+    passed: bool, results: List[Dict[str, Any]], row: Optional[Dict[str, Any]], link: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Sync DB work for /grade (runs in a worker thread).
+
+    First submission of a quiz → one QuizAttempt row and, pass OR fail, one
+    PRACTICE_ASSESSMENT EvidenceLog row whose value is the learner's updated
+    practice ability θ for the linked competency (practice_assessment.update_ability).
+    Re-submissions of the same quiz are scored for UX only — no second row, so
+    retaking a quiz whose answers you have now seen cannot farm the skill level.
+    """
+    out: Dict[str, Any] = {"firstAttempt": False, "evidenceWritten": False}
+    db = SessionLocal()
+    try:
+        if db.query(QuizAttempt).filter(QuizAttempt.userId == user_id, QuizAttempt.quizId == quiz_id).first():
+            return out
+        out["firstAttempt"] = True
+
+        # Evidence is keyed by the catalogue id when the role competency is
+        # crosswalked (the assembler reads both ids), else the role id; with no
+        # linked role competency, by the quiz's own FRAC tag or its skill name.
+        comp_id = (row.get("catalogueId") or row.get("competencyId")) if row else quiz.get("competency_id")
+        comp_name = (row.get("name") if row else None) or quiz.get("skill_name") or "General Statistics"
+        comp_obj = db.query(Competency).filter(Competency.compId == comp_id).first() if comp_id else None
+        if not comp_obj and not comp_id:
+            comp_obj = db.query(Competency).filter(Competency.skillName == comp_name).first()
+        if not comp_obj:
+            comp_obj = Competency(compId=comp_id or f"COMP-{uuid.uuid4().hex[:6].upper()}",
+                                  domain="Statistical", skillName=comp_name)
+            db.add(comp_obj)
+            db.flush()
+
+        ids = {i for i in ((row or {}).get("competencyId"), (row or {}).get("catalogueId"), comp_obj.compId) if i}
+        prior_rows = [
+            {"evidence_type": e.evidenceType, "granted_value": e.grantedValue, "issue_date": e.issueDate}
+            for e in db.query(EvidenceLog).filter(
+                EvidenceLog.userId == user_id,
+                EvidenceLog.evidenceType == "PRACTICE_ASSESSMENT",
+                EvidenceLog.compId.in_(ids),
+            ).all()
+        ]
+        prior, _ = pa.latest_practice_value(prior_rows)
+        theta0, start_basis = pa.starting_ability(prior, row)
+        theta1, trace = pa.update_ability(theta0, results)
+
+        attempt = QuizAttempt(userId=user_id, quizId=quiz_id, compId=comp_obj.compId, answers=answers,
+                              score=score, passed=passed, evidenceWritten=False)
+        db.add(attempt)
+        db.flush()
+        db.add(EvidenceLog(
+            userId=user_id, compId=comp_obj.compId, evidenceType="PRACTICE_ASSESSMENT",
+            grantedValue=theta1, issueDate=datetime.now(timezone.utc),
+            metadata_payload={
+                "source": "assessment_studio_quiz",
+                "quiz_id": quiz_id,
+                "title": quiz.get("filename"),
+                "quiz_source": quiz.get("source_type", "document"),
+                "competencyName": comp_name,
+                "difficulty": pa.normalise_difficulty(quiz.get("difficulty")),
+                "score": score,
+                "weighted_score": weighted,
+                "passed": passed,
+                "pass_threshold": pa.PASS_THRESHOLD,
+                "ability_before": round(theta0, 3),
+                "ability_after": theta1,
+                "start_basis": start_basis,
+                "per_question": trace,
+                "link": link,
+            },
+        ))
+        attempt.evidenceWritten = True
+        db.commit()
+        out.update({
+            "evidenceWritten": True, "compId": comp_obj.compId, "competencyName": comp_name,
+            "abilityBefore": round(theta0, 3), "abilityAfter": theta1,
+            "abilityDelta": round(theta1 - theta0, 3), "startBasis": start_basis, "perQuestion": trace,
+        })
+        logger.info("[grade_quiz] practice evidence: user=%s comp=%s θ %.2f → %.2f (score %.0f%%)",
+                    user_id, comp_obj.compId, theta0, theta1, score)
+        return out
+    except Exception as exc:
+        db.rollback()
+        logger.exception("[grade_quiz] DB error during QuizAttempt/EvidenceLog write: %s", exc)
+        out["error"] = str(exc)
+        return out
+    finally:
+        db.close()
+
+
+async def _competency_rows(user_id: str) -> Optional[List[Dict[str, Any]]]:
+    """The learner's resolved role competencies (same rows the skill-gap view shows), or None."""
+    if app_state.competency_state is None:
+        return None
+    try:
+        state = await app_state.competency_state(user_id, annotate=False)
+        return list(state.get("competencies") or [])
+    except Exception as exc:
+        logger.warning("[grade_quiz] competency state unavailable for %s: %s", user_id, exc)
+        return None
+
+
 @router.post(
     "/grade",
     response_model=GradeResponse,
     status_code=status.HTTP_200_OK,
-    summary="Grade submitted quiz answers and sync competency update to iGOT if passed",
+    summary="Grade a quiz, update the learner's practice ability on the linked competency, and recommend next steps",
     responses={
         200: {"description": "Quiz evaluated successfully."},
         400: {"model": ErrorResponse, "description": "Invalid submission or answers format."},
@@ -892,258 +1048,238 @@ async def grade_quiz(
     current_user: UserAuth = Depends(get_current_user),   # FIX (Bug #10): auth required
 ) -> GradeResponse:
     """
-    **Grade Quiz & Sync Competency to Internal DB & Mock iGOT Server**
+    **Grade Quiz → Skill Gap**
 
-    FIX (Bug #10): Requires a valid JWT (Bearer token). user_id is derived
-    from current_user.username (the iGOT userId like usr_XXXXXXXXX) — never
-    from the request body (which was spoofable).
-
-    FIX (Bug #10) Idempotency: A QuizAttempt row with UNIQUE(userId, quizId)
-    is written BEFORE evidence. If the same user submits the same quiz again,
-    the score is re-calculated for UX but NO second EvidenceLog row is written.
-
-    FIX (Bug #9): On pass + first submission, writes an EvidenceLog row with:
-      evidenceType = "PRACTICE_ASSESSMENT"
-      userId       = current_user.username (iGOT userId, same identity space
-                     as BaselineAssembler.compute_for_user)
-      grantedValue = clamp(2.5 + (score-70)/30 * 1.5, 2.5, 4.0)
-
-    The _update_internal_db_competency helper is kept for backward-compat UI
-    display of db_updated field and the legacy CompetencyProfile table.
+    - user_id comes from the JWT (current_user.username), never the body (Bug #10).
+    - The quiz is linked to one of the learner's ROLE competencies (FRAC tag →
+      e5 similarity → keyword overlap; practice_assessment.link_competency).
+    - Every question moves the learner's practice ability θ by a
+      difficulty-aware step: missing an Easy question costs more than missing a
+      Hard one; solving a Hard one gains more than solving an Easy one.
+    - First submission (pass or fail) writes one PRACTICE_ASSESSMENT EvidenceLog
+      row = θ after; the baseline assembler reads the latest one into the
+      documented channel, so the skill score moves up or down a bounded amount.
+      Re-submissions are re-scored for UX only (QuizAttempt UNIQUE(userId, quizId)).
+    - Pass (≥ 70 %) still awards karma, updates the legacy CompetencyProfile
+      table and syncs to iGOT.
+    - The response carries the before → after skill impact, a question review
+      and recommendations (next difficulty, focus topics, courses).
     """
-    # Derive iGOT userId from JWT (Bug #10)
     igot_user_id = current_user.username   # e.g. "usr_720465595"
 
-    # 1. Validate quiz existence in store
     quiz = QUIZ_STORE.get(payload.quiz_id)
     if not quiz:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Quiz session '{payload.quiz_id}' not found. Please upload a document to generate a quiz.",
         )
-
     questions: List[QuizQuestion] = quiz.get("questions", [])
     total_questions = len(questions)
-
     if total_questions == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The specified quiz contains no questions to grade.",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="The specified quiz contains no questions to grade.")
+    if not payload.answers:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="No answers provided in submission payload.")
 
-    # 2. Validate answers list
-    if payload.answers is None or len(payload.answers) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No answers provided in submission payload.",
-        )
-
-    # 3. Calculate score
-    correct_count = 0
-    for idx, question in enumerate(questions):
-        if idx < len(payload.answers):
-            if payload.answers[idx] == question.correct_answer:
-                correct_count += 1
-
+    # 1. Score — plain % (pass rule) and difficulty-weighted %
+    quiz_difficulty = pa.normalise_difficulty(quiz.get("difficulty"))
+    difficulties = _question_difficulties(quiz)
+    results = [
+        {"difficulty": difficulties[i],
+         "correct": i < len(payload.answers) and payload.answers[i] == q.correct_answer}
+        for i, q in enumerate(questions)
+    ]
+    correct_count = sum(r["correct"] for r in results)
     score_percentage = round((correct_count / total_questions) * 100.0, 2)
-    passed = score_percentage >= 70.0
+    weighted = pa.weighted_score(results)
+    passed = score_percentage >= pa.PASS_THRESHOLD
 
-    # 4. Idempotency check + evidence write (Bug #10 + #9)
+    # 2. Link the quiz to the learner's role competency (the skill-gap rows)
+    rows_before = await _competency_rows(igot_user_id)
+    engine = app_state.engine
+    descriptions = {cid: m.get("description", "") for cid, m in (getattr(engine, "_frac_map", None) or {}).items()}
+    row_before, link_method, link_score = await asyncio.to_thread(
+        pa.link_competency, rows_before or [], quiz, descriptions)
+    link = {"method": link_method, "score": link_score,
+            "competencyId": row_before.get("competencyId") if row_before else None}
+
+    # 3. Persist attempt + practice evidence (first submission only)
+    rec = await asyncio.to_thread(
+        _record_attempt, igot_user_id, payload.quiz_id, quiz, payload.answers, score_percentage,
+        weighted, passed, results, row_before, link)
+    evidence_written = rec["evidenceWritten"]
+
+    # 4. Re-resolve the skill gap so the learner sees the effect immediately
+    row_after = None
+    if evidence_written:
+        app_state.invalidate_user(igot_user_id)
+        if row_before:
+            rows_after = await _competency_rows(igot_user_id)
+            row_after = next((r for r in rows_after or [] if r.get("competencyId") == row_before["competencyId"]), None)
+
+    before, after = _row_snapshot(row_before), _row_snapshot(row_after or row_before)
+    skill_impact: Dict[str, Any] = {
+        "recorded": evidence_written,
+        "linkedToSkillGap": row_before is not None,
+        "competencyId": row_before.get("competencyId") if row_before else rec.get("compId"),
+        "competencyName": row_before.get("name") if row_before else (rec.get("competencyName") or quiz.get("skill_name")),
+        "linkMethod": link_method,
+        "linkScore": link_score,
+        "before": before,
+        "after": after,
+    }
+    if evidence_written:
+        skill_impact.update({k: rec[k] for k in ("abilityBefore", "abilityAfter", "abilityDelta",
+                                                   "startBasis", "perQuestion")})
+        if before and after:
+            skill_impact["scoreDelta"] = round(after["score"] - before["score"], 3)
+            if before.get("level") is not None and after.get("level") is not None:
+                skill_impact["levelDelta"] = after["level"] - before["level"]
+    elif not rec["firstAttempt"]:
+        skill_impact["note"] = ("You already submitted this quiz — practice evidence is recorded once per quiz. "
+                                "Generate a new quiz to move your skill level again.")
+    elif rec.get("error"):
+        skill_impact["note"] = "Could not record practice evidence (database unavailable)."
+
+    # 5. Karma (first pass only)
+    karma_result = None
+    if passed and rec["firstAttempt"] and evidence_written:
+        from models.models import KarmaEventType
+        from services.karma_engine import karma_engine
+        karma_result = await asyncio.to_thread(
+            karma_engine.award_safe, igot_user_id, KarmaEventType.ASSESSMENT_PASSED,
+            {"referenceId": payload.quiz_id, "note": skill_impact["competencyName"] or quiz.get("filename") or "Quiz passed"})
+
+    # 6. Review + recommendations
+    review = pa.review_topics(questions, payload.answers, difficulties)
+    next_diff, next_reason = pa.next_difficulty(quiz_difficulty, weighted)
+    focus = [r["question"] for r in review if not r["correct"]][:5]
+    catalogue_id = (row_before or {}).get("catalogueId") or (row_before or {}).get("competencyId") or quiz.get("competency_id")
+    courses = pa.suggest_courses(engine, catalogue_id, after.get("level"), after.get("targetLevel"))
+    name = skill_impact["competencyName"] or "this topic"
+    if after.get("gap"):
+        summary = (f"{name}: you are at Level {after['level']} of the Level {after['targetLevel']} your role needs "
+                   f"(gap {after['gap']}).")
+    elif after.get("level") is not None and after.get("targetLevel") is not None:
+        summary = f"{name}: you meet your role's Level {after['targetLevel']} — keep the skill fresh with harder quizzes."
+    else:
+        summary = f"{name}: not one of your role competencies, so this quiz does not change your skill gap."
+    if focus:
+        summary += f" Revise the {len(focus)} question{'s' if len(focus) != 1 else ''} you missed first."
+    recommendations = {"nextDifficulty": next_diff, "nextDifficultyReason": next_reason,
+                       "focusTopics": focus, "courses": courses, "summary": summary}
+
+    # 7. Pass → legacy CompetencyProfile table + iGOT sync
     synced_to_igot: Optional[bool] = None
     igot_response_data: Optional[Dict[str, Any]] = None
     db_updated: Optional[bool] = None
-    evidence_written: Optional[bool] = None
-    final_level: int = 3
-    karma_result = None
-
-    def _grant_value_for_score(score: float) -> float:
-        """Maps pass score [70,100] → evidence level [2.5, 4.0] (Bug #10)."""
-        return round(max(2.5, min(4.0, 2.5 + (score - 70) / 30 * 1.5)), 2)
-
-    # Write QuizAttempt row (idempotency) + EvidenceLog (Bug #9) if first attempt
-    db = SessionLocal()
-    try:
-        existing_attempt = db.query(QuizAttempt).filter(
-            QuizAttempt.userId == igot_user_id,
-            QuizAttempt.quizId == payload.quiz_id,
-        ).first()
-
-        if existing_attempt:
-            # Re-submission: return score for UX, do NOT write new evidence
-            evidence_written = False
-            logger.info(
-                "[grade_quiz] Re-submission detected for user=%s quiz=%s — skipping evidence write.",
-                igot_user_id, payload.quiz_id,
-            )
-        else:
-            # First submission: persist attempt record
-            quiz_comp_id = quiz.get("competency_id") or None
-            attempt = QuizAttempt(
-                userId          = igot_user_id,
-                quizId          = payload.quiz_id,
-                compId          = quiz_comp_id,
-                answers         = payload.answers,
-                score           = score_percentage,
-                passed          = passed,
-                evidenceWritten = False,
-            )
-            db.add(attempt)
-            db.flush()   # get attemptId without committing yet
-
-            if passed:
-                # FIX (Bug #9): write EvidenceLog keyed by iGOT userId
-                granted = _grant_value_for_score(score_percentage)
-
-                # Try to resolve comp_id to a real Competency row
-                comp_obj = None
-                if quiz_comp_id:
-                    comp_obj = db.query(Competency).filter(
-                        Competency.compId == quiz_comp_id
-                    ).first()
-                if not comp_obj:
-                    # Fallback: find/create by skill name
-                    skill_name = quiz.get("skill_name", "General Statistics")
-                    comp_obj = db.query(Competency).filter(
-                        Competency.skillName == skill_name
-                    ).first()
-                    if not comp_obj:
-                        comp_obj = Competency(
-                            compId    = f"COMP-{uuid.uuid4().hex[:6].upper()}",
-                            domain    = "Statistical",
-                            skillName = skill_name,
-                        )
-                        db.add(comp_obj)
-                        db.flush()
-
-                from datetime import timezone as _tz
-                evidence_row = EvidenceLog(
-                    userId       = igot_user_id,           # iGOT userId (Bug #9)
-                    compId       = comp_obj.compId,
-                    evidenceType = "PRACTICE_ASSESSMENT",  # (Bug #9)
-                    grantedValue = granted,                # formula, not +1 (Bug #10)
-                    issueDate    = datetime.now(_tz.utc),
-                    metadata_payload = {
-                        "quiz_id":    payload.quiz_id,
-                        "score":      score_percentage,
-                        "pass_threshold": 70.0,
-                    },
-                )
-                db.add(evidence_row)
-                attempt.evidenceWritten = True
-                evidence_written = True
-                logger.info(
-                    "[grade_quiz] EvidenceLog written: user=%s comp=%s granted=%.2f",
-                    igot_user_id, comp_obj.compId, granted,
-                )
-            else:
-                evidence_written = False
-
-            db.commit()
-            if evidence_written:
-                # The memoised competency state predates this row — drop it so
-                # the dashboard refetch after a pass shows the new level.
-                from services import app_state
-                app_state.invalidate_user(igot_user_id)
-            if passed:
-                from models.models import KarmaEventType
-                from services.karma_engine import karma_engine
-                karma_result = karma_engine.award_safe(igot_user_id, KarmaEventType.ASSESSMENT_PASSED, {
-                    "referenceId": payload.quiz_id,
-                    "note": quiz.get("skill_name") or quiz.get("filename") or "Quiz passed",
-                })
-
-    except Exception as exc:
-        db.rollback()
-        evidence_written = False
-        logger.exception("[grade_quiz] DB error during QuizAttempt/EvidenceLog write: %s", exc)
-    finally:
-        db.close()
-
-    # 5. If passed: update legacy CompetencyProfile table + sync to iGOT
     if passed:
-        skill_name = (
-            quiz.get("skill_name")
-            or quiz.get("competency")
-            or _detect_skill_name(text=quiz.get("extracted_text", ""), filename=quiz.get("filename", ""))
-            or "General Statistics"
+        skill_name = skill_impact["competencyName"] or quiz.get("skill_name") or "General Statistics"
+        db_updated, legacy_level = _update_internal_db_competency(
+            user_id=igot_user_id, competency_name=skill_name, default_level=3,
+            score=score_percentage, quiz_id=payload.quiz_id,
         )
-
-        # A. Update legacy internal DB (backward-compat — drives db_updated response field)
-        db_updated, final_level = _update_internal_db_competency(
-            user_id=igot_user_id,
-            competency_name=skill_name,
-            default_level=3,
-            score=score_percentage,
-            quiz_id=payload.quiz_id,
-        )
-
-        # B. Sync with mock iGOT server
-        igot_url   = os.getenv("IGOT_COMPETENCIES_UPDATE_URL", "http://localhost:8001/competencies/update")
+        igot_url = os.getenv("IGOT_COMPETENCIES_UPDATE_URL", "http://localhost:8001/competencies/update")
         igot_token = os.getenv("IGOT_MOCK_TOKEN", "mock-api-key-2026")
         update_payload = {
-            "user_id":   igot_user_id,
+            "user_id": igot_user_id,
             "competency": skill_name,
-            "new_level":  final_level,
+            "competency_id": skill_impact["competencyId"],
+            "new_level": after.get("level") if after.get("level") is not None else legacy_level,
         }
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.post(
-                    igot_url,
-                    json=update_payload,
-                    headers={"x-authenticated-user-token": igot_token},
-                )
-                if resp.status_code in (200, 201):
-                    synced_to_igot = True
-                    try:
-                        igot_response_data = resp.json()
-                    except Exception:
-                        igot_response_data = {"status": "success", "raw": resp.text}
-                else:
-                    synced_to_igot = False
-                    igot_response_data = {"status_code": resp.status_code, "response": resp.text}
+                resp = await client.post(igot_url, json=update_payload,
+                                         headers={"x-authenticated-user-token": igot_token})
+            synced_to_igot = resp.status_code in (200, 201)
+            try:
+                igot_response_data = resp.json()
+            except Exception:
+                igot_response_data = {"status_code": resp.status_code, "raw": resp.text}
         except httpx.RequestError as exc:
             synced_to_igot = False
             igot_response_data = {"warning": f"iGOT server unreachable at {igot_url}: {str(exc)}"}
-        except Exception as exc:
-            synced_to_igot = False
-            igot_response_data = {"error": str(exc)}
 
-    # 6. Build response message
-    if passed:
-        msg = f"Passed! You scored {score_percentage}% ({correct_count}/{total_questions} correct)."
-        if db_updated:
-            msg += f" Competency profile updated to Level {final_level}."
-        if evidence_written:
-            msg += " Practice assessment evidence recorded for skill gap analysis."
-        elif evidence_written is False and not (existing_attempt if 'existing_attempt' in dir() else True):
-            msg += " (Evidence already recorded from a previous submission.)"
-        if karma_result and karma_result.points_awarded > 0:
-            msg += f" +{karma_result.points_awarded} Karma Points earned."
-        if synced_to_igot:
-            msg += " Synced to iGOT."
-        elif synced_to_igot is False:
-            msg += " (iGOT sync unavailable — internal DB updated.)"
-    else:
-        msg = (
-            f"Did not pass. You scored {score_percentage}% ({correct_count}/{total_questions} correct). "
-            "A minimum score of 70% is required to update your competency profile."
-        )
+    # 8. Message
+    msg = (f"{'Passed' if passed else 'Not passed'} — {score_percentage:g}% ({correct_count}/{total_questions} correct), "
+           f"{weighted:g}% difficulty-weighted.")
+    if evidence_written and "abilityDelta" in skill_impact:
+        d = skill_impact["abilityDelta"]
+        msg += (f" {name} practice ability {skill_impact['abilityBefore']:.2f} → {skill_impact['abilityAfter']:.2f}"
+                f" ({'+' if d >= 0 else ''}{d:.2f}).")
+    elif skill_impact.get("note"):
+        msg += " " + skill_impact["note"]
+    if karma_result and karma_result.points_awarded > 0:
+        msg += f" +{karma_result.points_awarded} Karma Points earned."
+    if not passed:
+        msg += f" {pa.PASS_THRESHOLD:g}% is needed to pass."
 
     return GradeResponse(
-        status          = "success",
-        user_id         = igot_user_id,
-        quiz_id         = payload.quiz_id,
-        score           = score_percentage,
-        passed          = passed,
-        correct_count   = correct_count,
-        total_questions = total_questions,
-        message         = msg,
-        synced_to_igot  = synced_to_igot,
-        igot_response   = igot_response_data,
-        db_updated      = db_updated,
-        evidenceWritten = evidence_written,
-        karmaAwarded    = karma_result.points_awarded if karma_result else None,
-        karmaNote       = karma_result.reason if karma_result else None,
+        status="success",
+        user_id=igot_user_id,
+        quiz_id=payload.quiz_id,
+        score=score_percentage,
+        passed=passed,
+        correct_count=correct_count,
+        total_questions=total_questions,
+        message=msg,
+        synced_to_igot=synced_to_igot,
+        igot_response=igot_response_data,
+        db_updated=db_updated,
+        evidenceWritten=evidence_written,
+        karmaAwarded=karma_result.points_awarded if karma_result else None,
+        karmaNote=karma_result.reason if karma_result else None,
+        difficulty=quiz_difficulty,
+        weighted_score=weighted,
+        skillImpact=skill_impact,
+        questionReview=review,
+        recommendations=recommendations,
     )
 
 
+@router.get("/attempts", summary="The signed-in learner's graded quiz attempts, newest first")
+async def list_attempts(current_user: UserAuth = Depends(get_current_user)) -> Dict[str, Any]:
+    """Assessment Studio history: QuizAttempt rows joined with their practice evidence (skill impact)."""
+    user_id = current_user.username
+
+    def _load() -> List[Dict[str, Any]]:
+        db = SessionLocal()
+        try:
+            attempts = (db.query(QuizAttempt).filter(QuizAttempt.userId == user_id)
+                        .order_by(QuizAttempt.gradedAt.desc()).limit(100).all())
+            evidence = {}
+            for e in db.query(EvidenceLog).filter(EvidenceLog.userId == user_id,
+                                                  EvidenceLog.evidenceType == "PRACTICE_ASSESSMENT").all():
+                meta = e.metadata_payload or {}
+                if meta.get("quiz_id"):
+                    evidence[meta["quiz_id"]] = meta
+            names = {c.compId: c.skillName for c in db.query(Competency).filter(
+                Competency.compId.in_({a.compId for a in attempts if a.compId})).all()} if attempts else {}
+            out = []
+            for a in attempts:
+                meta = evidence.get(a.quizId, {})
+                stored = QUIZ_STORE.get(a.quizId) or {}
+                out.append({
+                    "id": a.attemptId,
+                    "quizId": a.quizId,
+                    "title": meta.get("title") or stored.get("filename") or a.quizId,
+                    "date": a.gradedAt.isoformat() if a.gradedAt else None,
+                    "score": a.score,
+                    "passed": a.passed,
+                    "weightedScore": meta.get("weighted_score"),
+                    "difficulty": meta.get("difficulty") or stored.get("difficulty"),
+                    "competencyId": a.compId,
+                    "competencyName": meta.get("competencyName") or names.get(a.compId),
+                    "abilityBefore": meta.get("ability_before"),
+                    "abilityAfter": meta.get("ability_after"),
+                })
+            return out
+        finally:
+            db.close()
+
+    try:
+        return {"status": "success", "attempts": await asyncio.to_thread(_load)}
+    except Exception as exc:
+        logger.exception("[attempts] %s", exc)
+        return {"status": "error", "attempts": []}

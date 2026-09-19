@@ -12,8 +12,9 @@ Changes vs prior version:
   explicit ADJACENT_COMPETENCIES table instead of a blanket category count.
 - Bug #1 fix: when confidence == "UNASSESSED", currentLevel is set to None,
   never fabricated.
-- Bug #9 read path: PRACTICE_ASSESSMENT rows from EvidenceLog are treated as
-  the documented evidence channel (same decay logic as DOCUMENTED_CERT).
+- Bug #9 read path: PRACTICE_ASSESSMENT rows from EvidenceLog feed the
+  documented evidence channel (same decay logic as DOCUMENTED_CERT). They are a
+  running practice ability, so the LATEST row counts (not the max).
 - Verified channel is level-aware: a COMPLETED course tagged with this
   competency at FRAC "Level N" credits N. Partial progress credits nothing
   (a 10%-watched course used to count as verified and flip confidence to HIGH).
@@ -27,6 +28,7 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+from services.practice_assessment import latest_practice_value
 from services.competency_service import (
     CHANNEL_WEIGHTS, CHANNEL_WEIGHTS_STATUS, CompetencyCalculator, fuse_channels,
 )
@@ -347,12 +349,15 @@ class BaselineAssembler:
 
             vs    = verified_scores_by_comp.get(tag_id(cid), 0.0)
 
-            # DocumentedScore — Bug #9 read path: include PRACTICE_ASSESSMENT rows
-            # in the documented channel so quiz-derived evidence feeds the formula.
+            # DocumentedScore — the best certificate, or the learner's CURRENT
+            # practice ability, whichever is higher. Practice rows (quizzes, the
+            # adaptive diagnostic) are a running rating that goes up and down
+            # with performance (services/practice_assessment.py), so only the
+            # latest one counts — a max would make a failed quiz invisible.
             ds, doc_date = 0.0, None
             for r in rows_for(cid):
                 etype = r.get("evidence_type") or r.get("evidenceType", "")
-                if etype in ("DOCUMENTED_CERT", "PRACTICE_ASSESSMENT"):
+                if etype == "DOCUMENTED_CERT":
                     val = float(r.get("granted_value") or r.get("grantedValue") or 0)
                     if val > ds:
                         ds = val
@@ -362,6 +367,9 @@ class BaselineAssembler:
                                 rd if isinstance(rd, datetime)
                                 else datetime.fromisoformat(str(rd))
                             )
+            practice, practice_date = latest_practice_value(rows_for(cid))
+            if practice > ds:
+                ds, doc_date = practice, practice_date
 
             # TenureScore
             ts  = _tenure_score(career, exp_years, cat, name)

@@ -16,7 +16,7 @@ Backend, `main-lms-backend/`:
 
 | File | Role |
 |---|---|
-| `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards) and stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`. |
+| `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards). Stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`, the quiz `difficulty`, and a `difficulty` on each question (`practice_assessment.media_question_difficulty`: the target level, one step harder for `synthesis` questions). `/grade` uses these for the difficulty-aware skill update. Generation is unchanged. |
 | `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource` (see *YouTube* below). |
 | `services/media_quiz/probe.py` | Computes `speech_ratio` (Silero VAD bundled with faster-whisper), `text_density` (RapidOCR **detector only**, one frame every ~10 s) and `screen_activity`, then `route()`. |
 | `services/media_quiz/extractors.py` | ASR (faster-whisper, per-window language, `task="transcribe"`, Whisper cut-offs), OCR on keyframes (RapidOCR, which runs the PaddleOCR models on ONNX) and the VLM (Gemini for demos, or Ollama Qwen2.5-VL offline). |
@@ -233,5 +233,6 @@ Timing on CPU: about 2 min for a 1-min narrated video (ASR dominates).
   CPI handbook and the glossary.
 - The relevance floor 0.76 and the probe thresholds were tuned on synthetic clips
   only. Re-tune them with the eval set.
-- The quiz is in-memory, like the document quiz. The `/grade` Authorization-header
-  bug noted in `rag-quiz-generator.md` also applies here.
+- The quiz is in-memory, like the document quiz. Grading is now authenticated
+  (`gradeQuiz`) and moves the learner's practice ability on the linked role
+  competency. See `rag-quiz-generator.md`.

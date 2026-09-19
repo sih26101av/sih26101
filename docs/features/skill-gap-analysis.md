@@ -45,6 +45,11 @@ three can never disagree.
     `_education_score` (`_EDU_RELEVANCE`), `_TIER_SENIORITY` (also maps the tier
     names profiles actually carry: `TIER1_APEX`, `TIER2_SENIOR`), `_map_category`.
   - `PRACTICE_ASSESSMENT` evidence rows are read through the *documented* channel.
+    They are a running practice ability (quizzes and the adaptive diagnostic, see
+    `services/practice_assessment.py`), so the channel takes the **latest**
+    practice row (`latest_practice_value`), not the max. The documented value is
+    then `max(best certificate, latest practice)`. As a result, a poor quiz
+    lowers the fused score and a good one raises it.
 - `main-lms-backend/main.py`
   - `_learner_competency_state(user_id)` — profile + enrollments + `EvidenceLog` →
     crosswalk (`_rec_engine.crosswalk`) → assembler → `resolve_level` → one row per
@@ -103,7 +108,9 @@ three can never disagree.
     `GET /api/evidence/v1/user/{id}` (`MockIgotAdapter.fetch_user_evidence`).
     `_learner_competency_state` merges them with the LMS's own `EvidenceLog`
     rows.
-- Tests: `main-lms-backend/tests/test_pathway.py` (formula renormalisation,
+- Tests: `tests/test_practice_assessment.py` (difficulty-aware update, latest
+  practice row wins, a failed quiz lowers the score and a passed one raises it),
+  `main-lms-backend/tests/test_pathway.py` (formula renormalisation,
   monotone levels, partial progress, crosswalked evidence, UNASSESSED),
   `tests/test_evidence_channels.py` (equal weights, renormalisation,
   lenient-rater ceiling, work-sample and confirmed-use floors, peer never
@@ -145,18 +152,22 @@ evidence alone supports (differs from `currentLevel` only when self-reported).
 ## Connections
 
 Levels feed the recommendation engine and pathway builder through the shared
-`_learner_competency_state`. Quiz passes and certificate uploads write `EvidenceLog`
-rows that move these numbers. The chatbot receives the computed gaps as request
+`_learner_competency_state`. Quiz attempts (pass or fail) and certificate
+uploads write `EvidenceLog` rows that move these numbers. `/rag/grade` links a
+quiz to one of these rows and returns the before → after snapshot as
+`skillImpact`. The chatbot receives the computed gaps as request
 context.
 
 ## TODOs / edge cases
 
 - Weights, half-lives, the adjacency table and `SYNERGY_CAP` are reasoned defaults,
   **not empirically validated** (SCIL v6 §3 wants AHP-elicited weights).
-- Every evidence source is a floor: nothing (not even a practice quiz, which only
-  writes evidence on a pass) can show an official is *below* a self-reported level.
-  The pathway's diagnostic step flags it, but a real "fail" signal needs the quiz
-  to record failed attempts as evidence too.
+- Quizzes now record failed attempts too: every first attempt writes the updated
+  practice ability, and a poor result lowers the fused `rawScore` (see
+  [rag-quiz-generator.md](rag-quiz-generator.md)). Floors still hold, though.
+  Nothing can show an official *below* a self-reported level, a completed course
+  or a passed work sample. The practice signal moves the score, and the
+  displayed level only when the formula is what sets it.
 - Documented/quiz evidence alone is capped at Level 3 by the MEDIUM ceiling (3.5);
   only verified completions reach Level 4–5.
 - If `_assembler` fails to build at startup, levels fall back to self-report only.

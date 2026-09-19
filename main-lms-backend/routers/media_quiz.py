@@ -28,6 +28,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from routers.rag import QUIZ_STORE, QuizQuestion
+from services.practice_assessment import media_question_difficulty
 from services.media_quiz import extractors, media_io
 from services.media_quiz.llm import LLMUnavailable
 from services.media_quiz.pipeline import NotLearnable, run
@@ -96,12 +97,16 @@ async def _process(media: media_io.MediaSource, filename: str, ext: str, size: i
                             detail=f"Media dependencies missing ({exc}). Run: pip install -r requirements-media.txt")
 
     skill_name = result.competency_name or "General Learning"
-    questions = [MediaQuizQuestion(**q.to_dict()) for q in result.questions]
+    questions = [MediaQuizQuestion(**q.to_dict(), difficulty=media_question_difficulty(difficulty, q.kind))
+                 for q in result.questions]
     quiz_id = f"QZ-{uuid.uuid4().hex[:8].upper()}"
     QUIZ_STORE[quiz_id] = {
         "quiz_id": quiz_id,
+        # Per-question difficulty for the difficulty-aware skill update at /grade:
+        # the quiz's target level, one step harder for cross-section synthesis questions.
         "questions": [QuizQuestion(question=q.question, options=q.options, correct_answer=q.correct_answer,
-                                   explanation=q.explanation) for q in questions],
+                                   explanation=q.explanation, difficulty=q.difficulty) for q in questions],
+        "difficulty": difficulty,
         "filename": filename,
         "extracted_text": result.transcript_excerpt,
         "chunk_count": len(result.report.get("chunks", [])),

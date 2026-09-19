@@ -6,9 +6,12 @@
  *
  * Sections: new_quiz · history · settings, inside the shared AppShell.
  *
- * History and the "last assessment" card read the learner's real achievement
- * record (`fetchAchievements`), replacing the hardcoded sample rows the page
- * previously displayed.
+ * Grading goes through the authenticated `gradeQuiz` (JWT → learner id). Every
+ * first attempt moves the learner's practice ability on the linked role
+ * competency with a difficulty-aware step, and the result screen shows the
+ * skill-gap impact, an answer review and next-step recommendations
+ * (components/assessment/QuizSkillImpact.tsx). History and the "last
+ * assessment" card read the learner's graded attempts (`fetchQuizAttempts`).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -19,21 +22,23 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
-import { fetchAchievements } from "../services/api";
-import type { Achievement } from "../types/domain";
+import { fetchQuizAttempts, gradeQuiz } from "../services/api";
+import type { QuizAttemptRecord, QuizGradeResult } from "../services/api";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
 import PageHeader from "../components/shell/PageHeader";
 import { MediaAnalysisCard, MediaAnswerReview, YoutubeLinkInput } from "../components/assessment/MediaQuizExtras";
 import { MEDIA_ACCEPT, generateMediaQuiz, generateYoutubeQuiz, isMediaFile, isYoutubeUrl } from "../services/mediaQuizApi";
 import SectionCard from "../components/shell/SectionCard";
+import { DifficultyChip, QuizQuestionReview, QuizRecommendations, SkillImpactCard } from "../components/assessment/QuizSkillImpact";
 
 type StudioTab = "new_quiz" | "history" | "settings";
 type Difficulty = "Easy" | "Medium" | "Hard";
 
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
 
-const formatDate = (iso: string): string => {
+const formatDate = (iso: string | null): string => {
+  if (!iso) return "—";
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? iso
@@ -53,7 +58,7 @@ const AssessmentPage: React.FC = () => {
 
   const [quizData, setQuizData] = useState<any>(null);
   const [answers, setAnswers] = useState<number[]>([]);
-  const [scoreInfo, setScoreInfo] = useState<any>(null);
+  const [scoreInfo, setScoreInfo] = useState<QuizGradeResult | null>(null);
 
   const [activeTab, setActiveTab] = useState<StudioTab>("new_quiz");
   const [selectedFormat, setSelectedFormat] = useState("pdf");
@@ -62,27 +67,22 @@ const AssessmentPage: React.FC = () => {
   const [youtubeUrl, setYoutubeUrl] = useState("");
 
   // ── Real assessment history ────────────────────────────────────────────────
-  const [history, setHistory] = useState<Achievement[]>([]);
+  const [history, setHistory] = useState<QuizAttemptRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const all = await fetchAchievements(userId);
-      setHistory(
-        all
-          .filter((a) => a.category === "RAG Quiz")
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-      );
+      setHistory(await fetchQuizAttempts());
     } catch (err) {
       console.error("[AssessmentPage] history", err);
       setHistory([]);
     } finally {
       setHistoryLoading(false);
     }
-  }, [userId]);
+  }, []);
 
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  useEffect(() => { loadHistory(); }, [loadHistory, userId]);
 
   const filteredHistory = history.filter((item) =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -171,21 +171,11 @@ const AssessmentPage: React.FC = () => {
     setStatus("grading");
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/rag/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, quiz_id: quizData.quiz_id, answers }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to grade assessment");
-      }
-
-      const data = await res.json();
+      // Authenticated: the backend takes the learner id from the JWT.
+      const data = await gradeQuiz(quizData.quiz_id, answers);
       setScoreInfo(data);
       setStatus("result");
-      loadHistory(); // a pass writes a new achievement — refresh the record
+      loadHistory(); // every first attempt is recorded — refresh the history
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "An error occurred during grading");
@@ -352,16 +342,16 @@ const AssessmentPage: React.FC = () => {
                         <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="12" fill="none" className="text-slate-100 dark:text-slate-700" />
                         <circle
                           cx="50" cy="50" r="40"
-                          stroke={lastAttempt.score >= 70 ? "#10b981" : "#e11d48"}
+                          stroke={lastAttempt.passed ? "#10b981" : "#e11d48"}
                           strokeWidth="12" fill="none" strokeLinecap="round"
                           strokeDasharray="251.2"
                           strokeDashoffset={251.2 * (1 - Math.min(100, lastAttempt.score) / 100)}
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-[26px] font-bold text-gov-ink dark:text-white">{lastAttempt.score}%</span>
+                        <span className="text-[26px] font-bold text-gov-ink dark:text-white">{Math.round(lastAttempt.score)}%</span>
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                          {lastAttempt.score >= 70 ? "Passed" : "Not passed"}
+                          {lastAttempt.passed ? "Passed" : "Not passed"}
                         </span>
                       </div>
                     </div>
@@ -375,14 +365,24 @@ const AssessmentPage: React.FC = () => {
                         <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Date</dt>
                         <dd className="text-[13px] text-slate-600 dark:text-slate-400">{formatDate(lastAttempt.date)}</dd>
                       </div>
+                      {lastAttempt.competencyName && (
+                        <div className="flex gap-2">
+                          <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Skill</dt>
+                          <dd className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-400">
+                            {lastAttempt.competencyName}
+                            {lastAttempt.difficulty && <DifficultyChip difficulty={lastAttempt.difficulty} />}
+                          </dd>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <dt className="w-20 flex-shrink-0 text-[13px] font-semibold text-gov-ink dark:text-white">Outcome</dt>
                         <dd className="flex items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-400">
-                          {lastAttempt.score >= 70 ? (
-                            <><CheckCircle className="h-4 w-4 text-accent-green" aria-hidden="true" /> Evidence logged to your competency baseline</>
-                          ) : (
-                            <><XCircle className="h-4 w-4 text-accent-rose" aria-hidden="true" /> 70% required to log verified evidence</>
-                          )}
+                          {lastAttempt.passed
+                            ? <CheckCircle className="h-4 w-4 text-accent-green" aria-hidden="true" />
+                            : <XCircle className="h-4 w-4 text-accent-rose" aria-hidden="true" />}
+                          {lastAttempt.abilityBefore != null && lastAttempt.abilityAfter != null
+                            ? `Practice ability ${lastAttempt.abilityBefore.toFixed(2)} → ${lastAttempt.abilityAfter.toFixed(2)}`
+                            : lastAttempt.passed ? "Passed" : "70% needed to pass"}
                         </dd>
                       </div>
                     </dl>
@@ -403,12 +403,15 @@ const AssessmentPage: React.FC = () => {
               padded={false}
             >
               <div className="overflow-x-auto">
-                <table className="gov-table min-w-[620px]">
+                <table className="gov-table min-w-[760px]">
                   <thead>
                     <tr>
                       <th scope="col">Date</th>
                       <th scope="col">Assessment Source</th>
+                      <th scope="col">Skill</th>
+                      <th scope="col">Difficulty</th>
                       <th scope="col">Score</th>
+                      <th scope="col">Ability</th>
                       <th scope="col">Result</th>
                     </tr>
                   </thead>
@@ -416,7 +419,7 @@ const AssessmentPage: React.FC = () => {
                     {historyLoading ? (
                       Array.from({ length: 3 }, (_, i) => (
                         <tr key={i} className="animate-pulse">
-                          {Array.from({ length: 4 }, (_, j) => (
+                          {Array.from({ length: 7 }, (_, j) => (
                             <td key={j} className="px-4 py-4"><div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-700" /></td>
                           ))}
                         </tr>
@@ -426,21 +429,35 @@ const AssessmentPage: React.FC = () => {
                         <tr key={row.id}>
                           <td className="whitespace-nowrap text-slate-500 dark:text-slate-400">{formatDate(row.date)}</td>
                           <td className="font-medium text-gov-ink dark:text-white">{row.title}</td>
-                          <td className="font-semibold tabular-nums">{row.score}%</td>
+                          <td className="text-slate-600 dark:text-slate-300">{row.competencyName ?? "—"}</td>
+                          <td>{row.difficulty ? <DifficultyChip difficulty={row.difficulty} /> : "—"}</td>
+                          <td className="font-semibold tabular-nums">
+                            {Math.round(row.score)}%
+                            {row.weightedScore != null && (
+                              <span className="ml-1 text-[11.5px] font-normal text-slate-400">({Math.round(row.weightedScore)}% wtd)</span>
+                            )}
+                          </td>
+                          <td className="tabular-nums">
+                            {row.abilityBefore != null && row.abilityAfter != null ? (
+                              <span className={row.abilityAfter >= row.abilityBefore ? "text-accent-green" : "text-accent-rose"}>
+                                {row.abilityAfter >= row.abilityBefore ? "+" : ""}{(row.abilityAfter - row.abilityBefore).toFixed(2)}
+                              </span>
+                            ) : "—"}
+                          </td>
                           <td>
                             <span className={`chip ${
-                              row.score >= 70
+                              row.passed
                                 ? "bg-accent-green-soft text-accent-green dark:bg-emerald-500/15 dark:text-emerald-300"
                                 : "bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300"
                             }`}>
-                              {row.score >= 70 ? "Passed" : "Not passed"}
+                              {row.passed ? "Passed" : "Not passed"}
                             </span>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="py-12 text-center text-slate-400">
+                        <td colSpan={7} className="py-12 text-center text-slate-400">
                           {searchTerm
                             ? `No assessments match “${searchTerm}”.`
                             : "No assessments on record yet."}
@@ -467,8 +484,10 @@ const AssessmentPage: React.FC = () => {
                   </div>
                 </fieldset>
                 <p className="rounded-xl border border-gov-line bg-gov-paper px-4 py-3 text-[12px] leading-relaxed text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
-                  A score of 70% or higher writes verified evidence against the competencies detected in
-                  your document and syncs the result to your iGOT Karmayogi record.
+                  Every first attempt updates your practice ability on the role competency the quiz matches:
+                  missing an easy question costs more than missing a hard one, and solving a hard question
+                  earns more. That ability feeds your skill-gap score. 70% or higher also passes the quiz,
+                  earns Karma Points and syncs to your iGOT Karmayogi record.
                 </p>
               </div>
             </SectionCard>
@@ -522,6 +541,7 @@ const AssessmentPage: React.FC = () => {
                 <legend className="mb-5 text-[16.5px] font-semibold text-gov-ink dark:text-slate-100">
                   <span className="mr-3 text-slate-400">{i + 1}.</span>
                   {q.question}
+                  {q.difficulty && <span className="ml-2 align-middle"><DifficultyChip difficulty={q.difficulty} /></span>}
                 </legend>
                 <div className="space-y-3">
                   {q.options.map((opt: string, optIdx: number) => {
@@ -579,14 +599,14 @@ const AssessmentPage: React.FC = () => {
             </h2>
             <p className="mb-2 font-medium text-slate-500 dark:text-slate-400">
               {scoreInfo.passed
-                ? "Your competency profile has been updated on iGOT."
-                : "You need 70% or more to pass. Review and try again."}
+                ? "Your skill-gap evidence has been updated and synced to iGOT."
+                : "You need 70% or more to pass — your attempt still counts toward your skill level."}
             </p>
             {scoreInfo.message && (
               <p className="mb-8 px-4 text-xs leading-relaxed text-slate-400 dark:text-slate-500">{scoreInfo.message}</p>
             )}
 
-            <div className="mb-8 grid grid-cols-2 gap-4">
+            <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-gov-line bg-gov-paper p-6 dark:border-slate-700 dark:bg-slate-900/50">
                 <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Score</p>
                 <p className={`text-4xl font-bold ${scoreInfo.passed ? "text-accent-green" : "text-accent-rose"}`}>
@@ -600,6 +620,12 @@ const AssessmentPage: React.FC = () => {
                   <span className="text-xl text-slate-400">/{scoreInfo.total_questions}</span>
                 </p>
               </div>
+              {scoreInfo.weighted_score != null && (
+                <div className="col-span-2 rounded-2xl border border-gov-line bg-gov-paper p-6 md:col-span-1 dark:border-slate-700 dark:bg-slate-900/50">
+                  <p className="mb-1 text-[11.5px] font-semibold uppercase tracking-wider text-slate-400">Difficulty-weighted</p>
+                  <p className="text-4xl font-bold text-gov-ink dark:text-white">{Math.round(scoreInfo.weighted_score)}%</p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -611,9 +637,16 @@ const AssessmentPage: React.FC = () => {
               </button>
             </div>
           </div>
-          {quizData?.media && (
+          <SkillImpactCard result={scoreInfo} />
+          <QuizRecommendations
+            result={scoreInfo}
+            onRetry={(d) => { setDifficulty(d); reset(); setActiveTab("new_quiz"); }}
+          />
+          {quizData?.media ? (
             <MediaAnswerReview questions={quizData.questions} evidence={quizData.evidence ?? []} answers={answers} />
-          )}
+          ) : scoreInfo.questionReview && scoreInfo.questionReview.length > 0 ? (
+            <QuizQuestionReview rows={scoreInfo.questionReview} />
+          ) : null}
         </div>
       )}
     </AppShell>

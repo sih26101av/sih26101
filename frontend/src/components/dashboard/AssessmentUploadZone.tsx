@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Bot, Globe, Paperclip, Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { gradeQuiz } from "../../services/api";
 
 interface AssessmentUploadZoneProps {
   userId?: string;
@@ -7,7 +8,7 @@ interface AssessmentUploadZoneProps {
   onViewProgress?: () => void;
 }
 
-const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ userId = 'usr_720465595', onQuizPassed, onViewProgress }) => {
+const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPassed, onViewProgress }) => {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "quiz" | "grading" | "result">("idle");
   const [loadingText, setLoadingText] = useState("");
@@ -77,27 +78,14 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ userId = 'u
     setStatus("grading");
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/rag/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          quiz_id: quizData.quiz_id,
-          answers: answers
-        })
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to grade quiz");
-      }
-
-      const data = await res.json();
+      // Authenticated: the backend takes the learner id from the JWT.
+      const data = await gradeQuiz(quizData.quiz_id, answers);
       setScoreInfo(data);
       setStatus("result");
-      
-      if (data.passed && onQuizPassed) {
-        onQuizPassed(); // Triggers refetch in background
+
+      // Any first attempt (pass or fail) moves the skill score — refetch the gaps.
+      if (data.evidenceWritten && onQuizPassed) {
+        onQuizPassed();
       }
     } catch (err: any) {
       console.error(err);

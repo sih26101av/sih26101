@@ -122,11 +122,15 @@ priority-weighted levels per hour across all ladders, optional hours budget) →
 `SkillGapCard` "View learning path" + "Suggested study order".
 
 **Document → quiz → evidence** (`POST /api/v1/rag/upload`, `/grade`)
-Upload → pdfplumber/pypdf/python-pptx extraction → LangChain chunking → Gemini
-JSON MCQs → in-memory `QUIZ_STORE`. Grade (JWT required) → `QuizAttempt`
-(unique on userId+quizId) → on first pass writes an `EvidenceLog`
-`PRACTICE_ASSESSMENT` row → feeds straight back into the baseline formula → also
-POSTs to the mock server's `/competencies/update`.
+Upload (with `difficulty`) → pdfplumber/pypdf/python-pptx extraction → LangChain
+chunking → Gemini JSON MCQs, each tagged Easy/Medium/Hard → in-memory `QUIZ_STORE`.
+Grade (JWT required) → link the quiz to one of the learner's role competencies
+(via `app_state.competency_state`, FRAC tag → e5 → keywords) → difficulty-aware
+practice-ability update (`services/practice_assessment.py`) → `QuizAttempt`
+(unique on userId+quizId) + on the first attempt, **pass or fail**, one
+`EvidenceLog` `PRACTICE_ASSESSMENT` row = the new ability → the assembler reads
+the latest one into the documented channel → re-resolved skill gap returned as
+`skillImpact`. A pass also awards karma and POSTs to the mock's `/competencies/update`.
 
 **Media → quiz → evidence** (`POST /api/v1/rag/media/upload`, `/youtube`)
 Probe (Silero VAD speech ratio, OCR-detector text density, screen activity) →

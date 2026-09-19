@@ -362,6 +362,100 @@ export async function fetchAchievements(userId: string): Promise<Achievement[]> 
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ASSESSMENT STUDIO — quiz grading ↔ skill gap (routers/rag.py)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type QuizDifficulty = 'Easy' | 'Medium' | 'Hard';
+
+export interface SkillSnapshot {
+  level: number | null;
+  score: number;
+  confidence: string | null;
+  basis: string | null;
+  targetLevel: number | null;
+  gap: number | null;
+}
+
+export interface QuizSkillImpact {
+  recorded: boolean;
+  linkedToSkillGap: boolean;
+  competencyId: string | null;
+  competencyName: string | null;
+  linkMethod: string;
+  before: Partial<SkillSnapshot>;
+  after: Partial<SkillSnapshot>;
+  abilityBefore?: number;
+  abilityAfter?: number;
+  abilityDelta?: number;
+  scoreDelta?: number;
+  levelDelta?: number;
+  perQuestion?: { difficulty: QuizDifficulty; correct: boolean; expected: number; delta: number }[];
+  note?: string;
+}
+
+export interface QuizQuestionReview {
+  index: number;
+  question: string;
+  difficulty: QuizDifficulty;
+  correct: boolean;
+  yourAnswer: string | null;
+  correctAnswer: string | null;
+  explanation: string;
+}
+
+export interface QuizGradeResult {
+  quiz_id: string;
+  score: number;
+  passed: boolean;
+  correct_count: number;
+  total_questions: number;
+  message: string;
+  evidenceWritten: boolean | null;
+  karmaAwarded: number | null;
+  difficulty: QuizDifficulty | null;
+  weighted_score: number | null;
+  skillImpact: QuizSkillImpact | null;
+  questionReview: QuizQuestionReview[] | null;
+  recommendations: {
+    nextDifficulty: QuizDifficulty;
+    nextDifficultyReason: string;
+    focusTopics: string[];
+    courses: { courseId: string; title: string; level: number | null; durationHours: number | null; rating: number | null }[];
+    summary: string;
+  } | null;
+}
+
+export interface QuizAttemptRecord {
+  id: string;
+  quizId: string;
+  title: string;
+  date: string | null;
+  score: number;
+  passed: boolean;
+  weightedScore: number | null;
+  difficulty: QuizDifficulty | null;
+  competencyId: string | null;
+  competencyName: string | null;
+  abilityBefore: number | null;
+  abilityAfter: number | null;
+}
+
+/** Grade a quiz with the learner's JWT (the backend derives the user from it). */
+export async function gradeQuiz(quizId: string, answers: number[]): Promise<QuizGradeResult> {
+  return lmsFetch<QuizGradeResult>('/api/v1/rag/grade', 'grade', {
+    method: 'POST',
+    body: JSON.stringify({ quiz_id: quizId, answers }),
+  });
+}
+
+/** The signed-in learner's graded quiz attempts, newest first. */
+export async function fetchQuizAttempts(): Promise<QuizAttemptRecord[]> {
+  const result = await lmsFetch<{ attempts: QuizAttemptRecord[] }>('/api/v1/rag/attempts', 'quiz attempts');
+  return result?.attempts ?? [];
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ADMIN API — routed through My App Backend (authenticated + role=admin)
 // ─────────────────────────────────────────────────────────────────────────────
 
