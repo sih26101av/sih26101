@@ -30,7 +30,8 @@ const SERIES_LIGHT = ['#1d4ed8', '#ea580c', '#0d9488'];
 const SERIES_DARK = ['#3b82f6', '#ea580c', '#0d9488'];
 
 const RATE_SERIES: { key: keyof TrendPoint; label: string }[] = [
-  { key: 'compliancePct', label: 'Completed ≥1 course' },
+  // Rolling 12-month rate, not the cumulative "ever completed" share (that one saturates at 100%).
+  { key: 'trainedLast12mPct', label: 'Trained in last 12 months' },
   { key: 'mandatoryCompletionPct', label: 'Mandatory (ACBP) completion' },
   { key: 'atTargetPct', label: 'Competencies at target (snapshots)' },
 ];

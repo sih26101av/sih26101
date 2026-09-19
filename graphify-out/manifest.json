@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/ChatWidget.tsx": {
-    "mtime": 1789806802.5130782,
-    "seen": 1789807161.6164439,
-    "ast_hash": "c6662a38c992fbe9813e555a614e3f87",
+    "mtime": 1789813562.8241532,
+    "seen": 1789813674.603061,
+    "ast_hash": "2e7eae676f9026c487be57fe97278723",
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/CourseCard.tsx": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/home/HomeChatWidget.tsx": {
-    "mtime": 1789786299.7062826,
-    "seen": 1789788789.6916554,
-    "ast_hash": "bda786cf87e9f51ebbf28acd6a517918",
+    "mtime": 1789813562.7862222,
+    "seen": 1789813674.606355,
+    "ast_hash": "b7bd73090ec4f761761a0aa77b5a45d5",
     "semantic_hash": ""
   },
   "frontend/src/context/AuthContext.tsx": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminDashboard.tsx": {
-    "mtime": 1789791433.794,
-    "seen": 1789791526.1331787,
-    "ast_hash": "02fddb6c3028bcc69ed89b3dacd7ae89",
+    "mtime": 1789813751.3786523,
+    "seen": 1789813867.8661432,
+    "ast_hash": "42dbf4f750cbb051b345b130fe863e0a",
     "semantic_hash": ""
   },
   "frontend/src/pages/AssessmentPage.tsx": {
@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/LearnerDashboard.tsx": {
-    "mtime": 1789804543.2510164,
-    "seen": 1789804600.877221,
-    "ast_hash": "58e854b520eb14266d1fd7c533eb986d",
+    "mtime": 1789813570.2629704,
+    "seen": 1789813674.6109743,
+    "ast_hash": "29e73a4f80928c556607e9c23792adea",
     "semantic_hash": ""
   },
   "frontend/src/pages/LoginPage.tsx": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1789791851.6482222,
-    "seen": 1789792275.9273705,
-    "ast_hash": "7c13c4ff45761adab5b0115bd673fc95",
+    "mtime": 1789813752.8109026,
+    "seen": 1789813867.8676105,
+    "ast_hash": "5f6474ec2a7f9e988a7f6b8909c782cc",
     "semantic_hash": ""
   },
   "frontend/src/services/authApi.ts": {
@@ -570,9 +570,9 @@
     "semantic_hash": ""
   },
   "docs/features/admin-dashboard.md": {
-    "mtime": 1789791497.5018518,
-    "seen": 1789791526.1782246,
-    "ast_hash": "a788305e5282137bf7cfe1a9b60805e3",
+    "mtime": 1789813838.9530528,
+    "seen": 1789813867.9191768,
+    "ast_hash": "bea93ea3d3c401a89f7306101dab7e1c",
     "semantic_hash": ""
   },
   "docs/features/auth-and-rbac.md": {
@@ -588,9 +588,9 @@
     "semantic_hash": ""
   },
   "docs/features/chatbot-gyan.md": {
-    "mtime": 1789807120.1965952,
-    "seen": 1789807161.6685932,
-    "ast_hash": "e3a9f0760cda3a462e1254e5619f90f7",
+    "mtime": 1789813759.405089,
+    "seen": 1789813867.9206374,
+    "ast_hash": "1f74c27e8c558ca6bfd5287d9f7ce577",
     "semantic_hash": ""
   },
   "docs/features/karma-points.md": {
@@ -600,9 +600,9 @@
     "semantic_hash": ""
   },
   "docs/features/learner-dashboard.md": {
-    "mtime": 1789804553.1262789,
-    "seen": 1789804600.963901,
-    "ast_hash": "178684220ee5e4b2ed05bf474f68996e",
+    "mtime": 1789813643.941851,
+    "seen": 1789813674.6562665,
+    "ast_hash": "4f45ce93ac93853404b2d5aa5b7c1cec",
     "semantic_hash": ""
   },
   "docs/features/mock-igot-integration.md": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "frontend/src/i18n/chatLanguages.ts": {
-    "mtime": 1789675744.015303,
-    "seen": 1789676800.7324276,
-    "ast_hash": "97634a52ce29d6100501b02978ebe55b",
+    "mtime": 1789813759.2043042,
+    "seen": 1789813867.8659039,
+    "ast_hash": "3493ab0659489ad3e996129ff12bad92",
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/LearningPathway.tsx": {
@@ -1428,9 +1428,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/admin/TrendsPanel.tsx": {
-    "mtime": 1789789836.7410238,
-    "seen": 1789789900.6064243,
-    "ast_hash": "ec7d6187911249f26cd0d37827d5fd6c",
+    "mtime": 1789813754.243605,
+    "seen": 1789813867.8547325,
+    "ast_hash": "54b529b46e4157c2382187a9e32cee63",
     "semantic_hash": ""
   },
   "frontend/src/components/admin/adminReport.ts": {
@@ -1440,9 +1440,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/CareerReadinessCard.tsx": {
-    "mtime": 1789788566.965456,
-    "seen": 1789788789.6877868,
-    "ast_hash": "8e3cdb06d2db712aed3cc9947ab50c83",
+    "mtime": 1789813589.2063212,
+    "seen": 1789813674.602783,
+    "ast_hash": "12f508b0727e7769ea345202ebb137c9",
     "semantic_hash": ""
   },
   "frontend/src/components/dashboard/LevelCheckModal.tsx": {
@@ -1458,9 +1458,9 @@
     "semantic_hash": ""
   },
   "main-lms-backend/routers/admin_console.py": {
-    "mtime": 1789789672.5439982,
-    "seen": 1789789900.6401,
-    "ast_hash": "09389be5cc7cc9ad63a5507bc155ff72",
+    "mtime": 1789813742.25782,
+    "seen": 1789813867.8799088,
+    "ast_hash": "5040a361017b72e461354532dd1de146",
     "semantic_hash": ""
   },
   "main-lms-backend/routers/career.py": {
@@ -1476,9 +1476,9 @@
     "semantic_hash": ""
   },
   "main-lms-backend/services/admin_analytics.py": {
-    "mtime": 1789789672.542469,
-    "seen": 1789789900.6442678,
-    "ast_hash": "5dc5f938aae0626dd0c00d52567e84e3",
+    "mtime": 1789813738.7655685,
+    "seen": 1789813867.8847141,
+    "ast_hash": "7b90714d98b03b3f532f3b9f972973a6",
     "semantic_hash": ""
   },
   "main-lms-backend/services/catalogue_store.py": {

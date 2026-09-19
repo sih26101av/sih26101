@@ -223,7 +223,11 @@ async def _trend_series(days: int, f: aa.Filters) -> Dict[str, Any]:
     rows = aa.apply_filters(await _roster(), f)
     rebuilt = aa.reconstruct_history(rows, start, end)
     stored = {d: p for d, m in await _db(_trend_loader(days)) if (p := aa.trend_point(d, m, f))}
-    points = [stored.get(p["date"], p) for p in rebuilt["points"]]
+    # The rolling "trained in last 12 months" rate is exact from dated completions,
+    # so it is taken from the reconstruction on stored-snapshot days as well.
+    points = [({**stored[p["date"]], "trainedLast12mPct": p.get("trainedLast12mPct")}
+               if p["date"] in stored and not stored[p["date"]].get("suppressed") else stored.get(p["date"], p))
+              for p in rebuilt["points"]]
     live = sorted(stored)
     return {"points": points, "weeklyCompletions": rebuilt["weeklyCompletions"],
             "liveSnapshots": len(live), "firstLiveSnapshot": live[0] if live else None}
@@ -519,7 +523,7 @@ async def export_csv(
                       i["recommendedAction"]] for i in e["items"]])
     if kind == "trends":
         pts = (await _trend_series(days, f))["points"]
-        cols = ["reconstructed", "officials", "compliancePct", "mandatoryCompletionPct", "behindMandatory", "avgMissingSkills",
+        cols = ["reconstructed", "officials", "trainedLast12mPct", "compliancePct", "mandatoryCompletionPct", "behindMandatory", "avgMissingSkills",
                 "avgLevel", "atTargetPct", "assessedPct"]
         return _csv(f"workforce-trends-{tag}-{stamp}.csv", ["date", *cols],
                     [[p["date"], *[p.get(c) for c in cols]] for p in pts])

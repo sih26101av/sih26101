@@ -79,11 +79,12 @@ const CareerReadinessCard: React.FC<Props> = ({ userId, refreshKey }) => {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[26px] font-black leading-none text-indigo-600 dark:text-indigo-400">{pct}%</span>
-              <span className="text-[9.5px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 uppercase tracking-wide">
-                {target ? "ready for next role" : "of current role"}
-              </span>
             </div>
           </div>
+          {/* Caption lives below the gauge — inside the ring it is wider than the hole and collides with the arc */}
+          <p className="-mt-2 mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {target ? "ready for next role" : "of current role"}
+          </p>
 
           <p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mb-3">
             {target ? (

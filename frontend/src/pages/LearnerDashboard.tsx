@@ -304,6 +304,14 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                       onFindCourses={handleFindCourses}
                       onViewDetailed={() => setActiveTab("skill-gap")}
                     />
+
+                    {/* Sits under the table so the left column fills the height of the right one */}
+                    <SectionCard
+                      title="Recent Activity"
+                      action={<SectionAction label="View all" onClick={() => setActiveTab("progress")} />}
+                    >
+                      <RecentActivityList achievements={achievements} />
+                    </SectionCard>
                   </div>
 
                   <div className="space-y-5">
@@ -317,13 +325,6 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                       userId={userId}
                       refreshKey={skillGaps.map(g => `${g.competency.compId}:${g.currentLevel}`).join("|")}
                     />
-
-                    <SectionCard
-                      title="Recent Activity"
-                      action={<SectionAction label="View all" onClick={() => setActiveTab("progress")} />}
-                    >
-                      <RecentActivityList achievements={achievements} />
-                    </SectionCard>
                   </div>
                 </div>
 

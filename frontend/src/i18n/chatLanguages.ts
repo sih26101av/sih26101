@@ -136,7 +136,7 @@ const COPY: Record<ChatLanguage, ChatCopy> = {
     },
     label: {
       gaps: 'Skill Gaps', courses: 'My Courses', progress: 'My Progress', assess: 'Assessments',
-      guidance: 'Platform Guidance', courseRecs: 'Course Recommendations',
+      guidance: 'Platform Guidance', courseRecs: 'Course Recommender',
       insights: 'Competency Insights', quick: 'Quick Information',
     },
   },
@@ -212,7 +212,7 @@ const COPY: Record<ChatLanguage, ChatCopy> = {
     },
     label: {
       gaps: 'Skill Gaps', courses: 'Mere Courses', progress: 'Meri Progress', assess: 'Assessments',
-      guidance: 'Platform Margdarshan', courseRecs: 'Course Recommendations',
+      guidance: 'Platform Margdarshan', courseRecs: 'Course Recommender',
       insights: 'Competency Insights', quick: 'Turant Jaankari',
     },
   },

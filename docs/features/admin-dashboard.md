@@ -50,10 +50,13 @@ aggregate at a time. It never downloads and aggregates the whole roster.
   - `AdminFilterBar.tsx`: the three facet selects with headcounts, `ExportButton`
     and `facetLabels`.
   - `TrendsPanel.tsx`: one point per day for the range (30d / 90d / 1y).
-    - **Training rates (%)**: compliance, mandatory completion, and
-      competencies at target. The first two come from snapshots or
-      reconstruction; "at target" exists only on snapshot days. A dashed marker
-      shows where the daily snapshots begin.
+    - **Training rates (%)**: trained in the last 12 months
+      (`trainedLast12mPct`), mandatory completion, and competencies at target.
+      The first is always from reconstruction (exact, also on snapshot days);
+      mandatory comes from snapshots or reconstruction; "at target" exists only
+      on snapshot days. A dashed marker shows where the daily snapshots begin.
+      The cumulative `compliancePct` ("ever completed ≥1 course") is no longer
+      plotted: it only rises and sits at 100% on this roster.
     - **Course completions per week**: a bar chart.
     - **Average FRAC level**: a line once there are two or more daily
       snapshots, until then today's value as text.
@@ -116,7 +119,7 @@ aggregate at a time. It never downloads and aggregates the whole roster.
 | GET | `/filters` | `{departments, grades, offices}`: `[{value, label, count}]` over the whole roster |
 | GET | `/overview` | `{kpis{totalOfficials, trainingCompliancePct, avgMissingSkills, mandatory{officialsWithPlan, behind, coursesAssigned, coursesCompleted, completionPct}, suppressed}, statusCounts, heatmap[{competency, gap, officials}], deptCompliance[{dept, headcount, pct, mandatoryPct, behindMandatory, suppressed}], needsTraining[5]}` |
 | GET | `/roster?page=&pageSize=&search=&status=` | `{items[AdminRosterRow], total, page, pageSize, totalPages, statusCounts}` |
-| GET | `/trends?days=` | `{points[{date, reconstructed, officials, compliancePct, mandatoryCompletionPct, behindMandatory?, avgMissingSkills?, avgLevel?, atTargetPct?, assessedPct?}], weeklyCompletions[{weekStart, completions}], liveSnapshots, firstLiveSnapshot, scope, note}`: one point per day |
+| GET | `/trends?days=` | `{points[{date, reconstructed, officials, compliancePct, trainedLast12mPct, mandatoryCompletionPct, behindMandatory?, avgMissingSkills?, avgLevel?, atTargetPct?, assessedPct?}], weeklyCompletions[{weekStart, completions}], liveSnapshots, firstLiveSnapshot, scope, note}`: one point per day |
 | POST | `/trends/snapshot` | upserts today's snapshot now |
 | GET | `/courses?q=` | catalogue search for the assign form |
 | GET/POST | `/assignments` | the plans assigned so far, with progress `{completedAll, completedSome, completionPct}` and `overdue` / create one |
@@ -148,7 +151,10 @@ Learner side (the learner or an admin only):
   snapshot:
   - `compliancePct` = officials whose first completion (from the mock
     roster's `completions[{courseId, completedDate}]`) falls on or before the
-    day;
+    day (cumulative; CSV only);
+  - `trainedLast12mPct` = officials with a completion in the trailing
+    `TRAINED_WINDOW_DAYS` (365) up to the day. `_trend_series` copies it onto
+    stored-snapshot days too, since old snapshot rows don't carry it;
   - `mandatoryCompletionPct` = current-cycle ACBP courses (`mandatory.courseIds`)
     completed by the day, over all courses assigned;
   - `weeklyCompletions` = course completions per week.
@@ -202,7 +208,8 @@ Learner side (the learner or an admin only):
   department before using "Nudge all".
 - Every official has `enrollmentStatus = 2`, so "training compliance" (at
   least one completed course) is 100%. The mandatory-completion KPI is the
-  informative one.
+  informative one. The trend chart therefore plots "trained in last 12 months"
+  (~76–81% over the past year) instead.
 - Emerging skills puts Survey Design, Price Statistics / CPI, Change
   Management, Leadership and Data Governance on top. As in the foresight view,
   the 6.5-month accuracy half-life drives most of the 36-month decline.

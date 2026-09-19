@@ -924,7 +924,7 @@ export interface TrendPoint {
   date: string; officials: number; suppressed?: boolean;
   /** true = rebuilt from dated iGOT completions (training rates only); false = stored daily snapshot */
   reconstructed?: boolean;
-  compliancePct?: number | null; mandatoryCompletionPct?: number | null; behindMandatory?: number;
+  compliancePct?: number | null; trainedLast12mPct?: number | null; mandatoryCompletionPct?: number | null; behindMandatory?: number;
   avgMissingSkills?: number | null; avgLevel?: number | null; atTargetPct?: number | null;
   assessedPct?: number | null;
 }

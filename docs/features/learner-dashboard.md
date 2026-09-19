@@ -13,9 +13,10 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     three legacy targets plus the new ones (`skill-gap`, `recommendations`,
     `assessments`, `certificates`, `karma`) and aliases (`skill-gaps`, `courses`).
   - `dashboard` → (no `PageHeader`; the banner carries the date chip) `ProfileHeader` + 5 `StatCard` tiles (assessed, active gaps,
-    mandatory gaps, recommendations, overall proficiency) + `CompetencyOverviewTable`
-    + right column (top→bottom) `LearningSnapshot`, `CareerReadinessCard`,
-    `RecentActivityList` + a 3-card
+    mandatory gaps, recommendations, overall proficiency) + left column
+    `CompetencyOverviewTable` then `RecentActivityList` (moved under the table so the
+    left column no longer leaves a blank gap beside the taller right column)
+    + right column (top→bottom) `LearningSnapshot`, `CareerReadinessCard` + a 3-card
     `RecommendationsPanel` preview.
   - `my-courses` → `MyCoursesView`; `progress` → `ProgressView` + `LearningSnapshot`.
   - `skill-gap` → 4 stat tiles + `SkillGapCard` (filtered by the topbar search).

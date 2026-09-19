@@ -378,18 +378,18 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
               </p>
 
               {/* Capability cards — each sends a real prompt */}
-              <div className="mb-5 grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <div className="mb-5 grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
                 {CAPABILITIES.map(({ id, icon: Icon, label, ask, tile, ink }) => (
                   <button
                     key={id}
                     onClick={() => handleSend(copy.ask[ask])}
-                    className="group flex flex-col items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-2 py-3 text-center
+                    className="group flex min-w-0 flex-col items-center gap-2 overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-0.5 py-3 text-center
                       transition-all duration-200 hover:-translate-y-0.5 hover:border-gov-blue/30 hover:shadow-[0_10px_24px_-14px_rgba(10,26,51,0.6)]"
                   >
                     <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tile} transition-transform duration-200 group-hover:scale-105`}>
                       <Icon size={18} className={ink} aria-hidden="true" />
                     </span>
-                    <span className="text-[10.5px] font-semibold leading-tight text-slate-700">{copy.label[label]}</span>
+                    <span className="w-full hyphens-auto break-words text-[9.5px] font-semibold leading-tight tracking-tight text-slate-700 [overflow-wrap:anywhere]">{copy.label[label]}</span>
                   </button>
                 ))}
               </div>

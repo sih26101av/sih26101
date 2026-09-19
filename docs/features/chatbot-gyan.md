@@ -90,7 +90,9 @@ Frontend:
   hints. Bubbles animate in with `animate-bubble-in` (keyframe in
   `tailwind.config.js`); the send button is grey until there is text to send.
   Each capability card and suggestion row calls `handleSend` with a real prompt from
-  `chatCopy(lang).ask` — none of them are decorative. There is deliberately **no**
+  `chatCopy(lang).ask` — none of them are decorative. The cards are `min-w-0` with
+  hyphenating/`overflow-wrap:anywhere` labels so long words wrap
+  inside the narrow 4-column grid instead of spilling out (same in `ChatWidget.tsx`). There is deliberately **no**
   file-attach button: the chat engine has no upload path, so the icon would be dead.
 - The chat textarea carries `focus-visible:ring-0 focus-visible:ring-offset-0`. The
   global `:focus-visible` rule in `index.css` paints a saffron **ring**, which

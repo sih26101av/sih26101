@@ -30,6 +30,9 @@ GRADE_LABELS = {
     "TIER4_JUNIOR": "Tier 4 · Junior (SSO / JSO)",
 }
 
+# Rolling window for the "trained in the last 12 months" trend line.
+TRAINED_WINDOW_DAYS = 365
+
 STATUS_LABELS = {2: "Compliant", 1: "In Progress", 0: "Training Required"}
 
 EMERGING_HORIZON_MONTHS = 36
@@ -293,7 +296,11 @@ def reconstruct_history(rows: List[Dict[str, Any]], start: date, end: date) -> D
     Daily training-rate history rebuilt from dated iGOT course completions, for
     days with no stored snapshot (history before the snapshot job existed):
 
-    * compliancePct — officials with a completed course on or before the day;
+    * compliancePct — officials with a completed course on or before the day
+      (cumulative, so it saturates — kept for CSV / back-compat);
+    * trainedLast12mPct — officials with a completed course in the trailing
+      TRAINED_WINDOW_DAYS up to the day (the rolling rate the chart plots; also
+      filled onto stored-snapshot days);
     * mandatoryCompletionPct — current-cycle ACBP courses completed by the day,
       over all ACBP courses assigned (the plan is taken as fixed);
     * weekly course completions (activity), Monday-start weeks.
@@ -312,6 +319,11 @@ def reconstruct_history(rows: List[Dict[str, Any]], start: date, end: date) -> D
             mand_dates += [r["completions"][c] for c in m.get("courseIds", []) if c in r["completions"]]
     mand_dates.sort()
     all_dates = sorted(d for r in rows for d in r.get("completions", {}).values())
+    per_user = [sorted(r["completions"].values()) for r in rows if r.get("completions")]
+
+    def trained_in_window(day: date) -> int:
+        lo, hi = (day - timedelta(days=TRAINED_WINDOW_DAYS)).isoformat(), day.isoformat()
+        return sum(1 for ds in per_user if any(lo < d <= hi for d in ds))
 
     def count_upto(sorted_dates: List[str], day: str) -> int:
         lo, hi = 0, len(sorted_dates)
@@ -333,6 +345,7 @@ def reconstruct_history(rows: List[Dict[str, Any]], start: date, end: date) -> D
             points.append({
                 "date": iso, "officials": n, "reconstructed": True,
                 "compliancePct": round(100 * count_upto(first_done, iso) / n, 1),
+                "trainedLast12mPct": round(100 * trained_in_window(day) / n, 1),
                 "mandatoryCompletionPct": (round(100 * count_upto(mand_dates, iso) / mand_total, 1)
                                            if mand_total else None),
             })

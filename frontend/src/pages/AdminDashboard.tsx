@@ -287,9 +287,9 @@ const AdminDashboard: React.FC = () => {
       title = 'Workforce trends';
       sections = [{
         heading: 'Daily snapshots (last 12 months)', note: t.note,
-        columns: ['Date', 'Officials', 'Compliance %', 'Mandatory %', 'Avg level', 'At target %', 'Avg missing skills'],
+        columns: ['Date', 'Officials', 'Trained last 12 m %', 'Mandatory %', 'Avg level', 'At target %', 'Avg missing skills'],
         rows: t.points.map((p) => p.suppressed ? [p.date, '<5', '—', '—', '—', '—', '—']
-          : [p.date, p.officials, p.compliancePct, p.mandatoryCompletionPct, p.avgLevel, p.atTargetPct, p.avgMissingSkills]),
+          : [p.date, p.officials, p.trainedLast12mPct, p.mandatoryCompletionPct, p.avgLevel, p.atTargetPct, p.avgMissingSkills]),
       }];
     } else if (kind === 'departments') {
       title = 'Training compliance by department';
