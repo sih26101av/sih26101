@@ -144,6 +144,17 @@ export interface SkillGapEntry {
   proficiency?: ProficiencyState | null;
   /** SCIL v6 §2 cold start for UNASSESSED: cohort prior "inferred from role" */
   coldStartPrior?: ColdStartPrior | null;
+  /** "Why this level" — what set the level, the floors and channels behind it */
+  whyThisLevel?: LevelExplanation | null;
+}
+
+export type LevelFactorRole = 'sets_level' | 'floor' | 'contributes' | 'context' | 'absent';
+
+export interface LevelExplanation {
+  summary: string;
+  basis: LevelBasis;
+  factors: { key: string; label: string; value: number; detail: string; role: LevelFactorRole }[];
+  caps: string[];
 }
 
 export interface ProficiencyState {
@@ -350,6 +361,90 @@ export interface CourseRecommendation {
   /** Human-readable chips explaining the recommendation */
   matchReasons: string[];
   priorityRank: number;
+  competencyId?: string;
+  courseLevel?: number | null;
+  tpacSource?: 'verified' | 'inferred' | 'none';
+  measuredUplift?: number | null;
+  /** self_paced | virtual_lab | classroom */
+  modality?: string | null;
+  /** In the official's Annual Capacity Building Plan — always listed first */
+  mandatory?: boolean;
+  why?: RecommendationWhy | null;
+}
+
+export interface RecommendationWhy {
+  gap: { competencyId: string; competencyName: string; currentLevel: number; targetLevel: number; gap: number } | null;
+  levelStep: { from: number | null; to: number | null; kind: 'next_step' | 'on_the_way' | 'stretch' | 'untagged_level' | 'mandatory' };
+  badges: { key: 'mandatory' | 'tpac_verified' | 'tpac_inferred' | 'measured_improvement' | 'under_review'; label: string; value?: number }[];
+  summary: string;
+}
+
+export type FeedbackEvent = 'impression' | 'click' | 'enrol' | 'thumbs_up' | 'thumbs_down' | 'clear_vote';
+
+// ── Career readiness (/learner/{id}/career-readiness) ────────────────────────
+export interface CareerCompetency {
+  competencyId: string;
+  competencyName: string;
+  requiredLevel: number;
+  currentLevel: number | null;
+  gap: number | null;
+  confidence: EvidenceConfidence;
+  basis: LevelBasis;
+  inCurrentRole: boolean;
+}
+
+export interface CareerRoleOption {
+  roleId: string;
+  designation: string;
+  tier: string;
+  readinessPct: number;
+  metCount: number;
+  gapCount: number;
+  unassessedCount: number;
+  competencies: CareerCompetency[];
+}
+
+export interface CareerReadiness {
+  currentRole: { roleId: string; designation: string; tier: string; officeId: string; readinessPct: number };
+  nextRole: CareerRoleOption | null;
+  alternatives: CareerRoleOption[];
+  atTopOfLadder: boolean;
+  milestones: { roleId: string; designation: string; tier: string; status: 'current' | 'next' | 'future' }[];
+  method: string;
+}
+
+// ── Adaptive level check (routers/diagnostic.py) + level disputes ────────────
+export interface DiagnosticItem {
+  itemId: string;
+  stem: string;
+  options: string[];
+  bloom: string;
+  level: number;
+}
+
+export interface DiagnosticView {
+  sessionId: string;
+  competencyId: string;
+  competencyName: string;
+  answered: number;
+  maxItems: number;
+  posterior: { mu: number; sigma: number };
+  done: boolean;
+  calibration: string;
+  item?: DiagnosticItem;
+  dispute?: { disputeId: string; status: DisputeStatus; shownLevel: number | null; claimedLevel: number | null; testedLevel: number };
+}
+
+export type DisputeStatus = 'OPEN' | 'CONFIRMED' | 'RAISED' | 'LOWER_THAN_SHOWN' | 'NEEDS_REVIEW';
+
+export interface LevelDispute {
+  disputeId: string;
+  competencyId: string;
+  shownLevel: number | null;
+  claimedLevel: number | null;
+  status: DisputeStatus;
+  testedLevel: number | null;
+  sessionId: string | null;
 }
 
 // Enrollment - maps to the /api/v1/users/{id}/enrollments response

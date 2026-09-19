@@ -23,9 +23,9 @@ Backend, `main-lms-backend/`:
 | `services/media_quiz/evidence.py` | `Timeline` holds the shared evidence records and prunes them by confidence; `build_chunks` does slide/speech alignment. |
 | `services/media_quiz/relevance.py` | Scores each chunk with multilingual-e5 (`ai/embedder.py` role `chat`) against the FRAC descriptions in `mock-igot-server/data/frac_competencies.json` (read-only). |
 | `services/media_quiz/question_gen.py` | Per-chunk generation, a synthesis pass and the validator. `generate_naive` is the eval baseline. |
-| `services/media_quiz/fact_check.py` | Checks answers against `reference_facts.json` (flags, never rejects), plus translation with ⟦T1⟧-protected terms. |
-| `services/media_quiz/llm.py` | `gemini_json` for text and images (same `GEMINI_API_KEY`/`GEMINI_MODEL` as the document quiz) and `ollama_vision_json`. |
-| `services/media_quiz/pipeline.py` | `run()` orchestrates the steps; one job at a time (semaphore). `run_naive()` is the old behaviour. |
+| `services/media_quiz/fact_check.py` | Checks answers against `reference_facts.json` (flags, never rejects), plus translation with ⟦T1⟧-protected terms. The per-answer check (`review_answer`) and the string translator (`translate_texts`) are shared with the document quiz (`services/doc_quiz`); `fact_check` / `translate_questions` wrap them and behave as before. |
+| `services/media_quiz/llm.py` | `gemini_json` for text and images (same `GEMINI_API_KEY`/`GEMINI_MODEL` as the document quiz) and `ollama_vision_json`. `DEFAULT_GEMINI_MODEL` (`gemini-3.5-flash-lite`) is the one model id for both quiz paths; `.env.example` matches it. |
+| `services/media_quiz/pipeline.py` | `run()` orchestrates the steps; one job at a time (semaphore). Independent stages run concurrently (see *Performance*). `warm_up()` preloads the CPU models; the router starts it in a background thread at startup (`MEDIA_WARMUP=0` turns it off). `run_naive()` is the old behaviour. |
 | `scripts/eval_media_quiz.py` | Runs a test folder through the old and new pipelines and writes `results.csv` and `summary.md`. |
 | `requirements-media.txt` | Optional dependencies. Without them the endpoints return 503; the document quiz is unaffected. |
 
@@ -111,6 +111,53 @@ Frontend, `frontend/src/`:
    - If `target_lang` is set (hi, bn, ta, …), glossary terms are protected as
      ⟦Tn⟧, the text is translated and the terms are restored. A field whose
      placeholders are lost keeps its English text.
+
+## Performance
+
+The pipeline's output doesn't depend on scheduling. Only the scheduling below was
+tuned, and a benchmark (below) checks that the timeline, chunks and drop counts come
+out **identical** to the sequential version.
+
+- **Probe:** the audio branch (decode, then VAD) runs next to the video branch (the
+  scan, then the text detector). Routing waits for both. Whisper starts loading
+  during the probe when ASR might be needed.
+- **Extract:** speech (Whisper or captions) runs next to visuals (OCR, then VLM).
+  Visual evidence is written to a staging `Timeline` and appended with
+  `Timeline.absorb()`, so the evidence ids are the same as a sequential run's
+  (ASR first, then OCR, then VLM).
+- **Whisper:** speech windows are independent (`condition_on_previous_text=False`),
+  so they decode in parallel on `MEDIA_WHISPER_WORKERS` CTranslate2 workers ×
+  `MEDIA_WHISPER_THREADS` threads. The defaults scale with `os.cpu_count()`.
+  Library default: 1 × 4. Results are written in window order.
+- **OCR:** RapidOCR's ONNX sessions are rebuilt with `MEDIA_OCR_THREADS`=2 intra-op
+  threads. By default each session takes every core, and on a single frame most of
+  those threads just spin. `MEDIA_OCR_WORKERS` frames are then recognised in
+  parallel, and the probe's text detector uses the same pool. Timeline writes stay
+  sequential, in keyframe order.
+- **YouTube:** when there are no captions, the video-only and audio-only streams
+  download in parallel.
+- **Cold start:** Whisper, RapidOCR, Silero VAD and e5 are loaded by the startup
+  warm-up instead of by the first request.
+
+Measured on the dev laptop (20 logical cores, warm models, VLM off). The input was a
+77-min 360p screen recording plus a 3-min narration, routed as `narrated_slides`.
+Gemini generation isn't included; it was already concurrent.
+
+| Stage | Before | After |
+|---|---|---|
+| Probe: scan ∥ text detector (55 frames) | 12 s + 19–22 s, sequential | 13 s + 11 s, alongside VAD |
+| OCR, 20 keyframes | 56–64 s | 24–34 s (identical text and scores) |
+| Whisper, 6 windows / 180 s of speech | 34–69 s (1 × 4 threads) | 30.5 s alone at 3 × 4 (identical transcript) |
+| ASR and OCR | sequential | concurrent (≈51 s together) |
+| **Probe + extract, wall time** | **122–154 s** | **≈74 s** |
+| First request after a restart | also loads the models | models loaded by the warm-up (≈20 s, in the background) |
+
+Tuning notes:
+- Whisper sweep (workers × threads → seconds): 1×4 69, 1×8 52, 2×4 42, 2×6 34,
+  3×4 30.5, 4×3 32. The default is 3 workers when there are ≥12 cores.
+- More OCR workers beyond about `cores/4` bring little.
+- On machines with fewer than 6 cores, the defaults fall back to one Whisper worker,
+  which is the old behaviour.
 
 ## YouTube
 
@@ -209,7 +256,9 @@ Hinglish, with Hindi auto-captions. Runs on warm CPU:
 Through the live API with the frontend's `Origin` header: HTTP 200, CORS OK,
 7 questions (about 4 min on a cold server).
 
-Timing on CPU: about 2 min for a 1-min narrated video (ASR dominates).
+Timing on CPU: about 2 min for a 1-min narrated video (ASR dominated). That was
+measured before the concurrency work in *Performance*, which roughly halves the CPU
+stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
@@ -224,7 +273,14 @@ Timing on CPU: about 2 min for a 1-min narrated video (ASR dominates).
 - The endpoints are **unauthenticated**, like `/rag/upload`, and CPU-heavy. They
   should take a JWT once the frontend has a multipart-capable authenticated fetch.
 - Processing is synchronous. Long videos keep the request open for minutes. A job
-  queue with polling would be better. Only one job runs per process.
+  queue with polling would be better. Only one job runs per process (each job
+  already uses most of the CPU).
+- The remaining big CPU costs: RapidOCR's detector upscales the short side to
+  736 px (`limit_type: min`), and recognition uses about 2 s of CPU per text-heavy
+  frame. Lowering either changes the OCR output, so both were left alone. Try them
+  against the eval set.
+- On hosts with little RAM, the startup warm-up keeps Whisper (~0.5 GB) resident.
+  Set `MEDIA_WARMUP=0` there.
 - The RapidOCR recognition model is Chinese/English. Devanagari slides OCR poorly
   and are mostly dropped by the confidence gate. A Devanagari recognition model is
   needed for Hindi slides.

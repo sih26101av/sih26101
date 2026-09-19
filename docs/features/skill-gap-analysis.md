@@ -22,9 +22,23 @@ three can never disagree.
     `ADJACENT_COMPETENCIES` (now keyed by the real FRAC catalogue ids), cap 0.15.
   - Self-report is discounted ×0.6; seniority is zeroed for Domain/Technical.
 - `main-lms-backend/services/baseline_assembler.py`
-  - `BaselineAssembler(course_comp_map)` — map is `{courseId: {compId: FRAC level}}`
+  - `BaselineAssembler(course_comp_map, rater_offsets=None)` — map is `{courseId: {compId: FRAC level}}`
     from `HybridRecommendationEngine.course_comp_levels()` (legacy
-    `{courseId: [compId]}` still accepted).
+    `{courseId: [compId]}` still accepted); `rater_offsets` from
+    `ReferenceData.rater_offsets` (see *Supervisor leniency* below).
+  - `assess_competency(frac_type, comp_id, evidence, work, verified_scores_by_comp, now,
+    completed_level)` — **the one scoring path**: 6-term K (adjacency synergy) fused
+    with A/U/S, confidence from the strongest objective channel, ceilings,
+    `currentLevel`. Used by `compute_for_user` (Pass 2) and by `POST /baseline`.
+    Returns `ceiling` and `_evidence` including `supervisorRaw` / `raterOffset`.
+  - `explain_level(assessment, resolved, self_reported_level, completed_courses,
+    practice_rows)` → `{summary, basis, factors[{key,label,value,detail,role}], caps[]}`:
+    the "why this level" text. `role` ∈ `sets_level | floor | contributes | context`.
+    It names the completed course behind a course floor, the rater
+    correction behind S, and the confidence ceiling ("capped at 3.5 without a
+    completed course") and self-report caveat as `caps`. It is built only from
+    values the assessment already holds. `compute_for_user` adds
+    `completedCourses` and `practiceRows` to each result for it.
   - `compute_for_user(user, enrollments, db_evidence, now, comp_aliases)` →
     `{compId: {score, confidence, currentLevel, completedLevel, _evidence{…}}}`.
     Two passes (verified first, for synergy). `comp_aliases` = crosswalk
@@ -51,7 +65,8 @@ three can never disagree.
     then `max(best certificate, latest practice)`. As a result, a poor quiz
     lowers the fused score and a good one raises it.
 - `main-lms-backend/main.py`
-  - `_learner_competency_state(user_id)` — profile + enrollments + `EvidenceLog` →
+  - `_learner_competency_state(user_id)` — returns `{user, enrollments, competencies,
+    evidenceRows, aliases}`; each row now carries `explanation` (`explain_level`). Pipeline: profile + enrollments + `EvidenceLog` →
     crosswalk (`_rec_engine.crosswalk`) → assembler → `resolve_level` → one row per
     role competency. Shared by `/skill-gaps`, `/recommendations`, `/pathway`.
     It is a memo over `_resolve_competency_state` keyed `(userId, annotate)`
@@ -69,13 +84,51 @@ three can never disagree.
     `Technical→Technical`), disambiguates duplicate display names, sorts known gaps
     first (largest gap, then lowest raw score), UNASSESSED last.
 - `main-lms-backend/routers/competency.py::POST /api/v1/competencies/baseline` —
-  stateless calculator for a single hand-supplied `EvidencePayload` (demo/debug).
+  stateless calculator for a single hand-supplied `EvidencePayload` (demo/debug), now
+  on the assembler path (`assess_competency` → `resolve_level` → `explain_level`).
+  The optional payload fields are `comp_id` (adjacency synergy),
+  `adjacent_verified`, workplace channels (`work_sample_level/passed`,
+  `utility_level`, `supervisor_rating` + `rater_id`), `completed_level` and
+  `self_reported_level`. The response carries `level`, `basis`,
+  `knowledgeScore`, `channels` and `whyThisLevel`. `verified_count_in_category`
+  is accepted and ignored.
+- **Supervisor leniency (per-rater mean offset).**
+  `competency_service.rater_leniency_offsets(ratings)` computes, for each rater,
+  `offset = (rater mean − grand mean) · n/(n+5)` (no correction below 3
+  ratings). `correct_supervisor_rating` gives `S = clamp(raw − offset, 1, 5)`.
+  Ratings come from the mock's `GET /api/evidence/v1/supervisor-ratings`
+  (`ReferenceData.rater_offsets`, 46 raters in the mock data), and the offsets
+  are applied in `_workplace_channels` before fusion.
+- **Career readiness** — `routers/career.py::GET /api/v1/learner/{id}/career-readiness[?targetRoleId=]`.
+  The next role is the role(s) in the official's office one tier up
+  (`roles.json` via `ReferenceData.roles`, `TIER_RANK`). Levels for the role's
+  competencies come from `_learner_competency_state`. Competencies not in the
+  current profile are scored on the same evidence through
+  `assembler.compute_for_user` (no self-report), using `state["evidenceRows"]`.
+  `readiness = mean(min(level, required)/required)`, with UNASSESSED counted as
+  0 and listed. The primary option is the highest-readiness role in that tier;
+  the others go under `alternatives`. `milestones` = current → next → the tier
+  after.
+- **Level disputes** — `routers/career.py::POST/GET /api/v1/level-disputes`
+  (`models.LevelDispute`). Posting one records the shown and claimed level and
+  starts an adaptive session (`diagnostic.start_session`); with no item bank it
+  is stored as `NEEDS_REVIEW`. When the session finishes,
+  `diagnostic._resolve_dispute` sets `CONFIRMED | RAISED | LOWER_THAN_SHOWN`
+  from `floor(posterior μ)`, and the answer view carries `dispute`. The usual
+  PRACTICE_ASSESSMENT row is what moves the level, so floors still hold.
 - `main-lms-backend/models/models.py::EvidenceLog` — the evidence store
-  (`VERIFIED_IGOT`, `DOCUMENTED_CERT`, `TENURE`, `SELF_REPORT`, `PRACTICE_ASSESSMENT`).
-- Frontend: `src/services/api.ts::fetchSkillGapsAndProfile`,
+  (`VERIFIED_IGOT`, `DOCUMENTED_CERT`, `VERIFIED_CERT`, `TENURE`, `SELF_REPORT`, `PRACTICE_ASSESSMENT`).
+  `VERIFIED_CERT` rows (admin-approved certificates) are read by the verified channel
+  together with `VERIFIED_IGOT` (`baseline_assembler.VERIFIED_EVIDENCE`).
+- `_load_db_evidence` and every non-route DB use go through `auth.database.session_scope()`;
+  routes use `Depends(get_db)` (no `next(get_db())` left).
+- Frontend: `src/services/api.ts::fetchSkillGapsAndProfile` (+ `whyThisLevel`),
+  `fetchCareerReadiness`, `openLevelDispute`, `answerDiagnostic`;
+  `components/dashboard/CareerReadinessCard.tsx`, `LevelCheckModal.tsx`,
   `src/hooks/useLearnerDashboard.ts`, `src/components/dashboard/SkillGapCard.tsx`
   (pip strip, target gauge, `CONFIDENCE_CONFIG` badge incl. UNASSESSED and a
-  "Self-reported" label, per-channel `EvidenceBar`, "Not yet assessed" section,
+  "Self-reported" label, "Why this level?" panel (`WhyThisLevel`), "Disagree with
+  this level?" → `LevelCheckModal`, per-channel `EvidenceBar`, "Not yet assessed" section,
   per-gap learning-path toggle — see
   [recommendation-engine.md](recommendation-engine.md)).
 - **SCIL v6 §3 evidence channels (B6).** The 6-term `b_k` above is channel
@@ -133,8 +186,20 @@ three can never disagree.
                   "peerFeedback",
                   "evidence": { "verified","documented","tenure","selfReport",
                                 "education","seniority","workSample","utility",
-                                "supervisor" } }] }
+                                "supervisor","supervisorRaw","raterOffset" },
+                  "whyThisLevel": { "summary","basis",
+                                    "factors": [{ "key","label","value","detail","role" }],
+                                    "caps": [] } }] }
 ```
+`GET /api/v1/learner/{id}/career-readiness` →
+`{currentRole{roleId,designation,tier,officeId,readinessPct}, nextRole{roleId,designation,tier,
+readinessPct,metCount,gapCount,unassessedCount,competencies[{competencyId,competencyName,
+requiredLevel,currentLevel,gap,confidence,basis,inCurrentRole}]} | null, alternatives[],
+atTopOfLadder, milestones[{roleId,designation,tier,status}], method}`.
+
+`POST /api/v1/level-disputes {competencyId, claimedLevel?, reason?}` →
+`{dispute{disputeId,competencyId,shownLevel,claimedLevel,status,testedLevel,sessionId,…},
+session: <diagnostic view> | null}`; `GET /api/v1/level-disputes` → `{disputes[]}`.
 `rawScore` is the fused K/A/U/S score. `basis` also takes `work_sample` and
 `applied_at_work` values. Each row also carries `proficiency` (SCIL v6 §2
 belief θ ~ N(μ, σ²) with dated two-class decay, expected-shortfall gap,
@@ -171,13 +236,20 @@ context.
 - Documented/quiz evidence alone is capped at Level 3 by the MEDIUM ceiling (3.5);
   only verified completions reach Level 4–5.
 - If `_assembler` fails to build at startup, levels fall back to self-report only.
-- Sessions are opened with `next(get_db())` rather than via `Depends(get_db)`.
-- `routers/competency.py::/baseline` still uses the legacy count-based synergy path.
-- **Supervisor ratings are not corrected for rater leniency.** The synthetic
-  raters are lenient by +0.4 levels on average, plus halo. With equal weights,
-  S raises the fused level where K is weak; the ceilings bound it only when no
-  objective evidence exists. A per-rater leniency correction needs repeated
-  ratings per rater and is a TODO.
+- Sessions: done (routes use `Depends(get_db)`, the rest `session_scope()`).
+- `/baseline`: done (assembler path).
+- **Rater leniency is corrected relative to other raters only.** Mean-centring
+  cannot remove leniency that every rater shares: the synthetic raters are
+  all +0.4 on average, and the grand mean absorbs that. A rater whose team
+  really is stronger also gets corrected as if lenient. An anchor against
+  objective evidence (K/A of the same ratees) would fix both; that is a TODO.
+  Offsets are computed once at startup.
+- Career readiness assumes promotion stays within the office, one tier up. Cross-office
+  moves need `?targetRoleId=`. Competencies outside the current profile have no
+  self-report, so they are often LOW or UNASSESSED; the level check is the fix.
+- Level disputes: `LOWER_THAN_SHOWN` is recorded but cannot push the level
+  below evidence floors (completed course, passed work sample). There is no
+  reviewer UI for `NEEDS_REVIEW` disputes yet.
 - Opportunity badge: done (B1).
 - Tier-2 attribute mastery (DINA) is not built. It needs 30–50 real
   respondents; synthetic data is not enough.

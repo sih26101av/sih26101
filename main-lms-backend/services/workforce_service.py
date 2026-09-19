@@ -96,7 +96,8 @@ def capability_risk(snapshot: Dict[str, Dict[str, Any]], hrms: Dict[str, Any], n
 
 
 def _p_capable(row: Dict[str, Any], months_ahead: float, now: datetime,
-               population: Dict[str, Any]) -> float:
+               population: Dict[str, Any], threshold: float = CAPABLE_LEVEL) -> float:
+    """P(θ ≥ threshold) `months_ahead` from now under dated decay (0 when unassessed)."""
     conf = row.get("confidence")
     if conf not in SIGMA_BY_CONFIDENCE:
         return 0.0
@@ -106,7 +107,7 @@ def _p_capable(row: Dict[str, Any], months_ahead: float, now: datetime,
     if age is not None:
         mu, sigma, _ = decay(mu, sigma, age + months_ahead, row.get("decayClass", "procedural"),
                              pop_mu, pop_sigma)
-    return 1.0 - _Phi((CAPABLE_LEVEL - mu) / sigma)
+    return 1.0 - _Phi((threshold - mu) / sigma)
 
 
 def foresight(snapshot: Dict[str, Dict[str, Any]], hrms: Dict[str, Any], names: Dict[str, str],

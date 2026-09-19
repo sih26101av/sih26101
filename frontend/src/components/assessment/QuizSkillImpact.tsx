@@ -5,8 +5,11 @@
  *  - SkillImpactCard      — linked role competency, practice ability and skill
  *                           score / level before → after, per-question moves
  *  - QuizRecommendations  — next difficulty, focus topics, courses
- *  - QuizQuestionReview   — each question with difficulty, your answer, the
- *                           correct answer and the explanation (missed first)
+ *  - QuizQuestionReview   — each question (any type) with difficulty, your
+ *                           answer, the correct answer, personalised "why"
+ *                           feedback, the source passage, a course for the
+ *                           missed point and the difficulty calibration
+ *                           (missed first)
  */
 
 import React from "react";
@@ -186,9 +189,32 @@ export const QuizRecommendations: React.FC<{ result: QuizGradeResult; onRetry?: 
   );
 };
 
+const TYPE_NAMES: Record<string, string> = {
+  mcq: "Multiple choice", true_false: "True / False", multi_select: "Select all",
+  fill_blank: "Fill in the blank", numeric: "Numeric",
+};
+
+const CalibrationNote: React.FC<{ row: ReviewRow }> = ({ row }) => {
+  const c = row.calibration;
+  if (!c) return null;
+  if (c.source === "response_data") {
+    const pct = c.pValue != null ? `${Math.round(c.pValue * 100)}% answered correctly` : "";
+    return (
+      <p className="mt-1.5 pl-6 text-[11.5px] text-slate-400">
+        Difficulty from {c.responses} learner responses{pct ? ` (${pct})` : ""}
+        {c.agreesWithLlm === false ? ` — the generator had tagged it ${c.llmDifficulty}` : ""}.
+      </p>
+    );
+  }
+  return null;
+};
+
 export const QuizQuestionReview: React.FC<{ rows: ReviewRow[] }> = ({ rows }) => (
   <section className="panel mt-5 p-6 text-left" aria-labelledby="quiz-review-title">
-    <h3 id="quiz-review-title" className="mb-4 text-[15px] font-semibold text-gov-ink dark:text-white">Answer review</h3>
+    <h3 id="quiz-review-title" className="mb-1 text-[15px] font-semibold text-gov-ink dark:text-white">Answer review</h3>
+    <p className="mb-4 text-[12.5px] text-slate-500 dark:text-slate-400">
+      Each missed question explains why your answer is wrong, shows the source passage it came from, and suggests a course.
+    </p>
     <ol className="space-y-3">
       {rows.map((r) => (
         <li key={r.index} className={`rounded-xl border p-4 ${r.correct ? "border-gov-line dark:border-slate-700" : "border-accent-rose/30 bg-accent-rose-soft/40 dark:border-rose-800/40 dark:bg-rose-900/10"}`}>
@@ -198,14 +224,57 @@ export const QuizQuestionReview: React.FC<{ rows: ReviewRow[] }> = ({ rows }) =>
               : <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-rose" aria-label="wrong" />}
             <p className="flex-1 text-[13.5px] font-medium text-gov-ink dark:text-white">
               <span className="mr-1.5 text-slate-400">{r.index + 1}.</span>{r.question}
+              {r.translation?.question && r.translation.question !== r.question && (
+                <span className="mt-0.5 block text-[12.5px] font-normal text-slate-500 dark:text-slate-400">{r.translation.question}</span>
+              )}
             </p>
-            <DifficultyChip difficulty={r.difficulty} />
+            <span className="flex flex-shrink-0 flex-wrap justify-end gap-1">
+              {r.type && r.type !== "mcq" && (
+                <span className="chip bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300">{TYPE_NAMES[r.type] ?? r.type}</span>
+              )}
+              <DifficultyChip difficulty={r.difficulty} />
+            </span>
           </div>
-          {!r.correct && r.yourAnswer && (
-            <p className="pl-6 text-[12.5px] text-accent-rose">Your answer: {r.yourAnswer}</p>
+          {!r.correct && (
+            <p className="pl-6 text-[12.5px] text-accent-rose">Your answer: {r.yourAnswer ?? "— (not answered)"}</p>
           )}
           <p className="pl-6 text-[12.5px] text-accent-green">Correct answer: {r.correctAnswer}</p>
-          {r.explanation && <p className="mt-1 pl-6 text-[12.5px] leading-relaxed text-slate-500 dark:text-slate-400">{r.explanation}</p>}
+
+          {!r.correct && r.feedback && (
+            <p className="mt-2 ml-6 rounded-lg border-l-2 border-accent-rose/60 bg-white/70 px-3 py-2 text-[12.5px] leading-relaxed text-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+              <span className="font-semibold">Why: </span>{r.feedback}
+            </p>
+          )}
+          {(r.correct || !r.feedback) && r.explanation && (
+            <p className="mt-1 pl-6 text-[12.5px] leading-relaxed text-slate-500 dark:text-slate-400">{r.explanation}</p>
+          )}
+          {r.correct && r.solution && (
+            <p className="mt-1 pl-6 text-[12px] text-slate-500 dark:text-slate-400">Working: {r.solution}</p>
+          )}
+
+          {r.source && (
+            <figure className="mt-2 ml-6 rounded-lg border border-gov-line bg-gov-paper px-3 py-2 dark:border-slate-700 dark:bg-slate-900/50">
+              <figcaption className="mb-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
+                Source · {r.source.locator}
+              </figcaption>
+              <blockquote className="text-[12.5px] italic leading-relaxed text-slate-600 dark:text-slate-300">“{r.source.passage || r.source.quote}”</blockquote>
+            </figure>
+          )}
+
+          {!r.correct && r.course && (
+            <p className="mt-2 flex items-center gap-2 pl-6 text-[12.5px] text-slate-600 dark:text-slate-300">
+              <BookOpen className="h-3.5 w-3.5 flex-shrink-0 text-accent-blue" aria-hidden="true" />
+              <span>
+                Revise with <span className="font-semibold text-gov-ink dark:text-white">{r.course.title}</span>
+                {r.course.durationHours ? <span className="text-slate-400"> · {r.course.durationHours} h</span> : null}
+              </span>
+            </p>
+          )}
+
+          {r.review?.status === "flagged" && r.review.note && (
+            <p className="mt-1.5 pl-6 text-[11.5px] text-amber-600 dark:text-amber-400">Trainer check: {r.review.note}</p>
+          )}
+          <CalibrationNote row={r} />
         </li>
       ))}
     </ol>

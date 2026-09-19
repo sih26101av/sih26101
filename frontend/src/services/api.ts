@@ -34,6 +34,11 @@ import type {
   KarmaRules,
   EvidenceConfidence,
   LearningPathwayResponse,
+  RecommendationWhy,
+  FeedbackEvent,
+  CareerReadiness,
+  LevelDispute,
+  DiagnosticView,
 } from '../types/domain';
 import { refresh } from './authApi';
 
@@ -94,8 +99,10 @@ async function lmsFetch<T>(
   options: RequestInit = {},
 ): Promise<T> {
 
+  // FormData bodies set their own multipart boundary header.
+  const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const makeHeaders = (token: string | null) => ({
-    'Content-Type': 'application/json',
+    ...(isForm ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string> ?? {}),
   });
@@ -249,6 +256,7 @@ export async function fetchSkillGapsAndProfile(userId: string): Promise<{
     peerFeedback:       g.peerFeedback ?? 0,
     proficiency:        g.proficiency ?? null,
     coldStartPrior:     g.coldStartPrior ?? null,
+    whyThisLevel:       g.whyThisLevel ?? null,
     rawScore:           g.rawScore,
     evidence:           g.evidence,
   }));
@@ -301,6 +309,12 @@ export async function fetchRecommendations(
       competencyName: string;
       priorityRank:   number;
       matchReasons:   string[];
+      courseLevel?:   number | null;
+      tpacSource?:    'verified' | 'inferred' | 'none';
+      measuredUplift?: number | null;
+      modality?:      string | null;
+      mandatory?:     boolean;
+      why?:           RecommendationWhy | null;
       // legacy fallbacks (always present on backend)
       matchReason:    string;
       tags:           string[];
@@ -328,7 +342,71 @@ export async function fetchRecommendations(
     aiMatchTag:   r.matchReasons?.[0] ?? r.matchReason ?? '',
     matchReasons: r.matchReasons ?? (r.matchReason ? [r.matchReason] : []),
     priorityRank: r.priorityRank,
+    competencyId:   r.competencyId,
+    courseLevel:    r.courseLevel ?? null,
+    tpacSource:     r.tpacSource,
+    measuredUplift: r.measuredUplift ?? null,
+    modality:       r.modality ?? null,
+    mandatory:      r.mandatory ?? false,
+    why:            r.why ?? null,
   }));
+}
+
+// ── Recommendation feedback (clicks, enrolments, thumbs) ─────────────────────
+/** Logs one interaction; returns the learner's current votes. Never throws (feedback is best-effort). */
+export async function sendRecommendationFeedback(
+  rec: CourseRecommendation,
+  event: FeedbackEvent,
+  context: Record<string, unknown> = {},
+): Promise<Record<string, 'up' | 'down'> | null> {
+  try {
+    const res = await lmsFetch<{ votes: Record<string, 'up' | 'down'> }>(
+      '/api/v1/recommendations/feedback', 'recommendation-feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          courseId: rec.course.courseId, event, competencyId: rec.competencyId ?? rec.bridgesGapFor.compId,
+          rank: rec.priorityRank, finalScore: rec.finalScore,
+          context: { mandatory: rec.mandatory ?? false, courseLevel: rec.courseLevel ?? null, ...context },
+        }),
+      });
+    return res?.votes ?? null;
+  } catch (err) {
+    console.warn('[feedback]', err);
+    return null;
+  }
+}
+
+export async function fetchMyRecommendationVotes(): Promise<Record<string, 'up' | 'down'>> {
+  try {
+    const res = await lmsFetch<{ votes: Record<string, 'up' | 'down'> }>(
+      '/api/v1/recommendations/feedback/mine', 'recommendation-votes');
+    return res?.votes ?? {};
+  } catch {
+    return {};
+  }
+}
+
+// ── Career readiness ─────────────────────────────────────────────────────────
+export async function fetchCareerReadiness(userId: string, targetRoleId?: string): Promise<CareerReadiness> {
+  const q = targetRoleId ? `?targetRoleId=${encodeURIComponent(targetRoleId)}` : '';
+  return lmsFetch<CareerReadiness>(`/api/v1/learner/${userId}/career-readiness${q}`, 'career-readiness');
+}
+
+// ── Level disputes → adaptive level check ───────────────────────────────────
+export async function openLevelDispute(
+  competencyId: string, claimedLevel: number | null, reason: string,
+): Promise<{ dispute: LevelDispute; session: DiagnosticView | null }> {
+  return lmsFetch('/api/v1/level-disputes', 'level-dispute', {
+    method: 'POST',
+    body: JSON.stringify({ competencyId, claimedLevel, reason: reason || null }),
+  });
+}
+
+export async function answerDiagnostic(sessionId: string, itemId: string, optionIndex: number): Promise<DiagnosticView> {
+  return lmsFetch(`/api/v1/diagnostic/${sessionId}/answer`, 'diagnostic-answer', {
+    method: 'POST',
+    body: JSON.stringify({ itemId, optionIndex }),
+  });
 }
 
 /**
@@ -393,14 +471,65 @@ export interface QuizSkillImpact {
   note?: string;
 }
 
+export type QuizQuestionType = 'mcq' | 'true_false' | 'multi_select' | 'fill_blank' | 'numeric';
+
+/** Per question: option index (mcq, true_false), indices (multi_select), text (fill_blank, numeric). */
+export type QuizAnswer = number | number[] | string | null;
+
+export interface QuizCitation {
+  chunkId: string;
+  locator: string;   // "Page 4" | "Slide 2" | "Section 3: Price collection"
+  quote: string;     // verbatim sentence from the source
+  passage: string;   // surrounding source passage
+}
+
+export interface ItemCalibration {
+  difficulty: QuizDifficulty;
+  source: 'llm_tag' | 'response_data';
+  llmDifficulty: QuizDifficulty;
+  responses: number;
+  pValue?: number;
+  b?: number;
+  calibratedDifficulty?: QuizDifficulty;
+  agreesWithLlm?: boolean;
+}
+
+/** A question as returned by POST /api/v1/rag/upload (media quizzes: mcq fields only). */
+export interface DocQuizQuestion {
+  question: string;
+  options: string[];
+  correct_answer: number;
+  explanation: string;
+  difficulty?: QuizDifficulty | null;
+  type?: QuizQuestionType;
+  correct_answers?: number[] | null;
+  unit?: string | null;
+  citations?: QuizCitation[] | null;
+  calibration?: ItemCalibration | null;
+  translations?: {
+    hi?: { question?: string; options?: string[]; explanation?: string; unit?: string; solution?: string };
+  } | null;
+}
+
 export interface QuizQuestionReview {
   index: number;
+  type?: QuizQuestionType;
   question: string;
   difficulty: QuizDifficulty;
   correct: boolean;
   yourAnswer: string | null;
   correctAnswer: string | null;
   explanation: string;
+  /** Why THIS answer is wrong (empty when correct). */
+  feedback?: string;
+  solution?: string | null;
+  /** The exact source passage supporting the correct answer (document quizzes). */
+  source?: QuizCitation | null;
+  /** A catalogue course for the missed point. */
+  course?: { courseId: string; title: string; level: number | null; durationHours: number | null; rating: number | null; fromCompetency?: boolean } | null;
+  calibration?: ItemCalibration | null;
+  review?: { status: string; note?: string } | null;
+  translation?: { question?: string; explanation?: string } | null;
 }
 
 export interface QuizGradeResult {
@@ -441,7 +570,7 @@ export interface QuizAttemptRecord {
 }
 
 /** Grade a quiz with the learner's JWT (the backend derives the user from it). */
-export async function gradeQuiz(quizId: string, answers: number[]): Promise<QuizGradeResult> {
+export async function gradeQuiz(quizId: string, answers: QuizAnswer[]): Promise<QuizGradeResult> {
   return lmsFetch<QuizGradeResult>('/api/v1/rag/grade', 'grade', {
     method: 'POST',
     body: JSON.stringify({ quiz_id: quizId, answers }),
@@ -453,6 +582,71 @@ export async function fetchQuizAttempts(): Promise<QuizAttemptRecord[]> {
   const result = await lmsFetch<{ attempts: QuizAttemptRecord[] }>('/api/v1/rag/attempts', 'quiz attempts');
   return result?.attempts ?? [];
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CERTIFICATES — external certificate → FRAC evidence (routers/competency.py)
+// Upload writes DOCUMENTED evidence at once; an admin approval makes it VERIFIED.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CertificateStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+export interface CertificateCompetency {
+  competency_id: string;
+  competency_name: string;
+  extracted_level: number;
+  issue_date: string | null;
+  justification: string;
+  match_score?: number | null;
+}
+
+export interface CertificateSubmission {
+  id: string;
+  filename: string;
+  issuingOrganization: string | null;
+  extractor: string;
+  status: CertificateStatus;
+  verification: 'documented' | 'verified' | 'rejected';
+  competencies: CertificateCompetency[];
+  reviewNote: string | null;
+  createdAt: string | null;
+  reviewedAt: string | null;
+  // Admin view only
+  userId?: string;
+  reviewedBy?: string | null;
+  isValidCredential?: boolean;
+}
+
+export interface CertificateUploadResult {
+  status: 'success' | 'duplicate' | 'no_evidence';
+  message: string;
+  certificate?: CertificateSubmission | null;
+}
+
+export async function uploadCertificate(file: File): Promise<CertificateUploadResult> {
+  const form = new FormData();
+  form.append('file', file);
+  return lmsFetch<CertificateUploadResult>('/api/v1/competencies/upload-certificate', 'certificate upload', {
+    method: 'POST',
+    body: form,
+  });
+}
+
+export async function fetchMyCertificates(): Promise<CertificateSubmission[]> {
+  const r = await lmsFetch<{ certificates: CertificateSubmission[] }>('/api/v1/competencies/certificates', 'certificates');
+  return r?.certificates ?? [];
+}
+
+export const fetchCertificateReviews = (status: CertificateStatus | 'ALL' = 'PENDING') =>
+  lmsFetch<{ certificates: CertificateSubmission[]; pendingCount: number }>(
+    `/api/v1/competencies/certificates/review?status=${status}`, 'certificate review');
+
+export const reviewCertificate = (id: string, decision: 'approve' | 'reject', note?: string) =>
+  lmsFetch<{ status: string; certificate: CertificateSubmission }>(
+    `/api/v1/competencies/certificates/${encodeURIComponent(id)}/review`, 'certificate review', {
+      method: 'POST',
+      body: JSON.stringify({ decision, note: note || null }),
+    });
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -666,6 +860,194 @@ export async function fetchTpacAgenda(): Promise<TpacAgenda> {
 /** SCIL v6 §5 — enforced expert prerequisite DAG + data-driven suggestions (never applied). */
 export async function fetchPrerequisiteDag(): Promise<PrerequisiteDagReport> {
   return lmsFetch<PrerequisiteDagReport>('/api/v1/admin/prerequisites', 'prerequisites');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN CONSOLE — server-side KPIs, trends, actions (routers/admin_console.py)
+// Every view takes the same filters: department, grade (service tier), office (officeId).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AdminFilters { department?: string; grade?: string; office?: string }
+
+const CONSOLE = '/api/v1/admin/console';
+
+function consoleQs(filters: AdminFilters = {}, extra: Record<string, string | number | undefined> = {}): string {
+  const qs = new URLSearchParams();
+  Object.entries({ ...filters, ...extra }).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+  });
+  const s = qs.toString();
+  return s ? `?${s}` : '';
+}
+
+export interface FacetOption { value: string; label: string; count: number }
+export interface AdminFacets { departments: FacetOption[]; grades: FacetOption[]; offices: FacetOption[] }
+
+export interface MandatoryProgress {
+  cycle: string; total: number; completed: number;
+  pending: { courseId: string; title: string; hours?: number }[];
+}
+
+export interface AdminRosterRow {
+  userId: string; govId: string; firstName: string; lastName: string; email: string;
+  designation: string; department: string; grade: string | null; gradeLabel: string;
+  officeId: string | null; officeName: string; enrollmentStatus: number; statusLabel: string;
+  missingSkill: string | null; missingCount: number; mandatory: MandatoryProgress | null;
+}
+
+export interface StatusCounts { compliant: number; inProgress: number; required: number }
+
+export interface MandatorySummary {
+  officialsWithPlan: number; behind: number; coursesAssigned: number; coursesCompleted: number;
+  completionPct: number | null;
+}
+
+export interface AdminOverview {
+  filters: AdminFilters;
+  kpis: {
+    totalOfficials: number; trainingCompliancePct: number; avgMissingSkills: number;
+    mandatory: MandatorySummary; suppressed: boolean;
+  };
+  statusCounts: StatusCounts;
+  heatmap: { competency: string; gap: number; officials: CountCell }[];
+  deptCompliance: {
+    dept: string; headcount: number; suppressed: boolean; pct: number | null;
+    mandatoryPct: number | null; behindMandatory: CountCell;
+  }[];
+  needsTraining: AdminRosterRow[];
+  asOf: string;
+}
+
+export interface Page<T> { items: T[]; total: number; page: number; pageSize: number; totalPages: number }
+
+export interface TrendPoint {
+  date: string; officials: number; suppressed?: boolean;
+  /** true = rebuilt from dated iGOT completions (training rates only); false = stored daily snapshot */
+  reconstructed?: boolean;
+  compliancePct?: number | null; mandatoryCompletionPct?: number | null; behindMandatory?: number;
+  avgMissingSkills?: number | null; avgLevel?: number | null; atTargetPct?: number | null;
+  assessedPct?: number | null;
+}
+
+export interface TrendsReport {
+  days: number; filters: AdminFilters; scope: { dimension: string; value: string } | null;
+  points: TrendPoint[]; note: string;
+  weeklyCompletions: { weekStart: string; completions: number | null }[];
+  liveSnapshots: number; firstLiveSnapshot: string | null;
+}
+
+export interface CatalogueCourse { courseId: string; title: string; hours: number | null; competencies: string[] }
+
+export interface TrainingAssignment {
+  assignmentId: string; title: string; scope: 'department' | 'officials'; department: string | null;
+  courses: { courseId: string; title: string; hours: number | null }[]; assignees: number;
+  dueDate: string | null; note: string | null; createdBy: string; createdAt: string | null;
+  progress: { completedAll: number; completedSome: number; completionPct: number }; overdue: boolean;
+}
+
+export interface AssignmentInput {
+  title: string; scope: 'department' | 'officials'; department?: string; grade?: string; office?: string;
+  userIds?: string[]; courseIds: string[]; dueDate?: string; note?: string;
+}
+
+export interface BehindRow {
+  userId: string; govId: string; name: string; designation: string; department: string;
+  grade: string | null; gradeLabel: string; officeName: string; completed: number; total: number;
+  pending: { courseId: string; title: string; hours?: number }[]; lastNudgedAt: string | null;
+}
+
+export interface NudgeLogEntry {
+  nudgeId: string; userId: string; name: string; department: string | null; message: string;
+  pendingCourses: { courseId: string; title: string }[]; createdBy: string; createdAt: string; readAt: string | null;
+}
+
+export interface NudgeResult { sent: number; skipped: { userId: string; reason: string }[]; message: string }
+
+export interface EmergingSkill {
+  rank: number; competencyId: string; competencyName: string; required: CountCell; avgTargetLevel: number;
+  supplyNow: CountCell; expectedSupplyNow: CountCell; expectedSupply36: CountCell; retiringCapable: CountCell;
+  shortfallNow: CountCell; shortfall36: CountCell; coveragePct: number | null; coverage36Pct: number | null;
+  rising: boolean; inScope: boolean; critical: boolean; missingCatalogueLevels: number[];
+  flaggedCourses: number; priorityScore: number; recommendedAction: string; trainNextYear: boolean;
+}
+
+export interface EmergingSkillsReport {
+  asOf: string; horizonMonths: number; officials: number; items: EmergingSkill[]; shortlist: string[];
+  method: string; suppression: string; filters: AdminFilters; dataNote: string;
+}
+
+export type HealthStatus = 'ok' | 'degraded' | 'down' | 'unknown';
+export interface SystemHealth {
+  overall: 'ok' | 'degraded' | 'down'; checkedAt: string; lastDailySnapshot: string | null;
+  health: { status: string; ready: boolean; recommendationEngine: boolean; chatSemantic: boolean; workforceSnapshot: string };
+  components: { id: string; label: string; status: HealthStatus; detail: string; latencyMs?: number; model?: string }[];
+}
+
+export const fetchAdminFacets = () => lmsFetch<AdminFacets>(`${CONSOLE}/filters`, 'admin-filters');
+
+export const fetchAdminOverview = (f: AdminFilters) =>
+  lmsFetch<AdminOverview>(`${CONSOLE}/overview${consoleQs(f)}`, 'admin-overview');
+
+export const fetchAdminRoster = (
+  f: AdminFilters, page: number, pageSize: number, search: string, status?: number,
+) => lmsFetch<Page<AdminRosterRow> & { statusCounts: StatusCounts }>(
+  `${CONSOLE}/roster${consoleQs(f, { page, pageSize, search, status })}`, 'admin-roster-page');
+
+export const fetchAdminTrends = (f: AdminFilters, days = 90) =>
+  lmsFetch<TrendsReport>(`${CONSOLE}/trends${consoleQs(f, { days })}`, 'admin-trends');
+
+export const recordAdminSnapshot = () =>
+  lmsFetch<{ date: string }>(`${CONSOLE}/trends/snapshot`, 'admin-snapshot', { method: 'POST' });
+
+export const searchCatalogueCourses = (q: string) =>
+  lmsFetch<{ courses: CatalogueCourse[]; total: number }>(`${CONSOLE}/courses${consoleQs({}, { q })}`, 'course-search');
+
+export const fetchAssignments = () =>
+  lmsFetch<{ assignments: TrainingAssignment[] }>(`${CONSOLE}/assignments`, 'assignments');
+
+export const createAssignment = (body: AssignmentInput) =>
+  lmsFetch<TrainingAssignment>(`${CONSOLE}/assignments`, 'assign', { method: 'POST', body: JSON.stringify(body) });
+
+export const fetchMandatoryBehind = (f: AdminFilters, page: number, pageSize: number, search = '') =>
+  lmsFetch<Page<BehindRow> & { summary: MandatorySummary }>(
+    `${CONSOLE}/mandatory-behind${consoleQs(f, { page, pageSize, search })}`, 'mandatory-behind');
+
+export const sendNudges = (body: AdminFilters & { userIds?: string[]; message?: string; force?: boolean }) =>
+  lmsFetch<NudgeResult>(`${CONSOLE}/nudges`, 'nudge', { method: 'POST', body: JSON.stringify(body) });
+
+export const fetchNudgeLog = (limit = 20) =>
+  lmsFetch<{ nudges: NudgeLogEntry[] }>(`${CONSOLE}/nudges?limit=${limit}`, 'nudge-log');
+
+export const fetchEmergingSkills = (f: AdminFilters) =>
+  lmsFetch<EmergingSkillsReport>(`${CONSOLE}/emerging-skills${consoleQs(f)}`, 'emerging-skills');
+
+export const fetchSystemHealth = (probeGemini = false) =>
+  lmsFetch<SystemHealth>(`${CONSOLE}/system-health${probeGemini ? '?probeGemini=true' : ''}`, 'system-health');
+
+export type AdminExportKind = 'roster' | 'mandatory-behind' | 'emerging-skills' | 'trends' | 'departments' | 'shortages';
+
+/** Download a server-built CSV (same filters as the view) through the authenticated client. */
+export async function downloadAdminCsv(
+  kind: AdminExportKind, f: AdminFilters, extra: Record<string, string | number | undefined> = {},
+): Promise<void> {
+  const path = `${CONSOLE}/export/${kind}.csv${consoleQs(f, extra)}`;
+  const send = (token: string | null) => fetch(`${LMS_BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: 'include',
+  });
+  let res = await send(_accessToken);
+  if (res.status === 401) {
+    const { access_token } = await refresh();
+    setApiToken(access_token);
+    res = await send(access_token);
+  }
+  if (!res.ok) throw new Error(`[export-${kind}] HTTP ${res.status}`);
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? `${kind}.csv`;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

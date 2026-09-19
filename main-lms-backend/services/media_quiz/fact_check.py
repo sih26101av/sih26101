@@ -24,7 +24,7 @@ import logging
 import os
 import re
 from functools import lru_cache
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from services.media_quiz.llm import LLMUnavailable, gemini_json
 from services.media_quiz.question_gen import MediaQuestion, numbers_in
@@ -56,31 +56,38 @@ def _match(text: str) -> Tuple[Dict, int]:
     return best, best_hits
 
 
+def review_answer(question: str, answer: str, answer_type: str) -> Tuple[Dict, str]:
+    """Fact-check one answer. Returns (review dict, summary bucket) where the bucket is
+    "skipped" (not a number/definition), "no_reference", "flagged" or "ok".
+    Shared by the media and the document quiz (services/doc_quiz)."""
+    nums = numbers_in(answer)
+    if answer_type not in {"number", "definition"} and not nums:
+        return {"status": "unchecked"}, "skipped"
+    fact, _ = _match(f"{question} {answer}")
+    if not fact:
+        return {"status": "no_reference", "note": "No reference entry covers this; trainer may verify."}, "no_reference"
+    accepted = {n for v in fact.get("numbers", []) for n in numbers_in(v)}
+    if nums and accepted and not nums & accepted:
+        return {
+            "status": "flagged",
+            "reference_id": fact["id"],
+            "note": (f"Answer states {', '.join(sorted(nums))}, but the reference ({fact.get('source')}) says: "
+                     f"{fact['statement']} The source may be wrong or outdated — please review."),
+        }, "flagged"
+    return {"status": "ok", "reference_id": fact["id"], "note": fact["statement"]}, "ok"
+
+
 def fact_check(questions: List[MediaQuestion]) -> Dict[str, int]:
     summary = {"checked": 0, "flagged": 0, "ok": 0, "no_reference": 0}
     for q in questions:
-        answer = q.options[q.correct_answer]
-        nums = numbers_in(answer)
-        if q.answer_type not in {"number", "definition"} and not nums:
+        review, bucket = review_answer(q.question, q.options[q.correct_answer], q.answer_type)
+        if bucket == "skipped":
             continue
         summary["checked"] += 1
-        fact, _ = _match(f"{q.question} {answer}")
-        if not fact:
-            q.review = {"status": "no_reference", "note": "No reference entry covers this; trainer may verify."}
-            summary["no_reference"] += 1
-            continue
-        accepted = {n for v in fact.get("numbers", []) for n in numbers_in(v)}
-        if nums and accepted and not nums & accepted:
-            q.review = {
-                "status": "flagged",
-                "reference_id": fact["id"],
-                "note": (f"Answer states {', '.join(sorted(nums))}, but the reference ({fact.get('source')}) says: "
-                         f"{fact['statement']} The speaker may have misspoken — please review."),
-            }
-            summary["flagged"] += 1
-        else:
-            q.review = {"status": "ok", "reference_id": fact["id"], "note": fact["statement"]}
-            summary["ok"] += 1
+        summary[bucket] += 1
+        if bucket == "flagged":
+            review["note"] = review["note"].replace("The source may be wrong or outdated", "The speaker may have misspoken")
+        q.review = review
     return summary
 
 
@@ -106,43 +113,61 @@ def restore_terms(text: str, mapping: Dict[str, str]) -> Tuple[str, bool]:
     return text, ok
 
 
-async def translate_questions(questions: List[MediaQuestion], target_lang: str) -> Dict:
+async def translate_texts(texts: List[str], target_lang: str) -> Tuple[Optional[List[str]], Dict]:
+    """Translate strings with glossary terms protected as ⟦Tn⟧. Returns (translations in
+    order | None on failure, report). A string whose placeholders are lost keeps its
+    original text. Shared by the media and the document quiz."""
     name = LANG_NAMES.get(target_lang)
-    if not name or not questions:
-        return {"target": target_lang, "status": "skipped"}
+    if not name or not texts:
+        return None, {"target": target_lang, "status": "skipped"}
     terms = _reference().get("glossary_terms", [])
-
-    fields: List[Tuple[int, str, int]] = []       # (question index, field, option index)
-    texts: List[str] = []
-    maps: List[Dict[str, str]] = []
-    for qi, q in enumerate(questions):
-        for fname, oi, val in [("question", -1, q.question), ("explanation", -1, q.explanation)] + \
-                              [("option", i, o) for i, o in enumerate(q.options)]:
-            t, m = protect_terms(val, terms)
-            fields.append((qi, fname, oi))
-            texts.append(t)
-            maps.append(m)
+    protected, maps = [], []
+    for val in texts:
+        t, m = protect_terms(val, terms)
+        protected.append(t)
+        maps.append(m)
 
     prompt = (
         f"Translate each string in the JSON array into {name}. Keep every placeholder like ⟦T1⟧ exactly as is "
         "(same characters, same count), keep numbers and units unchanged. "
         'Return JSON: {"translations": ["...", ...]} with the same length and order.\n\n'
-        + json.dumps(texts, ensure_ascii=False)
+        + json.dumps(protected, ensure_ascii=False)
     )
     try:
         data = await gemini_json(prompt, temperature=0.1)
     except LLMUnavailable as exc:
-        return {"target": target_lang, "status": f"failed: {exc}"}
+        return None, {"target": target_lang, "status": f"failed: {exc}"}
     out = data.get("translations") if isinstance(data, dict) else data
     if not isinstance(out, list) or len(out) != len(texts):
-        return {"target": target_lang, "status": "failed: length mismatch"}
+        return None, {"target": target_lang, "status": "failed: length mismatch"}
 
     kept_original = 0
-    for (qi, fname, oi), tr, m, orig in zip(fields, out, maps, texts):
+    result = []
+    for tr, m, orig in zip(out, maps, protected):
         restored, ok = restore_terms(str(tr), m)
         if not ok:
             restored, _ = restore_terms(orig, m)
             kept_original += 1
+        result.append(restored)
+    return result, {"target": target_lang, "status": "ok", "fields": len(texts),
+                    "fields_kept_in_english_placeholder_lost": kept_original}
+
+
+async def translate_questions(questions: List[MediaQuestion], target_lang: str) -> Dict:
+    if not LANG_NAMES.get(target_lang) or not questions:
+        return {"target": target_lang, "status": "skipped"}
+    fields: List[Tuple[int, str, int]] = []       # (question index, field, option index)
+    texts: List[str] = []
+    for qi, q in enumerate(questions):
+        for fname, oi, val in [("question", -1, q.question), ("explanation", -1, q.explanation)] + \
+                              [("option", i, o) for i, o in enumerate(q.options)]:
+            fields.append((qi, fname, oi))
+            texts.append(val)
+
+    out, report = await translate_texts(texts, target_lang)
+    if out is None:
+        return report
+    for (qi, fname, oi), restored in zip(fields, out):
         q = questions[qi]
         if fname == "question":
             q.question = restored
@@ -150,5 +175,4 @@ async def translate_questions(questions: List[MediaQuestion], target_lang: str) 
             q.explanation = restored
         else:
             q.options[oi] = restored
-    return {"target": target_lang, "status": "ok", "fields": len(texts),
-            "fields_kept_in_english_placeholder_lost": kept_original}
+    return report

@@ -19,6 +19,7 @@ import importlib.util
 import logging
 import os
 import shutil
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -31,10 +32,18 @@ from routers.rag import QUIZ_STORE, QuizQuestion
 from services.practice_assessment import media_question_difficulty
 from services.media_quiz import extractors, media_io
 from services.media_quiz.llm import LLMUnavailable
-from services.media_quiz.pipeline import NotLearnable, run
+from services.media_quiz.pipeline import NotLearnable, run, warm_up
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.on_event("startup")
+async def _warm_media_models() -> None:
+    # Whisper / RapidOCR / VAD load in the background so the first media quiz starts
+    # warm. MEDIA_WARMUP=0 turns it off (e.g. small hosts without the media extras).
+    if os.getenv("MEDIA_WARMUP", "1") != "0" and importlib.util.find_spec("faster_whisper"):
+        threading.Thread(target=warm_up, name="media-warm-up", daemon=True).start()
 
 MAX_MEDIA_BYTES = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "1024")) * 1024 * 1024
 MEDIA_EXTS = media_io.MEDIA_VIDEO_EXTS | media_io.MEDIA_AUDIO_EXTS

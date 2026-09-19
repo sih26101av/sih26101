@@ -41,6 +41,10 @@ class ReferenceData:
         self.hrms: Dict[str, Any] = {}                  # {officials{userId: …}, products, productCriticalCompetencies}
         self.item_bank: Dict[str, List[Dict[str, Any]]] = {}   # competencyId → 2PL items (with keys)
         self.item_bank_calibration: str = ""
+        # Role competency profiles (career ladder): roleId → {officeId, designation, tier, competencies}
+        self.roles: Dict[str, Dict[str, Any]] = {}
+        # Per-rater leniency offsets for APAR supervisor ratings (competency_service.rater_leniency_offsets)
+        self.rater_offsets: Dict[str, Dict[str, Any]] = {}
         self.sources: Dict[str, str] = {}          # dataset → "adapter" | "disk" | "missing"
         self.cache: Dict[str, Any] = {}            # derived analytics computed once per process
 
@@ -64,13 +68,15 @@ class ReferenceData:
     async def load(cls, adapter) -> "ReferenceData":
         ref = cls()
         # Independent datasets: fetch concurrently (sequential round-trips were ~6 s).
-        gsbpm, offices, prereq, bank, hrms, outcomes = await asyncio.gather(
+        gsbpm, offices, prereq, bank, hrms, outcomes, roles, ratings = await asyncio.gather(
             ref._load("gsbpm", adapter.fetch_gsbpm_map, "gsbpm_map.json"),
             ref._load("offices", adapter.fetch_offices, "offices.json"),
             ref._load("prerequisites", adapter.fetch_prerequisites, "prerequisites.json"),
             ref._load("itemBank", adapter.fetch_item_bank, "item_bank.json"),
             ref._load("hrms", adapter.fetch_hrms, "hrms.json"),
             ref._load("outcomes", adapter.fetch_course_outcomes, "course_outcomes.json"),
+            ref._load("roles", adapter.fetch_roles, "roles.json"),
+            ref._load("supervisorRatings", adapter.fetch_supervisor_ratings, "workplace_evidence.json"),
         )
         if gsbpm:
             ref.gsbpm = {k: v for k, v in gsbpm.items() if k != "_meta"}
@@ -95,5 +101,16 @@ class ReferenceData:
         if outcomes:
             ref.outcomes = outcomes.get("outcomes", [])
             ref.comparisons = outcomes.get("comparisons", [])
+        if roles:
+            ref.roles = {r["roleId"]: r for r in roles.get("roles", []) if r.get("roleId")}
+        if ratings:
+            from services.competency_service import rater_leniency_offsets
+            # Adapter → {ratings[]}; disk fallback → the raw workplace_evidence.json {rows[]}.
+            raw = ratings.get("ratings") or [
+                {"raterId": (r.get("meta") or {}).get("raterId"), "compId": r.get("compId"),
+                 "grantedValue": r.get("grantedValue")}
+                for r in ratings.get("rows", []) if r.get("evidenceType") == "SUPERVISOR_RATING"
+            ]
+            ref.rater_offsets = rater_leniency_offsets(raw)
         logger.info("[reference] loaded: %s", ref.sources)
         return ref

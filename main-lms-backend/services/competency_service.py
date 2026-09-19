@@ -74,6 +74,43 @@ CHANNEL_WEIGHTS = {"K": 0.25, "A": 0.25, "U": 0.25, "S": 0.25}
 CHANNEL_WEIGHTS_STATUS = "equal placeholder — pending expert AHP elicitation"
 
 
+# ── Supervisor-rater leniency (SCIL v6 §3 S channel) ─────────────────────────
+# A rater's offset is how far their mean rating sits from the mean of all
+# ratings, shrunk toward 0 by n/(n+k) so a rater with few ratings is barely
+# corrected. The corrected rating is raw − offset, clamped to 1..5.
+# Limits: this removes RELATIVE leniency between raters only. If every rater is
+# lenient by the same amount, the grand mean absorbs it; and a rater whose team
+# really is stronger is corrected as if lenient. k = 5 is a reasoned default.
+RATER_SHRINK_K = 5.0
+RATER_MIN_RATINGS = 3        # fewer ratings than this → no correction at all
+
+
+def rater_leniency_offsets(ratings: list, shrink_k: float = RATER_SHRINK_K) -> Dict[str, Dict]:
+    """[{raterId, grantedValue}] → {raterId: {offset, n, mean, grandMean}} (shrunk mean offsets)."""
+    by_rater: Dict[str, list] = {}
+    for r in ratings or []:
+        rid, val = r.get("raterId"), r.get("grantedValue")
+        if rid and val is not None:
+            by_rater.setdefault(rid, []).append(float(val))
+    values = [v for vs in by_rater.values() for v in vs]
+    if not values:
+        return {}
+    grand = sum(values) / len(values)
+    out: Dict[str, Dict] = {}
+    for rid, vs in by_rater.items():
+        n, mean = len(vs), sum(vs) / len(vs)
+        offset = (mean - grand) * n / (n + shrink_k) if n >= RATER_MIN_RATINGS else 0.0
+        out[rid] = {"offset": round(offset, 3), "n": n, "mean": round(mean, 3), "grandMean": round(grand, 3)}
+    return out
+
+
+def correct_supervisor_rating(value: float, rater_id: Optional[str],
+                              offsets: Optional[Dict[str, Dict]]) -> Tuple[float, float]:
+    """(corrected rating on 1..5, offset applied). Unknown rater → unchanged."""
+    offset = float(((offsets or {}).get(rater_id or "") or {}).get("offset", 0.0))
+    return min(5.0, max(1.0, float(value) - offset)), offset
+
+
 def fuse_channels(channels: Dict[str, Optional[float]]) -> Optional[float]:
     """Weighted mean over the K/A/U/S channels that carry evidence (None → absent)."""
     present = {k: float(v) for k, v in channels.items() if v is not None and k in CHANNEL_WEIGHTS}

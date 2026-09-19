@@ -85,6 +85,21 @@ class Timeline:
         self._items[ev.id] = ev
         return ev
 
+    def absorb(self, other: "Timeline") -> Dict[str, str]:
+        """
+        Append another timeline's records, renumbered after this one's, plus its drop
+        counts. Returns old id → new id. Lets extractors run concurrently on their own
+        timelines while the final ids match a sequential run.
+        """
+        mapping: Dict[str, str] = {}
+        for ev in list(other._items.values()):          # insertion order = creation order
+            self._n += 1
+            mapping[ev.id] = ev.id = f"e{self._n}"
+            self._items[ev.id] = ev
+        for reason, n in other.dropped.items():
+            self.drop(reason, n)
+        return mapping
+
     def drop(self, reason: str, n: int = 1) -> None:
         self.dropped[reason] = self.dropped.get(reason, 0) + n
 

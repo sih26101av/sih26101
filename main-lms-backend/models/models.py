@@ -175,7 +175,9 @@ class OutboxEntry(Base):
 # ─────────────────────────────────────────────────────────────────────────────
 # evidenceType values:
 #   'VERIFIED_IGOT'       — iGOT/NSSTA enrollment completion, FRAC-tag-matched
-#   'DOCUMENTED_CERT'     — uploaded certificate (grantedValue = cert level 1-5)
+#   'DOCUMENTED_CERT'     — uploaded certificate awaiting admin review (grantedValue = cert level 1-5)
+#   'VERIFIED_CERT'       — the same row after an admin approved the certificate;
+#                           read by the VERIFIED channel (see CertificateSubmission)
 #   'TENURE'              — career history evidence
 #   'SELF_REPORT'         — user-declared level (0.6x reliability discount applied)
 #   'PRACTICE_ASSESSMENT' — RAG quiz pass; keyed by iGOT userId, feeds into the
@@ -194,7 +196,7 @@ class EvidenceLog(Base):
 
     compId = Column(String, ForeignKey("competencies.compId"), nullable=False, index=True)
 
-    # 'VERIFIED_IGOT', 'DOCUMENTED_CERT', 'TENURE', 'SELF_REPORT', 'PRACTICE_ASSESSMENT'
+    # 'VERIFIED_IGOT', 'DOCUMENTED_CERT', 'VERIFIED_CERT', 'TENURE', 'SELF_REPORT', 'PRACTICE_ASSESSMENT'
     evidenceType = Column(String, nullable=False)
 
     grantedValue = Column(Float, nullable=False)  # 1.0 to 5.0
@@ -205,6 +207,37 @@ class EvidenceLog(Base):
     createdAt = Column(DateTime, default=datetime.utcnow)
 
     competency = relationship("Competency")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CERTIFICATE SUBMISSION — external certificate awaiting / after admin review
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CertificateSubmission(Base):
+    """
+    One uploaded certificate (routers/competency.py). On upload each extracted
+    competency gets a DOCUMENTED_CERT EvidenceLog row (MEDIUM confidence) whose
+    id is kept in `evidenceIds`. An admin then decides:
+      approve → status VERIFIED, rows become VERIFIED_CERT (verified channel, HIGH)
+      reject  → status REJECTED, rows are deleted (the gap goes back)
+    (userId, sha256) is unique, so re-uploading the same file is a no-op.
+    """
+    __tablename__ = "certificate_submissions"
+    __table_args__ = (UniqueConstraint("userId", "sha256", name="uq_user_certificate"),)
+
+    id                  = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId              = Column(String, nullable=False, index=True)   # iGOT userId
+    filename            = Column(String, nullable=False)
+    sha256              = Column(String, nullable=False)
+    issuingOrganization = Column(String, nullable=True)
+    extractor           = Column(String, nullable=False)               # 'gemini' | 'ocr+e5'
+    extraction          = Column(JSON, nullable=False)                 # CertificateExtractionResult
+    evidenceIds         = Column(JSON, nullable=False, default=list)
+    status              = Column(String, nullable=False, default="PENDING", index=True)
+    reviewedBy          = Column(String, nullable=True)
+    reviewNote          = Column(String, nullable=True)
+    createdAt           = Column(DateTime, default=datetime.utcnow)
+    reviewedAt          = Column(DateTime, nullable=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +264,27 @@ class QuizAttempt(Base):
     passed          = Column(Boolean, nullable=False)
     evidenceWritten = Column(Boolean, default=False)  # True once EvidenceLog row created
     gradedAt        = Column(DateTime, default=datetime.utcnow)
+
+
+class QuizItemStat(Base):
+    """
+    Response data per quiz item (services/doc_quiz/calibration.py). itemKey is a hash
+    of the item's content (doc_quiz.items.item_key), so the counts survive new quiz ids
+    and restarts. Only first submissions are counted: a re-submission after seeing the
+    answers would bias the p-value. thetaSum (respondents' practice ability before the
+    quiz) lets the calibration separate item difficulty from who happened to answer.
+    """
+    __tablename__ = "quiz_item_stats"
+
+    itemKey         = Column(String, primary_key=True)
+    questionType    = Column(String, nullable=True)
+    llmDifficulty   = Column(String, nullable=True)
+    responses       = Column(Integer, nullable=False, default=0)
+    correctCount    = Column(Integer, nullable=False, default=0)
+    thetaSum        = Column(Float, nullable=False, default=0.0)
+    sampleQuestion  = Column(String, nullable=True)
+    firstSeen       = Column(DateTime, default=datetime.utcnow)
+    lastSeen        = Column(DateTime, default=datetime.utcnow)
 
 
 
@@ -282,3 +336,99 @@ class KarmaMonthlyUsage(Base):
     year              = Column(Integer, nullable=False)
     month             = Column(Integer, nullable=False)   # 1–12
     nonCbpCompletions = Column(Integer, nullable=False, default=0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADMIN CONSOLE — daily workforce snapshots, training assignments, nudges
+# (routers/admin_console.py). Created by main._create_schema like the tables above.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AdminDailySnapshot(Base):
+    """
+    One row per calendar day (UTC): the workforce headline numbers plus the same
+    numbers broken down by department / grade / office, so trend charts can be
+    filtered. Upserted by admin_console.record_daily_snapshot — history starts
+    the day the feature is deployed; nothing is back-filled.
+    """
+    __tablename__ = "admin_daily_snapshots"
+
+    snapshotDate = Column(String, primary_key=True)          # YYYY-MM-DD
+    metrics      = Column(JSON, nullable=False)              # {overall{…}, byDepartment{}, byGrade{}, byOffice{}}
+    createdAt    = Column(DateTime, default=datetime.utcnow)
+
+
+class TrainingAssignment(Base):
+    """An admin assigning courses (a training plan) to a department or a list of officials."""
+    __tablename__ = "training_assignments"
+
+    assignmentId = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title        = Column(String, nullable=False)            # plan name
+    scope        = Column(String, nullable=False)            # "department" | "officials"
+    department   = Column(String, nullable=True)
+    courses      = Column(JSON, nullable=False)              # [{courseId, title, hours}]
+    assigneeIds  = Column(JSON, nullable=False)              # iGOT userIds resolved at creation
+    dueDate      = Column(String, nullable=True)             # YYYY-MM-DD
+    note         = Column(String, nullable=True)
+    createdBy    = Column(String, nullable=False)            # admin username
+    createdAt    = Column(DateTime, default=datetime.utcnow)
+
+
+class TrainingNudge(Base):
+    """A reminder sent by an admin to an official behind on mandatory (ACBP) training."""
+    __tablename__ = "training_nudges"
+
+    nudgeId      = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId       = Column(String, nullable=False, index=True)  # iGOT userId
+    message      = Column(String, nullable=False)
+    pendingCourses = Column(JSON, nullable=True)            # [{courseId, title}] at send time
+    createdBy    = Column(String, nullable=False)
+    createdAt    = Column(DateTime, default=datetime.utcnow, index=True)
+    readAt       = Column(DateTime, nullable=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RECOMMENDATION FEEDBACK — clicks, enrolments, thumbs up/down (logged per event)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RecommendationFeedback(Base):
+    """
+    One learner interaction with a recommended course. `event` ∈ impression |
+    click | enrol | thumbs_up | thumbs_down | clear_vote. The rank / score /
+    competency at the time are kept so ranking changes can later be evaluated
+    offline (click-through by rank, bandit logging). userId = iGOT userId.
+    """
+    __tablename__ = "recommendation_feedback"
+    id           = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId       = Column(String, nullable=False, index=True)
+    courseId     = Column(String, nullable=False, index=True)
+    competencyId = Column(String, nullable=True)
+    event        = Column(String, nullable=False)
+    rank         = Column(Integer, nullable=True)
+    finalScore   = Column(Float, nullable=True)
+    context      = Column(JSON, nullable=True)       # {mandatory, courseLevel, surface, …}
+    createdAt    = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LEVEL DISPUTE — a learner disagrees with a computed level → adaptive level test
+# ─────────────────────────────────────────────────────────────────────────────
+
+class LevelDispute(Base):
+    """
+    status: OPEN (test started) → CONFIRMED | RAISED | LOWER_THAN_SHOWN once the
+    adaptive diagnostic finishes, or NEEDS_REVIEW when no test items exist.
+    The diagnostic writes the usual PRACTICE_ASSESSMENT evidence row; this table
+    only records the disagreement and its outcome.
+    """
+    __tablename__ = "level_disputes"
+    id            = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    userId        = Column(String, nullable=False, index=True)
+    competencyId  = Column(String, nullable=False)
+    shownLevel    = Column(Integer, nullable=True)
+    claimedLevel  = Column(Integer, nullable=True)
+    reason        = Column(String, nullable=True)
+    status        = Column(String, nullable=False, default="OPEN")
+    sessionId     = Column(String, nullable=True, index=True)
+    testedLevel   = Column(Integer, nullable=True)
+    createdAt     = Column(DateTime, default=datetime.utcnow)
+    resolvedAt    = Column(DateTime, nullable=True)

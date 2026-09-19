@@ -26,7 +26,7 @@ Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token─
    │                  ├─ FAISS + BM25 (in-process, built at startup)
    │                  ├─ ONNX INT8 multilingual embedder (singleton)
    │                  ├─ Neon Postgres via DATABASE_URL (auth, evidence, quiz attempts, karma; SQLite auth.db fallback)
-   │                  └─ Google Gemini (cloud, quiz MCQ generation)
+   │                  └─ Google Gemini (cloud, quiz generation + Hindi translation)
    └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
 ```
 
@@ -59,9 +59,9 @@ request. All mock data is synthetic and comes from one deterministic generator,
 | `main.py` | App bootstrap, CORS, router registration, startup singletons (`_rec_engine`, `_assembler`), learner endpoints (profile, skill-gaps, enrollments, recommendations, pathway, achievements), admin proxies |
 | `auth/` | JWT access tokens + httpOnly refresh cookie, bcrypt hashing, `users_auth` table, RBAC dependencies, `seed.py` (one-shot user seeding from the mock server) |
 | `adapters/` | `ILearningPlatformAdapter` port + `MockIgotAdapter` HTTP adapter to port 8001 |
-| `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (Ollama certificate parsing), `media_quiz/` (probe → route → evidence timeline → cited MCQs) |
+| `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (certificate → FRAC: Gemini, else OCR + e5), `media_quiz/` (probe → route → evidence timeline → cited MCQs) |
 | `ai/` | `embedder.py` (shared ONNX/sentence-transformers singleton), `semantic_engine.py` (chatbot intent classifier), `rag_engine.py` + `vector_store.py` + `seed_knowledge.py` (Ollama/ChromaDB — **disconnected**, Tier 3) |
-| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `competency.py` (certificate upload, baseline calc), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload) |
+| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `competency.py` (certificate upload + admin verification, baseline calc), `career.py` (next-role career readiness, level disputes), `recommendation_feedback.py` (clicks / enrolments / thumbs), `diagnostic.py` (adaptive level check), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload), `insights.py` (SCIL v6 admin views), `admin_console.py` (admin KPIs / roster pages / trends / assignments / nudges / emerging skills / system health / CSV exports) |
 | `models/` | `models.py` (SQLAlchemy domain + evidence/quiz/karma tables), `domain.py` (Pydantic response schemas) |
 | `scripts/` | `download_model.py` (build step: ONNX exports → `ai/.cache/onnx/`, pre-warms `ai/.cache/emb/`), `quantize_model.py` (legacy `model_int8.onnx`), `eval_intents.py` |
 
@@ -122,8 +122,15 @@ priority-weighted levels per hour across all ladders, optional hours budget) →
 `SkillGapCard` "View learning path" + "Suggested study order".
 
 **Document → quiz → evidence** (`POST /api/v1/rag/upload`, `/grade`)
-Upload (with `difficulty`) → pdfplumber/pypdf/python-pptx extraction → LangChain
-chunking → Gemini JSON MCQs, each tagged Easy/Medium/Hard → in-memory `QUIZ_STORE`.
+Upload (with `difficulty`, `num_questions` 3–20, `question_types`, `language`
+en/hi/bi) → pdfplumber/pypdf/python-pptx/python-docx extraction, with RapidOCR
+on scanned PDF pages → LangChain chunking → `services/doc_quiz`: Gemini writes
+MCQ / True-False / multi-select / fill-in / numeric questions, each citing a
+verbatim quote from its chunk → validator (grounding, numbers, computed answers,
+distractor plausibility), e5 dedup, and the media pipeline's fact-check and
+term-protected Hindi translation (`services/media_quiz/fact_check.py`, shared) →
+in-memory `QUIZ_STORE`. Each item's difficulty is calibrated from first-attempt
+response data (`quiz_item_stats`, ability-adjusted p-values), else the LLM's tag.
 Grade (JWT required) → link the quiz to one of the learner's role competencies
 (via `app_state.competency_state`, FRAC tag → e5 → keywords) → difficulty-aware
 practice-ability update (`services/practice_assessment.py`) → `QuizAttempt`
@@ -131,6 +138,9 @@ practice-ability update (`services/practice_assessment.py`) → `QuizAttempt`
 `EvidenceLog` `PRACTICE_ASSESSMENT` row = the new ability → the assembler reads
 the latest one into the documented channel → re-resolved skill gap returned as
 `skillImpact`. A pass also awards karma and POSTs to the mock's `/competencies/update`.
+The review explains each wrong answer, cites the source passage, and links a
+catalogue course for the missed point (`practice_assessment.courses_for_topics`,
+reusing the recommender's catalogue embeddings).
 
 **Media → quiz → evidence** (`POST /api/v1/rag/media/upload`, `/youtube`)
 Probe (Silero VAD speech ratio, OCR-detector text density, screen activity) →
@@ -160,6 +170,14 @@ synthetic mock data.
 - **Admin views** are in `routers/insights.py` under `/api/v1/admin/…`: GSBPM
   scope, prerequisites, training effectiveness, capability risk, foresight
   and the TPAC agenda. They are rendered by `WorkforceInsights.tsx`.
+- **Admin console** (`routers/admin_console.py`, `/api/v1/admin/console/…`)
+  aggregates the mock roster on the server (KPIs, heatmap, pages, filters by
+  department / grade / office), stores a daily trend snapshot, assignments and
+  nudges in the auth DB (`admin_daily_snapshots`, `training_assignments`,
+  `training_nudges`), reads the workforce snapshot for the emerging-skills
+  forecast, and extends `/health` (`services/system_health.py`) with live
+  probes. Learners read what admins sent them at
+  `GET /api/v1/learner/{id}/training-actions` (no learner UI yet).
 
 **Chat** (`POST /api/v1/chat`) — frontend posts profile context (gaps, recs, role);
 backend runs regex intercepts → semantic intent classification → templated reply,
@@ -176,7 +194,7 @@ Falls back to SQLite `main-lms-backend/auth.db` when `DATABASE_URL` is unset. Ta
 are auto-created at startup (`create_all`, no migrations):
 - `users_auth` — `AuthBase` (auth/models.py)
 - Everything else — `Base` (models/models.py): domain tables from the UML,
-  plus `evidence_log`, `quiz_attempts`, `karma_events`, `karma_monthly_usage`
+  plus `evidence_log`, `quiz_attempts`, `quiz_item_stats`, `karma_events`, `karma_monthly_usage`
 
 Identity note: `EvidenceLog.userId` and `QuizAttempt.userId` intentionally store
 the **iGOT userId** (`usr_…`), not `users.uuid`. Auth usernames are also iGOT
@@ -196,7 +214,7 @@ lucide-react. No state library; hooks + context only.
 
 **Models** — `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, ONNX INT8 preferred)
 for both chat intents and course search; Gemini (`GEMINI_MODEL`) for MCQs;
-`llama3.2:3b` via local Ollama for certificate parsing.
+Gemini (or RapidOCR + multilingual-e5 offline) for certificate parsing.
 
 **Env vars** (`main-lms-backend/.env`, see `.env.example`): `IGOT_MOCK_BASE_URL`,
 `IGOT_MOCK_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `IGOT_COMPETENCIES_UPDATE_URL`,
@@ -243,7 +261,9 @@ what runs today.
 4. **Factory/Builder for documents not implemented.** No `IDocumentParser`,
    `PdfParser`, `PptParser`, `TextParser`, `DocumentParserFactory`, or
    `AssessmentBuilder`. `routers/rag.py` dispatches on file extension with
-   `if/elif` and builds Pydantic `QuizQuestion` objects inline.
+   `if/elif` (DOCX and scanned-PDF OCR live in `services/doc_quiz/extract.py`);
+   question building is a pipeline module (`services/doc_quiz/generate.py`),
+   not a Builder class.
 5. **`SkillGapEngine` / `SkillGapReport` don't exist as named classes.** That role
    is played by `BaselineAssembler` + `CompetencyCalculator` + inline logic in
    `main.py`, which produce a JSON payload rather than a `SkillGapReport` type.
@@ -251,10 +271,12 @@ what runs today.
    `IAssessmentRepository`, `ICourseRepository`. Routers query SQLAlchemy
    sessions directly; the course catalog is a JSON file read at startup, not a
    repository.
-7. **Course vectors are not persisted.** The diagram has
-   `Course.syllabusVectorEmbedding` / `embeddingModelVersion`; the columns exist
-   in `models.py` but are never populated. Embeddings are recomputed in memory at
-   every startup from the catalog JSON.
+7. **Course vectors are persisted, but only as a cache.** `services/catalogue_store.py`
+   writes `Course.syllabusVectorEmbedding` (base64 float32) and
+   `embeddingModelVersion` (`<model>|<text hash>`), and reuses them when the
+   engine is built. The catalogue itself still comes from the mock server,
+   re-checked every `CATALOGUE_REFRESH_SECONDS`. `CourseSkillMapping` stays
+   unused (tags are read from the catalogue).
 8. **The UML domain tables are largely dormant.** `Official`, `JobRole`,
    `RoleRequirement`, `UserCompetency`, `CourseSkillMapping`,
    `AssessmentSkillMapping` are created but barely written. Live user, role and
@@ -262,7 +284,9 @@ what runs today.
    the RAG grading path writes `CompetencyProfile`/`UserCompetency`, and it
    overloads `CompetencyProfile.profileId` to hold an iGOT userId.
 9. **The evidence model is richer than the diagram.** `EvidenceLog`,
-   `QuizAttempt`, `KarmaEvent`, `KarmaMonthlyUsage` and the whole 6-term baseline
+   `QuizAttempt`, `QuizItemStat` (per-item response data for difficulty
+   calibration), `CertificateSubmission` (admin documented → verified review),
+   `KarmaEvent`, `KarmaMonthlyUsage` and the whole 6-term baseline
    formula have no counterpart in the mermaid file; the diagram's
    `UserCompetency.verificationSource` is the only nod to evidence provenance.
 10. **Roles diverge.** The diagram has `BaseUser → Official | Admin | Trainer`.

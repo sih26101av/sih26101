@@ -56,19 +56,59 @@ ROUTE_TOOLS = {
     REJECT: [],
 }
 
+# RapidOCR gives each ONNX session every core. On small inputs (one frame, a few text
+# lines) most of those threads just spin, so several frames on small per-session pools
+# are ~2.5× faster than one frame on all cores, with identical results.
+_CPUS = os.cpu_count() or 4
+OCR_THREADS = max(1, int(os.getenv("MEDIA_OCR_THREADS", "2")))
+OCR_WORKERS = max(1, int(os.getenv("MEDIA_OCR_WORKERS", str(max(1, min(8, (_CPUS // 2) // OCR_THREADS))))))
+
 _ocr = None
 _ocr_lock = threading.Lock()
 
 
+def _limit_threads(eng) -> None:
+    """Rebuild RapidOCR's det/cls/rec sessions with OCR_THREADS intra-op threads (same
+    models and options). Stock sessions are kept if the library layout differs."""
+    import onnxruntime as ort
+
+    try:
+        holders = [eng.text_detector.infer, eng.text_cls.infer, eng.text_recognizer.session]
+        for h in holders:
+            so = ort.SessionOptions()
+            so.log_severity_level = 4
+            so.enable_cpu_mem_arena = False
+            so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            so.intra_op_num_threads = OCR_THREADS
+            so.inter_op_num_threads = 1
+            h.session = ort.InferenceSession(h.session._model_path, sess_options=so,
+                                             providers=h.session.get_providers())
+    except Exception as exc:
+        logger.info("[ocr] keeping RapidOCR's default thread pools: %s", exc)
+
+
 def get_ocr():
-    """Shared RapidOCR engine (PaddleOCR det/cls/rec models on ONNX Runtime)."""
+    """Shared RapidOCR engine (PaddleOCR det/cls/rec models on ONNX Runtime). Thread-safe
+    when called without kwargs, so frames can be recognised in parallel."""
     global _ocr
     if _ocr is None:
         with _ocr_lock:
             if _ocr is None:
                 from rapidocr_onnxruntime import RapidOCR
-                _ocr = RapidOCR()
+                eng = RapidOCR()
+                _limit_threads(eng)
+                _ocr = eng
     return _ocr
+
+
+def map_frames(fn, items: list) -> list:
+    """fn over items on OCR_WORKERS threads, results in input order."""
+    if OCR_WORKERS <= 1 or len(items) <= 1:
+        return [fn(x) for x in items]
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=OCR_WORKERS, thread_name_prefix="ocr") as pool:
+        return list(pool.map(fn, items))
 
 
 @dataclass
@@ -108,21 +148,21 @@ def text_density(frames: List[np.ndarray]) -> float:
     if not frames:
         return 0.0
     det = get_ocr().text_detector
-    hits = 0
-    for f in frames:
+
+    def has_text(f) -> bool:
         try:
             boxes, _ = det(f)
         except Exception as exc:
             logger.debug("[probe] text detector failed on a frame: %s", exc)
-            continue
+            return False
         if boxes is None or len(boxes) == 0:
-            continue
+            return False
         h, w = f.shape[:2]
         area = sum(float(np.ptp(b[:, 0]) * np.ptp(b[:, 1])) for b in boxes) / float(w * h)
         # A few lines of real text, or one large block (a title slide).
-        if (len(boxes) >= MIN_TEXT_BOXES and area >= MIN_TEXT_AREA) or area >= MIN_TEXT_AREA * 4:
-            hits += 1
-    return hits / len(frames)
+        return (len(boxes) >= MIN_TEXT_BOXES and area >= MIN_TEXT_AREA) or area >= MIN_TEXT_AREA * 4
+
+    return sum(map_frames(has_text, frames)) / len(frames)
 
 
 def route(speech: float, text: float, activity: float, has_video: bool) -> str:
@@ -137,8 +177,14 @@ def route(speech: float, text: float, activity: float, has_video: bool) -> str:
 
 def probe(duration: float, has_audio: bool, has_video: bool,
           audio: Optional[np.ndarray], scan: Optional[VideoScan],
-          regions: Optional[List[Tuple[float, float]]] = None) -> ProbeResult:
-    """`regions` — precomputed speech spans (e.g. from YouTube captions) instead of running VAD."""
+          regions: Optional[List[Tuple[float, float]]] = None,
+          vad_regions: Optional[List[Tuple[float, float]]] = None,
+          text_dens: Optional[float] = None) -> ProbeResult:
+    """
+    `regions` — precomputed speech spans (e.g. from YouTube captions) instead of running VAD.
+    `vad_regions` / `text_dens` — speech_regions(audio) / text_density(scan.text_frames)
+    already computed by the caller (the pipeline runs them concurrently).
+    """
     t0 = time.perf_counter()
     res = ProbeResult(duration=duration, has_audio=bool(regions) or (has_audio and audio is not None),
                       has_video=has_video)
@@ -147,13 +193,13 @@ def probe(duration: float, has_audio: bool, has_video: bool,
         res.speech_regions = regions
         total = duration or (max(e for _, e in regions) if regions else 0.0)
     else:
-        res.speech_regions = speech_regions(audio)
+        res.speech_regions = vad_regions if vad_regions is not None else speech_regions(audio)
         total = audio.size / 16000.0 if audio is not None and audio.size else 0.0
     if total:
         res.speech_ratio = min(1.0, sum(e - s for s, e in res.speech_regions) / total)
 
     if scan is not None:
-        res.text_density = text_density(scan.text_frames)
+        res.text_density = text_dens if text_dens is not None else text_density(scan.text_frames)
         res.screen_activity = scan.screen_activity
         res.scene_changes = len(scan.scene_changes)
         res.keyframes = len(scan.keyframes)

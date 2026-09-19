@@ -16,8 +16,8 @@ import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle, ArrowRight, Award, BarChart3, Bot, Briefcase, BookOpen,
-  FileText, LayoutDashboard, LifeBuoy, Lock, RefreshCcw, Search, Sparkles,
-  Target, TrendingUp, Trophy, Upload,
+  LayoutDashboard, LifeBuoy, Lock, RefreshCcw, Search, Sparkles,
+  Target, TrendingUp, Trophy,
 } from "lucide-react";
 
 import { useLearnerDashboard } from "../hooks/useLearnerDashboard";
@@ -35,10 +35,12 @@ import ProgressView from "../components/dashboard/ProgressView";
 import ChatWidget from "../components/dashboard/ChatWidget";
 import KarmaRewardsView from "../components/karma/KarmaRewardsView";
 import AssessmentUploadZone from "../components/dashboard/AssessmentUploadZone";
+import CertificateUploadZone from "../components/dashboard/CertificateUploadZone";
 import CompetencyOverviewTable from "../components/dashboard/CompetencyOverviewTable";
 import LearningSnapshot from "../components/dashboard/LearningSnapshot";
 import RecentActivityList from "../components/dashboard/RecentActivityList";
 import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
+import CareerReadinessCard from "../components/dashboard/CareerReadinessCard";
 import { AshokaChakra } from "../components/gov/GovUI";
 
 // ─── Sections ─────────────────────────────────────────────────────────────────
@@ -168,74 +170,6 @@ const StudioPromo: React.FC<{ onOpenStudio: () => void; onOpenQuizPage: () => vo
     </div>
   </div>
 );
-
-// ─── Certificate upload ───────────────────────────────────────────────────────
-const CertificateUploadZone: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleUpload = () => {
-    if (file) {
-      alert(`Certificate "${file.name}" uploaded successfully for verification!`);
-      setFile(null);
-    } else {
-      fileInputRef.current?.click();
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-4">
-        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent-green-soft dark:bg-emerald-500/15">
-          <Award size={22} className="text-accent-green dark:text-emerald-300" aria-hidden="true" />
-        </span>
-        <div>
-          <h3 className="mb-0.5 text-[14.5px] font-semibold leading-tight text-gov-ink dark:text-white">External Certificates</h3>
-          <p className="text-[12px] text-slate-500 dark:text-slate-400">
-            Upload non-iGOT certificates (PDF/Image) for FRAC skill verification.
-          </p>
-        </div>
-      </div>
-
-      <input
-        type="file"
-        className="hidden"
-        ref={fileInputRef}
-        accept=".pdf,image/*"
-        aria-label="Choose a certificate file"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-      />
-
-      {file && (
-        <div className="flex animate-fade-in items-center gap-2 rounded-xl border border-gov-line bg-gov-paper p-3 text-sm dark:border-slate-700/50 dark:bg-slate-800/60">
-          <FileText size={16} className="flex-shrink-0 text-accent-green" aria-hidden="true" />
-          <span className="flex-1 truncate font-medium text-slate-700 dark:text-slate-300">{file.name}</span>
-          <button
-            type="button"
-            onClick={() => setFile(null)}
-            className="font-bold text-slate-400 hover:text-accent-rose"
-            aria-label={`Remove ${file.name}`}
-          >
-            &times;
-          </button>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={handleUpload}
-        className={`flex w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed py-2.5 text-[13.5px] font-semibold transition-all duration-300 ${
-          file
-            ? "border-solid border-accent-green bg-accent-green text-white hover:bg-emerald-600"
-            : "border-accent-green/50 bg-accent-green/[0.05] text-accent-green hover:border-accent-green hover:bg-accent-green/10 dark:text-emerald-300"
-        }`}
-      >
-        <Upload size={17} aria-hidden="true" />
-        {file ? "Submit for Verification" : "Upload Certificate"}
-      </button>
-    </div>
-  );
-};
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => {
@@ -379,6 +313,10 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                     >
                       <LearningSnapshot enrollments={enrollments} />
                     </SectionCard>
+                    <CareerReadinessCard
+                      userId={userId}
+                      refreshKey={skillGaps.map(g => `${g.competency.compId}:${g.currentLevel}`).join("|")}
+                    />
 
                     <SectionCard
                       title="Recent Activity"
@@ -430,7 +368,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
                   </p>
                 )}
 
-                <SkillGapCard skillGaps={searchedGaps} onFindCourses={handleFindCourses} officialId={userId} />
+                <SkillGapCard skillGaps={searchedGaps} onFindCourses={handleFindCourses} officialId={userId} onLevelChanged={refetch} />
               </div>
             )}
 
@@ -516,7 +454,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
             {activeTab === "certificates" && (
               <div className="animate-fade-up grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
                 <SectionCard title="Upload a Certificate" subtitle="Extracted skills are matched to FRAC competencies and logged as documented evidence">
-                  <CertificateUploadZone />
+                  <CertificateUploadZone onUploaded={refetch} />
                 </SectionCard>
                 <SectionCard title="Verified Achievements" subtitle="Quiz passes and accepted certificates on your record">
                   <RecentActivityList achievements={achievements} limit={8} />

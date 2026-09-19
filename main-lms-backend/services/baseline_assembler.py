@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from services.practice_assessment import latest_practice_value
 from services.competency_service import (
-    CHANNEL_WEIGHTS, CHANNEL_WEIGHTS_STATUS, CompetencyCalculator, fuse_channels,
+    CHANNEL_WEIGHTS, CHANNEL_WEIGHTS_STATUS, CompetencyCalculator, correct_supervisor_rating, fuse_channels,
 )
 
 _calculator = CompetencyCalculator()
@@ -204,13 +204,15 @@ def _row_date(r: Dict) -> str:
     return d.isoformat() if isinstance(d, datetime) else str(d)
 
 
-def _workplace_channels(rows: List[Dict]) -> Dict[str, Any]:
+def _workplace_channels(rows: List[Dict], rater_offsets: Optional[Dict[str, Dict]] = None) -> Dict[str, Any]:
     """
     SCIL v6 §3 workplace channels for one competency, on the 0–5 level scale:
       A — work samples: a passed Level-L sample shows L; a failed one shows
           "not yet L" (L − 0.5). Channel value = the best attempt.
       U — utility: the highest course level whose use the supervisor confirmed.
-      S — supervisor rating (1–5), the most recent one.
+      S — supervisor rating (1–5), the most recent one, corrected for the
+          rater's leniency (competency_service.rater_leniency_offsets) when
+          offsets are known.
     Peer ratings are counted for display only — never a channel.
     """
     a_vals, ws_floor, u_floor, s_latest, peer = [], 0, 0, None, 0
@@ -230,17 +232,204 @@ def _workplace_channels(rows: List[Dict]) -> Dict[str, Any]:
                 s_latest = r
         elif etype == "PEER_RATING":
             peer += 1
+    s_raw, s_val, rater_id, offset = None, None, None, 0.0
+    if s_latest is not None:
+        s_raw = _row_value(s_latest)
+        rater_id = (s_latest.get("meta") or {}).get("raterId")
+        s_val, offset = correct_supervisor_rating(s_raw, rater_id, rater_offsets)
     return {
         "A": max(a_vals) if a_vals else None,
         "U": float(u_floor) if u_floor else None,
-        "S": _row_value(s_latest) if s_latest is not None else None,
+        "S": s_val,
+        "S_raw": s_raw,
+        "raterId": rater_id,
+        "raterOffset": round(offset, 3),
         "workSampleLevel": ws_floor,
         "appliedLevel": u_floor,
         "peer": peer,
     }
 
 
-_DATED_EVIDENCE = {"VERIFIED_IGOT", "DOCUMENTED_CERT", "PRACTICE_ASSESSMENT", "WORK_SAMPLE",
+def _completed_courses(enrollments: list, comp_id: str,
+                       course_comp_map: Dict[str, Dict[str, Optional[int]]]) -> List[Dict[str, Any]]:
+    """Completed courses tagged with comp_id, highest level first — for the "why this level" text."""
+    out = []
+    for e in enrollments:
+        cid = enrollment_course_id(e)
+        if cid and is_completed(e) and comp_id in course_comp_map.get(cid, {}):
+            out.append({"courseId": cid, "title": e.get("courseName") or cid,
+                        "level": course_comp_map[cid][comp_id]})
+    return sorted(out, key=lambda c: -(c["level"] or 0))
+
+
+def assess_competency(
+    frac_type: str,
+    comp_id: str,
+    evidence: Dict[str, Any],
+    work: Dict[str, Any],
+    verified_scores_by_comp: Optional[Dict[str, float]] = None,
+    now: Optional[datetime] = None,
+    completed_level: int = 0,
+) -> Dict[str, Any]:
+    """
+    One competency, K/A/U/S fused — the scoring path shared by compute_for_user
+    and the stateless POST /competencies/baseline calculator.
+
+    `evidence` = {verified, documented, doc_date, tenure, self_report, education,
+    seniority} (the six K terms), `work` = _workplace_channels() output (or the
+    same keys supplied by hand). Synergy uses the ADJACENT_COMPETENCIES table.
+    """
+    b_k, conf = _calculator.calculate_baseline(
+        frac_type=frac_type,
+        evidence_data=evidence,
+        verified_count_in_category=0,           # unused when comp_id supplied
+        current_time=now,
+        verified_scores_by_comp=verified_scores_by_comp or {},
+        comp_id=comp_id,
+    )
+    knowledge = None if conf == "UNASSESSED" else b_k
+    fused = fuse_channels({"K": knowledge, "A": work.get("A"), "U": work.get("U"), "S": work.get("S")})
+    # Confidence from the strongest OBJECTIVE channel: a passed work sample
+    # is demonstrated performance (HIGH); supervisor-confirmed use lifts a
+    # LOW/UNASSESSED estimate to MEDIUM; a supervisor rating alone is LOW.
+    # The anti-gaming ceilings still apply, so a lenient rater with no
+    # objective evidence behind them cannot lift the level above 2.5.
+    if work.get("workSampleLevel"):
+        conf = "HIGH"
+    elif work.get("appliedLevel") and conf in ("LOW", "UNASSESSED"):
+        conf = "MEDIUM"
+    elif fused is not None and conf == "UNASSESSED":
+        conf = "LOW"
+    score = 0.0 if fused is None else min(fused, _CONFIDENCE_CEILING[conf])
+
+    # FIX (Bug #1): UNASSESSED → currentLevel = None, never fabricated.
+    current_level = None if conf == "UNASSESSED" else max(0, min(5, int(score)))
+    channels = {"K": knowledge, "A": work.get("A"), "U": work.get("U"), "S": work.get("S")}
+    return {
+        "score":      round(score, 3),
+        "knowledgeScore": b_k,
+        "confidence": conf,
+        "ceiling":    _CONFIDENCE_CEILING[conf],
+        "currentLevel":   current_level,
+        "completedLevel": completed_level,
+        "workSampleLevel": work.get("workSampleLevel", 0),
+        "appliedLevel":    work.get("appliedLevel", 0),
+        "channels": {k: (round(v, 3) if v is not None else None) for k, v in channels.items()},
+        "completeness": {
+            "present": [k for k, v in channels.items() if v is not None],
+            "missing": [k for k, v in channels.items() if v is None],
+            "weights": CHANNEL_WEIGHTS, "weightsStatus": CHANNEL_WEIGHTS_STATUS,
+        },
+        "peerFeedback": work.get("peer", 0),
+        "_evidence": {
+            "verified":   round(evidence.get("verified", 0.0), 3),
+            "documented": round(evidence.get("documented", 0.0), 3),
+            "tenure":     round(evidence.get("tenure", 0.0), 3),
+            "selfReport": round(evidence.get("self_report", 0.0), 3),
+            "education":  round(evidence.get("education", 0.0), 3),
+            "seniority":  round(evidence.get("seniority", 0.0), 3),
+            "workSample": round(work.get("A") or 0.0, 3),
+            "utility":    round(work.get("U") or 0.0, 3),
+            "supervisor": round(work.get("S") or 0.0, 3),
+            "supervisorRaw": round(work["S_raw"], 3) if work.get("S_raw") is not None else None,
+            "raterOffset": work.get("raterOffset", 0.0),
+        },
+    }
+
+
+_BASIS_TEXT = {
+    "evidence":          "the weighted evidence score",
+    "course_completion": "a completed course",
+    "work_sample":       "a passed work sample",
+    "applied_at_work":   "supervisor-confirmed use at work",
+    "self_report":       "your own self-assessment",
+    "none":              "no evidence yet",
+}
+
+
+def explain_level(assessment: Dict[str, Any], resolved: Dict[str, Any], self_reported_level: int = 0,
+                  completed_courses: Optional[List[Dict[str, Any]]] = None,
+                  practice_rows: int = 0) -> Dict[str, Any]:
+    """
+    "Why this level" for one competency, built only from numbers the API already
+    returns: which source set the level (resolve_level basis), the floors, the
+    evidence channels that fired and the confidence ceiling that capped them.
+
+    → {summary, basis, factors[{key, label, value, detail, role}], caps[]}
+    role ∈ sets_level | floor | contributes | context | absent.
+    """
+    ev = assessment.get("_evidence") or {}
+    level, basis = resolved.get("level"), resolved.get("basis", "none")
+    completed_courses = completed_courses or []
+    factors: List[Dict[str, Any]] = []
+
+    def add(key, label, value, detail, role="contributes"):
+        factors.append({"key": key, "label": label, "value": value, "detail": detail, "role": role})
+
+    if completed_courses:
+        top = completed_courses[0]
+        more = f" (+{len(completed_courses) - 1} more)" if len(completed_courses) > 1 else ""
+        add("verified", "Completed courses", top["level"],
+            f"Finished “{top['title']}” at Level {top['level'] or '?'}{more}.",
+            "sets_level" if basis == "course_completion" else "floor")
+    elif ev.get("verified"):
+        add("verified", "Verified record", ev["verified"],
+            "Verified assessment on iGOT or an admin-approved certificate.")
+    if ev.get("documented"):
+        add("documented", "Certificates & quizzes", ev["documented"],
+            f"Best certificate or latest practice score ({practice_rows} quiz/diagnostic result"
+            f"{'' if practice_rows == 1 else 's'} on record)." if practice_rows else
+            "Best uploaded certificate (older certificates decay).")
+    if ev.get("workSample"):
+        ws = assessment.get("workSampleLevel") or 0
+        add("workSample", "Work sample", ev["workSample"],
+            f"Passed a Level-{ws} work sample." if ws else "Work sample attempted but not yet passed.",
+            "sets_level" if basis == "work_sample" else ("floor" if ws else "contributes"))
+    if ev.get("utility"):
+        add("utility", "Used at work", ev["utility"],
+            f"Supervisor confirmed you used Level-{int(ev['utility'])} skills at work.",
+            "sets_level" if basis == "applied_at_work" else "floor")
+    if ev.get("supervisor"):
+        raw, off = ev.get("supervisorRaw"), ev.get("raterOffset") or 0.0
+        adj = (f" Rated {raw:g}; adjusted by {-off:+.1f} for this rater's leniency."
+               if raw is not None and abs(off) >= 0.05 else "")
+        add("supervisor", "Supervisor (APAR)", ev["supervisor"],
+            "Latest APAR rating — never sets the level on its own." + adj)
+    if ev.get("tenure"):
+        add("tenure", "Experience", ev["tenure"], "Years in related posts (older posts count less).", "context")
+    if ev.get("education"):
+        add("education", "Education", ev["education"], "How relevant your degree is to this competency.", "context")
+    if ev.get("seniority"):
+        add("seniority", "Seniority", ev["seniority"], "Grade seniority (behavioural competencies only).", "context")
+    if self_reported_level:
+        add("selfReport", "Self-assessment", self_reported_level,
+            f"You reported Level {self_reported_level} on your iGOT profile.",
+            "sets_level" if basis == "self_report" else "context")
+
+    caps = []
+    ceiling = assessment.get("ceiling")
+    if ceiling is not None and ceiling < 5 and assessment.get("confidence") not in (None, "UNASSESSED"):
+        caps.append(f"Without a completed course or passed work sample the evidence score is capped at "
+                    f"{ceiling:g}; finish a tagged course to go higher.")
+    if basis == "self_report" and resolved.get("evidenceLevel") is not None:
+        caps.append(f"Evidence alone supports Level {resolved['evidenceLevel']}; take the level check to confirm "
+                    f"your self-assessment.")
+
+    if level is None:
+        summary = "Not assessed: there is no course, quiz, certificate or workplace evidence for this competency yet."
+    else:
+        summary = f"Level {level} because of {_BASIS_TEXT.get(basis, basis)}"
+        if basis == "evidence":
+            summary += f" ({assessment.get('score', 0):.2f} of 5 across {len(assessment.get('completeness', {}).get('present', []))} channel(s))"
+        summary += "."
+    return {"summary": summary, "basis": basis, "factors": factors, "caps": caps}
+
+
+# Rows read by the VERIFIED channel: iGOT records and admin-approved certificates
+# (routers/competency.py review → DOCUMENTED_CERT rows become VERIFIED_CERT).
+VERIFIED_EVIDENCE = {"VERIFIED_IGOT", "VERIFIED_CERT"}
+
+_DATED_EVIDENCE = {"VERIFIED_IGOT", "VERIFIED_CERT", "DOCUMENTED_CERT", "PRACTICE_ASSESSMENT", "WORK_SAMPLE",
                    "SUPERVISOR_RATING", "UTILITY"}
 
 
@@ -271,9 +460,11 @@ def _normalise_course_map(course_comp_map: Dict) -> Dict[str, Dict[str, Optional
 
 
 class BaselineAssembler:
-    def __init__(self, course_comp_map: Dict):
+    def __init__(self, course_comp_map: Dict, rater_offsets: Optional[Dict[str, Dict]] = None):
         # {courseId: {compId: FRAC level (1-5) or None}}
         self._course_comp_map = _normalise_course_map(course_comp_map)
+        # {raterId: {offset, n, …}} — APAR leniency correction (competency_service.rater_leniency_offsets)
+        self.rater_offsets: Dict[str, Dict] = rater_offsets or {}
 
     def compute_for_user(
         self,
@@ -335,7 +526,7 @@ class BaselineAssembler:
                 enrollments, tag_id(cid), self._course_comp_map
             )
             for r in rows_for(cid):
-                if r.get("evidence_type") == "VERIFIED_IGOT":
+                if _row_type(r) in VERIFIED_EVIDENCE:
                     vs = max(vs, float(r.get("granted_value") or 0))
             verified_scores_by_comp[tag_id(cid)] = max(vs, verified_scores_by_comp.get(tag_id(cid), 0.0))
 
@@ -391,73 +582,21 @@ class BaselineAssembler:
             tier = (job_profile.get("tier") or "TIER4_JUNIOR").upper()
             sen  = _TIER_SENIORITY.get(tier, 1.5) if cat == "GENERIC_BEHAVIOURAL" else 0.0
 
-            # FIX (Bug #4): pass comp_id and verified_scores_by_comp so the
-            # calculator uses the explicit adjacency table, not a blanket count.
-            b_k, conf = _calculator.calculate_baseline(
-                frac_type=ftype,
-                evidence_data={
-                    "verified": vs, "documented": ds, "doc_date": doc_date,
-                    "tenure": ts, "self_report": srs, "education": es, "seniority": sen,
-                },
-                verified_count_in_category=0,           # unused when comp_id supplied
-                current_time=now,
-                verified_scores_by_comp=verified_scores_by_comp,  # Bug #4
-                comp_id=tag_id(cid),                    # Bug #4 (catalogue id space)
+            # ── K (6-term b_k) fused with the workplace channels A/U/S (SCIL v6 §3) ──
+            work = _workplace_channels(rows_for(cid), self.rater_offsets)
+            result = assess_competency(
+                frac_type=ftype, comp_id=tag_id(cid),        # catalogue id space (adjacency)
+                evidence={"verified": vs, "documented": ds, "doc_date": doc_date, "tenure": ts,
+                          "self_report": srs, "education": es, "seniority": sen},
+                work=work, verified_scores_by_comp=verified_scores_by_comp, now=now,
+                completed_level=completed_levels.get(cid, 0),
             )
-
-            # ── SCIL v6 §3: fuse K (this b_k) with the workplace channels A/U/S ──
-            work = _workplace_channels(rows_for(cid))
-            knowledge = None if conf == "UNASSESSED" else b_k
-            fused = fuse_channels({"K": knowledge, "A": work["A"], "U": work["U"], "S": work["S"]})
-            # Confidence from the strongest OBJECTIVE channel: a passed work sample
-            # is demonstrated performance (HIGH); supervisor-confirmed use lifts a
-            # LOW/UNASSESSED estimate to MEDIUM; a supervisor rating alone is LOW.
-            # The anti-gaming ceilings still apply, so a lenient rater with no
-            # objective evidence behind them cannot lift the level above 2.5.
-            if work["workSampleLevel"]:
-                conf = "HIGH"
-            elif work["appliedLevel"] and conf in ("LOW", "UNASSESSED"):
-                conf = "MEDIUM"
-            elif fused is not None and conf == "UNASSESSED":
-                conf = "LOW"
-            score = 0.0 if fused is None else min(fused, _CONFIDENCE_CEILING[conf])
-
-            # FIX (Bug #1): UNASSESSED → currentLevel = None, never fabricated.
-            # Otherwise the highest FRAC level fully reached. The score is on the
-            # 0-5 level scale (channels are renormalised) and bounded by the
-            # confidence ceiling, so no further rescaling or capping.
-            current_level = None if conf == "UNASSESSED" else max(0, min(5, int(score)))
-
-            channels = {"K": knowledge, "A": work["A"], "U": work["U"], "S": work["S"]}
-            results[cid] = {
-                "score":      round(score, 3),
-                "knowledgeScore": b_k,
-                "confidence": conf,
-                "currentLevel":   current_level,          # None when UNASSESSED
-                "completedLevel": completed_levels.get(cid, 0),
-                "workSampleLevel": work["workSampleLevel"],   # evidence floor (passed work sample)
-                "appliedLevel":    work["appliedLevel"],      # evidence floor (supervisor-confirmed use)
-                "channels": {k: (round(v, 3) if v is not None else None) for k, v in channels.items()},
-                "completeness": {
-                    "present": [k for k, v in channels.items() if v is not None],
-                    "missing": [k for k, v in channels.items() if v is None],
-                    "weights": CHANNEL_WEIGHTS, "weightsStatus": CHANNEL_WEIGHTS_STATUS,
-                },
-                "peerFeedback": work["peer"],
-                "lastEvidenceDate": _last_evidence_date(enrollments, tag_id(cid), self._course_comp_map,
-                                                        rows_for(cid)),
-                "_evidence": {
-                    "verified":   round(vs, 3),
-                    "documented": round(ds, 3),
-                    "tenure":     round(ts, 3),
-                    "selfReport": round(srs, 3),
-                    "education":  round(es, 3),
-                    "seniority":  round(sen, 3),
-                    "workSample": round(work["A"] or 0.0, 3),
-                    "utility":    round(work["U"] or 0.0, 3),
-                    "supervisor": round(work["S"] or 0.0, 3),
-                },
-            }
+            result["lastEvidenceDate"] = _last_evidence_date(enrollments, tag_id(cid), self._course_comp_map,
+                                                             rows_for(cid))
+            # For explain_level(): which completed courses and how many practice results back the level.
+            result["completedCourses"] = _completed_courses(enrollments, tag_id(cid), self._course_comp_map)
+            result["practiceRows"] = sum(1 for r in rows_for(cid) if _row_type(r) == "PRACTICE_ASSESSMENT")
+            results[cid] = result
         return results
 
 

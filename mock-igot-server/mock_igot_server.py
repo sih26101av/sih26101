@@ -828,10 +828,33 @@ async def get_admin_roster(
     API_ID, VER = "api.admin.users.list", "v1"
     _require_auth(x_authenticated_user_token, API_ID, VER)
 
+    # ACBP (data/acbp.json) — the APAR-linked mandatory courses per official, so
+    # the admin console can list officials behind on mandatory training.
+    acbp = DB_REF.get("acbp.json") or {}
+    offices = {o["officeId"]: o["name"] for o in (DB_REF.get("offices.json") or {}).get("offices", [])}
+
     enriched = []
     for user in DB_USERS:
         user_id = user["userId"]
         enrolments = _user_enrolments(user_id)
+        completed_ids = sorted({e["courseId"] for e in enrolments if e.get("status") == 2})
+        # First completion date per course — lets the admin console rebuild trend history.
+        completions: dict[str, str] = {}
+        for e in enrolments:
+            d = (e.get("completedDate") or "")[:10]
+            if e.get("status") == 2 and d:
+                completions[e["courseId"]] = min(completions.get(e["courseId"], d), d)
+        job = user.get("jobProfile") or {}
+        acbp_official = (acbp.get("officials") or {}).get(user_id)
+        mandatory = None
+        if acbp_official is not None:
+            courses = (acbp.get("organisationMandatory") or []) + \
+                      ((acbp.get("roles") or {}).get(acbp_official["roleId"], {}).get("mandatoryCourses") or [])
+            pending = [{"courseId": c["courseId"], "title": c["title"], "hours": c.get("hours")}
+                       for c in courses if c["courseId"] not in completed_ids]
+            mandatory = {"cycle": acbp.get("cycle"), "total": len(courses),
+                         "courseIds": [c["courseId"] for c in courses],
+                         "completed": len(courses) - len(pending), "pending": pending}
 
         # Derive enrollment status: 2=completed, 1=in-progress, 0=none
         if any(e["status"] == 2 for e in enrolments):
@@ -860,6 +883,15 @@ async def get_admin_roster(
             "enrollmentStatus": enroll_status,
             "missingSkill":     missing,
             "competencies":     comps,
+            # Admin-console fields: grade (service tier), posting office, role,
+            # completed course ids and ACBP mandatory progress (null = no ACBP entry).
+            "grade":            job.get("tier"),
+            "officeId":         job.get("officeId"),
+            "officeName":       offices.get(job.get("officeId") or ""),
+            "roleId":           job.get("roleId"),
+            "completedCourseIds": completed_ids,
+            "completions":      [{"courseId": k, "completedDate": v} for k, v in sorted(completions.items())],
+            "mandatory":        mandatory,
         })
 
     return sunbird_ok(API_ID, VER, {
@@ -1058,6 +1090,33 @@ async def get_user_workplace_evidence(user_id: str, x_authenticated_user_token: 
         "supervisorItem": data.get("supervisorItem"), "utilityItem": data.get("utilityItem"),
         "peerNote": data.get("peerNote"),
     })
+
+
+@app.get("/api/evidence/v1/supervisor-ratings")
+async def get_supervisor_ratings(x_authenticated_user_token: str | None = Header(default=None)):
+    """
+    Every APAR supervisor rating (rater id, competency, value, cycle) — platform-wide,
+    for per-rater leniency correction. Ratee ids are dropped.
+    """
+    API_ID, VER = "api.evidence.supervisor.ratings", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    data, err = _ref_or_404("workplace_evidence.json", API_ID, VER)
+    if err:
+        return err
+    ratings = [
+        {"raterId": (r.get("meta") or {}).get("raterId"), "compId": r["compId"],
+         "grantedValue": r["grantedValue"], "cycle": (r.get("meta") or {}).get("cycle")}
+        for r in data["rows"] if r["evidenceType"] == "SUPERVISOR_RATING"
+    ]
+    return sunbird_ok(API_ID, VER, {"count": len(ratings), "ratings": ratings})
+
+
+@app.get("/api/org/v1/roles")
+async def get_org_roles(x_authenticated_user_token: str | None = Header(default=None)):
+    """Role competency profiles per office and tier (roles.json) — career ladder source."""
+    API_ID, VER = "api.org.roles.list", "v1"
+    _require_auth(x_authenticated_user_token, API_ID, VER)
+    return sunbird_ok(API_ID, VER, {"count": len(DB_ROLES), "roles": DB_ROLES})
 
 
 # ─────────────────────────────────────────────────────────────

@@ -4,17 +4,18 @@ FILE: routers/rag.py
 RAG Document-to-Quiz Router
 MoSPI Skill Intelligence Platform | SIH 2026
 
-Handles document ingestion (PDF, PPT, PPTX, TXT), validates payloads,
-extracts cleaned plain-text using PyPDF / pdfplumber / python-pptx,
-generates exactly 5 MCQs using Google Gemini API with strict JSON schema,
-and provides quiz grading with automatic competency syncing to iGOT.
+Handles document ingestion (PDF incl. OCR of scanned pages, PPTX, DOCX, TXT),
+generates a configurable number (3-20) of source-cited objective questions —
+MCQ, True/False, multi-select, fill-in-the-blank, numeric — through the
+validated pipeline in services/doc_quiz (optionally in Hindi / bilingual),
+and grades any quiz in QUIZ_STORE (document or media) with personalised
+feedback, response-calibrated item difficulty and competency sync to iGOT.
 ─────────────────────────────────────────────────────────────────────────────
 """
 
 import io
 import os
 import re
-import json
 import uuid
 import asyncio
 import logging
@@ -44,6 +45,8 @@ from models.models import (
 from fastapi import Depends
 from services import app_state
 from services import practice_assessment as pa
+from services.doc_quiz import calibration as calib
+from services.doc_quiz import items as qitems
 
 # Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
@@ -59,7 +62,7 @@ router = APIRouter()
 
 # ── Configuration Constants ───────────────────────────────────────────────────
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB max limit
-SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt"}
+SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt", ".docx", ".doc"}
 
 
 # =============================================================================
@@ -67,20 +70,38 @@ SUPPORTED_EXTENSIONS = {".pdf", ".ppt", ".pptx", ".txt"}
 # =============================================================================
 
 class QuizQuestion(BaseModel):
-    question: str = Field(..., description="The quiz question text")
-    options: List[str] = Field(..., description="List of 4 multiple-choice options")
-    correct_answer: int = Field(..., description="Zero-based index (0, 1, 2, or 3) of the correct option in options")
+    # Media quizzes and the demo quiz set only the first five fields → type "mcq".
+    question: str = Field(..., description="The quiz question text (fill_blank: contains _____)")
+    options: List[str] = Field(default_factory=list, description="Choices (mcq: 4, true_false: True/False, multi_select: 4-6); empty for fill_blank / numeric")
+    correct_answer: int = Field(-1, description="Zero-based index of the correct option (mcq, true_false); -1 otherwise")
     explanation: str = Field(..., description="Detailed explanation for why the answer is correct")
-    difficulty: Optional[str] = Field(None, description="Easy | Medium | Hard — drives the difficulty-aware skill update at grading")
+    difficulty: Optional[str] = Field(None, description="Effective Easy | Medium | Hard — the calibrated class once the item has response data, else the generator's tag")
+    type: str = Field("mcq", description="mcq | true_false | multi_select | fill_blank | numeric")
+    correct_answers: Optional[List[int]] = Field(None, description="multi_select: indices of all correct options")
+    answer_text: Optional[str] = Field(None, description="fill_blank: the expected term")
+    accepted_answers: Optional[List[str]] = Field(None, description="fill_blank: accepted alternatives")
+    numeric_answer: Optional[float] = Field(None, description="numeric: the answer")
+    tolerance: Optional[float] = Field(None, description="numeric: absolute tolerance (default 1 %)")
+    unit: Optional[str] = Field(None, description="numeric: unit shown next to the input")
+    expression: Optional[str] = Field(None, description="numeric: arithmetic the answer was verified against")
+    solution: Optional[str] = Field(None, description="numeric: one-line working, shown after grading")
+    why_wrong: Optional[List[str]] = Field(None, description="Per-option reason it is wrong (personalised feedback)")
+    citations: Optional[List[Dict[str, Any]]] = Field(None, description="[{chunkId, locator, quote, passage}] — the source passage supporting the answer")
+    answer_type: Optional[str] = Field(None, description="number | definition | concept | procedure (fact-check)")
+    review: Optional[Dict[str, Any]] = Field(None, description="Fact-check status: ok | flagged | no_reference | unchecked")
+    llm_difficulty: Optional[str] = Field(None, description="The generator's own difficulty tag")
+    calibration: Optional[Dict[str, Any]] = Field(None, description="Response-data calibration (services/doc_quiz/calibration.py)")
+    item_key: Optional[str] = Field(None, description="Content hash keying the item's response statistics")
+    translations: Optional[Dict[str, Dict[str, Any]]] = Field(None, description='{"hi": {question, options, explanation, why_wrong, answer_text, unit, solution}}')
 
 
 class QuizPayload(BaseModel):
-    questions: List[QuizQuestion] = Field(..., description="List of exactly 5 generated multiple-choice questions")
+    questions: List[QuizQuestion] = Field(..., description="Generated questions")
 
 
 class DocumentMetadata(BaseModel):
     filename: str = Field(..., description="Original name of the uploaded file")
-    file_type: str = Field(..., description="Detected file extension (.pdf, .ppt, .pptx, .txt)")
+    file_type: str = Field(..., description="Detected file extension (.pdf, .ppt, .pptx, .docx, .txt)")
     file_size_bytes: int = Field(..., description="Size of the uploaded file in bytes")
     character_count: int = Field(..., description="Total extracted character count")
     word_count: int = Field(..., description="Total extracted word count")
@@ -88,6 +109,8 @@ class DocumentMetadata(BaseModel):
     page_count: Optional[int] = Field(None, description="Total number of pages (for PDF)")
     slide_count: Optional[int] = Field(None, description="Total number of slides (for PPT/PPTX)")
     line_count: Optional[int] = Field(None, description="Total number of lines (for TXT)")
+    section_count: Optional[int] = Field(None, description="Heading-delimited sections (for DOCX)")
+    ocr: Optional[Dict[str, Any]] = Field(None, description="Scanned-page OCR report (for PDF), when any page was OCR'd")
 
 
 class DocumentUploadResponse(BaseModel):
@@ -96,8 +119,11 @@ class DocumentUploadResponse(BaseModel):
     quiz_id: str = Field(..., description="Unique identifier for the generated quiz session")
     filename: str = Field(..., description="Uploaded document filename")
     file_type: str = Field(..., description="Document file type")
-    questions: List[QuizQuestion] = Field(..., description="List of 5 generated multiple choice questions based on document text")
+    questions: List[QuizQuestion] = Field(..., description="Generated, source-cited questions")
     metadata: DocumentMetadata = Field(..., description="Structured metadata of the processed document")
+    difficulty: Optional[str] = Field(None, description="Target difficulty")
+    language: str = Field("en", description="en | hi | bi (bilingual) — Hindi text is in each question's translations.hi")
+    generation: Optional[Dict[str, Any]] = Field(None, description="Validator / plausibility / dedup / fact-check / translation report")
 
 
 class GradeRequest(BaseModel):
@@ -106,7 +132,8 @@ class GradeRequest(BaseModel):
     # (populated via JWT in Depends(get_current_user)).
     # Accepting user_id from the body allowed unauthenticated identity spoofing.
     quiz_id: str = Field(..., description="Unique ID of the quiz session being graded")
-    answers: List[int] = Field(..., description="List of chosen option indices (0-indexed)")
+    answers: List[Any] = Field(..., description="Per question: option index (mcq, true_false), list of indices "
+                                                 "(multi_select), text (fill_blank) or number/text (numeric)")
 
 
 class GradeResponse(BaseModel):
@@ -129,7 +156,7 @@ class GradeResponse(BaseModel):
     difficulty: Optional[str] = Field(None, description="Target difficulty the quiz was generated at")
     weighted_score: Optional[float] = Field(None, description="Difficulty-weighted % (Hard = 2x Easy)")
     skillImpact: Optional[Dict[str, Any]] = Field(None, description="Linked role competency, practice ability and skill score/level before → after")
-    questionReview: Optional[List[Dict[str, Any]]] = Field(None, description="Per-question result with difficulty, your answer, correct answer, explanation (missed first)")
+    questionReview: Optional[List[Dict[str, Any]]] = Field(None, description="Per-question result, missed first: your answer, correct answer, explanation, personalised feedback, source passage, a course for the missed point, difficulty calibration")
     recommendations: Optional[Dict[str, Any]] = Field(None, description="Next difficulty, focus topics, courses for the linked competency")
 
 
@@ -209,11 +236,8 @@ def _clean_text(text: str) -> str:
     return text.strip()
 
 
-def _extract_pdf(file_bytes: bytes) -> Tuple[str, int]:
-    """
-    Extracts text from PDF bytes using pdfplumber (primary) with fallback to pypdf.
-    Returns a tuple of (extracted_text, page_count).
-    """
+def _pdf_text_layer(file_bytes: bytes) -> Tuple[Dict[int, str], int]:
+    """{page: text} from the PDF's text layer (pdfplumber, else pypdf) and the page count."""
     try:
         import pdfplumber
     except ImportError:
@@ -223,38 +247,22 @@ def _extract_pdf(file_bytes: bytes) -> Tuple[str, int]:
     except ImportError:
         pypdf = None
 
-    extracted_pages = []
-    page_count = 0
-
-    # 1. Attempt extraction with pdfplumber (superior layout & table preservation)
+    # 1. pdfplumber (superior layout & table preservation)
     if pdfplumber is not None:
         try:
             with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-                page_count = len(pdf.pages)
-                for idx, page in enumerate(pdf.pages, start=1):
-                    page_text = page.extract_text() or ""
-                    if page_text.strip():
-                        extracted_pages.append(f"--- Page {idx} ---\n{page_text.strip()}")
-            
-            combined_text = "\n\n".join(extracted_pages)
-            if combined_text.strip():
-                return _clean_text(combined_text), page_count
+                pages = {idx: (page.extract_text() or "").strip() for idx, page in enumerate(pdf.pages, start=1)}
+            if any(pages.values()) or pypdf is None:
+                return pages, len(pages)
         except Exception as e:
             logger.warning(f"pdfplumber failed: {e}. Falling back to pypdf.")
-            extracted_pages.clear()
 
     # 2. Fallback to pypdf
     if pypdf is not None:
         try:
             reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-            page_count = len(reader.pages)
-            for idx, page in enumerate(reader.pages, start=1):
-                page_text = page.extract_text() or ""
-                if page_text.strip():
-                    extracted_pages.append(f"--- Page {idx} ---\n{page_text.strip()}")
-            
-            combined_text = "\n\n".join(extracted_pages)
-            return _clean_text(combined_text), page_count
+            pages = {idx: (page.extract_text() or "").strip() for idx, page in enumerate(reader.pages, start=1)}
+            return pages, len(pages)
         except Exception as e:
             logger.error(f"pypdf extraction failed: {e}")
             raise HTTPException(
@@ -266,6 +274,33 @@ def _extract_pdf(file_bytes: bytes) -> Tuple[str, int]:
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="No PDF extraction library available on the server (pdfplumber/pypdf)."
     )
+
+
+def _extract_pdf(file_bytes: bytes) -> Tuple[str, int, Optional[Dict[str, Any]]]:
+    """
+    Text layer first; pages with (almost) no text layer — scanned pages — are
+    rendered and OCR'd (services/doc_quiz/extract.py). Returns
+    (text with "--- Page N ---" markers, page_count, OCR report or None).
+    """
+    from services.doc_quiz import extract as dx
+
+    pages, page_count = _pdf_text_layer(file_bytes)
+    ocr_report: Optional[Dict[str, Any]] = None
+    scanned = [p for p, t in pages.items() if dx.needs_ocr(t)]
+    if scanned:
+        try:
+            ocr_text, ocr_report = dx.ocr_pdf_pages(file_bytes, scanned)
+            for p, t in ocr_text.items():
+                if len(t) > len(pages.get(p, "")):
+                    pages[p] = t
+            logger.info("[rag] OCR'd %d scanned page(s): %s", len(scanned), ocr_report)
+        except dx.OcrUnavailable as exc:
+            ocr_report = {"status": "unavailable", "detail": str(exc), "scanned_pages": len(scanned)}
+        except Exception as exc:
+            logger.exception("[rag] OCR failed: %s", exc)
+            ocr_report = {"status": "failed", "detail": str(exc), "scanned_pages": len(scanned)}
+    combined = "\n\n".join(f"--- Page {p} ---\n{t}" for p, t in sorted(pages.items()) if t.strip())
+    return _clean_text(combined), page_count, ocr_report
 
 
 def _extract_pptx(file_bytes: bytes) -> Tuple[str, int]:
@@ -546,187 +581,50 @@ def _update_internal_db_competency(
 
 
 # =============================================================================
-# GEMINI QUIZ GENERATION HELPER
+# QUIZ GENERATION (services/doc_quiz) + DIFFICULTY CALIBRATION
 # =============================================================================
 
-_DIFFICULTY_GUIDE = {
-    "Easy":   "recall and recognition — facts, definitions and terms stated directly in the text; clearly wrong distractors",
-    "Medium": "understanding and application — explain, compare, or apply a stated procedure to a simple case",
-    "Hard":   "analysis and evaluation — multi-step reasoning, interpreting results, choosing between methods, "
-              "spotting an error; all distractors plausible to a partially-prepared reader",
-}
-_DIFFICULTY_MIX = {"Easy": "3 Easy and 2 Medium", "Medium": "1 Easy, 3 Medium and 1 Hard", "Hard": "1 Medium and 4 Hard"}
+DEFAULT_QUESTION_TYPES = "mcq,true_false,multi_select,fill_blank,numeric"
 
 
-async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None,
-                                   difficulty: str = "Medium") -> List[QuizQuestion]:
-    """
-    Calls Google Gemini API using google-generativeai with GEMINI_API_KEY from .env.
-    Generates exactly 5 MCQs based on the extracted text and chunks, enforcing strict JSON output.
-    `difficulty` (Easy | Medium | Hard) sets the question mix; each question is
-    tagged with its own difficulty, which the grader uses to weight the skill update.
-    """
-    difficulty = pa.normalise_difficulty(difficulty)
-    load_dotenv()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+def _with_calibration(questions: List[QuizQuestion]) -> List[QuizQuestion]:
+    """Stamp each item with its content key and its response-calibrated difficulty.
+    The generator's tag is kept as llm_difficulty; `difficulty` is what grading uses."""
+    for q in questions:
+        q.item_key = q.item_key or qitems.item_key(q)
+        q.llm_difficulty = q.llm_difficulty or pa.normalise_difficulty(q.difficulty)
+    cal = calib.calibrate_items([(q.item_key, q.llm_difficulty) for q in questions])
+    for q, c in zip(questions, cal):
+        q.calibration = c
+        q.difficulty = c["difficulty"]
+    return questions
 
-    if not api_key or api_key in {"your-actual-api-key-here", "YOUR_GEMINI_API_KEY"}:
+
+async def _generate_questions(text: str, chunks: List[str], difficulty: str, n_questions: int,
+                              question_types: str, language: str) -> Tuple[List[QuizQuestion], Dict[str, Any]]:
+    """Cited, validated, multi-type questions (services/doc_quiz/generate.py) → QuizQuestion."""
+    from services.doc_quiz import generate as gen
+    from services.media_quiz.llm import LLMUnavailable, gemini_key
+
+    if not gemini_key():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="GEMINI_API_KEY is not configured in the .env file. Please configure a valid Gemini API key.",
         )
-
-    import google.generativeai as genai
-
     try:
-        genai.configure(api_key=api_key)
-        
-        configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
-        candidate_models = [configured_model] if configured_model else []
-        for fallback in ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"]:
-            if fallback not in candidate_models:
-                candidate_models.append(fallback)
-
-        if chunks and len(chunks) > 0:
-            formatted_context = "\n\n---\n\n".join(
-                [f"[Document Chunk {idx + 1}/{len(chunks)}]\n{c}" for idx, c in enumerate(chunks[:20])]
-            )
-        else:
-            formatted_context = text[:40000]
-
-        prompt = (
-            "You are an expert assessment and quiz creation engine for the Ministry of Statistics and Programme Implementation (MoSPI).\n"
-            "Generate exactly 5 multiple-choice questions (MCQs) strictly based on the following training document content chunks.\n\n"
-            "Strict Requirements:\n"
-            "1. Generate exactly 5 high-quality questions testing comprehension, core concepts, or statistical procedures described in the text.\n"
-            "2. Each question MUST contain exactly 4 distinct and plausible options.\n"
-            "3. 'correct_answer' MUST be the 0-based integer index of the correct option in the 'options' array (0, 1, 2, or 3).\n"
-            "4. Provide a clear, detailed 'explanation' justifying why the selected option is correct according to the text.\n"
-            f"5. Target difficulty: {difficulty}. Write {_DIFFICULTY_MIX[difficulty]} question(s), where "
-            f"Easy = {_DIFFICULTY_GUIDE['Easy']}; Medium = {_DIFFICULTY_GUIDE['Medium']}; Hard = {_DIFFICULTY_GUIDE['Hard']}.\n"
-            "6. Tag every question with its own \"difficulty\": \"Easy\", \"Medium\" or \"Hard\" (honestly — it weights the learner's score).\n"
-            "7. Return output conforming strictly to the JSON schema: {\"questions\": [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct_answer\": 0, \"explanation\": \"...\", \"difficulty\": \"Medium\"}]}.\n\n"
-            f"Document Content Chunks:\n\"\"\"\n{formatted_context}\n\"\"\""
-        )
-
-        response = None
-        last_error = None
-
-        for model_name in candidate_models:
-            try:
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    generation_config={
-                        "response_mime_type": "application/json",
-                        "temperature": 0.3,
-                    },
-                )
-                response = await asyncio.to_thread(model.generate_content, prompt)
-                if response and response.text:
-                    break
-            except Exception as ex:
-                logger.warning(f"Gemini model '{model_name}' attempt failed: {ex}")
-                last_error = ex
-                continue
-
-        if not response or not response.text:
-            raise ValueError(f"All Gemini model attempts failed. Last error: {last_error}")
-
-        raw_text = response.text.strip()
-
-        # Clean code fence blocks if returned by model
-        cleaned_text = raw_text
-        if cleaned_text.startswith("```json"):
-            cleaned_text = cleaned_text[7:]
-        elif cleaned_text.startswith("```"):
-            cleaned_text = cleaned_text[3:]
-        if cleaned_text.endswith("```"):
-            cleaned_text = cleaned_text[:-3]
-        cleaned_text = cleaned_text.strip()
-
-        parsed_json = json.loads(cleaned_text)
-        if isinstance(parsed_json, dict) and "questions" in parsed_json:
-            raw_questions = parsed_json["questions"]
-        elif isinstance(parsed_json, list):
-            raw_questions = parsed_json
-        else:
-            raw_questions = [parsed_json]
-
-        normalized_questions: List[QuizQuestion] = []
-        for item in raw_questions:
-            if not isinstance(item, dict):
-                continue
-            
-            q_text = str(item.get("question") or item.get("question_text") or item.get("prompt") or "").strip()
-            if not q_text:
-                continue
-
-            raw_opts = item.get("options") or item.get("choices") or item.get("answers") or []
-            if isinstance(raw_opts, dict):
-                opts = [str(v).strip() for v in raw_opts.values()]
-            elif isinstance(raw_opts, list):
-                opts = [str(o).strip() for o in raw_opts]
-            else:
-                opts = [str(raw_opts).strip()]
-
-            opts = [o for o in opts if o]
-            while len(opts) < 4:
-                opts.append(f"Option {chr(65 + len(opts))}")
-            if len(opts) > 4:
-                opts = opts[:4]
-
-            raw_ans = item.get("correct_answer") if "correct_answer" in item else (item.get("correctAnswer") if "correctAnswer" in item else item.get("answer"))
-            ans_idx = 0
-            if isinstance(raw_ans, int):
-                ans_idx = max(0, min(len(opts) - 1, raw_ans))
-            elif isinstance(raw_ans, str):
-                ans_str = raw_ans.strip().upper()
-                if ans_str in {"A", "B", "C", "D"}:
-                    ans_idx = ord(ans_str) - ord("A")
-                elif ans_str.isdigit():
-                    ans_idx = max(0, min(len(opts) - 1, int(ans_str)))
-                else:
-                    for i, opt in enumerate(opts):
-                        if opt.lower() == raw_ans.strip().lower():
-                            ans_idx = i
-                            break
-
-            explanation = str(
-                item.get("explanation")
-                or item.get("reason")
-                or item.get("justification")
-                or f"Option {chr(65 + ans_idx)} is the correct answer according to the document."
-            ).strip()
-
-            normalized_questions.append(
-                QuizQuestion(
-                    question=q_text,
-                    options=opts,
-                    correct_answer=ans_idx,
-                    explanation=explanation,
-                    difficulty=pa.normalise_difficulty(item.get("difficulty") or item.get("level"), difficulty),
-                )
-            )
-
-        if not normalized_questions:
-            raise ValueError("No valid questions could be extracted from Gemini response.")
-
-        return normalized_questions
-
-    except HTTPException:
-        raise
-    except json.JSONDecodeError as jde:
-        logger.error(f"JSON decode failure from Gemini response: {jde}")
+        raw, report = await gen.generate(text, chunks, difficulty=difficulty, n_questions=n_questions,
+                                         types=gen.parse_types(question_types), language=language)
+    except LLMUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"Gemini API error during quiz generation: {exc}")
+    if not raw:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to parse structured JSON quiz questions from Gemini response: {str(jde)}",
+            detail={"message": "No generated question passed validation (citation, grounding and distractor "
+                               "checks). Try another document or fewer question types.", "generation": report},
         )
-    except Exception as e:
-        logger.exception(f"Gemini API generation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini API error during quiz generation: {str(e)}",
-        )
+    questions = [QuizQuestion(**{k: v for k, v in q.items() if k in QuizQuestion.model_fields}) for q in raw]
+    return await asyncio.to_thread(_with_calibration, questions), report
 
 
 # =============================================================================
@@ -737,31 +635,35 @@ async def _generate_mcqs_from_text(text: str, chunks: Optional[List[str]] = None
     "/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_200_OK,
-    summary="Upload document, extract text, and generate 5 RAG Quiz MCQs with Gemini API",
+    summary="Upload a document and generate a source-cited objective quiz (MCQ, T/F, multi-select, fill-in, numeric)",
     responses={
-        200: {"description": "Document parsed and 5 MCQs successfully generated via Gemini API."},
+        200: {"description": "Document parsed and questions generated, validated and cited."},
         400: {"model": ErrorResponse, "description": "Invalid file format or empty payload."},
         413: {"model": ErrorResponse, "description": "File exceeds maximum size limit."},
-        422: {"model": ErrorResponse, "description": "Unprocessable document or no readable text."},
+        422: {"model": ErrorResponse, "description": "Unprocessable document or no readable text (incl. scanned PDF without OCR)."},
         500: {"model": ErrorResponse, "description": "Internal server processing or configuration error."},
-        502: {"model": ErrorResponse, "description": "Gemini API error or bad gateway during generation."},
+        502: {"model": ErrorResponse, "description": "Gemini API error, or no question survived validation."},
     },
 )
 async def upload_document_for_rag(
-    file: UploadFile = File(..., description="Document file to process (.pdf, .ppt, .pptx, .txt)"),
+    file: UploadFile = File(..., description="Document file to process (.pdf, .pptx, .docx, .txt)"),
     difficulty: str = Form("Medium", description="Easy | Medium | Hard — question mix and grading weights"),
+    num_questions: int = Form(5, description="How many questions (3-20)"),
+    question_types: str = Form(DEFAULT_QUESTION_TYPES,
+                               description="Comma list of mcq, true_false, multi_select, fill_blank, numeric"),
+    language: str = Form("en", description="en | hi (Hindi) | bi (bilingual English + Hindi)"),
 ) -> DocumentUploadResponse:
     """
     **RAG Document Ingestion & Quiz Generator**
-    
-    - Accepts **PDF**, **PPT/PPTX**, and **TXT** files.
-    - Validates file extension, MIME type, and size constraints (max 25MB).
-    - Extracts clean plain text with page/slide context using **pdfplumber / PyPDF / python-pptx**.
-    - Calls Google Gemini API using `google-generativeai` with `GEMINI_API_KEY` from `.env`.
-    - Generates exactly **5 MCQs** with strict JSON schema:
-      `{"questions": [{"question": "...", "options": ["A", "B", "C", "D"], "correct_answer": 0, "explanation": "..."}]}`.
-    - Stores generated quiz in-memory with unique `quiz_id` for grading.
-    - Returns the structured quiz payload, quiz_id, and document metadata.
+
+    - Accepts **PDF** (scanned pages are OCR'd), **PPTX**, **DOCX** and **TXT** (max 25 MB).
+    - Extracts text with page / slide / section markers, chunks it, and generates
+      `num_questions` questions of the requested `question_types` through
+      services/doc_quiz: every question cites its source chunk with a verbatim quote,
+      and passes the validator (grounding, numbers, distractor plausibility), dedup
+      and the reference fact-check. `language` = hi / bi adds Hindi text.
+    - Each question's difficulty is calibrated from response data once it has enough.
+    - Stores the quiz in-memory under a unique `quiz_id` for grading.
     """
     # 1. Validate presence of filename
     if not file.filename:
@@ -810,32 +712,41 @@ async def upload_document_for_rag(
             detail=f"File size exceeds maximum allowed limit of {max_mb} MB."
         )
 
-    # 5. Extract text based on file type
+    # 5. Extract text based on file type (OCR and DOCX parsing are CPU work → worker thread)
     page_count: Optional[int] = None
     slide_count: Optional[int] = None
     line_count: Optional[int] = None
+    section_count: Optional[int] = None
+    ocr_report: Optional[Dict[str, Any]] = None
     extracted_text = ""
+    is_zip = file_bytes.startswith(b"PK\x03\x04")
 
     try:
         if ext == ".pdf":
-            extracted_text, page_count = _extract_pdf(file_bytes)
+            extracted_text, page_count, ocr_report = await asyncio.to_thread(_extract_pdf, file_bytes)
         elif ext in {".ppt", ".pptx"}:
-            if ext == ".ppt":
-                # Check if it's actually a PPTX named .ppt or legacy PPT
-                if file_bytes.startswith(b"PK\x03\x04"):
-                    extracted_text, slide_count = _extract_pptx(file_bytes)
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Legacy binary .ppt files must be converted to .pptx format or PDF."
-                    )
-            else:
-                extracted_text, slide_count = _extract_pptx(file_bytes)
+            if ext == ".ppt" and not is_zip:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Legacy binary .ppt files must be converted to .pptx format or PDF."
+                )
+            extracted_text, slide_count = _extract_pptx(file_bytes)
+        elif ext in {".doc", ".docx"}:
+            if not is_zip:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Legacy binary .doc files must be saved as .docx or PDF."
+                )
+            from services.doc_quiz.extract import extract_docx
+            text, section_count = await asyncio.to_thread(extract_docx, file_bytes)
+            extracted_text = _clean_text(text)
         elif ext == ".txt":
             extracted_text, line_count = _extract_txt(file_bytes)
 
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
         logger.exception(f"Unexpected error extracting text from {filename}: {e}")
         raise HTTPException(
@@ -845,23 +756,26 @@ async def upload_document_for_rag(
 
     # 6. Verify that readable text was obtained
     if not extracted_text or len(extracted_text.strip()) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                "No readable text could be extracted from this document. "
-                "If this is a scanned PDF/image, please provide a document with OCR/selectable text."
-            )
-        )
+        if ocr_report and ocr_report.get("status") == "unavailable":
+            detail = ("This PDF looks scanned (no text layer) and OCR is not installed on the server — "
+                      "run `pip install -r requirements-media.txt` or upload a PDF with selectable text.")
+        elif ocr_report:
+            detail = "This PDF looks scanned and OCR could not read any text from it (blurred, handwritten or non-Latin script?)."
+        else:
+            detail = "No readable text could be extracted from this document."
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
-    # 6. Chunk extracted text using LangChain TextSplitter
-    chunks = _chunk_document_text(extracted_text, chunk_size=1000, chunk_overlap=150)
+    # 7. Chunk extracted text using LangChain TextSplitter
+    chunks = await asyncio.to_thread(_chunk_document_text, extracted_text, 1000, 150)
     chunk_count = len(chunks)
 
-    # 7. Generate exactly 5 MCQs via Google Gemini API from text and chunks
+    # 8. Generate cited, validated questions
     difficulty = pa.normalise_difficulty(difficulty)
-    questions = await _generate_mcqs_from_text(extracted_text, chunks=chunks, difficulty=difficulty)
+    language = language if language in ("en", "hi", "bi") else "en"
+    questions, generation = await _generate_questions(extracted_text, chunks, difficulty, num_questions,
+                                                      question_types, language)
 
-    # 8. Generate unique quiz ID and store in-memory for subsequent grading
+    # 9. Store in-memory for grading
     inferred_skill = _detect_skill_name(text=extracted_text, filename=filename)
     quiz_id = f"QZ-{uuid.uuid4().hex[:8].upper()}"
     QUIZ_STORE[quiz_id] = {
@@ -876,41 +790,104 @@ async def upload_document_for_rag(
         "competency_id": None,
         "skill_name": inferred_skill,
         "difficulty": difficulty,
+        "language": language,
+        "source_type": "document",
+        "generation": generation,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # 9. Compute statistics & build response metadata
-    char_count = len(extracted_text)
-    word_count = len(extracted_text.split())
-
+    # 10. Response metadata
     metadata = DocumentMetadata(
         filename=filename,
         file_type=ext,
         file_size_bytes=file_size,
-        character_count=char_count,
-        word_count=word_count,
+        character_count=len(extracted_text),
+        word_count=len(extracted_text.split()),
         chunk_count=chunk_count,
         page_count=page_count,
         slide_count=slide_count,
         line_count=line_count,
+        section_count=section_count,
+        ocr=ocr_report,
     )
 
+    requested = generation.get("requested", num_questions)
+    short = f" ({requested} requested; the rest failed validation)" if len(questions) < requested else ""
+    ocr_note = (f" {ocr_report['pages_with_text']} scanned page(s) were read with OCR."
+                if ocr_report and ocr_report.get("pages_with_text") else "")
     return DocumentUploadResponse(
         status="success",
-        message=f"Successfully chunked ({chunk_count} chunks) and generated {len(questions)} {difficulty}-level quiz questions from {filename}.",
+        message=(f"Generated {len(questions)} {difficulty}-level source-cited questions{short} "
+                 f"from {filename} ({chunk_count} chunks).{ocr_note}"),
         quiz_id=quiz_id,
         filename=filename,
         file_type=ext,
         questions=questions,
         metadata=metadata,
+        difficulty=difficulty,
+        language=language,
+        generation=generation,
     )
 
 
-def _question_difficulties(quiz: Dict[str, Any]) -> List[str]:
-    """Per-question difficulty: the question's own tag, else the quiz's target difficulty."""
+def _question_difficulties(quiz: Dict[str, Any]) -> Tuple[List[str], List[Dict[str, Any]]]:
+    """
+    Per-question difficulty for grading, calibrated from response data
+    (services/doc_quiz/calibration.py) — read fresh at grading time, so items gain
+    calibration while a quiz is live. The prior is the question's own tag (the
+    generator's), else the quiz's target difficulty. Media quizzes go through the
+    same calibration. Returns (difficulties, calibration dicts).
+    """
     quiz_difficulty = pa.normalise_difficulty(quiz.get("difficulty"))
-    return [pa.normalise_difficulty(getattr(q, "difficulty", None), quiz_difficulty)
-            for q in quiz.get("questions", [])]
+    questions = quiz.get("questions", [])
+    items = []
+    for q in questions:
+        key = getattr(q, "item_key", None) or qitems.item_key(q)
+        prior = getattr(q, "llm_difficulty", None) or getattr(q, "difficulty", None)
+        items.append((key, pa.normalise_difficulty(prior, quiz_difficulty)))
+    cals = calib.calibrate_items(items)
+    for (key, _), c in zip(items, cals):
+        c["itemKey"] = key
+    return [c["difficulty"] for c in cals], cals
+
+
+def _build_review(questions: List[QuizQuestion], answers: List[Any], difficulties: List[str],
+                  cals: List[Dict[str, Any]], engine: Any, comp_id: Optional[str]) -> List[Dict[str, Any]]:
+    """
+    Type-aware answer review, missed questions first. Each wrong answer gets
+    personalised feedback (why THIS answer is wrong — the generator's per-option
+    rationale, or numeric/fill-in diagnostics), the exact source passage and a
+    course for the missed point (practice_assessment.courses_for_topics).
+    """
+    rows = []
+    for i, q in enumerate(questions):
+        ans = answers[i] if i < len(answers) else None
+        correct = qitems.is_correct(q, ans)
+        cite = (getattr(q, "citations", None) or [None])[0]
+        tr = (getattr(q, "translations", None) or {}).get("hi")
+        rows.append({
+            "index": i,
+            "type": qitems.qtype(q),
+            "question": q.question,
+            "difficulty": difficulties[i] if i < len(difficulties) else "Medium",
+            "calibration": cals[i] if i < len(cals) else None,
+            "correct": correct,
+            "yourAnswer": qitems.answer_display(q, ans),
+            "correctAnswer": qitems.correct_display(q),
+            "explanation": q.explanation or "",
+            "feedback": "" if correct else qitems.feedback(q, ans),
+            "solution": getattr(q, "solution", None),
+            "source": cite,
+            "review": getattr(q, "review", None),
+            "translation": ({"question": tr.get("question"), "explanation": tr.get("explanation")} if tr else None),
+            "course": None,
+        })
+    missed = [r for r in rows if not r["correct"]]
+    if missed:
+        courses = pa.courses_for_topics(engine, [f"{r['question']} {r['correctAnswer']}" for r in missed], comp_id)
+        for r, c in zip(missed, courses):
+            r["course"] = c
+    return sorted(rows, key=lambda r: (r["correct"], r["index"]))
 
 
 def _row_snapshot(row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -928,7 +905,7 @@ def _row_snapshot(row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def _record_attempt(
-    user_id: str, quiz_id: str, quiz: Dict[str, Any], answers: List[int], score: float, weighted: float,
+    user_id: str, quiz_id: str, quiz: Dict[str, Any], answers: List[Any], score: float, weighted: float,
     passed: bool, results: List[Dict[str, Any]], row: Optional[Dict[str, Any]], link: Dict[str, Any],
 ) -> Dict[str, Any]:
     """
@@ -996,6 +973,7 @@ def _record_attempt(
                 "ability_after": theta1,
                 "start_basis": start_basis,
                 "per_question": trace,
+                "question_types": [qitems.qtype(q) for q in quiz.get("questions", [])],
                 "link": link,
             },
         ))
@@ -1084,10 +1062,12 @@ async def grade_quiz(
 
     # 1. Score — plain % (pass rule) and difficulty-weighted %
     quiz_difficulty = pa.normalise_difficulty(quiz.get("difficulty"))
-    difficulties = _question_difficulties(quiz)
+    # Difficulty per item: calibrated from response data once an item has enough
+    # first-attempt responses, else the generator's tag (services/doc_quiz/calibration.py).
+    difficulties, calibrations = await asyncio.to_thread(_question_difficulties, quiz)
     results = [
         {"difficulty": difficulties[i],
-         "correct": i < len(payload.answers) and payload.answers[i] == q.correct_answer}
+         "correct": i < len(payload.answers) and qitems.is_correct(q, payload.answers[i])}
         for i, q in enumerate(questions)
     ]
     correct_count = sum(r["correct"] for r in results)
@@ -1109,6 +1089,17 @@ async def grade_quiz(
         _record_attempt, igot_user_id, payload.quiz_id, quiz, payload.answers, score_percentage,
         weighted, passed, results, row_before, link)
     evidence_written = rec["evidenceWritten"]
+
+    # 3b. Item response data for difficulty calibration — first submissions only
+    # (a retake after seeing the answers would bias the p-value).
+    if evidence_written:
+        responses = [{"key": c.get("itemKey"), "correct": r["correct"], "llm_difficulty": c.get("llmDifficulty"),
+                      "type": qitems.qtype(q), "question": q.question}
+                     for q, r, c in zip(questions, results, calibrations)]
+        try:
+            await asyncio.to_thread(calib.record_responses, responses, rec.get("abilityBefore", pa.DEFAULT_PRIOR))
+        except Exception as exc:
+            logger.warning("[grade_quiz] item statistics not recorded: %s", exc)
 
     # 4. Re-resolve the skill gap so the learner sees the effect immediately
     row_after = None
@@ -1152,10 +1143,11 @@ async def grade_quiz(
             {"referenceId": payload.quiz_id, "note": skill_impact["competencyName"] or quiz.get("filename") or "Quiz passed"})
 
     # 6. Review + recommendations
-    review = pa.review_topics(questions, payload.answers, difficulties)
+    catalogue_id = (row_before or {}).get("catalogueId") or (row_before or {}).get("competencyId") or quiz.get("competency_id")
+    review = await asyncio.to_thread(_build_review, questions, payload.answers, difficulties, calibrations,
+                                     engine, catalogue_id)
     next_diff, next_reason = pa.next_difficulty(quiz_difficulty, weighted)
     focus = [r["question"] for r in review if not r["correct"]][:5]
-    catalogue_id = (row_before or {}).get("catalogueId") or (row_before or {}).get("competencyId") or quiz.get("competency_id")
     courses = pa.suggest_courses(engine, catalogue_id, after.get("level"), after.get("targetLevel"))
     name = skill_impact["competencyName"] or "this topic"
     if after.get("gap"):

@@ -7,14 +7,35 @@
  *  - MatchScoreBar showing finalScore (real backend value)
  *  - Score breakdown tooltip: Relevance % | Quality %
  *  - Match reason chips (matchReasons[])
+ *  - "Mandatory" badge for ACBP courses and a structured "why recommended"
+ *    (gap it closes, level step, TPAC / measured-improvement badges)
+ *  - Thumbs up / down; title clicks and Enroll are logged as feedback
  *  - Enroll CTA button
  */
 
 import React, { useState } from 'react';
-import { Clock, ExternalLink, Sparkles, Target, ShieldCheck, Info } from 'lucide-react';
-import type { CourseRecommendation } from '../../types/domain';
+import { Clock, ExternalLink, Sparkles, Target, ShieldCheck, Info, Lock, ThumbsUp, ThumbsDown, TrendingUp, ArrowUpRight } from 'lucide-react';
+import type { CourseRecommendation, FeedbackEvent } from '../../types/domain';
 
-interface CourseCardProps { recommendation: CourseRecommendation; }
+interface CourseCardProps {
+  recommendation: CourseRecommendation;
+  /** The learner's current vote on this course */
+  vote?: 'up' | 'down';
+  /** Log an interaction (click, enrol, thumbs) — RecommendationsPanel owns the state */
+  onFeedback?: (rec: CourseRecommendation, event: FeedbackEvent) => void;
+}
+
+const MODALITY_LABEL: Record<string, string> = {
+  self_paced: 'Self-paced', classroom: 'Classroom', virtual_lab: 'Virtual lab',
+};
+
+const BADGE_STYLE: Record<string, string> = {
+  mandatory:            'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700',
+  tpac_verified:        'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-700',
+  tpac_inferred:        'bg-teal-50/50 dark:bg-teal-900/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-800 border-dashed',
+  measured_improvement: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
+  under_review:         'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600',
+};
 
 const SOURCE_STYLES: Record<string, { badge: string; label: string }> = {
   'iGOT Karmayogi':  { badge: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50',  label: 'iGOT Karmayogi' },
@@ -79,7 +100,7 @@ const MatchScoreBar: React.FC<MatchScoreBarProps> = ({ score, relevance, quality
 };
 
 // ── Main Card ─────────────────────────────────────────────────────────────────
-const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ recommendation, vote, onFeedback }) => {
   const {
     course,
     finalScore,
@@ -90,9 +111,15 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
     matchReasons,
     aiMatchTag,
     priorityRank,
+    mandatory,
+    why,
+    modality,
   } = recommendation;
 
   const sourceStyle = getSourceStyle(course.source);
+  const badges = why?.badges ?? [];
+  const toggleVote = (dir: 'up' | 'down') =>
+    onFeedback?.(recommendation, vote === dir ? 'clear_vote' : dir === 'up' ? 'thumbs_up' : 'thumbs_down');
 
   return (
     <div className="group relative bg-white dark:bg-slate-900 rounded-xl border border-gov-line dark:border-slate-700/70 shadow-gov hover:shadow-gov-lg hover:-translate-y-1 hover:border-gov-blue/40 dark:hover:border-sky-500/50 transition-all duration-300 flex flex-col h-full overflow-hidden">
@@ -107,8 +134,14 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${sourceStyle.badge}`}>
             {sourceStyle.label}
           </span>
-          {/* NSSTA TPAC-vetted badge */}
-          {isTpac && (
+          {mandatory && (
+            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700">
+              <Lock size={11} className="flex-shrink-0" />
+              Mandatory
+            </span>
+          )}
+          {/* NSSTA TPAC-vetted badge (the structured "why" badges replace it when present) */}
+          {isTpac && !why && (
             <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-700">
               <ShieldCheck size={11} className="flex-shrink-0" />
               NSSTA Vetted
@@ -122,9 +155,16 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
 
       {/* ── Body: title + score bar + competency gap ── */}
       <div className="px-4 py-3 flex-1">
-        <h3 className="text-gov-ink dark:text-slate-100 font-bold text-sm leading-snug mb-3 group-hover:text-gov-blue dark:group-hover:text-sky-300 transition-colors">
+        <h3
+          onClick={() => onFeedback?.(recommendation, 'click')}
+          className="cursor-pointer text-gov-ink dark:text-slate-100 font-bold text-sm leading-snug mb-1 group-hover:text-gov-blue dark:group-hover:text-sky-300 transition-colors"
+        >
           {course.title}
         </h3>
+        <p className="text-[10.5px] text-slate-400 dark:text-slate-500 mb-3">
+          {modality ? (MODALITY_LABEL[modality] ?? modality) : 'Online'}
+          {recommendation.courseLevel ? ` · FRAC Level ${recommendation.courseLevel}` : ''}
+        </p>
 
         {/* Score bar with breakdown */}
         <div className="mb-2">
@@ -156,11 +196,28 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
       <div className="mx-4 mb-3">
         <div className="bg-gov-paper dark:bg-slate-800/60 border-l-[3px] border-gov-saffron rounded-md px-3 py-2">
           <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-            <span className="font-semibold">Why this course? </span>
-            {aiMatchTag || matchReasons?.[0] || 'Matched by FRAC competency tag.'}
+            <span className="font-semibold">Why recommended? </span>
+            {why?.summary || aiMatchTag || matchReasons?.[0] || 'Matched by FRAC competency tag.'}
           </p>
-          {/* Extra reason chips (if more than one reason) */}
-          {matchReasons && matchReasons.length > 1 && (
+          {why?.gap && why.levelStep.to != null && (
+            <p className="mt-1 flex items-center gap-1 text-[10.5px] text-slate-500 dark:text-slate-400">
+              <TrendingUp size={11} className="text-indigo-500" />
+              Level {why.levelStep.from} <ArrowUpRight size={10} /> {why.levelStep.to}
+              <span className="text-slate-400"> · target {why.gap.targetLevel}</span>
+            </p>
+          )}
+          {badges.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {badges.map(b => (
+                <span key={b.key} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${BADGE_STYLE[b.key] ?? BADGE_STYLE.under_review}`}>
+                  {b.key === 'tpac_verified' && <ShieldCheck size={10} className="inline -mt-px mr-0.5" />}
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          )}
+          {/* Extra reason chips (legacy — only when there is no structured "why") */}
+          {!why && matchReasons && matchReasons.length > 1 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {matchReasons.slice(1).map((reason, i) => (
                 <span
@@ -176,12 +233,43 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation }) => {
       </div>
 
       {/* ── CTA ── */}
-      <div className="px-4 pb-4">
-        <button className="gov-btn-primary w-full">
+      <div className="px-4 pb-4 flex items-center gap-2">
+        <button className="gov-btn-primary flex-1" onClick={() => onFeedback?.(recommendation, 'enrol')}>
           <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
           {course.source === 'iGOT Karmayogi' ? 'Enroll on iGOT' : 'Enroll Now'}
         </button>
+        {onFeedback && (
+          <>
+            <button
+              onClick={() => toggleVote('up')}
+              aria-pressed={vote === 'up'}
+              aria-label="Useful recommendation"
+              title="Useful recommendation"
+              className={`p-2 rounded-lg border transition-colors ${vote === 'up'
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 text-emerald-600'
+                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600'}`}
+            >
+              <ThumbsUp size={14} />
+            </button>
+            <button
+              onClick={() => toggleVote('down')}
+              aria-pressed={vote === 'down'}
+              aria-label="Not useful"
+              title={mandatory ? 'Not useful (mandatory courses stay in your plan)' : "Not useful — don't recommend this again"}
+              className={`p-2 rounded-lg border transition-colors ${vote === 'down'
+                ? 'bg-rose-50 dark:bg-rose-900/30 border-rose-300 text-rose-600'
+                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600'}`}
+            >
+              <ThumbsDown size={14} />
+            </button>
+          </>
+        )}
       </div>
+      {vote === 'down' && !mandatory && (
+        <p className="px-4 pb-3 -mt-2 text-[10.5px] text-rose-600 dark:text-rose-400">
+          Thanks — this course won’t be recommended to you again.
+        </p>
+      )}
     </div>
   );
 };

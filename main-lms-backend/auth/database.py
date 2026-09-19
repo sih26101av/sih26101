@@ -20,6 +20,7 @@ or logs.
 
 import logging
 import os
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -84,9 +85,14 @@ AuthBase = declarative_base()
 
 # ── FastAPI dependency ─────────────────────────────────────────────────────────
 def get_db():
-    """Yields a database session and ensures it is closed after the request."""
+    """FastAPI dependency — `db: Session = Depends(get_db)`; closed after the request."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+# The same session lifecycle for code that is not a route (worker threads, background
+# snapshot builds): `with session_scope() as db: ...`. Routes use Depends(get_db).
+session_scope = contextmanager(get_db)

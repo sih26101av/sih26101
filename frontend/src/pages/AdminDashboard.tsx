@@ -3,29 +3,35 @@
  *
  * Ministry-side dashboard at /admin (role `admin` only).
  *
- * Sections: overview · officials · competencies · analytics · insights · reports.
- * `insights` renders components/admin/WorkforceInsights (SCIL v6 admin views).
- * Every figure comes from `useAdminData` (roster → KPIs + shortage heatmap) and
- * `useSkillsData` (FRAC dictionary). The previous version fell back to invented
- * numbers (151 officials, 87% compliance, a static bar chart and a "25k" donut)
- * whenever the API was empty — those are gone; empty data now reads as empty.
+ * Sections: overview · officials · competencies · analytics · emerging skills ·
+ * actions · insights · reports. KPIs, the shortage heatmap, departmental
+ * compliance, roster pages, trends and exports are all computed on the server
+ * (routers/admin_console.py) — the browser never aggregates the whole roster.
+ * One filter row (department · grade · office) drives every per-official view
+ * and every export. `insights` renders components/admin/WorkforceInsights
+ * (SCIL v6 views; the office filter feeds its GSBPM panel). Empty data reads
+ * as empty — no invented fallback numbers.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  AlertTriangle, BarChart3, BookOpen, CheckCircle2, ChevronLeft, ChevronRight,
-  Database, Download, FileText, LayoutDashboard, Lightbulb, RefreshCcw, ShieldCheck,
-  SlidersHorizontal, TrendingUp, Users,
+  AlertTriangle, BarChart3, BellRing, BookOpen, Building2, CheckCircle2, ChevronLeft, ChevronRight,
+  ClipboardCheck, Download, FileText, LayoutDashboard, LineChart as LineChartIcon, Lightbulb, RefreshCcw,
+  ShieldCheck, SlidersHorizontal, Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 
 import { useTheme } from '../hooks/useTheme';
-import { useAdminData } from '../hooks/useAdminData';
+import { useAdminFacets, useAdminOverview, useAdminRoster } from '../hooks/useAdminData';
 import type { AdminRosterRow } from '../hooks/useAdminData';
 import { useSkillsData } from '../hooks/useSkillsData';
 import type { SkillRow } from '../hooks/useSkillsData';
+import {
+  downloadAdminCsv, fetchAdminRoster, fetchAdminTrends, fetchEmergingSkills, fetchMandatoryBehind,
+  type AdminExportKind, type AdminFilters,
+} from '../services/api';
 
 import AppShell, { type ShellNavGroup } from '../components/shell/AppShell';
 import PageHeader from '../components/shell/PageHeader';
@@ -33,10 +39,21 @@ import SectionCard, { SectionAction } from '../components/shell/SectionCard';
 import StatCard from '../components/shell/StatCard';
 import { AshokaChakra } from '../components/gov/GovUI';
 import WorkforceInsights from '../components/admin/WorkforceInsights';
+import AdminFilterBar, { ExportButton, facetLabels } from '../components/admin/AdminFilterBar';
+import TrendsPanel from '../components/admin/TrendsPanel';
+import SystemHealthPanel from '../components/admin/SystemHealthPanel';
+import EmergingSkills from '../components/admin/EmergingSkills';
+import AdminActions from '../components/admin/AdminActions';
+import CertificateReviewQueue from '../components/admin/CertificateReviewQueue';
+import { describeFilters, printReport, type ReportSection } from '../components/admin/adminReport';
 
-type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'insights' | 'reports';
+type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'emerging' | 'actions' | 'insights' | 'reports';
 
 const ITEMS_PER_PAGE = 10;
+const PDF_ROW_CAP = 200;
+// Validated with the dataviz palette checker; fixed order, one hue per measure.
+const BAR_LIGHT = ['#1d4ed8', '#ea580c'];
+const BAR_DARK = ['#3b82f6', '#ea580c'];
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function enrollmentLabel(status: number | undefined): string {
@@ -51,7 +68,7 @@ const STATUS_CHIP: Record<string, string> = {
   'Training Required':'bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300',
 };
 
-/** Download rows as a CSV file, quoting every cell. */
+/** Download rows as a CSV file, quoting every cell (FRAC dictionary only — the rest is server-built). */
 function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
   const esc = (v: string | number) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = [headers, ...rows].map((r) => r.map(esc).join(',')).join('\r\n');
@@ -127,6 +144,7 @@ const TableSkeleton: React.FC<{ cols: number }> = ({ cols }) => (
 const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
   const label = enrollmentLabel(employee.enrollmentStatus);
   const name = `${employee.firstName} ${employee.lastName}`.trim() || employee.govId;
+  const m = employee.mandatory;
   return (
     <tr>
       <td>
@@ -136,14 +154,19 @@ const RosterRow: React.FC<{ employee: AdminRosterRow }> = ({ employee }) => {
           </span>
           <span className="min-w-0">
             <span className="block truncate font-semibold text-gov-ink dark:text-white">{name}</span>
-            <span className="block truncate text-[11px] text-slate-400">{employee.email || employee.userId}</span>
+            <span className="block truncate text-[11px] text-slate-400">{employee.govId} · {employee.email || employee.userId}</span>
           </span>
         </span>
       </td>
-      <td className="whitespace-nowrap text-slate-500 dark:text-slate-400">{employee.govId ?? employee.userId}</td>
-      <td className="text-slate-500 dark:text-slate-400">{employee.designation}</td>
+      <td className="text-slate-500 dark:text-slate-400">
+        {employee.designation}
+        <span className="block text-[11px] text-slate-400">{employee.gradeLabel}</span>
+      </td>
       <td className="text-slate-500 dark:text-slate-400">{employee.department}</td>
       <td className="font-medium">{employee.missingSkill ?? '—'}</td>
+      <td className="whitespace-nowrap tabular-nums">
+        {m ? `${m.completed}/${m.total}` : '—'}
+      </td>
       <td><span className={`chip ${STATUS_CHIP[label]}`}>{label}</span></td>
     </tr>
   );
@@ -158,71 +181,47 @@ const SkillTableRow: React.FC<{ skill: SkillRow }> = ({ skill }) => (
   </tr>
 );
 
-/** Live status of one data feed — reflects the actual hook state, nothing simulated. */
-const FeedStatus: React.FC<{ label: string; endpoint: string; loading: boolean; error: string | null; count: number }> = ({
-  label, endpoint, loading, error, count,
-}) => {
-  const tone = error ? 'rose' : loading ? 'orange' : 'green';
-  const text = error ? 'Unavailable' : loading ? 'Loading…' : `${count} records`;
-  return (
-    <li className="flex items-center gap-3">
-      <span
-        className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
-          tone === 'green' ? 'bg-accent-green' : tone === 'orange' ? 'animate-pulse bg-accent-orange' : 'bg-accent-rose'
-        }`}
-        aria-hidden="true"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-semibold text-gov-ink dark:text-white">{label}</span>
-        <span className="block truncate font-mono text-[10.5px] text-slate-400">{endpoint}</span>
-      </span>
-      <span className={`chip ${tone === 'green' ? STATUS_CHIP['Compliant'] : tone === 'orange' ? STATUS_CHIP['In Progress'] : STATUS_CHIP['Training Required']}`}>
-        {text}
-      </span>
-    </li>
-  );
-};
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const AdminDashboard: React.FC = () => {
   const { theme } = useTheme();
-  const { roster, kpis, heatmap, isLoading, error, refetch } = useAdminData();
-  const { skills, isLoading: isSkillsLoading, error: skillsError, refetch: refetchSkills } = useSkillsData();
-
+  const [filters, setFilters] = useState<AdminFilters>({});
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<'all' | 0 | 1 | 2>('all');
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, activeTab, statusFilter]);
+  const facets = useAdminFacets();
+  const overview = useAdminOverview(filters);
+  const roster = useAdminRoster(filters, currentPage, ITEMS_PER_PAGE, debouncedSearch, statusFilter);
+  const { skills, isLoading: isSkillsLoading, error: skillsError, refetch: refetchSkills } = useSkillsData();
+
+  useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchTerm), 300); return () => clearTimeout(t); }, [searchTerm]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, activeTab, statusFilter, filters]);
 
   const isDark = theme === 'dark';
   const axisColor = isDark ? '#94a3b8' : '#64748b';
   const gridColor = isDark ? '#334155' : '#e2e8f0';
+  const bars = isDark ? BAR_DARK : BAR_LIGHT;
+  const tooltipStyle = { borderRadius: 10, fontSize: 12, border: `1px solid ${gridColor}`, background: isDark ? '#0f172a' : '#fff' };
 
-  // ── Roster filtering / pagination ──────────────────────────────────────────
-  const filteredRoster = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    return roster.filter((emp) => {
-      const matchesStatus = statusFilter === 'all' || emp.enrollmentStatus === statusFilter;
-      if (!matchesStatus) return false;
-      if (!q) return true;
-      return (
-        `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(q) ||
-        (emp.govId ?? emp.userId).toLowerCase().includes(q) ||
-        (emp.department ?? '').toLowerCase().includes(q) ||
-        (emp.designation ?? '').toLowerCase().includes(q)
-      );
-    });
-  }, [roster, searchTerm, statusFilter]);
-
-  const totalPagesRoster = Math.max(1, Math.ceil(filteredRoster.length / ITEMS_PER_PAGE));
-  const currentRoster = useMemo(
-    () => filteredRoster.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [filteredRoster, currentPage],
+  const ov = overview.data;
+  const kpis = ov?.kpis;
+  const statusCounts = ov?.statusCounts ?? { compliant: 0, inProgress: 0, required: 0 };
+  const heatmap = useMemo(
+    () => (ov?.heatmap ?? []).map((h) => ({ ...h, label: h.competency.length > 20 ? `${h.competency.slice(0, 20)}…` : h.competency })),
+    [ov],
   );
+  const deptCompliance = useMemo(
+    () => (ov?.deptCompliance ?? []).filter((d) => !d.suppressed)
+      .map((d) => ({ ...d, label: d.dept.length > 18 ? `${d.dept.slice(0, 18)}…` : d.dept })),
+    [ov],
+  );
+  const labels = facetLabels(facets.data, filters);
+  const filterText = describeFilters(filters, labels);
+  const refetchAll = () => { overview.refetch(); roster.refetch(); facets.refetch(); refetchSkills(); };
 
-  // ── FRAC filtering / pagination ────────────────────────────────────────────
+  // ── FRAC filtering / pagination (the dictionary is small and not per-official) ──
   const filteredSkills = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return skills;
@@ -234,60 +233,16 @@ const AdminDashboard: React.FC = () => {
         s.description.toLowerCase().includes(q),
     );
   }, [skills, searchTerm]);
-
   const totalPagesSkills = Math.max(1, Math.ceil(filteredSkills.length / ITEMS_PER_PAGE));
   const currentSkills = useMemo(
     () => filteredSkills.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
     [filteredSkills, currentPage],
   );
 
-  // ── Derived analytics (all from the live roster) ───────────────────────────
-  const statusCounts = useMemo(() => {
-    const counts = { compliant: 0, inProgress: 0, required: 0 };
-    roster.forEach((r) => {
-      if (r.enrollmentStatus === 2) counts.compliant += 1;
-      else if (r.enrollmentStatus === 1) counts.inProgress += 1;
-      else counts.required += 1;
-    });
-    return counts;
-  }, [roster]);
-
-  /** Completion rate per department, biggest departments first. */
-  const deptCompliance = useMemo(() => {
-    const byDept = new Map<string, { total: number; done: number }>();
-    roster.forEach((r) => {
-      const key = r.department || 'Unspecified';
-      const cur = byDept.get(key) ?? { total: 0, done: 0 };
-      cur.total += 1;
-      if (r.enrollmentStatus === 2) cur.done += 1;
-      byDept.set(key, cur);
-    });
-    return [...byDept.entries()]
-      .sort((a, b) => b[1].total - a[1].total)
-      .slice(0, 5)
-      .map(([dept, v], i) => ({
-        dept: dept.length > 18 ? `${dept.slice(0, 18)}…` : dept,
-        pct: Math.round((v.done / v.total) * 100),
-        headcount: v.total,
-        color: ['#0b2a55', '#f97316', '#10b981', '#8b5cf6', '#60a5fa'][i % 5],
-      }));
-  }, [roster]);
-
-  const needsTraining = useMemo(
-    () => roster.filter((r) => r.enrollmentStatus === 0).slice(0, 5),
-    [roster],
-  );
-
-  // ── Exports ────────────────────────────────────────────────────────────────
-  const exportRoster = () =>
-    downloadCsv(
-      `nso-officials-roster-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Gov ID', 'User ID', 'First Name', 'Last Name', 'Email', 'Designation', 'Department', 'Top Missing Skill', 'Status'],
-      filteredRoster.map((r) => [
-        r.govId, r.userId, r.firstName, r.lastName, r.email,
-        r.designation, r.department, r.missingSkill ?? '', enrollmentLabel(r.enrollmentStatus),
-      ]),
-    );
+  // ── Exports: CSV from the server, PDF via the browser's print dialog ────────
+  const csv = (kind: AdminExportKind, extra: Record<string, string | number | undefined> = {}) =>
+    downloadAdminCsv(kind, filters, extra);
+  const rosterExtra = { search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter };
 
   const exportCompetencies = () =>
     downloadCsv(
@@ -296,21 +251,74 @@ const AdminDashboard: React.FC = () => {
       filteredSkills.map((s) => [s.competency_id, s.name, s.category, s.description]),
     );
 
-  const exportShortages = () =>
-    downloadCsv(
-      `competency-shortage-index-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Competency', 'Shortage Index'],
-      heatmap.map((h) => [h.competency, h.gap]),
-    );
+  const pdf = async (kind: AdminExportKind) => {
+    let title = '';
+    let sections: ReportSection[] = [];
+    if (kind === 'roster') {
+      const r = await fetchAdminRoster(filters, 1, PDF_ROW_CAP, debouncedSearch, rosterExtra.status);
+      title = 'NSO officials roster';
+      sections = [{
+        heading: `${r.total} official(s)`,
+        note: r.total > PDF_ROW_CAP ? `First ${PDF_ROW_CAP} rows — use the CSV export for the full list.` : undefined,
+        columns: ['Gov ID', 'Name', 'Designation', 'Grade', 'Department', 'Top missing skill', 'Mandatory', 'Status'],
+        rows: r.items.map((e) => [e.govId, `${e.firstName} ${e.lastName}`, e.designation, e.gradeLabel, e.department,
+          e.missingSkill, e.mandatory ? `${e.mandatory.completed}/${e.mandatory.total}` : '—', e.statusLabel]),
+      }];
+    } else if (kind === 'mandatory-behind') {
+      const r = await fetchMandatoryBehind(filters, 1, PDF_ROW_CAP);
+      title = 'Officials behind on mandatory training';
+      sections = [{
+        heading: `${r.total} official(s) with pending ACBP courses`,
+        columns: ['Gov ID', 'Name', 'Department', 'Grade', 'Done', 'Pending courses'],
+        rows: r.items.map((b) => [b.govId, b.name, b.department, b.gradeLabel, `${b.completed}/${b.total}`,
+          b.pending.map((p) => p.title).join('; ')]),
+      }];
+    } else if (kind === 'emerging-skills') {
+      const e = await fetchEmergingSkills(filters);
+      title = 'Emerging skills — NSSTA training priorities';
+      sections = [{
+        heading: 'Required vs supply vs 36-month forecast', note: e.method,
+        columns: ['#', 'Competency', 'Required', 'Supply now', 'Expected 36 m', 'Shortfall 36 m', 'Next year', 'Action'],
+        rows: e.items.map((i) => [i.rank, i.competencyName, i.required.display, i.supplyNow.display,
+          i.expectedSupply36.display, i.shortfall36.display, i.trainNextYear ? 'yes' : '', i.recommendedAction]),
+      }];
+    } else if (kind === 'trends') {
+      const t = await fetchAdminTrends(filters, 365);
+      title = 'Workforce trends';
+      sections = [{
+        heading: 'Daily snapshots (last 12 months)', note: t.note,
+        columns: ['Date', 'Officials', 'Compliance %', 'Mandatory %', 'Avg level', 'At target %', 'Avg missing skills'],
+        rows: t.points.map((p) => p.suppressed ? [p.date, '<5', '—', '—', '—', '—', '—']
+          : [p.date, p.officials, p.compliancePct, p.mandatoryCompletionPct, p.avgLevel, p.atTargetPct, p.avgMissingSkills]),
+      }];
+    } else if (kind === 'departments') {
+      title = 'Training compliance by department';
+      sections = [{
+        heading: 'Departments', note: 'Departments with fewer than 5 officials show no percentages.',
+        columns: ['Department', 'Headcount', 'Compliance %', 'Mandatory completion %', 'Behind mandatory'],
+        rows: (ov?.deptCompliance ?? []).map((d) => [d.dept, d.headcount, d.pct, d.mandatoryPct, d.behindMandatory.display]),
+      }];
+    } else {
+      title = 'Competency shortage index';
+      sections = [{
+        heading: 'Top shortages', note: 'Weight 1.5 planned / 1 in progress × (4 − current level), summed over officials.',
+        columns: ['Competency', 'Shortage index', 'Officials'],
+        rows: (ov?.heatmap ?? []).map((h) => [h.competency, h.gap, h.officials.display]),
+      }];
+    }
+    if (!printReport(title, filterText, sections)) alert('Allow pop-ups for this site to export a PDF.');
+  };
 
   // ── Nav ────────────────────────────────────────────────────────────────────
   const navGroups: ShellNavGroup[] = [
     {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'officials', label: 'Officials', icon: Users, badge: roster.length || undefined },
+        { id: 'officials', label: 'Officials', icon: Users, badge: kpis?.totalOfficials || undefined },
         { id: 'competencies', label: 'Competencies', icon: BookOpen, badge: skills.length || undefined },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'emerging', label: 'Emerging Skills', icon: Sparkles },
+        { id: 'actions', label: 'Actions', icon: ClipboardCheck, badge: kpis?.mandatory.behind || undefined },
         { id: 'insights', label: 'Insights', icon: Lightbulb },
         { id: 'reports', label: 'Reports', icon: FileText },
       ],
@@ -318,65 +326,82 @@ const AdminDashboard: React.FC = () => {
   ];
 
   const META: Record<AdminTab, { title: string; subtitle: string }> = {
-    dashboard:    { title: 'Admin Dashboard',  subtitle: 'Monitor platform usage, track training progress and drive capability development.' },
-    officials:    { title: 'Officials',        subtitle: 'The full NSO roster with competency status from iGOT Karmayogi.' },
+    dashboard:    { title: 'Admin Dashboard',  subtitle: 'Monitor training progress, workforce trends and service health.' },
+    officials:    { title: 'Officials',        subtitle: 'The NSO roster with competency and mandatory-training status from iGOT Karmayogi.' },
     competencies: { title: 'FRAC Competencies',subtitle: 'The competency dictionary that every skill gap is measured against.' },
-    analytics:    { title: 'Analytics',        subtitle: 'Shortage concentration and departmental training compliance.' },
+    analytics:    { title: 'Analytics',        subtitle: 'Shortage concentration, departmental compliance and trends over time.' },
+    emerging:     { title: 'Emerging Skills',  subtitle: 'Required competencies vs current supply vs the 36-month forecast — what NSSTA should train next year.' },
+    actions:      { title: 'Actions',          subtitle: 'Assign training plans to departments and nudge officials behind on mandatory training.' },
     insights:     { title: 'Workforce Insights', subtitle: 'SCIL v6 views: GSBPM scope, training effectiveness and capability risk (synthetic data).' },
-    reports:      { title: 'Reports',          subtitle: 'Export the current view as CSV for offline analysis.' },
+    reports:      { title: 'Reports',          subtitle: 'Export any view as CSV or PDF — every export respects the filters above.' },
   };
 
-  // ── Shortage bar chart (real heatmap from useAdminData) ────────────────────
+  // ── Charts ─────────────────────────────────────────────────────────────────
   const shortageChart = (height = 300) => (
     heatmap.length === 0 ? (
       <p className="py-14 text-center text-[13px] text-slate-400">
-        {isLoading ? 'Loading shortage data…' : 'No competency shortages recorded in the roster.'}
+        {overview.isLoading ? 'Loading shortage data…' : 'No competency shortages recorded for these officials.'}
       </p>
     ) : (
       <div style={{ height }} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={heatmap} margin={{ top: 10, right: 10, left: -18, bottom: 16 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-            <XAxis dataKey="competency" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
+            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
             <YAxis axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} />
             <Tooltip
-              cursor={{ fill: 'transparent' }}
-              formatter={(v) => [String(v), 'Shortage index'] as [string, string]}
-              contentStyle={{ borderRadius: 10, fontSize: 12, border: `1px solid ${gridColor}`, background: isDark ? '#0f172a' : '#fff' }}
+              cursor={{ fill: isDark ? '#1e293b' : '#f1f5f9' }}
+              labelFormatter={(_l, p) => (p?.[0]?.payload?.competency ?? '') as string}
+              formatter={(v, _n, item: any) => [`${v} (${item?.payload?.officials?.display} officials)`, 'Shortage index'] as [string, string]}
+              contentStyle={tooltipStyle}
             />
-            <Bar dataKey="gap" radius={[6, 6, 0, 0]} barSize={42}>
-              {heatmap.map((entry, i) => <Cell key={i} fill={entry.color[0]} />)}
-            </Bar>
+            <Bar dataKey="gap" fill={bars[0]} radius={[4, 4, 0, 0]} barSize={34} />
           </BarChart>
         </ResponsiveContainer>
       </div>
     )
   );
 
-  const deptChart = (height = 300) => (
-    deptCompliance.length === 0 ? (
+  const deptChart = (height = 300, top?: number) => {
+    const data = top ? deptCompliance.slice(0, top) : deptCompliance;
+    return data.length === 0 ? (
       <p className="py-14 text-center text-[13px] text-slate-400">
-        {isLoading ? 'Loading roster…' : 'No departmental data available.'}
+        {overview.isLoading ? 'Loading…' : 'No department with 5 or more officials in this view.'}
       </p>
     ) : (
       <div style={{ height }} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={deptCompliance} margin={{ top: 18, right: 10, left: -18, bottom: 16 }}>
+          <BarChart data={data} margin={{ top: 18, right: 10, left: -18, bottom: 16 }} barGap={2}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-            <XAxis dataKey="dept" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
+            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} dy={8} interval={0} />
             <YAxis axisLine={false} tickLine={false} tick={{ fill: axisColor, fontSize: 11 }} domain={[0, 100]} unit="%" />
             <Tooltip
-              cursor={{ fill: 'transparent' }}
-              formatter={(v, _n, item: any) => [`${v}% of ${item?.payload?.headcount} officials`, 'Compliant'] as [string, string]}
-              contentStyle={{ borderRadius: 10, fontSize: 12, border: `1px solid ${gridColor}`, background: isDark ? '#0f172a' : '#fff' }}
+              cursor={{ fill: isDark ? '#1e293b' : '#f1f5f9' }}
+              labelFormatter={(_l, p) => {
+                const d = p?.[0]?.payload;
+                return d ? `${d.dept} · ${d.headcount} officials` : '';
+              }}
+              formatter={(v) => (v == null ? '—' : `${v}%`)}
+              contentStyle={tooltipStyle}
             />
-            <Bar dataKey="pct" radius={[6, 6, 0, 0]} barSize={42}>
-              {deptCompliance.map((d, i) => <Cell key={i} fill={d.color} />)}
-            </Bar>
+            <Legend wrapperStyle={{ fontSize: 11.5, color: axisColor }} />
+            <Bar dataKey="pct" name="Completed ≥1 course" fill={bars[0]} radius={[4, 4, 0, 0]} barSize={18} />
+            <Bar dataKey="mandatoryPct" name="Mandatory (ACBP) completion" fill={bars[1]} radius={[4, 4, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    )
+    );
+  };
+
+  const exportButtons = (kind: AdminExportKind, extra: Record<string, string | number | undefined> = {}) => (
+    <>
+      <ExportButton label="CSV" icon={Download} onClick={() => csv(kind, extra)} />
+      <ExportButton label="PDF" icon={FileText} onClick={() => pdf(kind)} />
+    </>
+  );
+
+  const filterBar = (actions?: React.ReactNode, note?: string) => (
+    <AdminFilterBar facets={facets.data} value={filters} onChange={setFilters} actions={actions} note={note} />
   );
 
   return (
@@ -386,8 +411,8 @@ const AdminDashboard: React.FC = () => {
       onNavigate={(id) => setActiveTab(id as AdminTab)}
       userName="Admin"
       userRole="System Administrator"
-      notificationCount={statusCounts.required}
-      onNotificationsClick={() => { setStatusFilter(0); setActiveTab('officials'); }}
+      notificationCount={kpis?.mandatory.behind ?? 0}
+      onNotificationsClick={() => setActiveTab('actions')}
       searchValue={searchTerm}
       onSearchChange={(v) => {
         setSearchTerm(v);
@@ -408,44 +433,55 @@ const AdminDashboard: React.FC = () => {
         actions={
           <button
             type="button"
-            onClick={() => { refetch(); refetchSkills(); }}
+            onClick={refetchAll}
             className="panel flex items-center gap-2 px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:text-gov-navy dark:text-slate-300 dark:hover:text-white"
           >
-            <RefreshCcw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh
+            <RefreshCcw size={14} className={overview.isLoading ? 'animate-spin' : ''} /> Refresh
           </button>
         }
       />
 
+      {/* One filter row for every per-official view; the FRAC dictionary is not per-official. */}
+      {activeTab !== 'competencies' && activeTab !== 'officials' && activeTab !== 'analytics' && filterBar(
+        undefined,
+        activeTab === 'insights' ? 'Office feeds the GSBPM scope panel; product-level views are NSO-wide.' : undefined,
+      )}
+
       {/* ── Overview ──────────────────────────────────────────────────────── */}
       {activeTab === 'dashboard' && (
         <div className="animate-fade-up space-y-5">
-          {error && <ErrorBanner message={error} onRetry={refetch} />}
+          {overview.error && <ErrorBanner message={overview.error} onRetry={overview.refetch} />}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              index={0} icon={Users} tone="blue" label="Total Officials" value={kpis.totalOfficials}
-              caption="Tracked via iGOT Karmayogi" onClick={() => setActiveTab('officials')}
+              index={0} icon={Users} tone="blue" label="Officials" value={kpis?.totalOfficials ?? '—'}
+              caption={filterText} onClick={() => setActiveTab('officials')}
             />
             <StatCard
-              index={1} icon={BookOpen} tone="orange" label="FRAC Competencies" value={skills.length}
-              caption="In the competency dictionary" onClick={() => setActiveTab('competencies')}
+              index={1} icon={ShieldCheck} tone="green" label="Training Compliance"
+              value={kpis ? `${kpis.trainingCompliancePct}%` : '—'} progress={kpis?.trainingCompliancePct}
+              caption={`${statusCounts.compliant} with at least one completed course`}
             />
             <StatCard
-              index={2} icon={ShieldCheck} tone="green" label="Training Compliance"
-              value={`${kpis.trainingCompliancePct}%`} progress={kpis.trainingCompliancePct}
-              caption={`${statusCounts.compliant} of ${roster.length || 0} officials compliant`}
+              index={2} icon={BellRing} tone="orange" label="Mandatory (ACBP) Completion"
+              value={kpis?.mandatory.completionPct != null ? `${kpis.mandatory.completionPct}%` : '—'}
+              progress={kpis?.mandatory.completionPct ?? undefined}
+              caption={kpis ? `${kpis.mandatory.behind} officials behind — assign or nudge` : undefined}
+              onClick={() => setActiveTab('actions')}
             />
             <StatCard
               index={3} icon={AlertTriangle} tone="purple" label="Avg Missing Skills"
-              value={kpis.avgMissingSkills} caption="Per official, planned or in progress"
+              value={kpis?.avgMissingSkills ?? '—'} caption="Per official, planned or in progress"
               onClick={() => setActiveTab('analytics')}
             />
           </div>
 
+          <TrendsPanel filters={filters} compact />
+
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
             <SectionCard
               title="Competency Shortage Index"
-              subtitle="Weighted by deficiency level across the whole roster"
+              subtitle="Weighted by deficiency level, computed on the server"
               action={<SectionAction label="Analytics" onClick={() => setActiveTab('analytics')} />}
             >
               {shortageChart(268)}
@@ -453,10 +489,10 @@ const AdminDashboard: React.FC = () => {
 
             <SectionCard
               title="Compliance by Department"
-              subtitle="Share of officials with at least one completed course"
-              action={<SectionAction label="Officials" onClick={() => setActiveTab('officials')} />}
+              subtitle="Five largest departments in view"
+              action={<SectionAction label="Analytics" onClick={() => setActiveTab('analytics')} />}
             >
-              {deptChart(268)}
+              {deptChart(268, 5)}
             </SectionCard>
           </div>
 
@@ -467,7 +503,7 @@ const AdminDashboard: React.FC = () => {
               action={<SectionAction label="View all" onClick={() => { setStatusFilter(0); setActiveTab('officials'); }} />}
             >
               <ul className="space-y-3">
-                {needsTraining.map((r) => (
+                {(ov?.needsTraining ?? []).map((r) => (
                   <li key={r.userId} className="flex items-center gap-3">
                     <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent-rose-soft text-[11px] font-bold text-accent-rose dark:bg-rose-500/15 dark:text-rose-300">
                       {(r.firstName || r.govId).charAt(0).toUpperCase()}
@@ -485,24 +521,14 @@ const AdminDashboard: React.FC = () => {
                     )}
                   </li>
                 ))}
-                {needsTraining.length === 0 && (
-                  <li className="py-8 text-center text-[13px] text-slate-400">
-                    {isLoading ? 'Loading roster…' : 'Every official has started at least one course.'}
-                  </li>
+                {ov && ov.needsTraining.length === 0 && (
+                  <li className="py-8 text-center text-[13px] text-slate-400">Every official in view has started at least one course.</li>
                 )}
+                {!ov && <li className="py-8 text-center text-[13px] text-slate-400">Loading roster…</li>}
               </ul>
             </SectionCard>
 
-            <SectionCard title="Data Sources" subtitle="Live status of the feeds behind this dashboard">
-              <ul className="space-y-3.5">
-                <FeedStatus label="Officials roster" endpoint="/api/v1/admin/users" loading={isLoading} error={error} count={roster.length} />
-                <FeedStatus label="FRAC competencies" endpoint="/api/v1/admin/frac/competencies" loading={isSkillsLoading} error={skillsError} count={skills.length} />
-              </ul>
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-gov-line bg-gov-paper px-3.5 py-2.5 text-[11.5px] text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
-                <Database size={14} className="flex-shrink-0 text-gov-blue dark:text-sky-400" aria-hidden="true" />
-                Both feeds are proxied through the LMS backend on port 8000 with admin role enforcement.
-              </div>
-            </SectionCard>
+            <SystemHealthPanel compact />
           </div>
 
           {/* CTA banner */}
@@ -516,14 +542,14 @@ const AdminDashboard: React.FC = () => {
                   <TrendingUp size={22} className="text-gov-saffron" aria-hidden="true" />
                 </span>
                 <div>
-                  <h3 className="mb-1 text-[15.5px] font-semibold">Empower a Data-Ready Workforce</h3>
+                  <h3 className="mb-1 text-[15.5px] font-semibold">What should NSSTA train next year?</h3>
                   <p className="max-w-xl text-[12.5px] leading-relaxed text-white/70">
-                    Track progress, identify gaps and enable continuous learning across government.
+                    Compare required competencies with today's supply and the 36-month forecast.
                   </p>
                 </div>
               </div>
-              <button type="button" onClick={() => setActiveTab('reports')} className="gov-btn-saffron flex-shrink-0">
-                Generate Report <Download size={15} />
+              <button type="button" onClick={() => setActiveTab('emerging')} className="gov-btn-saffron flex-shrink-0">
+                Emerging skills <Sparkles size={15} />
               </button>
             </div>
           </div>
@@ -533,64 +559,57 @@ const AdminDashboard: React.FC = () => {
       {/* ── Officials ─────────────────────────────────────────────────────── */}
       {activeTab === 'officials' && (
         <div className="animate-fade-up">
-          {error && <ErrorBanner message={error} onRetry={refetch} />}
+          {filterBar(exportButtons('roster', rosterExtra))}
+          {roster.error && <ErrorBanner message={roster.error} onRetry={roster.refetch} />}
           <SectionCard
             title="Official Roster"
-            subtitle={`${filteredRoster.length} of ${roster.length} officials`}
+            subtitle={roster.data ? `${roster.data.total} officials match` : 'Loading…'}
             padded={false}
-            action={
-              <button
-                type="button"
-                onClick={exportRoster}
-                disabled={filteredRoster.length === 0}
-                className="flex items-center gap-2 rounded-lg border border-gov-line px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:border-gov-blue/40 hover:text-gov-navy disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:text-white"
-              >
-                <Download size={14} /> Export CSV
-              </button>
-            }
           >
-            {/* Status filters — replaces the old dead "Filters" button */}
             <div className="flex flex-wrap items-center gap-2 px-5 pb-4">
               <SlidersHorizontal size={14} className="text-slate-400" aria-hidden="true" />
-              {([['all', 'All'], [2, 'Compliant'], [1, 'In Progress'], [0, 'Training Required']] as const).map(([value, label]) => (
-                <button
-                  key={String(value)}
-                  type="button"
-                  aria-pressed={statusFilter === value}
-                  onClick={() => setStatusFilter(value as typeof statusFilter)}
-                  className="chip-filter"
-                >
-                  {label}
-                  {value !== 'all' && (
-                    <span className="text-slate-400">
-                      ({value === 2 ? statusCounts.compliant : value === 1 ? statusCounts.inProgress : statusCounts.required})
-                    </span>
-                  )}
-                </button>
-              ))}
+              {([['all', 'All'], [2, 'Compliant'], [1, 'In Progress'], [0, 'Training Required']] as const).map(([value, label]) => {
+                const c = roster.data?.statusCounts;
+                return (
+                  <button
+                    key={String(value)}
+                    type="button"
+                    aria-pressed={statusFilter === value}
+                    onClick={() => setStatusFilter(value as typeof statusFilter)}
+                    className="chip-filter"
+                  >
+                    {label}
+                    {value !== 'all' && c && (
+                      <span className="text-slate-400">
+                        ({value === 2 ? c.compliant : value === 1 ? c.inProgress : c.required})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="overflow-x-auto">
-              <table className="gov-table min-w-[860px]">
+              <table className="gov-table min-w-[900px]">
                 <thead>
                   <tr>
                     <th scope="col">Official</th>
-                    <th scope="col">Gov ID</th>
-                    <th scope="col">Designation</th>
+                    <th scope="col">Designation · grade</th>
                     <th scope="col">Department</th>
                     <th scope="col">Top Missing Skill</th>
+                    <th scope="col">Mandatory</th>
                     <th scope="col">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {isLoading ? (
+                  {roster.isLoading && !roster.data ? (
                     <TableSkeleton cols={6} />
-                  ) : currentRoster.length > 0 ? (
-                    currentRoster.map((emp) => <RosterRow key={emp.userId} employee={emp} />)
+                  ) : roster.data && roster.data.items.length > 0 ? (
+                    roster.data.items.map((emp) => <RosterRow key={emp.userId} employee={emp} />)
                   ) : (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-slate-400">
-                        {roster.length === 0 ? 'No officials loaded.' : 'No officials match the current search and filters.'}
+                        No officials match the current search and filters.
                       </td>
                     </tr>
                   )}
@@ -598,9 +617,9 @@ const AdminDashboard: React.FC = () => {
               </table>
             </div>
 
-            {!isLoading && filteredRoster.length > 0 && (
+            {roster.data && roster.data.total > 0 && (
               <Pagination
-                page={currentPage} totalPages={totalPagesRoster} totalItems={filteredRoster.length}
+                page={roster.data.page} totalPages={roster.data.totalPages} totalItems={roster.data.total}
                 noun="officials" onChange={setCurrentPage}
               />
             )}
@@ -614,7 +633,7 @@ const AdminDashboard: React.FC = () => {
           {skillsError && <ErrorBanner message={skillsError} onRetry={refetchSkills} />}
           <SectionCard
             title="FRAC Competencies"
-            subtitle={`${filteredSkills.length} of ${skills.length} competencies loaded`}
+            subtitle={`${filteredSkills.length} of ${skills.length} competencies loaded · the dictionary is ministry-wide, so the department / grade / office filters don't apply`}
             padded={false}
             action={
               <button
@@ -666,7 +685,8 @@ const AdminDashboard: React.FC = () => {
       {/* ── Analytics ─────────────────────────────────────────────────────── */}
       {activeTab === 'analytics' && (
         <div className="animate-fade-up space-y-5">
-          {error && <ErrorBanner message={error} onRetry={refetch} />}
+          {filterBar()}
+          {overview.error && <ErrorBanner message={overview.error} onRetry={overview.refetch} />}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatCard index={0} icon={CheckCircle2} tone="green" label="Compliant" value={statusCounts.compliant} />
@@ -674,67 +694,69 @@ const AdminDashboard: React.FC = () => {
             <StatCard index={2} icon={AlertTriangle} tone="rose" label="Training Required" value={statusCounts.required} />
           </div>
 
+          <TrendsPanel filters={filters} />
+
           <SectionCard
             title="Competency Shortage Index"
             subtitle="Top deficiencies weighted by status (planned ×1.5) and current level"
-            action={
-              <button
-                type="button"
-                onClick={exportShortages}
-                disabled={heatmap.length === 0}
-                className="flex items-center gap-2 rounded-lg border border-gov-line px-3.5 py-2 text-[12.5px] font-semibold text-slate-600 transition-colors hover:border-gov-blue/40 hover:text-gov-navy disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:text-white"
-              >
-                <Download size={14} /> Export
-              </button>
-            }
+            action={<div className="flex gap-2">{exportButtons('shortages')}</div>}
           >
             {shortageChart(330)}
           </SectionCard>
 
-          <SectionCard title="Compliance by Department" subtitle="Five largest departments by headcount">
+          <SectionCard
+            title="Compliance by Department"
+            subtitle="Every department with 5+ officials in view (smaller ones are suppressed)"
+            action={<div className="flex gap-2">{exportButtons('departments')}</div>}
+          >
             {deptChart(330)}
           </SectionCard>
         </div>
       )}
 
+      {/* ── Emerging skills ──────────────────────────────────────────────── */}
+      {activeTab === 'emerging' && <EmergingSkills filters={filters} filterText={filterText} />}
+
+      {/* ── Actions ──────────────────────────────────────────────────────── */}
+      {activeTab === 'actions' && (
+        <div className="space-y-5">
+          <AdminActions filters={filters} facets={facets.data} filterText={filterText} />
+          <CertificateReviewQueue />
+        </div>
+      )}
+
       {/* ── Insights (SCIL v6) ─────────────────────────────────────────────── */}
-      {activeTab === 'insights' && <WorkforceInsights />}
+      {activeTab === 'insights' && <WorkforceInsights office={filters.office} />}
 
       {/* ── Reports ───────────────────────────────────────────────────────── */}
       {activeTab === 'reports' && (
-        <div className="animate-fade-up grid grid-cols-1 gap-5 md:grid-cols-3">
-          {[
-            {
-              title: 'Officials Roster', icon: Users, tone: 'bg-accent-blue-soft text-accent-blue dark:bg-blue-500/15 dark:text-blue-300',
-              desc: 'Every official with designation, department, top missing skill and training status. Respects the filters set on the Officials page.',
-              count: filteredRoster.length, noun: 'rows', onExport: exportRoster,
-            },
-            {
-              title: 'FRAC Competencies', icon: BookOpen, tone: 'bg-accent-orange-soft text-accent-orange dark:bg-orange-500/15 dark:text-orange-300',
-              desc: 'The full competency dictionary with identifiers, categories and descriptions as served by the mock iGOT server.',
-              count: filteredSkills.length, noun: 'rows', onExport: exportCompetencies,
-            },
-            {
-              title: 'Shortage Index', icon: BarChart3, tone: 'bg-accent-purple-soft text-accent-purple dark:bg-violet-500/15 dark:text-violet-300',
-              desc: 'Aggregate competency shortage scores computed across the roster — the data behind the analytics bar chart.',
-              count: heatmap.length, noun: 'competencies', onExport: exportShortages,
-            },
-          ].map(({ title, icon: Icon, tone, desc, count, noun, onExport }, i) => (
-            <div key={title} className="panel animate-fade-up flex flex-col p-5" style={{ animationDelay: `${i * 70}ms` }}>
+        <div className="animate-fade-up grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {([
+            { kind: 'roster', title: 'Officials Roster', icon: Users, tone: 'bg-accent-blue-soft text-accent-blue dark:bg-blue-500/15 dark:text-blue-300',
+              desc: 'Every official with grade, department, top missing skill, mandatory progress and training status. Uses the Officials search and status chip too.' },
+            { kind: 'mandatory-behind', title: 'Behind on Mandatory Training', icon: BellRing, tone: 'bg-accent-orange-soft text-accent-orange dark:bg-orange-500/15 dark:text-orange-300',
+              desc: 'Officials with pending APAR-linked ACBP courses this cycle, the courses pending and when they were last nudged.' },
+            { kind: 'emerging-skills', title: 'Emerging Skills', icon: Sparkles, tone: 'bg-accent-purple-soft text-accent-purple dark:bg-violet-500/15 dark:text-violet-300',
+              desc: 'Required vs supply vs 36-month forecast per competency, ranked — the NSSTA "train next year" list.' },
+            { kind: 'trends', title: 'Workforce Trends', icon: LineChartIcon, tone: 'bg-accent-green-soft text-accent-green dark:bg-emerald-500/15 dark:text-emerald-300',
+              desc: 'Daily snapshots: compliance, mandatory completion, average competency level and share at target.' },
+            { kind: 'departments', title: 'Department Compliance', icon: Building2, tone: 'bg-gov-navy/[0.08] text-gov-navy dark:bg-sky-500/15 dark:text-sky-300',
+              desc: 'Headcount, compliance and mandatory completion per department; small departments are suppressed.' },
+            { kind: 'shortages', title: 'Shortage Index', icon: BarChart3, tone: 'bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300',
+              desc: 'Aggregate competency shortage scores — the data behind the analytics bar chart.' },
+          ] as const).map(({ kind, title, icon: Icon, tone, desc }, i) => (
+            <div key={kind} className="panel animate-fade-up flex flex-col p-5" style={{ animationDelay: `${i * 70}ms` }}>
               <span className={`mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
                 <Icon size={20} aria-hidden="true" />
               </span>
               <h3 className="mb-1.5 text-[14.5px] font-semibold text-gov-ink dark:text-white">{title}</h3>
               <p className="mb-4 flex-1 text-[12.5px] leading-relaxed text-slate-500 dark:text-slate-400">{desc}</p>
-              <p className="mb-3 text-[11.5px] font-medium text-slate-400">{count} {noun} ready</p>
-              <button
-                type="button"
-                onClick={onExport}
-                disabled={count === 0}
-                className="gov-btn-primary w-full disabled:opacity-50"
-              >
-                <Download size={15} /> Download CSV
-              </button>
+              <p className="mb-3 text-[11.5px] font-medium text-slate-400">{filterText}</p>
+              <div className="flex gap-2">
+                <ExportButton label="Download CSV" icon={Download}
+                              onClick={() => csv(kind, kind === 'roster' ? rosterExtra : kind === 'trends' ? { days: 365 } : {})} />
+                <ExportButton label="PDF" icon={FileText} onClick={() => pdf(kind)} />
+              </div>
             </div>
           ))}
         </div>

@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
 import { Bot, Globe, Paperclip, Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { gradeQuiz } from "../../services/api";
+import type { DocQuizQuestion, QuizAnswer } from "../../services/api";
+import QuizQuestionInput, { emptyAnswer, isAnswered } from "../assessment/QuizQuestionInput";
 
 interface AssessmentUploadZoneProps {
   userId?: string;
@@ -16,7 +18,7 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
   const inputRef = useRef<HTMLInputElement>(null);
   
   const [quizData, setQuizData] = useState<any>(null);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [scoreInfo, setScoreInfo] = useState<any>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,13 +50,14 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to generate quiz");
+        const error = await res.json().catch(() => ({}));
+        const detail = typeof error.detail === "string" ? error.detail : error.detail?.message;
+        throw new Error(detail || "Failed to generate quiz");
       }
 
       const data = await res.json();
       setQuizData(data);
-      setAnswers(new Array(data.questions.length).fill(-1));
+      setAnswers(data.questions.map((q: DocQuizQuestion) => emptyAnswer(q)));
       setStatus("quiz");
     } catch (err: any) {
       console.error(err);
@@ -63,14 +66,12 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
     }
   };
 
-  const handleAnswer = (qIndex: number, optIndex: number) => {
-    const newAnswers = [...answers];
-    newAnswers[qIndex] = optIndex;
-    setAnswers(newAnswers);
+  const handleAnswer = (qIndex: number, value: QuizAnswer) => {
+    setAnswers((cur) => cur.map((a, i) => (i === qIndex ? value : a)));
   };
 
   const submitQuiz = async () => {
-    if (answers.includes(-1)) {
+    if (quizData.questions.some((q: DocQuizQuestion, i: number) => !isAnswered(q, answers[i]))) {
       setErrorMsg("Please answer all questions.");
       return;
     }
@@ -158,24 +159,15 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
         </h3>
         {errorMsg && <p className="text-red-500 text-sm mb-4">{errorMsg}</p>}
         <div className="space-y-6">
-          {quizData.questions.map((q: any, qIndex: number) => (
-            <div key={qIndex} className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
-              <p className="font-semibold text-slate-800 dark:text-slate-200 mb-3">{qIndex + 1}. {q.question}</p>
-              <div className="space-y-2">
-                {q.options.map((opt: string, optIndex: number) => (
-                  <label key={optIndex} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
-                    <input 
-                      type="radio" 
-                      name={`question-${qIndex}`} 
-                      className="w-4 h-4 text-blue-600"
-                      checked={answers[qIndex] === optIndex}
-                      onChange={() => handleAnswer(qIndex, optIndex)}
-                    />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">{opt}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          {quizData.questions.map((q: DocQuizQuestion, qIndex: number) => (
+            <QuizQuestionInput
+              key={qIndex}
+              q={q}
+              index={qIndex}
+              answer={answers[qIndex]}
+              onChange={(a) => handleAnswer(qIndex, a)}
+              compact
+            />
           ))}
         </div>
         <div className="mt-6 flex justify-end gap-3">
@@ -213,7 +205,7 @@ const AssessmentUploadZone: React.FC<AssessmentUploadZoneProps> = ({ onQuizPasse
             {file ? (
               <span className="text-blue-600 dark:text-blue-400 font-semibold">{file.name}</span>
             ) : (
-              <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Click to upload training document (.pdf, .pptx, .txt)</span>
+              <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Click to upload training document (.pdf, .docx, .pptx, .txt)</span>
             )}
           </div>
         </div>

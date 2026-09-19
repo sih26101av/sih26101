@@ -6,10 +6,11 @@
  * SkillGapCard / CompetencyOverviewTable trigger via `onFindCourses`.
  */
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import CourseCard from './CourseCard';
-import type { CourseRecommendation } from '../../types/domain';
+import { fetchMyRecommendationVotes, sendRecommendationFeedback } from '../../services/api';
+import type { CourseRecommendation, FeedbackEvent } from '../../types/domain';
 
 interface Props {
   recommendations: CourseRecommendation[];
@@ -40,6 +41,26 @@ const RecommendationsPanel: React.FC<Props> = ({
     () => [...recommendations].sort((a, b) => a.priorityRank - b.priorityRank),
     [recommendations],
   );
+
+  // Thumbs state + interaction logging (clicks, enrolments, votes).
+  const [votes, setVotes] = useState<Record<string, 'up' | 'down'>>({});
+  useEffect(() => {
+    let live = true;
+    fetchMyRecommendationVotes().then(v => { if (live) setVotes(v); });
+    return () => { live = false; };
+  }, []);
+  const onFeedback = (rec: CourseRecommendation, event: FeedbackEvent) => {
+    const id = rec.course.courseId;
+    if (event === 'thumbs_up' || event === 'thumbs_down' || event === 'clear_vote') {
+      setVotes(v => {                                   // optimistic
+        const next = { ...v };
+        if (event === 'clear_vote') delete next[id]; else next[id] = event === 'thumbs_up' ? 'up' : 'down';
+        return next;
+      });
+    }
+    sendRecommendationFeedback(rec, event, { surface: limit ? 'overview' : 'recommendations' })
+      .then(v => { if (v) setVotes(v); });
+  };
 
   const matched = filter ? sorted.filter((r) => matches(r, filter)) : sorted;
   // A filter that matches nothing falls back to the full list rather than an empty grid.
@@ -81,7 +102,7 @@ const RecommendationsPanel: React.FC<Props> = ({
       <div className={gridClassName}>
         {shown.map((rec, i) => (
           <div key={rec.course.courseId} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 70}ms` }}>
-            <CourseCard recommendation={rec} />
+            <CourseCard recommendation={rec} vote={votes[rec.course.courseId]} onFeedback={onFeedback} />
           </div>
         ))}
       </div>

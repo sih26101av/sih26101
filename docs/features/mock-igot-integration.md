@@ -76,7 +76,15 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/cbplan/v1/user/{userId}` — one official's ACBP: the
     organisation-wide + role mandatory (APAR-linked) courses,
     `learningHoursPerQuarter`, `cycle`. Adapter: `fetch_user_cbplan()` (None on
-    404), read per request by `/pathway`.
+    404), read per request by `/pathway` and `/recommendations` (mandatory
+    courses are always recommended).
+  - `GET /api/org/v1/roles` — role competency profiles per office and tier
+    (`roles.json`); `fetch_roles()` → `ReferenceData.roles`, the career ladder
+    for `/career-readiness`.
+  - `GET /api/evidence/v1/supervisor-ratings` — every APAR rating
+    `{raterId, compId, grantedValue, cycle}` (ratee ids dropped);
+    `fetch_supervisor_ratings()` → `ReferenceData.rater_offsets` (per-rater
+    leniency correction).
   - The adapter reads them with `_get_result(path)`, `fetch_gsbpm_map()` and
     `fetch_offices()`.
 - **Users and enrolments:**
@@ -84,7 +92,12 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/course/v1/user/enrollment/list/{user_id}`
   - `POST /api/course/v1/content/state/read` — completed enrolments have no
     stored snapshot; their all-done leaf list is derived at request time.
-  - `GET /api/admin/v1/users`
+  - `GET /api/admin/v1/users` — also returns `grade` (job-profile tier),
+    `officeId` / `officeName`, `roleId`, `completedCourseIds`, `completions`
+    (`[{courseId, completedDate}]`, first completion per course) and `mandatory`
+    (`{cycle, total, courseIds, completed, pending[]}` from `data/acbp.json` against
+    completed enrolments; `null` if the official has no ACBP entry) for the
+    admin console.
 - **Other:** `POST /v1/telemetry`, `GET /api/job-profiles`, `GET /health`.
 - **Legacy endpoints** kept for older callers: `/api/external/igot/*` and
   `POST /competencies/update` (the RAG grading sync target).

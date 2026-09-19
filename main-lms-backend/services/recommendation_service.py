@@ -22,7 +22,10 @@ Stage 2 — Hybrid Search + RRF Fusion
     Sparse : rank_bm25.BM25Okapi over title+description corpus
     Query  : FRAC competency official name + description (never raw user text)
     Fusion : RRF(d) = 1/(60+rank_dense) + 1/(60+rank_sparse)
-    Boost  : 1.25× on RRF score for NSSTA/TPAC-vetted courses
+    Boost  : RRF × 1.25 for verified TPAC courses, × 1.10 for inferred ones
+    Rerank : optional multilingual cross-encoder over the top 20 (ai/reranker.py,
+             ENABLE_CROSS_ENCODER=1): relevance = mean of RRF and cross-encoder,
+             each min-max normalised within the re-ranked set
 
 Stage 3 — Weighted Final Scoring
     quality = 0.35*completion + 0.35*rating_norm(Bayesian shrinkage) + 0.20*pop_norm + 0.10*tpac_flag
@@ -60,7 +63,9 @@ logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 _RRF_K         = 60          # RRF constant
-_NSSTA_BOOST   = 1.25        # multiplier for NSSTA/TPAC courses
+# RRF multiplier by TPAC provenance: a catalogue-confirmed TPAC course gets the
+# full boost; one inferred only from its NSSTA creator name gets a smaller one.
+_TPAC_BOOST    = {"verified": 1.25, "inferred": 1.10}
 _FALLBACK_DURS = 1.5         # hours if duration field missing/zero
 _MAX_LEVEL     = 5           # FRAC proficiency scale is Level 1..5
 _MIN_STEP_HRS  = 0.1         # floor on hours in gain-per-hour (avoids /0)
@@ -113,6 +118,11 @@ class RecommendationResult(BaseModel):
     # whether that data says the course barely moves its competency (synthetic data).
     measuredUplift: Optional[float] = None
     upliftFlag:     Optional[bool]  = None
+    modality:       Optional[str]   = None   # self_paced | virtual_lab | classroom
+    mandatory:      bool            = False  # in the official's ACBP (departmental training plan)
+    reranked:       Optional[bool]  = None   # True → relevance includes the cross-encoder score
+    # "Why recommended": {gap{…}, levelStep{…}, badges[], summary} — see _why()
+    why:            Optional[Dict[str, Any]] = None
 
 
 
@@ -222,12 +232,18 @@ class HybridRecommendationEngine:
         frac:         Optional[List[Dict[str, Any]]] = None,
         crosswalk:    Optional[List[Dict[str, Any]]] = None,
         crosswalk_path: Optional[str] = None,
+        precomputed_embeddings: Optional[Dict[str, Tuple[str, np.ndarray]]] = None,
     ):
         """
         `catalog` / `frac` / `crosswalk` are the lists served by the mock iGOT
         server (loaded through MockIgotAdapter in main._startup). When a list
         is not given, the matching file is read from disk instead — the same
         generated file the mock server serves, so the two cannot drift.
+
+        `precomputed_embeddings` = {courseId: (text_hash, vector)} loaded from the
+        database (services/catalogue_store.py). A vector is reused only when its
+        text hash matches the course's current title + description and it has
+        the right dimension; every other course is encoded.
         """
         self.catalog_source = "adapter" if catalog is not None else "disk"
         # ── 1. Load FRAC dictionary ────────────────────────────────────────────
@@ -292,7 +308,8 @@ class HybridRecommendationEngine:
         embedder = get_embedder("catalog")
 
         corpus_texts = [doc.corpus_text for doc in self._catalog]
-        embeddings = encode_cached("catalog", corpus_texts, kind="passage", embedder=embedder)   # memoised on disk
+        self._text_hash = [text_hash(t) for t in corpus_texts]
+        embeddings = self._corpus_embeddings(corpus_texts, precomputed_embeddings or {}, embedder)
         self._embeddings = embeddings   # kept for exact cosine over small candidate pools
 
         # Use faiss lazy import (not installed on every machine at import time)
@@ -441,6 +458,36 @@ class HybridRecommendationEngine:
         """{courseId: {compId: FRAC level}} — feeds BaselineAssembler so the
         Verified channel and the candidate filter read the same tags."""
         return {d.identifier: dict(d.comp_levels) for d in self._catalog if d.comp_levels}
+
+    def _corpus_embeddings(self, texts: List[str], stored: Dict[str, Tuple[str, np.ndarray]],
+                           embedder) -> np.ndarray:
+        """Stored vectors whose text hash still matches; encode (disk-memoised) the rest."""
+        reuse: Dict[int, np.ndarray] = {}
+        for i, doc in enumerate(self._catalog):
+            hit = stored.get(doc.identifier)
+            if hit is not None and hit[0] == self._text_hash[i]:
+                reuse[i] = np.asarray(hit[1], dtype="float32")
+        dims = {v.shape[-1] for v in reuse.values()}
+        missing = [i for i in range(len(texts)) if i not in reuse]
+        fresh = (encode_cached("catalog", [texts[i] for i in missing], kind="passage", embedder=embedder)
+                 if missing else None)
+        if fresh is not None and dims and fresh.shape[1] not in dims:
+            reuse, missing = {}, list(range(len(texts)))          # model changed → re-encode all
+            fresh = encode_cached("catalog", texts, kind="passage", embedder=embedder)
+        self.embedding_stats = {"fromStore": len(reuse), "encoded": len(missing)}
+        if not reuse:
+            return fresh
+        dim = next(iter(reuse.values())).shape[-1]
+        out = np.zeros((len(texts), dim), dtype="float32")
+        for i, v in reuse.items():
+            out[i] = v
+        for row, i in enumerate(missing):
+            out[i] = fresh[row]
+        return out
+
+    def course_embeddings(self) -> List[Tuple[str, str, np.ndarray]]:
+        """[(courseId, text_hash, vector)] — what catalogue_store persists."""
+        return [(d.identifier, self._text_hash[i], self._embeddings[i]) for i, d in enumerate(self._catalog)]
 
     def set_measured_uplift(self, estimates: List[Dict[str, Any]]) -> None:
         """Attach per-course measured uplift (uplift_service.estimate_uplift) — SCIL v6 §6."""
@@ -648,9 +695,7 @@ class HybridRecommendationEngine:
             results: List[Tuple[int, float]] = []
             for idx, score in zip(dense_indices_raw[0], _scores[0]):
                 if idx >= 0:
-                    rrf = float(score)  # use raw cosine score as proxy
-                    if self._catalog[idx].is_tpac:
-                        rrf *= _NSSTA_BOOST
+                    rrf = float(score) * _TPAC_BOOST.get(self._catalog[idx].tpac_source, 1.0)  # raw cosine as proxy
                     results.append((int(idx), rrf))
             return results
 
@@ -668,13 +713,11 @@ class HybridRecommendationEngine:
         cand_bm25.sort(key=lambda x: x[1], reverse=True)
         sparse_rank: Dict[int, int] = {idx: r + 1 for r, (idx, _) in enumerate(cand_bm25)}
 
-        # 2c. RRF fusion + NSSTA boost
+        # 2c. RRF fusion + TPAC boost (verified 1.25×, inferred 1.10×)
         rrf_scores: Dict[int, float] = {}
         for idx in candidate_indices:
             rrf  = 1.0 / (_RRF_K + dense_rank[idx]) + 1.0 / (_RRF_K + sparse_rank[idx])
-            if self._catalog[idx].is_tpac:
-                rrf *= _NSSTA_BOOST
-            rrf_scores[idx] = rrf
+            rrf_scores[idx] = rrf * _TPAC_BOOST.get(self._catalog[idx].tpac_source, 1.0)
 
         sorted_results = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
         return sorted_results[:top_k]
@@ -778,10 +821,14 @@ class HybridRecommendationEngine:
         if is_tagged:
             q_emb, _ = self._query_signals(gap.catalogue_key, self._query_text(gap))
             support_thr = self._tag_support_threshold(gap.catalogue_key, q_emb)
+        ce_norm = self._cross_encoder_norm(gap, retrieved)     # {idx: 0..1} for the top 20, or {}
 
         results: List[RecommendationResult] = []
         for (idx, rrf_raw), doc in zip(retrieved, shortlist_docs):
             relevance_n = (rrf_raw - rrf_min) / rrf_range
+            if ce_norm:
+                # Stage 2b: blend with the cross-encoder; unseen (below top 20) count as 0.
+                relevance_n = 0.5 * relevance_n + 0.5 * ce_norm.get(idx, 0.0)
             quality_n   = self._quality_score(doc, shortlist_docs)
             final       = round(0.6 * relevance_n + 0.4 * quality_n, 4)
             course_level = doc.comp_levels.get(gap.catalogue_key)
@@ -833,6 +880,9 @@ class HybridRecommendationEngine:
                 tagSupported   = tag_supported,
                 measuredUplift = uplift.get("measuredUplift"),
                 upliftFlag     = uplift.get("misTagFlag"),
+                modality       = doc.modality,
+                reranked       = (idx in ce_norm) if ce_norm else None,
+                why            = self._why(gap, doc, course_level, uplift, tag_supported),
             ))
 
         # Content-supported tags first, then finalScore — so wherever a level
@@ -841,6 +891,133 @@ class HybridRecommendationEngine:
         # used only when nothing else exists at that level — never hidden.
         results.sort(key=lambda r: (r.tagSupported is False or bool(r.upliftFlag), -r.finalScore))
         return results
+
+    def _cross_encoder_norm(self, gap: GapEntry, retrieved: List[Tuple[int, float]]) -> Dict[int, float]:
+        """Cross-encoder scores of the top RERANK_TOP_N by RRF, min-max normalised; {} if disabled."""
+        from ai.reranker import RERANK_TOP_N, rerank_scores
+        top = sorted(retrieved, key=lambda x: x[1], reverse=True)[:RERANK_TOP_N]
+        if len(top) < 2:
+            return {}
+        passages = [f"{self._catalog[i].name}. {self._catalog[i].description}" for i, _ in top]
+        scores = rerank_scores(self._query_text(gap), passages)
+        if scores is None:
+            return {}
+        lo, hi = float(scores.min()), float(scores.max())
+        span = hi - lo if hi > lo else 1.0
+        return {i: (float(sc) - lo) / span for (i, _), sc in zip(top, scores)}
+
+    def _why(self, gap: GapEntry, doc: _CourseDoc, course_level: Optional[int],
+             uplift: Dict[str, Any], tag_supported: Optional[bool]) -> Dict[str, Any]:
+        """
+        Structured "why recommended": the gap it closes, the level step it
+        covers and its badges (TPAC verified / inferred, measured improvement).
+        Built from the same fields the ranking used; nothing new is inferred.
+        """
+        current, target = int(gap.currentLevel), int(math.ceil(gap.targetLevel))
+        if not course_level:
+            kind = "untagged_level"
+        elif course_level > target:
+            kind = "stretch"
+        elif course_level == current + 1:
+            kind = "next_step"
+        else:
+            kind = "on_the_way"
+        badges = []
+        if doc.tpac_source == "verified":
+            badges.append({"key": "tpac_verified", "label": "TPAC verified"})
+        elif doc.tpac_source == "inferred":
+            badges.append({"key": "tpac_inferred", "label": "TPAC (inferred)"})
+        mu = uplift.get("measuredUplift")
+        if mu is not None and not uplift.get("misTagFlag") and mu > 0:
+            badges.append({"key": "measured_improvement", "label": f"Measured +{mu:.1f} level",
+                           "value": round(float(mu), 2)})
+        if tag_supported is False or uplift.get("misTagFlag"):
+            badges.append({"key": "under_review", "label": "Tag under review"})
+        step = f"Level {current} → {course_level}" if course_level else "level not tagged"
+        summary = {
+            "next_step": f"Closes your {gap.competencyName} gap one step: {step} (target {target}).",
+            "on_the_way": f"Builds {gap.competencyName} from Level {current} towards target {target} ({step}).",
+            "stretch": f"No course at Levels {current + 1}–{target}; this Level-{course_level} course covers the gap.",
+            "untagged_level": f"Semantically closest course for {gap.competencyName}.",
+        }[kind]
+        return {
+            "gap": {"competencyId": gap.competencyId, "competencyName": gap.competencyName,
+                    "currentLevel": current, "targetLevel": target, "gap": gap.gapScore},
+            "levelStep": {"from": current, "to": course_level, "kind": kind},
+            "badges": badges,
+            "summary": summary,
+        }
+
+    def order_gaps_by_opportunity(self, gaps: List[GapEntry],
+                                  opportunity: Dict[str, Optional[str]]) -> List[GapEntry]:
+        """
+        SCIL v6 §4 tie-break: gaps whose priority is within OPPORTUNITY_TIE_BAND
+        (10%) of each other are near-ties; among them the competency the
+        official's office uses more this cycle (High > Medium > Low) goes first.
+        Ordinal only — a clearly larger gap always stays ahead.
+        """
+        out = list(gaps)
+
+        def rank(g: GapEntry) -> int:
+            return _OPPORTUNITY_RANK.get(opportunity.get(g.competencyId) or "", 0)
+
+        changed = True
+        while changed:                    # adjacent swaps inside tie bands until stable
+            changed = False
+            for i in range(len(out) - 1):
+                a, b = out[i], out[i + 1]
+                near = abs(a.priorityScore - b.priorityScore) <= OPPORTUNITY_TIE_BAND * max(a.priorityScore, 1e-9)
+                if near and rank(b) > rank(a):
+                    out[i], out[i + 1] = b, a
+                    changed = True
+        return out
+
+    def mandatory_recommendations(
+        self,
+        mandatory:    List[Dict[str, Any]],
+        exclude_ids:  Set[str],
+        gaps:         Dict[str, GapEntry],
+        names:        Optional[Dict[str, str]] = None,
+    ) -> List[RecommendationResult]:
+        """
+        ACBP mandatory courses (the departmental training plan) as recommendations,
+        always included whatever their score. `gaps` is keyed by catalogue
+        competency id, so a mandatory course that also closes a gap says so.
+        """
+        out: List[RecommendationResult] = []
+        for m in mandatory:
+            cid = m.get("courseId")
+            if not cid or cid in exclude_ids:
+                continue
+            idx = self._by_id.get(cid)
+            doc = self._catalog[idx] if idx is not None else None
+            comp = m.get("competencyId") or ""
+            gap = gaps.get(comp)
+            level = m.get("level") or (doc.comp_levels.get(comp) if doc else None)
+            comp_name = ((gap.competencyName if gap else None) or (names or {}).get(comp)
+                         or self._frac_map.get(comp, {}).get("name") or comp)
+            if gap and doc:
+                why = self._why(gap, doc, level, self._uplift.get(cid) or {}, None)
+            else:
+                why = {"gap": None, "levelStep": {"from": None, "to": level, "kind": "mandatory"},
+                       "badges": [], "summary": m.get("reason") or "Mandatory in your capacity-building plan."}
+            why["badges"] = [{"key": "mandatory", "label": "Mandatory"
+                              + (" · APAR-linked" if m.get("aparLinked") else "")}] + why["badges"]
+            reasons = ["Mandatory in your Annual Capacity Building Plan"
+                       + (" (APAR-linked)" if m.get("aparLinked") else "")]
+            if m.get("reason"):
+                reasons.append(m["reason"])
+            out.append(RecommendationResult(
+                courseId=cid, title=(doc.name if doc else m.get("title") or cid),
+                provider=((doc.creator or doc.channel) if doc else "") or "iGOT Karmayogi",
+                durationHours=(doc.duration_hrs if doc else float(m.get("hours") or _FALLBACK_DURS)),
+                finalScore=1.0, relevanceScore=1.0, qualityScore=0.0,
+                isTpac=bool(doc and doc.is_tpac), competencyId=(gap.competencyId if gap else comp),
+                competencyName=comp_name, priorityRank=0, matchReasons=reasons, matchType="acbp_mandatory",
+                tpacSource=(doc.tpac_source if doc else "none"), courseLevel=level,
+                modality=(doc.modality if doc else None), mandatory=True, why=why,
+            ))
+        return out
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -882,7 +1059,7 @@ class HybridRecommendationEngine:
                 gap, levels, enrolled_ids | seen_course_ids,
                 pool_size=max(limit_per_gap * 5, 50),
             )
-            picked = _interleave_by_level(scored)[:limit_per_gap]
+            picked = _spread_modalities(_interleave_by_level(scored), limit_per_gap)
             seen_course_ids.update(r.courseId for r in picked)
             all_results.extend(picked)
 
@@ -1469,6 +1646,45 @@ def _interleave_by_level(results: List[RecommendationResult]) -> List[Recommenda
                 out.append(by_level[lvl][depth])
         depth += 1
     return out
+
+
+# A course of a format not yet picked for this gap may replace the next in line
+# if it is at the same level, among the next 3 candidates, and its finalScore is
+# within this margin of it — near-equal courses only, never a clearly worse one.
+_MODALITY_SWAP_MARGIN = 0.15
+_MODALITY_WINDOW = 3
+
+
+def _spread_modalities(ordered: List[RecommendationResult], k: int) -> List[RecommendationResult]:
+    """
+    Pick k from `ordered` (already in preference order) but spread formats
+    (self-paced, classroom, virtual lab): at each slot, a near-equal candidate
+    with an unseen modality is taken ahead of a repeat. The picks keep their
+    interleaved order (best of each level, lowest level first).
+    """
+    pool, picked, seen = list(ordered), [], set()
+    while pool and len(picked) < k:
+        head = pool[0]
+        choice = head
+        if head.modality in seen:
+            for cand in pool[1:_MODALITY_WINDOW + 1]:
+                if (cand.modality and cand.modality not in seen
+                        and cand.finalScore >= head.finalScore - _MODALITY_SWAP_MARGIN
+                        and (cand.courseLevel or 0) == (head.courseLevel or 0)):
+                    choice = cand
+                    break
+        pool.remove(choice)
+        picked.append(choice)
+        if choice.modality:
+            seen.add(choice.modality)
+    order = {id(r): i for i, r in enumerate(ordered)}
+    return sorted(picked, key=lambda r: order[id(r)])
+
+
+def text_hash(text: str) -> str:
+    """Stable hash of a course's embedded text — decides whether a stored vector is still valid."""
+    import hashlib
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:16]
 
 
 def _course_summary(r: RecommendationResult, progress: float = 0.0) -> Dict[str, Any]:

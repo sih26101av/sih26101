@@ -2,72 +2,225 @@
 
 Ministry-side view at `/admin` (role `admin` only), built on the shared `AppShell`
 (see [learner-dashboard.md](learner-dashboard.md) for the shell components).
+Everything except the FRAC dictionary is computed on the server by the **admin
+console** (`routers/admin_console.py`). The browser gets one page or one
+aggregate at a time. It never downloads and aggregates the whole roster.
 
 ## Code
 
-- `src/pages/AdminDashboard.tsx` — six in-page sections, `AdminTab = 'dashboard' |
-  'officials' | 'competencies' | 'analytics' | 'insights' | 'reports'` (state only,
-  **no** new routes, so the single `/admin` guard still covers everything).
-  - `insights` → `components/admin/WorkforceInsights.tsx`: SCIL v6 views on
-    synthetic data (banner says so) — `GsbpmScopePanel`, `PrerequisitePanel`,
-    `TrainingEffectivenessPanel`, `CapabilityRiskPanel`, `ForesightPanel`,
-    `TpacAgendaPanel`; each reads one admin endpoint under `/api/v1/admin/…`
-    (`routers/insights.py`) through `useInsight`. Suppressed counts show as
-    "<5". See [workforce-insights.md](workforce-insights.md).
-  - `dashboard` → 4 `StatCard`s (total officials, FRAC competencies, training
-    compliance, avg missing skills) + `shortageChart` + `deptChart` + "Officials
-    Needing Training" + "Data Sources" + the Generate Report banner.
-  - `officials` → status filter chips (`statusFilter`), paginated `RosterRow` table,
-    CSV export.
-  - `competencies` → paginated `SkillTableRow` table, CSV export.
-  - `analytics` → status tiles + both charts at full height.
-  - `reports` → three export cards.
-  - Helpers: `ITEMS_PER_PAGE = 10`, `enrollmentLabel(status)`, `STATUS_CHIP`,
-    `downloadCsv`, `Pagination`, `TableSkeleton`, `ErrorBanner`, `FeedStatus`.
-  - Charts are derived from live data: `shortageChart` renders the hook's `heatmap`
-    (previously ignored in favour of a hardcoded array); `deptChart` renders
-    `deptCompliance`, the per-department completion rate computed from the roster.
-  - The topbar search is wired to `searchTerm` (it used to be a dead input), and the
-    "Filters" button is replaced by working status chips.
-- `src/hooks/useAdminData.ts` — fetches the roster via `fetchAllUsers()`, derives
-  `AdminRosterRow`, `AdminKPIs` and `HeatmapEntry[]`; `levelToNumber` parses
-  `"Level 3"`; `GAP_COLORS` drives the heatmap palette.
-- `src/hooks/useSkillsData.ts` — FRAC dictionary via `fetchCompetencies()`
-  (`SkillRow = FracCompetency`).
-- `src/services/api.ts` — `fetchAllUsers()` → `GET /api/v1/admin/users`,
-  `fetchCompetencies()` → `GET /api/v1/admin/frac/competencies`.
-- Backend: `main-lms-backend/main.py::get_admin_roster` and
-  `get_frac_competencies` — both `Depends(require_role("admin"))`, proxy to the mock
-  server with `x-authenticated-user-token`, and return the unwrapped `result`.
-- Route guard: `<ProtectedRoute requiredRole="admin">` in `src/App.tsx`.
+### Frontend
+- `src/pages/AdminDashboard.tsx` — eight in-page sections, `AdminTab =
+  'dashboard' | 'officials' | 'competencies' | 'analytics' | 'emerging' |
+  'actions' | 'insights' | 'reports'`. These are state only, **not** routes, so the
+  single `/admin` guard still covers everything.
+  - **Shared filters.** One `AdminFilters` state `{department, grade, office}`
+    feeds every per-official view and every export, through `AdminFilterBar`.
+    The `competencies` tab is excluded because the FRAC dictionary isn't
+    per-official. On `insights`, the office filter drives the GSBPM scope panel
+    (`WorkforceInsights office=…`). The product-level panels there stay NSO-wide.
+  - `dashboard` has:
+    - 4 `StatCard`s: officials, training compliance, mandatory (ACBP)
+      completion, and avg missing skills;
+    - a compact `TrendsPanel`, the shortage chart and the department chart
+      (the 5 largest departments);
+    - "Officials needing training" and a compact `SystemHealthPanel`;
+    - a CTA to Emerging Skills.
+  - `officials` shows a server-paginated roster (`useAdminRoster`), status chips
+    with server counts, the grade and mandatory progress columns, and CSV/PDF
+    export. Search is debounced by 300 ms.
+  - `competencies` shows the FRAC dictionary, paginated client-side (40 rows),
+    with a client CSV export.
+  - `analytics` shows the status tiles, the full `TrendsPanel`, the shortage index
+    and the department chart (all departments with at least 5 officials,
+    compliance % and mandatory % side by side), each with CSV/PDF.
+  - `emerging` → `components/admin/EmergingSkills.tsx`.
+  - `actions` → `components/admin/AdminActions.tsx` + `CertificateReviewQueue.tsx`
+    (approve/reject external certificates: documented → verified; see
+    [certificate-evidence-extraction.md](certificate-evidence-extraction.md)).
+  - `insights` → `components/admin/WorkforceInsights.tsx`. See
+    [workforce-insights.md](workforce-insights.md).
+  - `reports` has six export cards: roster, behind on mandatory, emerging skills,
+    trends, departments and shortages. Each card has CSV and PDF.
+- `src/hooks/useAdminData.ts`:
+  - `useAsync(fn, key)` is a generic loader with refetch; it drops stale
+    responses.
+  - `useAdminFacets`, `useAdminOverview(filters)`,
+    `useAdminRoster(filters, page, size, search, status)`, `filterKey`.
+- `src/components/admin/`:
+  - `AdminFilterBar.tsx`: the three facet selects with headcounts, `ExportButton`
+    and `facetLabels`.
+  - `TrendsPanel.tsx`: one point per day for the range (30d / 90d / 1y).
+    - **Training rates (%)**: compliance, mandatory completion, and
+      competencies at target. The first two come from snapshots or
+      reconstruction; "at target" exists only on snapshot days. A dashed marker
+      shows where the daily snapshots begin.
+    - **Course completions per week**: a bar chart.
+    - **Average FRAC level**: a line once there are two or more daily
+      snapshots, until then today's value as text.
+    - The compact dashboard version shows rates + weekly completions. The full
+      version adds "Snapshot now" and CSV.
+  - `SystemHealthPanel.tsx`: per-component status chips (icon + label). "Live
+    check" re-probes everything, including a real Gemini call.
+  - `EmergingSkills.tsx`: shortlist cards, a grouped bar chart (required / supply
+    today / expected in 36 m) and a full ranked table, with CSV/PDF.
+  - `AdminActions.tsx`: the assign-plan form (catalogue search, department or
+    selected officials, due date), the "behind on mandatory" table (selection,
+    nudge selected / nudge all in view, custom message), the assigned plans
+    with progress bars, and the recent nudges log.
+  - `adminReport.ts`: `printReport` (a print-styled HTML report in a new window
+    → the browser's "Save as PDF") and `describeFilters`.
+  - Chart colours come from a palette checked with the dataviz validator:
+    `#1d4ed8 / #ea580c / #0d9488` (light) and `#3b82f6 / …` (dark), in fixed
+    order.
+- `src/services/api.ts` (section "ADMIN CONSOLE") has the typed fetchers for
+  every endpoint below, plus `downloadAdminCsv(kind, filters, extra)`, an
+  authenticated blob download with 401 refresh.
 
-## In / out
+### Backend
+- `routers/admin_console.py`:
+  - Admin endpoints use `require_role("admin")` and sit under
+    `/api/v1/admin/console`.
+  - The roster comes from `MockIgotAdapter.fetch_user_roster()`. It is
+    normalised and cached for 60 s; when the mock is down, the stale copy is
+    served.
+- `services/admin_analytics.py`: pure functions `normalise`, `Filters`,
+  `search`, `paginate`, `facets`, `kpis`, `heatmap`, `dept_compliance`,
+  `mandatory_summary`, `daily_metrics`, `trend_point` and `emerging_skills`.
+  Tests: `tests/test_admin_analytics.py`, `tests/test_admin_console_api.py`
+  (in-memory SQLite).
+- `services/system_health.py`:
+  - `basic()` is the `GET /health` payload (main.py now returns it).
+  - `detailed(probe_gemini)` adds probes: iGOT `/health` with latency, the
+    auth DB (`SELECT 1`; SQLite counts as degraded), the engine, the reference
+    datasets, the workforce snapshot, the catalogue and chat embedders, the Gyan
+    semantic tier, and Gemini. Without `probeGemini`, Gemini only checks that a
+    key is configured; with it, it calls `list_models` with a 10 s timeout.
+- `models/models.py` adds three tables to the auth DB (created by
+  `main._create_schema`):
+  - `AdminDailySnapshot`: `snapshotDate` PK and `metrics` JSON;
+  - `TrainingAssignment`;
+  - `TrainingNudge`.
+- `main.py`:
+  - includes `admin_console.router` + `learner_router`;
+  - `_startup` launches `daily_snapshot_loop()`;
+  - the legacy `GET /api/v1/admin/users` and `/admin/frac/competencies` proxies
+    are unchanged.
+- The mock roster (`GET /api/admin/v1/users`) now also returns `grade`,
+  `officeId`, `officeName`, `roleId`, `completedCourseIds` and `mandatory`. See
+  [mock-igot-integration.md](mock-igot-integration.md).
 
-- In: admin JWT.
-- Out (roster): `{users: [{userId, govId, firstName, lastName, email, designation,
-  department, competencies[], enrollmentStatus, missingSkill}], count}`.
-- Out (FRAC): `{competencies: [{competency_id, name, category, description}], count}`.
+## Endpoints (`/api/v1/admin/console`, all take `?department=&grade=&office=`)
 
-## Connections
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/filters` | `{departments, grades, offices}`: `[{value, label, count}]` over the whole roster |
+| GET | `/overview` | `{kpis{totalOfficials, trainingCompliancePct, avgMissingSkills, mandatory{officialsWithPlan, behind, coursesAssigned, coursesCompleted, completionPct}, suppressed}, statusCounts, heatmap[{competency, gap, officials}], deptCompliance[{dept, headcount, pct, mandatoryPct, behindMandatory, suppressed}], needsTraining[5]}` |
+| GET | `/roster?page=&pageSize=&search=&status=` | `{items[AdminRosterRow], total, page, pageSize, totalPages, statusCounts}` |
+| GET | `/trends?days=` | `{points[{date, reconstructed, officials, compliancePct, mandatoryCompletionPct, behindMandatory?, avgMissingSkills?, avgLevel?, atTargetPct?, assessedPct?}], weeklyCompletions[{weekStart, completions}], liveSnapshots, firstLiveSnapshot, scope, note}`: one point per day |
+| POST | `/trends/snapshot` | upserts today's snapshot now |
+| GET | `/courses?q=` | catalogue search for the assign form |
+| GET/POST | `/assignments` | the plans assigned so far, with progress `{completedAll, completedSome, completionPct}` and `overdue` / create one |
+| GET | `/mandatory-behind?page=&pageSize=&search=` | officials with pending ACBP courses, with `lastNudgedAt`, plus `summary` |
+| GET/POST | `/nudges` | the nudge log / send nudges `{userIds?, department?, grade?, office?, message?, force?}` → `{sent, skipped[{userId, reason}]}` |
+| GET | `/emerging-skills` | see below |
+| GET | `/system-health?probeGemini=` | `{overall, checkedAt, health (= /health), components[{id, label, status, detail, latencyMs?}], lastDailySnapshot}` |
+| GET | `/export/{kind}.csv` | kind: `roster` (also takes `search`, `status`), `mandatory-behind`, `emerging-skills`, `trends` (`days`), `departments`, `shortages` |
 
-The backend is the single auth-enforcement point — the admin UI never calls port
-8001 directly. Data originates from the mock server's generated (synthetic)
-`data/userdata.json` and `data/frac_competencies.json`; the FRAC table now lists
-the 40 catalogue competencies roles are defined in (the 331-entry iGOT CID
-dictionary is still served by the mock at `?dictionary=igot`).
+Learner side (the learner or an admin only):
+- `GET /api/v1/learner/{id}/training-actions` returns
+  `{nudges[], assignments[], unread}`.
+- `POST /api/v1/learner/{id}/nudges/{nudgeId}/read` marks a nudge read.
+
+## How the parts work
+
+- **Daily snapshot.**
+  - `daily_snapshot_loop` waits for the DB, then waits up to 10 min for the
+    workforce snapshot so that the first row carries competency levels.
+  - After that it **upserts today's row every hour**, so each day keeps its last
+    reading.
+  - A row stores the `overall` metrics plus `byDepartment`, `byGrade` and
+    `byOffice`.
+  - With several filters, a trend uses the most specific stored breakdown
+    (office > department > grade), and the response says which. The stored
+    breakdowns are one-dimensional, so exact combinations are not stored.
+- **Reconstructed history.** `admin_analytics.reconstruct_history` is computed
+  on read and never stored. It covers every day in range that has no stored
+  snapshot:
+  - `compliancePct` = officials whose first completion (from the mock
+    roster's `completions[{courseId, completedDate}]`) falls on or before the
+    day;
+  - `mandatoryCompletionPct` = current-cycle ACBP courses (`mandatory.courseIds`)
+    completed by the day, over all courses assigned;
+  - `weeklyCompletions` = course completions per week.
+
+  It is exact for any filter combination. Assumptions: the population is
+  today's roster and the ACBP plan is today's, so courses completed before the
+  cycle started count as done. A stored snapshot wins on its own day. Points
+  are flagged `reconstructed: true/false`. Competency levels are never
+  reconstructed.
+- **Competency growth.**
+  - `avgLevel`, `atTargetPct` and `assessedPct` come from the workforce snapshot
+    (`app_state.snapshot`). They are `null` until the snapshot is built.
+- **Assignments.**
+  - Assignees are resolved when the assignment is created. For a department,
+    that means the department narrowed by the grade / office in the body; for
+    officials, the explicit `userIds`.
+  - Course IDs are validated against the engine catalogue.
+  - Progress is computed from `completedCourseIds` in the roster.
+  - Nothing is pushed to iGOT. The mock has no CBP-assignment write API.
+- **Nudges.**
+  - Only officials whose ACBP `mandatory.completed < total` can be nudged.
+  - There is a 24 h cooldown per official (`NUDGE_COOLDOWN_H`) unless
+    `force`.
+  - Each nudge row stores the courses that were pending at send time.
+- **Emerging skills** (`admin_analytics.emerging_skills`), per FRAC competency,
+  over the filtered officials in the workforce snapshot:
+  - `required` = officials whose role sets a target on it.
+  - `supplyNow` = those whose displayed level meets the target.
+  - `expectedSupply36` = Σ P(in service at 36 m) × P(θ ≥ own target). θ is
+    decayed with `workforce_service._p_capable`, which now takes an optional
+    `threshold`. P(in service) = before superannuation × (1 − 0.03)³.
+  - Assumptions: no new learning, and role demand held constant.
+  - `priorityScore` = shortfall36 × 1.25 if in the GSBPM core × 1.25 if
+    product-critical.
+  - The top 10 with a shortfall are flagged `trainNextYear`.
+  - `recommendedAction`, checked in this order:
+    1. commission a course at the missing catalogue levels;
+    2. otherwise, review existing courses if any are flagged for low uplift;
+    3. otherwise, run a cohort programme;
+    4. otherwise, monitor.
+  - Counts of 1–4 are suppressed to `<5`.
+- **Small cells.**
+  - Departments, trend groups and KPI sets with fewer than 5 officials
+    suppress their percentages.
+  - Counts use `workforce_service.cell`.
+
+## What the synthetic data shows
+
+- FY2026-27 ACBP completion is 2.8%: 151 of 151 officials have at least one
+  pending mandatory course, because the cycle has just started. Filter by
+  department before using "Nudge all".
+- Every official has `enrollmentStatus = 2`, so "training compliance" (at
+  least one completed course) is 100%. The mandatory-completion KPI is the
+  informative one.
+- Emerging skills puts Survey Design, Price Statistics / CPI, Change
+  Management, Leadership and Data Governance on top. As in the foresight view,
+  the 6.5-month accuracy half-life drives most of the 36-month decline.
 
 ## TODOs / edge cases
 
-- The hardcoded demo constants (`SPARKLINE_DATA`, `PIE_DATA`, the static bar-chart
-  array, and the `151` / `2.4` / `87%` KPI fallbacks) have been removed. Empty data
-  now renders as an empty state rather than invented numbers.
-- No time-series data exists anywhere in the API, so there is no "user growth over
-  time" chart; the slot holds departmental compliance instead.
-- There is no activity-feed or service-health endpoint. "Data Sources" reports the
-  real load state of the two hooks; it is not a health probe.
-- KPIs, the heatmap and departmental compliance are computed client-side over the
-  full roster on every load; there is no server-side aggregation or pagination.
-- The roster proxy has no timeout tuning beyond 15 s and no retry; a mock-server
-  outage surfaces as an httpx exception → 500.
-- Admin still has no write actions (no CBP assignment, no user edit). The only
-  outbound actions are the three client-side CSV exports.
+- There is no learner UI yet for nudges and assignments. The endpoint exists
+  (`/training-actions`); wiring it into the learner dashboard notifications is
+  left for the learner-dashboard feature.
+- Assignments are not pushed to iGOT, and completion only counts courses
+  completed in iGOT enrolments.
+- The roster is still fetched whole from the mock (cached for 60 s) and
+  paginated in the backend. A real iGOT deployment would need server-side
+  paging upstream.
+- The trend breakdowns are one dimension each, so exact filter combinations
+  are not stored.
+- The PDF export uses the browser print dialog; pop-ups must be allowed. Roster
+  and "behind" PDFs cap at 200 rows (the CSV has everything).
+- Several backend instances sharing Neon each upsert the same daily row. This
+  is harmless (last writer wins), but a unique-key race on the very first
+  insert of a day is logged and retried by the next hourly tick.

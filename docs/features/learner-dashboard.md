@@ -14,13 +14,17 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     `assessments`, `certificates`, `karma`) and aliases (`skill-gaps`, `courses`).
   - `dashboard` → (no `PageHeader`; the banner carries the date chip) `ProfileHeader` + 5 `StatCard` tiles (assessed, active gaps,
     mandatory gaps, recommendations, overall proficiency) + `CompetencyOverviewTable`
-    + `LearningSnapshot` + `RecentActivityList` + a 3-card
+    + right column (top→bottom) `LearningSnapshot`, `CareerReadinessCard`,
+    `RecentActivityList` + a 3-card
     `RecommendationsPanel` preview.
   - `my-courses` → `MyCoursesView`; `progress` → `ProgressView` + `LearningSnapshot`.
   - `skill-gap` → 4 stat tiles + `SkillGapCard` (filtered by the topbar search).
   - `recommendations` → full `RecommendationsPanel` (honours the competency filter).
   - `assessments` → `StudioPromo` + `AssessmentUploadZone` + a top-5 gap list.
-  - `certificates` → `CertificateUploadZone` + `RecentActivityList`.
+  - `certificates` → `components/dashboard/CertificateUploadZone.tsx` (posts to
+    `/competencies/upload-certificate`, lists the official's submissions, calls
+    `refetch` on success; see [certificate-evidence-extraction.md](certificate-evidence-extraction.md))
+    + `RecentActivityList`.
   - `karma` → `KarmaRewardsView` (see `karma-points.md`).
   - Persistent: `ChatWidget` (rendered outside the shell, fixed).
   - Sidebar: `SidebarArt` (`public/sidebar-palace.webp` palace illustration, masked
@@ -82,8 +86,16 @@ sections, all fed by the single `useLearnerDashboard` fetch.
     scrim in dark mode): tricolour-ring avatar, name + Verified chip, role, id /
     department / last-assessed chips, today's date chip, ministry strapline,
     LEARN·ANALYSE·CONTRIBUTE·GROW motto (xl+), saffron/green bottom accent.
-  - `RightSidebar.tsx` — compact karma card, milestone stepper, career-match card
-    (no longer mounted; the Karma tab uses `components/karma/KarmaRewardsView.tsx`).
+  - `RightSidebar.tsx` — compact karma card + `CareerReadinessCard` (the sidebar
+    itself is no longer mounted; the Karma tab uses `components/karma/KarmaRewardsView.tsx`).
+  - `CareerReadinessCard.tsx` — mounted in the overview's right column. Reads
+    `GET /api/v1/learner/{id}/career-readiness` (`fetchCareerReadiness`): readiness %
+    for the next role, its largest gaps (NEW = not in the current role), the office
+    tier ladder. Refetches when any level changes (`refreshKey`). See
+    [skill-gap-analysis.md](skill-gap-analysis.md).
+  - `LevelCheckModal.tsx` — opened from "Disagree with this level?" / "Check my
+    level" on each gap row: records a level dispute and runs the adaptive level
+    check in place, then calls `refetch`.
   - `AssessmentUploadZone.tsx` — now rendered (Assessment Studio section); it was
     orphaned before this redesign.
 - `src/types/domain.ts` — `Official`, `SkillGapEntry`, `CourseRecommendation`,
@@ -150,10 +162,8 @@ gaps and recommendations it already has in state (the bot does not re-query them
 
 - `AssessmentUploadZone` has a hardcoded default `userId = 'usr_720465595'` (the
   dashboard now always passes the real id).
-- `MilestoneStepper` and `CareerCard` (`CAREER_MATCH_PCT = 82`) in `RightSidebar` are
-  static placeholder content, not backed by data.
-- `CertificateUploadZone` still only `alert()`s — it does not post to the certificate
-  evidence endpoint.
+- The static `CareerCard` (`CAREER_MATCH_PCT = 82`) and `MilestoneStepper` were
+  removed. `CareerReadinessCard` replaces them with live data.
 - Overall proficiency is `mean(min(1, current/required))` over `skillGaps`, computed
   client-side; there is no server-side equivalent.
 - API base URLs are hardcoded to `http://localhost:8000` in `api.ts`, `authApi.ts`

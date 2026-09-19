@@ -1,148 +1,71 @@
 /**
  * FILE: src/hooks/useAdminData.ts
  *
- * Fetches live admin roster from /api/admin/v1/users, then computes
- * KPIs and the heatmap entirely from real data. Zero mock/static data.
+ * Admin console data hooks. KPIs, the shortage heatmap, departmental
+ * compliance and roster pages are computed on the server
+ * (/api/v1/admin/console/*, routers/admin_console.py) — the browser no longer
+ * downloads and aggregates the whole roster. Every hook takes the shared
+ * department / grade / office filters.
  */
 
-import { useState, useEffect } from 'react';
-import { fetchAllUsers } from '../services/api';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  fetchAdminFacets, fetchAdminOverview, fetchAdminRoster,
+  type AdminFacets, type AdminFilters, type AdminOverview, type AdminRosterRow, type Page, type StatusCounts,
+} from '../services/api';
 
-// ─── Shapes the hook exposes ───────────────────────────────────────────────────
-export interface AdminRosterRow {
-  userId:           string;
-  govId:            string;
-  firstName:        string;
-  lastName:         string;
-  email:            string;
-  designation:      string;
-  department:       string;
-  enrollmentStatus: number;   // 0=none, 1=in-progress, 2=completed
-  missingSkill:     string | null;
-}
+export type { AdminRosterRow } from '../services/api';
 
-export interface AdminKPIs {
-  totalOfficials:       number;
-  avgMissingSkills:     number;  // avg competencies in PLANNED/IN_PROGRESS per user
-  trainingCompliancePct: number; // % with at least one completed course
-}
-
-export interface HeatmapEntry {
-  competency: string;
-  gap:        number;
-  color:      [string, string];
-}
-
-export interface UseAdminDataResult {
-  roster:    AdminRosterRow[];
-  kpis:      AdminKPIs;
-  heatmap:   HeatmapEntry[];
+export interface AsyncState<T> {
+  data: T | null;
   isLoading: boolean;
-  error:     string | null;
-  refetch:   () => void;
+  error: string | null;
+  refetch: () => void;
 }
 
-const GAP_COLORS: [string, string][] = [
-  ['#1e3a8a', '#172554'],
-  ['#0f766e', '#115e59'],
-  ['#2dd4bf', '#0d9488'],
-  ['#eab308', '#a16207'],
-  ['#f97316', '#c2410c'],
-  ['#7c3aed', '#4c1d95'],
-];
-
-function levelToNumber(levelStr: string): number {
-  const m = (levelStr ?? '').match(/\d+/);
-  return m ? parseInt(m[0], 10) : 2;
-}
-
-// ─── Hook ──────────────────────────────────────────────────────────────────────
-export function useAdminData(): UseAdminDataResult {
-  const [roster,    setRoster]    = useState<AdminRosterRow[]>([]);
-  const [kpis,      setKpis]      = useState<AdminKPIs>({ totalOfficials: 0, avgMissingSkills: 0, trainingCompliancePct: 0 });
-  const [heatmap,   setHeatmap]   = useState<HeatmapEntry[]>([]);
-  const [isLoading, setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
-  const [tick,      setTick]      = useState(0);
-
-  const refetch = () => setTick(t => t + 1);
+/** Load `fn` whenever `key` changes (or on refetch); stale responses are dropped. */
+export function useAsync<T>(fn: () => Promise<T>, key: string): AsyncState<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // fetchAllUsers() hits /api/admin/v1/users — returns pre-enriched rows
-        const raw: any[] = await fetchAllUsers() as any;
-
-        if (cancelled) return;
-
-        // ── Build roster rows ─────────────────────────────────────────────
-        const rows: AdminRosterRow[] = raw.map((u: any) => ({
-          userId:           u.userId,
-          govId:            u.govId ?? u.userId,
-          firstName:        u.firstName ?? '',
-          lastName:         u.lastName ?? '',
-          email:            u.email ?? '',
-          designation:      u.designation ?? 'Official',
-          department:       u.department ?? 'MoSPI',
-          enrollmentStatus: u.enrollmentStatus ?? 0,
-          missingSkill:     u.missingSkill ?? null,
-        }));
-
-        // ── Compute KPIs from live data ───────────────────────────────────
-        const total = rows.length;
-        const compliant = rows.filter(r => r.enrollmentStatus === 2).length;
-        const compliancePct = total > 0 ? Math.round((compliant / total) * 100) : 0;
-
-        // Avg missing competencies: count PLANNED/IN_PROGRESS per user, average
-        const totalMissing = raw.reduce((acc: number, u: any) => {
-          const comps: any[] = u.competencies ?? [];
-          return acc + comps.filter((c: any) => c.status === 'PLANNED' || c.status === 'IN_PROGRESS').length;
-        }, 0);
-        const avgMissing = total > 0 ? parseFloat((totalMissing / total).toFixed(1)) : 0;
-
-        // ── Build heatmap from competency deficiency frequency ────────────
-        const freqMap: Record<string, number> = {};
-        raw.forEach((u: any) => {
-          const comps: any[] = u.competencies ?? [];
-          comps.forEach((c: any) => {
-            if (c.status === 'PLANNED' || c.status === 'IN_PROGRESS') {
-              const penalty = c.status === 'PLANNED' ? 1.5 : 1;
-              const level = levelToNumber(c.competencyLevel ?? 'Level 2');
-              freqMap[c.name] = (freqMap[c.name] ?? 0) + penalty * (4 - level);
-            }
-          });
-        });
-
-        const heatmapEntries: HeatmapEntry[] = Object.entries(freqMap)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5)
-          .map(([comp, score], i) => ({
-            competency: comp.length > 20 ? comp.slice(0, 20) + '…' : comp,
-            gap:        parseFloat(score.toFixed(1)),
-            color:      GAP_COLORS[i % GAP_COLORS.length],
-          }));
-
-        setRoster(rows);
-        setKpis({ totalOfficials: total, avgMissingSkills: avgMissing, trainingCompliancePct: compliancePct });
-        setHeatmap(heatmapEntries);
-      } catch (err) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Failed to load admin data';
-          console.error('[useAdminData]', msg);
-          setError(msg);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
+    setLoading(true);
+    setError(null);
+    fn()
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Request failed');
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [tick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, tick]);
 
-  return { roster, kpis, heatmap, isLoading, error, refetch };
+  return { data, isLoading, error, refetch };
+}
+
+export const filterKey = (f: AdminFilters) => `${f.department ?? ''}|${f.grade ?? ''}|${f.office ?? ''}`;
+
+export function useAdminFacets(): AsyncState<AdminFacets> {
+  return useAsync(fetchAdminFacets, 'facets');
+}
+
+/** KPIs + status counts + heatmap + departmental compliance for the filtered workforce. */
+export function useAdminOverview(filters: AdminFilters): AsyncState<AdminOverview> {
+  return useAsync(() => fetchAdminOverview(filters), filterKey(filters));
+}
+
+/** One server-side page of the roster. */
+export function useAdminRoster(
+  filters: AdminFilters, page: number, pageSize: number, search: string, status: 'all' | 0 | 1 | 2,
+): AsyncState<Page<AdminRosterRow> & { statusCounts: StatusCounts }> {
+  const st = status === 'all' ? undefined : status;
+  return useAsync(
+    () => fetchAdminRoster(filters, page, pageSize, search, st),
+    `${filterKey(filters)}|${page}|${pageSize}|${search}|${status}`,
+  );
 }

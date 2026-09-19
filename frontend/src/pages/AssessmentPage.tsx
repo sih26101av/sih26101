@@ -6,6 +6,11 @@
  *
  * Sections: new_quiz · history · settings, inside the shared AppShell.
  *
+ * Document quizzes: the learner picks the question count (3–20), the objective
+ * types (MCQ, True/False, multi-select, fill-in-the-blank, numeric) and the
+ * language (English, Hindi, bilingual); questions render through
+ * components/assessment/QuizQuestionInput.tsx.
+ *
  * Grading goes through the authenticated `gradeQuiz` (JWT → learner id). Every
  * first attempt moves the learner's practice ability on the linked role
  * competency with a difficulty-aware step, and the result screen shows the
@@ -23,7 +28,7 @@ import {
 
 import { useAuth } from "../context/AuthContext";
 import { fetchQuizAttempts, gradeQuiz } from "../services/api";
-import type { QuizAttemptRecord, QuizGradeResult } from "../services/api";
+import type { DocQuizQuestion, QuizAnswer, QuizAttemptRecord, QuizGradeResult, QuizQuestionType } from "../services/api";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
 import PageHeader from "../components/shell/PageHeader";
@@ -31,11 +36,23 @@ import { MediaAnalysisCard, MediaAnswerReview, YoutubeLinkInput } from "../compo
 import { MEDIA_ACCEPT, generateMediaQuiz, generateYoutubeQuiz, isMediaFile, isYoutubeUrl } from "../services/mediaQuizApi";
 import SectionCard from "../components/shell/SectionCard";
 import { DifficultyChip, QuizQuestionReview, QuizRecommendations, SkillImpactCard } from "../components/assessment/QuizSkillImpact";
+import QuizQuestionInput, { TYPE_LABEL, emptyAnswer, isAnswered, type QuizLang } from "../components/assessment/QuizQuestionInput";
 
 type StudioTab = "new_quiz" | "history" | "settings";
 type Difficulty = "Easy" | "Medium" | "Hard";
 
 const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+const QUESTION_TYPES: QuizQuestionType[] = ["mcq", "true_false", "multi_select", "fill_blank", "numeric"];
+const QUESTION_COUNTS = [3, 5, 8, 10, 15, 20];
+const LANGUAGES: { id: QuizLang; label: string }[] = [
+  { id: "en", label: "English" },
+  { id: "hi", label: "हिंदी" },
+  { id: "bi", label: "Bilingual" },
+];
+
+/** FastAPI errors: `detail` is a string, or {message, …} for generation failures. */
+const errorText = (body: any, fallback: string): string =>
+  typeof body?.detail === "string" ? body.detail : body?.detail?.message ?? fallback;
 
 const formatDate = (iso: string | null): string => {
   if (!iso) return "—";
@@ -57,7 +74,7 @@ const AssessmentPage: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [quizData, setQuizData] = useState<any>(null);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [scoreInfo, setScoreInfo] = useState<QuizGradeResult | null>(null);
 
   const [activeTab, setActiveTab] = useState<StudioTab>("new_quiz");
@@ -65,6 +82,13 @@ const AssessmentPage: React.FC = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
   const [searchTerm, setSearchTerm] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [numQuestions, setNumQuestions] = useState(5);
+  const [questionTypes, setQuestionTypes] = useState<QuizQuestionType[]>(QUESTION_TYPES);
+  const [quizLanguage, setQuizLanguage] = useState<QuizLang>("en");
+  const [displayLang, setDisplayLang] = useState<QuizLang>("en");
+
+  const toggleType = (t: QuizQuestionType) =>
+    setQuestionTypes((cur) => (cur.includes(t) ? (cur.length > 1 ? cur.filter((x) => x !== t) : cur) : [...cur, t]));
 
   // ── Real assessment history ────────────────────────────────────────────────
   const [history, setHistory] = useState<QuizAttemptRecord[]>([]);
@@ -115,7 +139,8 @@ const AssessmentPage: React.FC = () => {
           ? await generateYoutubeQuiz(youtubeUrl, difficulty)
           : await generateMediaQuiz(file as File, difficulty);
         setQuizData(data);
-        setAnswers(new Array(data.questions.length).fill(-1));
+        setAnswers(data.questions.map((q: DocQuizQuestion) => emptyAnswer(q)));
+        setDisplayLang("en");
         setStatus("quiz");
       } catch (err: any) {
         console.error(err);
@@ -134,6 +159,9 @@ const AssessmentPage: React.FC = () => {
       formData.append("file", file as File);
       formData.append("user_id", userId);
       formData.append("difficulty", difficulty);
+      formData.append("num_questions", String(numQuestions));
+      formData.append("question_types", questionTypes.join(","));
+      formData.append("language", quizLanguage);
 
       const res = await fetch("http://localhost:8000/api/v1/rag/upload", {
         method: "POST",
@@ -141,13 +169,14 @@ const AssessmentPage: React.FC = () => {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to generate assessment");
+        const error = await res.json().catch(() => ({}));
+        throw new Error(errorText(error, "Failed to generate assessment"));
       }
 
       const data = await res.json();
       setQuizData(data);
-      setAnswers(new Array(data.questions.length).fill(-1));
+      setAnswers(data.questions.map((q: DocQuizQuestion) => emptyAnswer(q)));
+      setDisplayLang(data.language === "hi" ? "hi" : data.language === "bi" ? "bi" : "en");
       setStatus("quiz");
     } catch (err: any) {
       console.error(err);
@@ -156,14 +185,12 @@ const AssessmentPage: React.FC = () => {
     }
   };
 
-  const handleOptionSelect = (qIndex: number, optionIndex: number) => {
-    const newAnswers = [...answers];
-    newAnswers[qIndex] = optionIndex;
-    setAnswers(newAnswers);
+  const setAnswer = (qIndex: number, value: QuizAnswer) => {
+    setAnswers((cur) => cur.map((a, i) => (i === qIndex ? value : a)));
   };
 
   const handleSubmitQuiz = async () => {
-    if (answers.includes(-1)) {
+    if (quizData.questions.some((q: DocQuizQuestion, i: number) => !isAnswered(q, answers[i]))) {
       setErrorMsg("Please answer all questions before submitting.");
       return;
     }
@@ -198,7 +225,7 @@ const AssessmentPage: React.FC = () => {
     { id: "video", label: "Upload Video", icon: Video },
     { id: "audio", label: "Upload Audio", icon: Mic },
     { id: "pdf", label: "Upload PDF", icon: FileText },
-    { id: "word", label: "Upload Word Doc", icon: File },
+    { id: "word", label: "Upload Word Doc (.docx)", icon: File },
     { id: "text", label: "Paste Text/URL", icon: LinkIcon },
   ];
 
@@ -305,6 +332,36 @@ const AssessmentPage: React.FC = () => {
                     {errorMsg}
                   </div>
                 )}
+
+                {/* Document quizzes only (media quizzes keep their own pipeline) */}
+                <div className="mb-5 grid gap-4 rounded-xl border border-gov-line bg-gov-paper p-4 lg:grid-cols-[auto_1fr_auto] dark:border-slate-700/60 dark:bg-slate-800/40">
+                  <label className="flex items-center gap-2.5 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">
+                    Questions
+                    <select
+                      value={numQuestions}
+                      onChange={(e) => setNumQuestions(Number(e.target.value))}
+                      className="rounded-lg border border-gov-line bg-white px-2 py-1.5 text-[13px] font-semibold text-gov-ink dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                    >
+                      {QUESTION_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Question types">
+                    <span className="mr-1 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Types</span>
+                    {QUESTION_TYPES.map((t) => (
+                      <button key={t} type="button" aria-pressed={questionTypes.includes(t)} onClick={() => toggleType(t)} className="chip-filter">
+                        {TYPE_LABEL[t]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Quiz language">
+                    <span className="mr-1 text-[12.5px] font-medium text-slate-500 dark:text-slate-400">Language</span>
+                    {LANGUAGES.map((l) => (
+                      <button key={l.id} type="button" aria-pressed={quizLanguage === l.id} onClick={() => setQuizLanguage(l.id)} className="chip-filter">
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                   <button type="button" onClick={handleGenerate} className="gov-btn-primary !px-6 !py-3">
@@ -483,7 +540,19 @@ const AssessmentPage: React.FC = () => {
                     ))}
                   </div>
                 </fieldset>
+                <fieldset>
+                  <legend className="mb-2.5 text-[13px] font-semibold text-gov-ink dark:text-white">Default question types (documents)</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {QUESTION_TYPES.map((t) => (
+                      <button key={t} type="button" aria-pressed={questionTypes.includes(t)} onClick={() => toggleType(t)} className="chip-filter">
+                        {TYPE_LABEL[t]}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
                 <p className="rounded-xl border border-gov-line bg-gov-paper px-4 py-3 text-[12px] leading-relaxed text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
+                  Every question cites the passage it was written from, and a question's difficulty is
+                  re-estimated from how learners actually answer it once enough responses exist.
                   Every first attempt updates your practice ability on the role competency the quiz matches:
                   missing an easy question costs more than missing a hard one, and solving a hard question
                   earns more. That ability feeds your skill-gap score. 70% or higher also passes the quiz,
@@ -519,9 +588,18 @@ const AssessmentPage: React.FC = () => {
             <div>
               <h2 className="mb-1 text-2xl font-bold text-gov-ink dark:text-white">Assessment ready</h2>
               <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                {quizData.questions.length} questions · {difficulty} difficulty
+                {quizData.questions.length} questions · {quizData.difficulty ?? difficulty} difficulty
               </p>
             </div>
+            {quizData.language && quizData.language !== "en" && (
+              <div className="flex items-center gap-1.5" role="group" aria-label="Display language">
+                {LANGUAGES.map((l) => (
+                  <button key={l.id} type="button" aria-pressed={displayLang === l.id} onClick={() => setDisplayLang(l.id)} className="chip-filter">
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <span className="flex items-center gap-2 rounded-lg bg-accent-blue-soft px-4 py-2 font-semibold text-accent-blue dark:bg-sky-900/30 dark:text-sky-300">
               <Timer size={18} aria-hidden="true" /> 20:00
             </span>
@@ -536,43 +614,15 @@ const AssessmentPage: React.FC = () => {
           )}
 
           <div className="space-y-5">
-            {quizData.questions.map((q: any, i: number) => (
-              <fieldset key={i} className="panel p-6 md:p-7">
-                <legend className="mb-5 text-[16.5px] font-semibold text-gov-ink dark:text-slate-100">
-                  <span className="mr-3 text-slate-400">{i + 1}.</span>
-                  {q.question}
-                  {q.difficulty && <span className="ml-2 align-middle"><DifficultyChip difficulty={q.difficulty} /></span>}
-                </legend>
-                <div className="space-y-3">
-                  {q.options.map((opt: string, optIdx: number) => {
-                    const isSelected = answers[i] === optIdx;
-                    return (
-                      <label
-                        key={optIdx}
-                        className={`flex cursor-pointer items-center gap-4 rounded-xl border-2 p-4 transition-all ${
-                          isSelected
-                            ? "border-gov-navy bg-accent-blue-soft dark:border-sky-500 dark:bg-sky-900/20"
-                            : "border-gov-line hover:border-gov-blue/40 dark:border-slate-700 dark:hover:border-slate-600"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${i}`}
-                          className="sr-only"
-                          checked={isSelected}
-                          onChange={() => handleOptionSelect(i, optIdx)}
-                        />
-                        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${isSelected ? "border-gov-navy dark:border-sky-400" : "border-slate-300 dark:border-slate-600"}`}>
-                          {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-gov-navy dark:bg-sky-400" />}
-                        </span>
-                        <span className={`font-medium ${isSelected ? "text-gov-navy dark:text-sky-100" : "text-slate-700 dark:text-slate-300"}`}>
-                          {opt}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
+            {quizData.questions.map((q: DocQuizQuestion, i: number) => (
+              <QuizQuestionInput
+                key={i}
+                q={q}
+                index={i}
+                answer={answers[i]}
+                onChange={(a) => setAnswer(i, a)}
+                lang={displayLang}
+              />
             ))}
           </div>
 
@@ -643,7 +693,7 @@ const AssessmentPage: React.FC = () => {
             onRetry={(d) => { setDifficulty(d); reset(); setActiveTab("new_quiz"); }}
           />
           {quizData?.media ? (
-            <MediaAnswerReview questions={quizData.questions} evidence={quizData.evidence ?? []} answers={answers} />
+            <MediaAnswerReview questions={quizData.questions} evidence={quizData.evidence ?? []} answers={answers as number[]} />
           ) : scoreInfo.questionReview && scoreInfo.questionReview.length > 0 ? (
             <QuizQuestionReview rows={scoreInfo.questionReview} />
           ) : null}

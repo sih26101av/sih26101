@@ -33,8 +33,8 @@ endpoints remain reachable.
 ## Connections
 
 Separate from `ai/embedder.py` — this path uses Ollama's `nomic-embed-text`, not the
-shared ONNX model. `document_extractor.py` also talks to Ollama but calls
-`/api/generate` directly and does not use this vector store.
+shared ONNX model. (`document_extractor.py` no longer uses Ollama — it uses Gemini,
+or OCR + the shared e5 embedder.)
 
 ## TODOs / edge cases
 

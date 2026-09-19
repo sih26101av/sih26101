@@ -10,13 +10,16 @@ one study order across all gaps.
 `main-lms-backend/services/recommendation_service.py` — `HybridRecommendationEngine`
 (singleton, built once in `main.py::_warm_up` as `_rec_engine`).
 
-- `__init__(catalog_path, frac_path, catalog=None, frac=None, crosswalk=None)` —
+- `__init__(catalog_path, frac_path, catalog=None, frac=None, crosswalk=None,
+  precomputed_embeddings=None)` —
   takes the catalogue / FRAC set / crosswalk **as served by the mock iGOT server**
   (`main._warm_up` loads them through `MockIgotAdapter`); a list not given is read
   from the same generated file on disk (`catalog_source` = `adapter` | `disk`).
   Loads the FRAC set into `_frac_map` (incl. `levels`: the L1–L5 proficiency
   descriptors from `children`), parses the catalogue into `_catalog` + `_comp_index` + `_by_id`, builds
-  BM25 over `title + description`, encodes the corpus with `ai.embedder`, keeps the
+  BM25 over `title + description`, encodes the corpus with `ai.embedder` (reusing
+  `precomputed_embeddings = {courseId: (text_hash, vec)}` from the DB where the hash
+  still matches — `_corpus_embeddings`, `embedding_stats`, `course_embeddings()`), keeps the
   matrix as `_embeddings` and in a `faiss.IndexFlatIP`, and builds the crosswalk
   anchors (`_xw_ids`, `_xw_emb`, `_xw_threshold`).
 - `_parse_catalog` — parses the JSON-string `competencies_v3` tags **including
@@ -39,11 +42,33 @@ one study order across all gaps.
   (UNASSESSED) are skipped — "no evidence" is not "level 0".
 - `_retrieve_for_gap(gap, top_k, levels)` — **Stage 1** FRAC-tag filter restricted
   to `levels`; **Stage 2** exact cosine over the candidate pool + BM25, RRF
-  `1/(60+rank_dense) + 1/(60+rank_sparse)`, `1.25×` NSSTA boost. Query = official
+  `1/(60+rank_dense) + 1/(60+rank_sparse)`, TPAC boost by provenance
+  (`_TPAC_BOOST`: verified 1.25×, inferred 1.10×, none 1×). Query = official
   FRAC name + description of `gap.catalogue_key` (cached per competency in
   `_query_cache`). No tagged courses at all → full-corpus FAISS `semantic_fallback`.
 - `_score_candidates(gap, levels, exclude_ids)` — Stages 1–3 for one gap:
-  `final = 0.6·relevance + 0.4·quality`, `courseLevel`, `tagSupported`, reasons.
+  `final = 0.6·relevance + 0.4·quality`, `courseLevel`, `tagSupported`, reasons,
+  `modality`, `why` (`_why`). **Stage 2b** `_cross_encoder_norm`: when
+  `ENABLE_CROSS_ENCODER=1`, `ai/reranker.py` scores the top 20 by RRF with a
+  multilingual cross-encoder (`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`,
+  ONNX in `ai/.cache/onnx/<model>/` or sentence-transformers). Relevance then
+  becomes `0.5·RRF_norm + 0.5·CE_norm`, and anything outside the top 20 gets
+  CE = 0. It is off by default and falls back silently (`reranked` is `null`).
+- `_why(gap, doc, course_level, uplift, tag_supported)` — structured "why recommended":
+  `{gap{competencyId,competencyName,currentLevel,targetLevel,gap},
+  levelStep{from,to,kind: next_step|on_the_way|stretch|untagged_level|mandatory},
+  badges[{key: mandatory|tpac_verified|tpac_inferred|measured_improvement|under_review,label}],
+  summary}`.
+- `order_gaps_by_opportunity(gaps, {compId: Low|Medium|High})` — gaps whose priority
+  is within `OPPORTUNITY_TIE_BAND` (10%) are near-ties, and the one the office
+  uses more this cycle goes first (adjacent swaps). Ordinal only.
+- `mandatory_recommendations(mandatory, exclude_ids, gaps, names)` — ACBP courses as
+  `RecommendationResult(mandatory=True, matchType="acbp_mandatory")` with a
+  Mandatory badge; courses outside the catalogue are still listed from ACBP fields.
+- `_spread_modalities(ordered, k)` — per-gap picks. A candidate in an unseen format
+  (`self_paced | classroom | virtual_lab`) replaces a repeat when it is at the
+  same level, within the next 3, and within 0.15 finalScore. Picks keep
+  their interleaved order.
   Sorted content-supported tags first, then `finalScore`.
 - `_tag_support_threshold(comp)` — median cosine of courses *not* tagged with the
   competency; a tagged course at or below it has `tagSupported=False` (its
@@ -112,13 +137,36 @@ all reading `_learner_competency_state` — see
 [skill-gap-analysis.md](skill-gap-analysis.md)):
 
 - `get_recommendations_by_user_id` — resolved levels → `calculate_gaps` →
-  `get_recommendations(limit_per_gap=3)`.
+  `order_gaps_by_opportunity` → ACBP (`fetch_user_cbplan`) `mandatory_recommendations`
+  first (completed ones skipped) → `get_recommendations(limit_per_gap=3)` excluding
+  enrolled, mandatory and **thumbs-down** courses (`feedback_service.downvoted_ids`).
+  `priorityRank` runs over the concatenation.
+- `_build_engine` / `_refresh_catalogue_loop` (`main.py`) — the engine and assembler are
+  built from `catalogue_store.load_embeddings()` and saved back with
+  `save_embeddings()`. Every `CATALOGUE_REFRESH_SECONDS` (default 3600, 0 = off)
+  the catalogue + FRAC set are re-fetched. If `catalogue_fingerprint` changed,
+  a new engine is built in a thread and swapped in (`app_state.engine`), and
+  the competency-state memo is cleared.
+- `services/catalogue_store.py` — `Course.syllabusVectorEmbedding` = base64 float32,
+  `embeddingModelVersion = "<model>|<text hash>"`, `source = "igot_catalogue"`.
+  Never raises (a DB error only means re-encoding).
+- **Feedback** — `routers/recommendation_feedback.py` + `services/feedback_service.py`
+  (`models.RecommendationFeedback`, one row per event):
+  `POST /api/v1/recommendations/feedback {courseId, event, competencyId?, rank?, finalScore?, context?}`
+  with `event ∈ impression|click|enrol|thumbs_up|thumbs_down|clear_vote`;
+  `GET /api/v1/recommendations/feedback/mine` → `{votes{courseId: up|down}}` (latest vote wins);
+  `GET /api/v1/admin/recommendations/feedback` → per-course counts + click-through by rank.
+  Not gated on warm-up (`_UNGATED`).
 - `get_learning_pathway` — `build_pathway` per role competency (catalogue id from
   the crosswalk, role id echoed back), each pathway gets the row's `opportunity`,
   then `build_study_plan`.
 
-Frontend: `src/services/api.ts::fetchRecommendations`, `fetchLearningPathways`;
-`components/dashboard/CourseCard.tsx`; `components/dashboard/LearningPathway.tsx`
+Frontend: `src/services/api.ts::fetchRecommendations` (maps `why`, `mandatory`, `modality`,
+`courseLevel`, `tpacSource`, `measuredUplift`), `sendRecommendationFeedback`,
+`fetchMyRecommendationVotes`, `fetchLearningPathways`;
+`components/dashboard/CourseCard.tsx` (Mandatory badge, format + level line, "Why
+recommended?" summary + level step + badges, 👍/👎, title click and Enroll logged);
+`RecommendationsPanel.tsx` owns the vote state (optimistic) and sends feedback; `components/dashboard/LearningPathway.tsx`
 (`PathwayLadder` timeline, `StudyPlanSummary`), rendered from `SkillGapCard.tsx`
 ("View learning path" per gap, study order on top; needs `officialId` prop).
 
@@ -140,8 +188,13 @@ ordering, course sharing, budget, crosswalk.
   "recommendations": [{ "courseId","title","provider","durationHours","finalScore",
                         "relevanceScore","qualityScore","isTpac","competencyId",
                         "competencyName","priorityRank","matchReasons","matchType",
-                        "tpacSource","courseLevel","tagSupported","matchReason","tags" }] }
+                        "tpacSource","courseLevel","tagSupported","matchReason","tags",
+                        "measuredUplift","modality","mandatory","reranked",
+                        "why": { "gap","levelStep","badges","summary" } }],
+  "hiddenByFeedback", "acbpCycle", "message" }
 ```
+`skillGaps[]` also carries `opportunity` (Low | Medium | High | null). `matchType` adds
+`acbp_mandatory`.
 `GET /api/v1/learner/{user_id}/pathway?competencyId=&budgetHours=&unbudgeted=`.
 The endpoint reads the official's ACBP through
 `MockIgotAdapter.fetch_user_cbplan()`. With no `budgetHours`, the plan is
@@ -188,16 +241,21 @@ channel at its FRAC level — for crosswalked competencies too (`comp_aliases`).
   `tagSupported` / `tagReviewFlags` still guard against mis-tags in real data.
 - Semantic / curated crosswalk mappings are unconfirmed; SCIL v6 wants a human
   confirmation queue.
-- Corpus and crosswalk-anchor embeddings are memoised on disk by
-  `ai/embedder.encode_cached` (keyed by model + exact texts), so they are only
-  recomputed when the catalogue text changes (`Course.syllabusVectorEmbedding`
-  unused). The catalogue is loaded through `MockIgotAdapter` at startup only, so a
-  catalogue change needs a backend restart.
+- Course vectors are stored in the DB (`courses`) and memoised on disk; crosswalk
+  anchors only on disk. The catalogue is re-checked on a timer (no restart needed).
+  Swapping the engine does not rebuild the uplift estimates (reused from startup).
 - Warm-up failure is swallowed (`_rec_engine = None`) and surfaces as a 503.
   Requests made while warm-up is still running wait in `main._readiness_gate`
   (up to `WARMUP_WAIT_SECONDS`, default 240) instead of getting that 503.
-- The 1.25× NSSTA boost applies to any `is_tpac` course while Stage 3 distinguishes
-  verified (1.0) from inferred (0.5).
-- Not implemented from SCIL v6: cross-encoder re-ranking, expert/data-inferred
-  cross-competency prerequisite edges, mandatory-ACBP force-include, modality mix,
-  opportunity tie-breaker, coverage learning from measured gain, bandit logging.
+- TPAC boost now follows provenance (verified 1.25×, inferred 1.10×), consistent with
+  Stage 3's 1.0 / 0.5 flag. Both multipliers are reasoned defaults.
+- Cross-encoder: the default model is not in `scripts/download_model.py`. Enabling it
+  in production needs an ONNX export in `ai/.cache/onnx/<model>/` (or PyTorch),
+  and the 50/50 RRF/CE blend is not tuned on relevance labels.
+- Thumbs-down hides a course from that learner only. Feedback is logged, not yet
+  learned from: no bandit or re-weighting, and impressions are not sent by the
+  UI, so CTR by rank uses clicks only.
+- Not implemented from SCIL v6: data-inferred cross-competency prerequisite edges,
+  bandit learning from the feedback log. Cross-encoder re-ranking (opt-in),
+  mandatory ACBP in recommendations, modality spread, opportunity tie-break
+  and feedback logging are in.

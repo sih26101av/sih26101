@@ -39,6 +39,7 @@ import math
 import os
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -46,13 +47,20 @@ import numpy as np
 from services.media_quiz.evidence import Timeline
 from services.media_quiz.llm import LLMUnavailable, gemini_json, gemini_key, ollama_vision_json
 from services.media_quiz.media_io import Keyframe, encode_jpeg
-from services.media_quiz.probe import get_ocr
+from services.media_quiz.probe import get_ocr, map_frames
 
 logger = logging.getLogger(__name__)
 
 WHISPER_MODEL = os.getenv("MEDIA_WHISPER_MODEL", "small")
 WHISPER_DEVICE = os.getenv("MEDIA_WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE = os.getenv("MEDIA_WHISPER_COMPUTE", "int8")
+# CTranslate2 defaults to 4 threads and one worker, which leaves most of a modern CPU
+# idle. Several workers decode speech windows in parallel (each window is independent:
+# condition_on_previous_text=False), and some cores are left free for OCR, which
+# runs concurrently on the visual routes.
+_CPUS = os.cpu_count() or 4
+WHISPER_WORKERS = max(1, int(os.getenv("MEDIA_WHISPER_WORKERS", "3" if _CPUS >= 12 else "2" if _CPUS >= 6 else "1")))
+WHISPER_THREADS = max(1, int(os.getenv("MEDIA_WHISPER_THREADS", str(max(2, min(8, _CPUS // (WHISPER_WORKERS + 1)))))))
 WINDOW_MAX_S = 28.0
 # CPU Whisper runs at roughly real time, so long lectures are transcribed on an
 # evenly spread SAMPLE of speech windows up to this many seconds (coverage of the
@@ -85,8 +93,10 @@ def get_whisper():
         with _whisper_lock:
             if _whisper is None:
                 from faster_whisper import WhisperModel
-                logger.info("[asr] loading faster-whisper '%s' (%s/%s)", WHISPER_MODEL, WHISPER_DEVICE, WHISPER_COMPUTE)
-                _whisper = WhisperModel(WHISPER_MODEL, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE)
+                logger.info("[asr] loading faster-whisper '%s' (%s/%s, %d workers x %d threads)", WHISPER_MODEL,
+                            WHISPER_DEVICE, WHISPER_COMPUTE, WHISPER_WORKERS, WHISPER_THREADS)
+                _whisper = WhisperModel(WHISPER_MODEL, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE,
+                                        cpu_threads=WHISPER_THREADS, num_workers=WHISPER_WORKERS)
     return _whisper
 
 
@@ -156,19 +166,32 @@ def transcribe(audio: np.ndarray, regions: List[Tuple[float, float]], timeline: 
     langs: Dict[str, float] = {}
     windows, coverage = _budget(_windows(regions), budget_s)
     beam = 3 if coverage >= 1.0 else 1          # sampled long media: favour speed
+    jobs = []
     for ws, we in windows:
-        a, b = int(ws * 16000), int(we * 16000)
-        clip = audio[a:b]
-        if clip.size < 8000:                               # < 0.5 s
-            continue
+        clip = audio[int(ws * 16000):int(we * 16000)]
+        if clip.size >= 8000:                              # skip < 0.5 s
+            jobs.append((ws, clip))
+
+    def decode(job):
         # language=None → Whisper detects the language of THIS window (code-switching).
         # The anti-repetition settings stop the decoder looping on accented / Hinglish
         # speech: loops are rejected by the gates anyway, but cost ~2× real time.
         segments, info = model.transcribe(
-            clip, task="transcribe", language=None, beam_size=beam, condition_on_previous_text=False,
+            job[1], task="transcribe", language=None, beam_size=beam, condition_on_previous_text=False,
             vad_filter=False, temperature=[0.0, 0.4], no_repeat_ngram_size=3, repetition_penalty=1.15,
             max_new_tokens=224,
         )
+        return list(segments), info             # segments are lazy: decode inside the worker
+
+    # Windows are independent, so they decode in parallel; results are written in
+    # window order, which keeps evidence ids identical to a sequential run.
+    if WHISPER_WORKERS > 1 and len(jobs) > 1:
+        with ThreadPoolExecutor(max_workers=WHISPER_WORKERS, thread_name_prefix="asr") as pool:
+            decoded = list(pool.map(decode, jobs))
+    else:
+        decoded = [decode(j) for j in jobs]
+
+    for (ws, _), (segments, info) in zip(jobs, decoded):
         lang_prob = float(info.language_probability or 0.0)
         used_lang = info.language or "en"
         for seg in segments:
@@ -251,9 +274,13 @@ def ocr_keyframes(keyframes: List[Keyframe], timeline: Timeline) -> Dict[int, Li
     """OCR every keyframe. Returns keyframe index → evidence ids."""
     eng = get_ocr()
     out: Dict[int, List[str]] = {}
+    # Frames are recognised in parallel; everything that touches the timeline stays
+    # below, in keyframe order.
     read: List[Optional[Tuple[str, float, int]]] = []
-    for kf in keyframes:
-        read.append(_ocr_one(eng, kf, timeline))
+    for res, weak_lines in map_frames(lambda kf: _ocr_one(eng, kf), keyframes):
+        if weak_lines:
+            timeline.drop("ocr_line_low_score", weak_lines)
+        read.append(res)
 
     # Slide builds (flaw 6): a frame whose words all reappear in the next frame of
     # the same screen segment is a partial build — keep only the fully built one.
@@ -286,29 +313,30 @@ def ocr_keyframes(keyframes: List[Keyframe], timeline: Timeline) -> Dict[int, Li
     return out
 
 
-def _ocr_one(eng, kf: Keyframe, timeline: Timeline) -> Optional[Tuple[str, float, int]]:
-    """Recognise one keyframe → (text in reading order, confidence, line count) or None."""
+def _ocr_one(eng, kf: Keyframe) -> Tuple[Optional[Tuple[str, float, int]], int]:
+    """Recognise one keyframe → ((text in reading order, confidence, line count) or None,
+    number of lines dropped for a low score). Thread-safe: touches only this keyframe."""
     try:
         result, _ = eng(kf.image)
     except Exception as exc:
         logger.warning("[ocr] keyframe %.1fs failed: %s", kf.t, exc)
         result = None
-    lines = []
+    lines, weak = [], 0
     for box, text, score in result or []:
         score = float(score)
         text = str(text).strip()
         if score >= OCR_LINE_MIN_SCORE and len(text) >= 2:
             lines.append((np.asarray(box, dtype=float), text, score))
         else:
-            timeline.drop("ocr_line_low_score")
+            weak += 1
     kf.visual_score = _visual_score(kf.image, [l[0] for l in lines])
     if not lines:
         kf.ocr_conf = None
-        return None
+        return None, weak
     lines.sort(key=lambda l: (round(l[0][:, 1].min() / 12), l[0][:, 0].min()))
     weights = np.array([len(l[1]) for l in lines], dtype=float)
     kf.ocr_conf = float(np.average([l[2] for l in lines], weights=weights))
-    return " / ".join(l[1] for l in lines), kf.ocr_conf, len(lines)
+    return (" / ".join(l[1] for l in lines), kf.ocr_conf, len(lines)), weak
 
 
 def needs_vlm(kf: Keyframe, content_type: str) -> bool:

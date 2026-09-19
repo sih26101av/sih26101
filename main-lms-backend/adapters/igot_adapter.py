@@ -224,6 +224,14 @@ class MockIgotAdapter(ILearningPlatformAdapter):
         """GET /api/hrms/v1/officials — {officials{userId: DOB, superannuationDate, products}, products, …}."""
         return await self._get_result("/api/hrms/v1/officials")
 
+    async def fetch_roles(self) -> Dict[str, Any]:
+        """GET /api/org/v1/roles — {count, roles[{roleId, officeId, designation, tier, competencies}]}."""
+        return await self._get_result("/api/org/v1/roles")
+
+    async def fetch_supervisor_ratings(self) -> Dict[str, Any]:
+        """GET /api/evidence/v1/supervisor-ratings — {count, ratings[{raterId, compId, grantedValue}]}."""
+        return await self._get_result("/api/evidence/v1/supervisor-ratings", timeout=30.0)
+
     async def fetch_user_evidence(self, user_id: str) -> List[Dict[str, Any]]:
         """GET /api/evidence/v1/user/{id} — EvidenceLog-style workplace evidence rows ([] on 404)."""
         async def fetch():

@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { AlertTriangle, FlaskConical, GitBranch, Layers, Route, Telescope } from 'lucide-react';
+import { AlertTriangle, GitBranch, Layers, Route, Telescope } from 'lucide-react';
 
 import SectionCard from '../shell/SectionCard';
 import {
@@ -56,8 +56,10 @@ const pct = (x: number, digits = 0) => `${(x * 100).toFixed(digits)}%`;
 
 // ─── GSBPM 80% officer-hours scoping (SCIL v6 §1) ─────────────────────────────
 
-const GsbpmScopePanel: React.FC = () => {
-  const [officeId, setOfficeId] = React.useState<string>('');
+const GsbpmScopePanel: React.FC<{ office?: string }> = ({ office }) => {
+  const [officeId, setOfficeId] = React.useState<string>(office ?? '');
+  // Follows the admin console's shared office filter; the selector still overrides it locally.
+  React.useEffect(() => { setOfficeId(office ?? ''); }, [office]);
   const [showOut, setShowOut] = React.useState(false);
   const { data, error, loading } = useInsight<GsbpmScopeReport>(
     () => fetchGsbpmScope(officeId || undefined), [officeId],
@@ -510,20 +512,12 @@ const TpacAgendaPanel: React.FC = () => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const WorkforceInsights: React.FC = () => (
+const WorkforceInsights: React.FC<{ office?: string }> = ({ office }) => (
   <div className="animate-fade-up space-y-5">
-    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/20 dark:text-amber-300">
-      <FlaskConical size={16} className="mt-0.5 shrink-0" />
-      <p>
-        <span className="font-semibold">Synthetic data — demo only.</span> These views run the real SCIL v6
-        computations on mock data from the generator in <code>mock-igot-server/</code>. They show how the
-        platform would reason; they say nothing about real officials, courses or offices.
-      </p>
-    </div>
     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
       <Layers size={13} /> Capability scope
     </div>
-    <GsbpmScopePanel />
+    <GsbpmScopePanel office={office} />
     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
       <Route size={13} /> Learning design
     </div>

@@ -6,7 +6,7 @@ the same path: the generator writes data, the mock iGOT server serves it,
 
 **All inputs are synthetic** (`mock-igot-server/generate_mock_data.py`). Every
 admin response carries `dataNote: "Computed on synthetic mock data — demo only."`
-and the Insights tab opens with the same warning.
+(the Insights tab itself no longer shows a synthetic-data banner).
 
 ## Reference data loading
 
@@ -339,6 +339,16 @@ attrition only; "declining only" filter), and the draft TPAC agenda.
   projection. For CPI price statistics, expected capable officials fall from
   14 (level-based) to about 5. This is the half-life assumption at work, not
   a measured forgetting rate.
+
+## Used by the admin console
+
+The admin console's **Emerging Skills** view (see
+[admin-dashboard.md](admin-dashboard.md)) reuses this snapshot, the HRMS
+superannuation dates and `workforce_service._p_capable` (now with an
+optional `threshold`, default `CAPABLE_LEVEL`) to compare required
+competencies with supply today and in 36 months, per competency and filtered
+by department / grade / office. The Insights GSBPM panel follows the
+console's office filter.
 
 ## TODOs / limits
 

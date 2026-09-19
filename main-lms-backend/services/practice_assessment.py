@@ -255,3 +255,44 @@ def suggest_courses(engine: Any, comp_id: Optional[str], current_level: Optional
     return [{"courseId": d.identifier, "title": d.name, "level": lvl,
              "durationHours": d.duration_hrs, "rating": d.rating}
             for *_, d, lvl in docs[:limit]]
+
+
+COURSE_TOPIC_FLOOR = 0.35   # MiniLM cosine below which an untagged course is not "about" the missed point
+
+
+def courses_for_topics(engine: Any, texts: List[str], comp_id: Optional[str] = None) -> List[Optional[Dict[str, Any]]]:
+    """
+    One course per missed question: the catalogue course whose content is closest
+    (catalogue embedder, same vectors as the recommender) to the question + answer.
+    Courses tagged with the linked competency are searched first; the whole
+    catalogue only when none is tagged, and then only above COURSE_TOPIC_FLOOR.
+    Returns a list aligned with `texts` (None where nothing fits).
+    """
+    if engine is None or not texts:
+        return [None] * len(texts)
+    try:
+        import numpy as np
+        from ai.embedder import get_embedder
+
+        catalog, emb = engine._catalog, engine._embeddings
+        tagged = list(engine._comp_index.get(comp_id, [])) if comp_id else []
+        pool = tagged or list(range(len(catalog)))
+        if not pool:
+            return [None] * len(texts)
+        qv = np.asarray(get_embedder("catalog").encode(texts, normalize_embeddings=True, show_progress_bar=False),
+                        dtype="float32")
+        sims = qv @ emb[pool].T
+    except Exception:
+        return [None] * len(texts)
+    out: List[Optional[Dict[str, Any]]] = []
+    for row in sims:
+        j = int(row.argmax())
+        if not tagged and float(row[j]) < COURSE_TOPIC_FLOOR:
+            out.append(None)
+            continue
+        d = catalog[pool[j]]
+        out.append({"courseId": d.identifier, "title": d.name,
+                    "level": (d.comp_levels or {}).get(comp_id) if comp_id else None,
+                    "durationHours": d.duration_hrs, "rating": d.rating,
+                    "match": round(float(row[j]), 3), "fromCompetency": bool(tagged)})
+    return out

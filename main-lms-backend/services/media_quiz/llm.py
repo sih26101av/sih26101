@@ -26,7 +26,11 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+# Single source of truth for the model id (document + media quizzes). Keep
+# .env.example's GEMINI_MODEL equal to this. Verified against the key's
+# ListModels on 2026-09-19 (gemini-1.5-flash is no longer served).
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+_FALLBACK_MODELS = [DEFAULT_GEMINI_MODEL, "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"]
 
 
 class LLMUnavailable(RuntimeError):
@@ -59,7 +63,7 @@ async def gemini_json(prompt: str, images: Optional[List[bytes]] = None, tempera
     import google.generativeai as genai
 
     genai.configure(api_key=key)
-    configured = os.getenv("GEMINI_MODEL", "").strip()
+    configured = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip()
     models = ([configured] if configured else []) + [m for m in _FALLBACK_MODELS if m != configured]
     parts: List[Any] = [prompt] + [{"mime_type": "image/jpeg", "data": img} for img in (images or [])]
 

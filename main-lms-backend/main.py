@@ -63,7 +63,7 @@ import re as _re
 from starlette.middleware.base import BaseHTTPMiddleware
 
 _NO_WAIT = _re.compile(r"^/(?:health|docs|redoc|openapi\.json)")
-_UNGATED = _re.compile(r"^/(?:$|auth/|api/v1/(?:rag/|ai/|chat/mode))|/karma(?:/|$)")
+_UNGATED = _re.compile(r"^/(?:$|auth/|api/v1/(?:rag/|ai/|chat/mode|recommendations/feedback))|/karma(?:/|$)")
 _WARMUP_WAIT_S = float(os.getenv("WARMUP_WAIT_SECONDS", "240"))
 
 
@@ -126,6 +126,9 @@ async def _startup():
     import threading
     loop = asyncio.get_running_loop()
     loop.create_task(_create_schema())
+    # Admin console: upserts today's workforce trend snapshot hourly (waits for the DB itself).
+    from routers.admin_console import daily_snapshot_loop
+    loop.create_task(daily_snapshot_loop())
     # Own thread + own event loop: the warm-up's HTTP clients, JSON parsing and
     # model loading never delay the server binding its port or answering requests.
     threading.Thread(target=lambda: asyncio.run(_warm_up(loop)), name="warm-up", daemon=True).start()
@@ -189,18 +192,14 @@ async def _warm_up(server_loop: asyncio.AbstractEventLoop):
                      len(catalog), len(frac))
 
         try:
-            _rec_engine = await asyncio.to_thread(
-                HybridRecommendationEngine, catalog=catalog, frac=frac, crosswalk=crosswalk)
-            log.info("[startup] HybridRecommendationEngine ready (catalogue source: %s).",
-                     _rec_engine.catalog_source)
-
-            # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
-            # on, so the Verified channel credits a completed course at its tagged level.
-            course_comp_map = _rec_engine.course_comp_levels()
-
-            _assembler = BaselineAssembler(course_comp_map)
-            log.info("[startup] BaselineAssembler ready. Mapped %d courses.", len(course_comp_map))
-
+            _rec_engine, _assembler = await asyncio.to_thread(_build_engine, catalog, frac, crosswalk, _ref)
+            log.info("[startup] HybridRecommendationEngine ready (catalogue source: %s, embeddings %s).",
+                     _rec_engine.catalog_source, _rec_engine.embedding_stats)
+            log.info("[startup] BaselineAssembler ready. Mapped %d courses, %d rater offsets.",
+                     len(_rec_engine.course_comp_levels()), len(_ref.rater_offsets))
+            if catalog is not None:
+                from services.catalogue_store import catalogue_fingerprint
+                app_state.catalogue_fingerprint = catalogue_fingerprint(catalog, frac)
         except Exception as exc:
             log.error("[startup] Engine/Assembler failed to initialise: %s", exc)
             _rec_engine = None
@@ -233,19 +232,72 @@ async def _warm_up(server_loop: asyncio.AbstractEventLoop):
         await app_state.db_ready.wait()     # the snapshot reads EvidenceLog
         await _build_workforce_snapshot()
     asyncio.run_coroutine_threadsafe(_snapshot_after_schema(), server_loop)
+    asyncio.run_coroutine_threadsafe(_refresh_catalogue_loop(), server_loop)
+
+
+def _build_engine(catalog, frac, crosswalk, ref: ReferenceData):
+    """
+    Engine + assembler from one catalogue (sync — run in a thread). Course vectors
+    come from the database when their model and text hash still match
+    (services/catalogue_store.py); new or changed courses are encoded and saved back.
+    """
+    from ai.embedder import model_name
+    from services import catalogue_store
+    model = model_name("catalog")
+    stored = catalogue_store.load_embeddings(model)
+    engine_ = HybridRecommendationEngine(catalog=catalog, frac=frac, crosswalk=crosswalk,
+                                         precomputed_embeddings=stored)
+    catalogue_store.save_embeddings(model, engine_.course_embeddings(), known=stored)
+    # {course_id → {comp_id → FRAC level}} from the same tags the engine filters
+    # on, so the Verified channel credits a completed course at its tagged level.
+    assembler_ = BaselineAssembler(engine_.course_comp_levels(), rater_offsets=ref.rater_offsets)
+    return engine_, assembler_
+
+
+_CATALOGUE_REFRESH_S = float(os.getenv("CATALOGUE_REFRESH_SECONDS", "3600"))
+
+
+async def _refresh_catalogue_loop() -> None:
+    """
+    Reload the catalogue on a timer instead of only at restart. Every
+    CATALOGUE_REFRESH_SECONDS (default 1 h, 0 disables) the catalogue + FRAC set
+    are fetched through the adapter; if their fingerprint changed, a new engine
+    is built in a thread (unchanged courses reuse their stored vectors) and
+    swapped in atomically. Requests in flight keep the old engine.
+    """
+    global _rec_engine, _assembler
+    import logging
+    from services.catalogue_store import catalogue_fingerprint
+    log = logging.getLogger(__name__)
+    if _CATALOGUE_REFRESH_S <= 0:
+        return
+    while True:
+        await asyncio.sleep(_CATALOGUE_REFRESH_S)
+        try:
+            catalog, frac, crosswalk = await asyncio.gather(
+                adapter.fetch_catalog(), adapter.fetch_frac_competencies(), adapter.fetch_frac_crosswalk())
+            fp = catalogue_fingerprint(catalog, frac)
+            if fp == app_state.catalogue_fingerprint:
+                continue
+            engine_, assembler_ = await asyncio.to_thread(_build_engine, catalog, frac, crosswalk, _ref)
+            if "uplift" in _ref.cache:
+                engine_.set_measured_uplift(_ref.cache["uplift"]["courses"])
+            _rec_engine, _assembler = engine_, assembler_
+            app_state.engine, app_state.assembler = engine_, assembler_
+            app_state.catalogue_fingerprint = fp
+            app_state.user_state_cache.clear()          # levels depend on course tags
+            log.info("[catalogue] refreshed: %d courses (embeddings %s).",
+                     len(catalog), engine_.embedding_stats)
+        except Exception as exc:
+            log.warning("[catalogue] refresh skipped: %s", exc)
 
 
 @app.get("/health", tags=["meta"])
 async def health():
-    """Liveness + warm-up state. Cheap: use it as the Render health check / keep-alive ping."""
-    from ai.semantic_engine import is_semantic_engine_ready
-    return {
-        "status": "ok",
-        "ready": app_state.ready.is_set(),
-        "recommendationEngine": _rec_engine is not None,
-        "chatSemantic": is_semantic_engine_ready(),
-        "workforceSnapshot": app_state.snapshot_status,
-    }
+    """Liveness + warm-up state. Cheap: use it as the Render health check / keep-alive ping.
+    The admin console's system-health panel extends the same payload with live probes."""
+    from services import system_health
+    return system_health.basic()
 
 
 # ── Register routers ───────────────────────────────────────────────────────────
@@ -260,6 +312,13 @@ from routers.insights import router as insights_router
 app.include_router(insights_router)
 from routers.diagnostic import router as diagnostic_router
 app.include_router(diagnostic_router)
+from routers.career import router as career_router
+app.include_router(career_router)
+from routers.recommendation_feedback import router as recommendation_feedback_router
+app.include_router(recommendation_feedback_router)
+from routers import admin_console
+app.include_router(admin_console.router)
+app.include_router(admin_console.learner_router)
     
     
 
@@ -381,24 +440,22 @@ async def _learner_competency_state(user_id: str, annotate: bool = True) -> dict
 
 def _load_db_evidence(user_id: str) -> list:
     """The LMS's own EvidenceLog rows for one user (sync — run in a worker thread)."""
-    from auth.database import get_db
+    from auth.database import session_scope
     from models.models import EvidenceLog
 
-    db_session = next(get_db())
     try:
-        return [
-            {
-                "comp_id":       row.compId,
-                "evidence_type": row.evidenceType,
-                "granted_value": row.grantedValue,
-                "issue_date":    row.issueDate,
-            }
-            for row in db_session.query(EvidenceLog).filter(EvidenceLog.userId == user_id).all()
-        ]
+        with session_scope() as db_session:
+            return [
+                {
+                    "comp_id":       row.compId,
+                    "evidence_type": row.evidenceType,
+                    "granted_value": row.grantedValue,
+                    "issue_date":    row.issueDate,
+                }
+                for row in db_session.query(EvidenceLog).filter(EvidenceLog.userId == user_id).all()
+            ]
     except Exception:
         return []
-    finally:
-        db_session.close()
 
 
 async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict:
@@ -415,7 +472,7 @@ async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict
     a slow Neon round-trip never blocks the event loop.
     """
     from fastapi import HTTPException
-    from services.baseline_assembler import resolve_level
+    from services.baseline_assembler import explain_level, resolve_level
 
     user_r, enrollments_r, igot_evidence_r, db_evidence = await asyncio.gather(
         adapter.fetch_user_by_id(user_id),
@@ -483,7 +540,8 @@ async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict
     for comp in comps:
         cid = comp["id"]
         bline = baseline_results.get(cid, {})
-        resolved = resolve_level(bline, _self_reported_level(comp))
+        self_reported = _self_reported_level(comp)
+        resolved = resolve_level(bline, self_reported)
         catalogue_id = (crosswalks[cid] or {}).get("catalogueId") or cid
         rows.append({
             "competencyId":  cid,
@@ -508,6 +566,9 @@ async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict
             "lastEvidenceDate": bline.get("lastEvidenceDate"),   # newest dated objective evidence
             "decayClass":    (_rec_engine._frac_map.get(catalogue_id, {}).get("decayClass", "procedural")
                               if _rec_engine else "procedural"),
+            # "Why this level": the source that set it, the floors and channels behind it.
+            "explanation":   explain_level(bline, resolved, self_reported,
+                                           bline.get("completedCourses"), bline.get("practiceRows", 0)),
         })
 
     # SCIL v6 §2: probabilistic belief with dated decay (assessed) or a cohort
@@ -524,7 +585,10 @@ async def _resolve_competency_state(user_id: str, annotate: bool = True) -> dict
                 if row["confidence"] == "UNASSESSED" and snap else None
             )
 
-    return {"user": user, "enrollments": enrollments, "competencies": rows}
+    # evidenceRows: the merged iGOT + LMS evidence, reused by career readiness to score
+    # competencies of the NEXT role that are not in the official's current profile.
+    return {"user": user, "enrollments": enrollments, "competencies": rows,
+            "evidenceRows": db_evidence, "aliases": aliases}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -636,6 +700,7 @@ async def get_skill_gaps_by_user_id(
             "peerFeedback":  row["peerFeedback"],            # count only — peer ratings are never scored
             "proficiency":   row.get("proficiency"),         # SCIL v6 §2 θ ~ N(μ, σ²) with dated decay
             "coldStartPrior": row.get("coldStartPrior"),     # UNASSESSED: inferred from role (cohort prior)
+            "whyThisLevel":  row["explanation"],             # {summary, basis, factors[], caps[]}
         })
 
     # Sort: known gaps first (largest gap, lowest score), UNASSESSED last
@@ -705,32 +770,49 @@ async def get_recommendations_by_user_id(
     """
     Level-gated hybrid recommendations:
       Stage 0 — gap prioritisation (priority_k = gap_k * target_k/5) on the
-                resolved levels shared with /skill-gaps
+                resolved levels shared with /skill-gaps; near-equal priorities
+                are ordered by how much the official's office uses the
+                competency this cycle (SCIL v6 §4 opportunity)
       Stage 1 — FRAC-tag + level filter (current < courseLevel <= target)
-      Stage 2 — dense + BM25, RRF fusion, NSSTA 1.25× boost
+      Stage 2 — dense + BM25, RRF fusion, TPAC boost (verified 1.25×, inferred 1.10×),
+                optional cross-encoder re-rank of the top 20
       Stage 3 — final = 0.6*relevance + 0.4*quality (Bayesian-shrunk rating, log-pop)
-    UNASSESSED competencies are not ranked as gaps ("no evidence" is not
-    "level 0"); they are returned under `needsDiagnostic` instead.
+      Picks   — per gap, interleaved by level with formats spread (self-paced /
+                classroom / lab) among near-equal courses
+    Mandatory ACBP courses (the departmental training plan) are always listed
+    first with mandatory=true. Courses the learner thumbed down are skipped
+    (mandatory ones excepted). UNASSESSED competencies are not ranked as gaps;
+    they are returned under `needsDiagnostic` instead.
     """
     from fastapi import HTTPException
-    from services.baseline_assembler import enrollment_course_id
+    from services.baseline_assembler import enrollment_course_id, is_completed
+    from services.feedback_service import downvoted_ids
 
     _ensure_can_view(user_id, current_user)
-    if _rec_engine is None:
+    engine_ = _rec_engine                      # one engine for the whole request (refresh may swap it)
+    if engine_ is None:
         raise HTTPException(
             status_code=503,
             detail="Recommendation engine is not available. Check startup logs.",
         )
 
-    state = await _learner_competency_state(user_id)
+    async def _cbplan():
+        try:
+            return await adapter.fetch_user_cbplan(user_id)
+        except Exception:
+            return None
+
+    state, cbplan, downvoted = await asyncio.gather(
+        _learner_competency_state(user_id), _cbplan(), asyncio.to_thread(downvoted_ids, user_id))
     rows = state["competencies"]
     enrolled_ids = {enrollment_course_id(e) for e in state["enrollments"]} - {""}
+    completed_ids = {enrollment_course_id(e) for e in state["enrollments"] if is_completed(e)} - {""}
 
     needs_diagnostic = [
         {"competencyId": r["competencyId"], "competencyName": r["name"]}
         for r in rows if r["currentLevel"] is None
     ]
-    gaps = _rec_engine.calculate_gaps(
+    gaps = engine_.calculate_gaps(
         baselines  = {r["competencyId"]: float(r["currentLevel"])
                       for r in rows if r["currentLevel"] is not None},
         targets    = {r["competencyId"]: float(r["targetLevel"]) for r in rows},
@@ -738,24 +820,27 @@ async def get_recommendations_by_user_id(
         confidence = {r["competencyId"]: r["confidence"] for r in rows},
         catalogue_ids = {r["competencyId"]: r["catalogueId"] for r in rows if r["catalogueId"]},
     )
+    gaps = engine_.order_gaps_by_opportunity(
+        gaps, {r["competencyId"]: (r["opportunity"] or {}).get("level") for r in rows})
 
-    if not gaps:
-        return {
-            "status": "success",
-            "officialId": user_id,
-            "message": "No skill gaps detected. Keep learning!",
-            "skillGaps": [],
-            "recommendations": [],
-            "needsDiagnostic": needs_diagnostic,
-        }
+    # ACBP mandatory courses — always included (completed ones are not repeated).
+    mandatory = (cbplan or {}).get("mandatoryCourses") or []
+    mandatory_recs = engine_.mandatory_recommendations(
+        mandatory, exclude_ids=completed_ids, gaps={g.catalogue_key: g for g in gaps},
+        names={(r["catalogueId"] or r["competencyId"]): r["name"] for r in rows},
+    )
+    mandatory_ids = {r.courseId for r in mandatory_recs}
 
-    recs = _rec_engine.get_recommendations(
+    recs = engine_.get_recommendations(
         gaps=gaps,
         limit_per_gap=3,
-        enrolled_ids=enrolled_ids,
-    )
+        enrolled_ids=enrolled_ids | mandatory_ids | downvoted,
+    ) if gaps else []
+    all_recs = mandatory_recs + recs
+    for rank, r in enumerate(all_recs, start=1):
+        r.priorityRank = rank
 
-    # Shape response — map to what api.ts fetchRecommendations expects
+    opportunity = {r["competencyId"]: r["opportunity"] for r in rows}
     skill_gaps_payload = [
         {
             "competencyId":   g.competencyId,
@@ -765,6 +850,7 @@ async def get_recommendations_by_user_id(
             "gapScore":       g.gapScore,
             "priorityScore":  g.priorityScore,
             "confidence":     g.confidence,
+            "opportunity":    (opportunity.get(g.competencyId) or {}).get("level"),
         }
         for g in gaps
     ]
@@ -785,20 +871,28 @@ async def get_recommendations_by_user_id(
             "competencyName": r.competencyName,
             "priorityRank":   r.priorityRank,
             "matchReasons":   r.matchReasons,
-            "matchType":      r.matchType,     # "frac_tag" | "semantic_fallback"
+            "matchType":      r.matchType,     # "frac_tag" | "semantic_fallback" | "acbp_mandatory"
             "tpacSource":     r.tpacSource,    # "verified" | "inferred" | "none"
             "courseLevel":    r.courseLevel,   # FRAC level the course is tagged at
             "tagSupported":   r.tagSupported,  # False → tag flagged for review
+            "measuredUplift": r.measuredUplift,
+            "modality":       r.modality,      # self_paced | virtual_lab | classroom
+            "mandatory":      r.mandatory,     # in the official's ACBP → "Mandatory" badge
+            "reranked":       r.reranked,      # relevance includes the cross-encoder
+            "why":            r.why,           # {gap, levelStep, badges[], summary}
         }
-        for r in recs
+        for r in all_recs
     ]
 
     return {
         "status":          "success",
         "officialId":      user_id,
+        "message":         None if gaps else "No skill gaps detected. Keep learning!",
         "skillGaps":       skill_gaps_payload,
         "recommendations": recommendations_payload,
         "needsDiagnostic": needs_diagnostic,
+        "hiddenByFeedback": len(downvoted - mandatory_ids),
+        "acbpCycle":       (cbplan or {}).get("cycle"),
     }
 
 

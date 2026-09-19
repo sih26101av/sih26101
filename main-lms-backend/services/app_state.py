@@ -20,6 +20,8 @@ db_ready: asyncio.Event = asyncio.Event()
 engine: Optional[Any] = None          # HybridRecommendationEngine
 assembler: Optional[Any] = None       # BaselineAssembler
 ref: ReferenceData = ReferenceData()  # SCIL v6 reference datasets
+# Hash of the catalogue + FRAC set the engine was built from (main._refresh_catalogue_loop)
+catalogue_fingerprint: Optional[str] = None
 
 # Workforce snapshot (SCIL v6 §2 / §11): userId → {officeId, phase, tier,
 # experienceYears, competencies[{catalogueId, level, target, confidence, mu,

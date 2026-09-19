@@ -3,16 +3,19 @@
  */
 
 import React from "react";
-import { Target, CheckCircle2, AlertCircle, BookOpen, Route, HelpCircle, Briefcase } from "lucide-react";
-import type { SkillGapEntry, CompetencyDomain, LearningPathway, StudyPlan } from "../../types/domain";
+import { Target, CheckCircle2, AlertCircle, BookOpen, Route, HelpCircle, Briefcase, Lightbulb, Flag } from "lucide-react";
+import type { SkillGapEntry, CompetencyDomain, LearningPathway, StudyPlan, LevelExplanation } from "../../types/domain";
 import { fetchLearningPathways } from "../../services/api";
 import { PathwayLadder, StudyPlanSummary } from "./LearningPathway";
+import LevelCheckModal from "./LevelCheckModal";
 
 interface SkillGapCardProps {
   skillGaps: SkillGapEntry[];
   onFindCourses?: (skillName: string) => void;
   /** iGOT userId — enables the level-by-level learning paths */
   officialId?: string;
+  /** Called after a level check finishes (new evidence) — refetch the dashboard */
+  onLevelChanged?: () => void;
 }
 
 const DOMAIN_BADGE: Record<string, string> = {
@@ -176,14 +179,46 @@ const EvidenceBar: React.FC<{ label: string; value: number; max?: number; color:
   );
 };
 
+// "Why this level" — what set the level and what evidence stands behind it.
+const ROLE_STYLE: Record<string, { label: string; cls: string }> = {
+  sets_level:  { label: 'sets the level', cls: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' },
+  floor:       { label: 'minimum',        cls: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
+  contributes: { label: 'in the score',   cls: 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300' },
+  context:     { label: 'background',     cls: 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400' },
+  absent:      { label: 'none yet',       cls: 'bg-slate-100 dark:bg-slate-700/50 text-slate-400' },
+};
+
+const WhyThisLevel: React.FC<{ why: LevelExplanation }> = ({ why }) => (
+  <div className="mt-2 rounded-lg border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-2.5 pr-4">
+    <p className="text-[11.5px] font-semibold text-slate-800 dark:text-slate-100">{why.summary}</p>
+    {why.factors.length > 0 && (
+      <ul className="mt-1.5 space-y-1">
+        {why.factors.map(f => {
+          const role = ROLE_STYLE[f.role] ?? ROLE_STYLE.context;
+          return (
+            <li key={f.key} className="flex items-start gap-2 text-[10.5px] text-slate-600 dark:text-slate-300">
+              <span className={`shrink-0 mt-px px-1.5 py-px rounded-full text-[9px] font-bold ${role.cls}`}>{role.label}</span>
+              <span><b>{f.label}</b> ({Number(f.value).toFixed(1)}): {f.detail}</span>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+    {why.caps.map((c, i) => (
+      <p key={i} className="mt-1.5 text-[10px] text-amber-700 dark:text-amber-400">⚠ {c}</p>
+    ))}
+  </div>
+);
+
 interface GapRowProps {
   entry: SkillGapEntry;
   onFindCourses?: (skillName: string) => void;
   pathway?: LearningPathway;
   pathwayLoading?: boolean;
+  onLevelChanged?: () => void;
 }
 
-const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayLoading }) => {
+const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayLoading, onLevelChanged }) => {
   const { competency, currentLevel, requiredLevel, gap, isMandatory, confidence, basis, rawScore, evidence } = entry;
   const unassessed = confidence === 'UNASSESSED';
   const hasGap = !unassessed && gap > 0;
@@ -195,6 +230,8 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
     : conf.label;
   const [showEvidence, setShowEvidence] = React.useState(false);
   const [showPath, setShowPath] = React.useState(false);
+  const [showWhy, setShowWhy] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
   const pathSteps = pathway?.steps.filter(s => s.kind !== 'bridge').length ?? 0;
   const borderTone = unassessed
     ? 'border-l-violet-400'
@@ -279,15 +316,33 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
           </p>
         )}
 
-        {/* Evidence breakdown toggle */}
-        {evidence && (
+        {/* "Why this level" + evidence breakdown toggles */}
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          {entry.whyThisLevel && (
+            <button
+              onClick={() => setShowWhy(v => !v)}
+              className="inline-flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            >
+              <Lightbulb size={11} /> {showWhy ? 'Hide explanation' : 'Why this level?'}
+            </button>
+          )}
+          {evidence && (
+            <button
+              onClick={() => setShowEvidence(v => !v)}
+              className="text-[10px] text-blue-500 dark:text-blue-400 font-semibold hover:underline"
+            >
+              {showEvidence ? '▲ Hide' : '▼ Evidence breakdown'}
+            </button>
+          )}
           <button
-            onClick={() => setShowEvidence(v => !v)}
-            className="mt-2 text-[10px] text-blue-500 dark:text-blue-400 font-semibold hover:underline"
+            onClick={() => setChecking(true)}
+            className="inline-flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 font-semibold hover:underline"
+            title="Take an adaptive level check to confirm or correct this level"
           >
-            {showEvidence ? '▲ Hide' : '▼ Evidence breakdown'}
+            <Flag size={11} /> {unassessed ? 'Check my level' : 'Disagree with this level?'}
           </button>
-        )}
+        </div>
+        {showWhy && entry.whyThisLevel && <WhyThisLevel why={entry.whyThisLevel} />}
         {showEvidence && evidence && (
           <div className="mt-2 space-y-1 pr-4">
             <EvidenceBar label="Verified"    value={evidence.verified}    color="bg-emerald-400 dark:bg-emerald-500" />
@@ -302,7 +357,7 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
             <p className="text-[9.5px] text-slate-400 dark:text-slate-500 pt-1">
               The first six feed the knowledge channel K; K, work sample, use at work and supervisor are fused
               with equal placeholder weights (0.25 each) until an expert AHP elicitation sets them.
-              Supervisor ratings are not corrected for rater leniency.
+              Supervisor ratings are corrected for each rater's leniency (shrunk mean offset).
             </p>
           </div>
         )}
@@ -365,12 +420,21 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
       </div>
     </div>
       {showPath && pathway && <PathwayLadder pathway={pathway} />}
+      {checking && (
+        <LevelCheckModal
+          competencyId={competency.compId}
+          competencyName={competency.skillName}
+          shownLevel={unassessed ? null : currentLevel}
+          onClose={() => setChecking(false)}
+          onFinished={() => onLevelChanged?.()}
+        />
+      )}
     </div>
   );
 };
 
 
-const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses, officialId }) => {
+const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses, officialId, onLevelChanged }) => {
   const unassessed = skillGaps.filter(e => e.confidence === 'UNASSESSED');
   const withGaps = skillGaps.filter(e => e.confidence !== 'UNASSESSED' && e.gap > 0);
   const met = skillGaps.filter(e => e.confidence !== 'UNASSESSED' && e.gap === 0);
@@ -404,6 +468,7 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses, o
       onFindCourses={onFindCourses}
       pathway={pathways[e.competency.compId]}
       pathwayLoading={pathLoading}
+      onLevelChanged={onLevelChanged}
     />
   );
 

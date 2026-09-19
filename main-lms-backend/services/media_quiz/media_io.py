@@ -389,11 +389,18 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
             logger.warning("[youtube] %s download failed: %s", prefix, exc)
             return None
 
-    src.video_path = fetch(_YT_VIDEO_FORMAT, "v")
+    # Video and audio are separate streams: download them in parallel.
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="yt") as pool:
+        video_job = pool.submit(fetch, _YT_VIDEO_FORMAT, "v")
+        audio_job = pool.submit(fetch, _YT_AUDIO_FORMAT, "a") if not src.captions else None
+        src.video_path = video_job.result()
+        audio_path = audio_job.result() if audio_job else None
     if not src.video_path:
         src.notes.append("video frames unavailable — speech only")
     if not src.captions:
-        src.audio_path = fetch(_YT_AUDIO_FORMAT, "a")
+        src.audio_path = audio_path
         if src.audio_path:
             src.notes.append("speech transcribed from the audio track (no captions)")
     if not src.video_path and not src.audio_path and not src.captions:
