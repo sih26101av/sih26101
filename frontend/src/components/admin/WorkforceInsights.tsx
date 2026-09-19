@@ -201,7 +201,8 @@ const PrerequisitePanel: React.FC = () => {
             ) : inf.suggestions.length === 0 ? (
               <p className="text-[12px] text-slate-400">No pair passed the test ({inf.testedPairs} tested).</p>
             ) : (
-              <table className="w-full text-left text-[12px]">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-[12px]">
                 <thead>
                   <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
                     <th className="py-2 pr-3 font-semibold">Before</th>
@@ -230,6 +231,7 @@ const PrerequisitePanel: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
             {inf && <p className="mt-2 text-[10.5px] text-slate-400">{inf.testedPairs} pairs tested. {inf.method}</p>}
           </div>

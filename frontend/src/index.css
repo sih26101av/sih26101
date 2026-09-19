@@ -154,11 +154,19 @@
 
   /* Page title with the saffron rule, used at the top of every shell view */
   .shell-title {
-    @apply relative pl-3.5 text-[22px] font-semibold tracking-tight text-gov-ink dark:text-white;
+    @apply relative pl-3.5 text-[19px] sm:text-[22px] font-semibold tracking-tight text-gov-ink dark:text-white;
   }
   .shell-title::before {
     content: "";
     @apply absolute left-0 top-[0.2em] bottom-[0.2em] w-[4px] rounded-full bg-gov-navy dark:bg-gov-saffron;
+  }
+
+  /* Grid items default to min-width:auto, so one wide child (a table, a long
+     URL, a chart) stretches its column past a phone screen and defeats any
+     overflow-x-auto wrapper inside it. Inside the dashboard shells let them
+     shrink to the track instead. */
+  .shell-main .grid > * {
+    min-width: 0;
   }
 
   /* Panel = a flat card for dashboard sections (less lift than .gov-card) */
@@ -166,7 +174,7 @@
     @apply rounded-2xl border border-gov-line bg-white dark:border-slate-700/60 dark:bg-slate-900/70;
   }
   .panel-head {
-    @apply flex flex-wrap items-start justify-between gap-3 px-5 pt-5 pb-4;
+    @apply flex flex-wrap items-start justify-between gap-3 px-4 pt-4 pb-3.5 sm:px-5 sm:pt-5 sm:pb-4;
   }
   .panel-title {
     @apply relative pl-3 text-[15.5px] font-semibold tracking-tight text-gov-ink dark:text-white;

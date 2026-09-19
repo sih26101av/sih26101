@@ -79,6 +79,9 @@ const AppShell: React.FC<AppShellProps> = ({
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Phones/tablets: the topbar has no room for the search box, so it drops
+  // into its own row under the bar when the search icon is tapped.
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Close the mobile drawer whenever the section changes.
   useEffect(() => { setDrawerOpen(false); }, [activeId]);
@@ -86,7 +89,7 @@ const AppShell: React.FC<AppShellProps> = ({
   // Escape closes both overlays.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setDrawerOpen(false); setMenuOpen(false); }
+      if (e.key === 'Escape') { setDrawerOpen(false); setMenuOpen(false); setMobileSearchOpen(false); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -96,6 +99,14 @@ const AppShell: React.FC<AppShellProps> = ({
     await logout();
     navigate('/login', { replace: true });
   };
+
+  // Lock page scroll behind the open drawer (otherwise the page scrolls under a finger).
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [drawerOpen]);
 
   const initial = (userName ?? 'U').trim().charAt(0).toUpperCase();
 
@@ -112,7 +123,7 @@ const AppShell: React.FC<AppShellProps> = ({
             <button
               key={id}
               type="button"
-              onClick={() => onNavigate(id)}
+              onClick={() => { setDrawerOpen(false); onNavigate(id); }}
               aria-current={activeId === id ? 'page' : undefined}
               className="shell-nav-item"
             >
@@ -135,11 +146,11 @@ const AppShell: React.FC<AppShellProps> = ({
       {/* ── Topbar ───────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 shadow-gov">
         <div className="tricolor-strip" />
-        <div className="flex items-center gap-3 bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue px-3 py-2.5 md:px-5">
+        <div className="flex items-center gap-2 bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue px-2 py-2 sm:gap-3 sm:px-3 sm:py-2.5 md:px-5">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden"
+            className="flex-shrink-0 rounded-lg p-2 text-white transition-colors hover:bg-white/10 lg:hidden"
             aria-label="Open navigation menu"
           >
             <Menu size={19} />
@@ -148,16 +159,17 @@ const AppShell: React.FC<AppShellProps> = ({
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="group flex items-center gap-3 text-left"
+            className="group flex min-w-0 items-center gap-2 text-left sm:gap-3"
             aria-label="Go to home page"
           >
-            <GovEmblem size={38} className="flex-shrink-0 transition-transform duration-500 group-hover:rotate-12" />
-            <span className="leading-tight">
-              <span className="block text-[10px] font-semibold text-gov-saffron" lang="hi">राष्ट्रीय सांख्यिकी कार्यालय</span>
-              <span className="block text-[13px] font-semibold tracking-tight text-white md:text-[15.5px]">
-                National Statistical Office (NSO) Training Portal
+            <GovEmblem size={34} className="flex-shrink-0 transition-transform duration-500 group-hover:rotate-12" />
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate text-[10px] font-semibold text-gov-saffron" lang="hi">राष्ट्रीय सांख्यिकी कार्यालय</span>
+              <span className="block truncate text-[13px] font-semibold tracking-tight text-white md:text-[15.5px]">
+                <span className="sm:hidden">NSO Training Portal</span>
+                <span className="hidden sm:inline">National Statistical Office (NSO) Training Portal</span>
               </span>
-              <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55 md:block">
+              <span className="hidden truncate text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55 md:block">
                 Ministry of Statistics &amp; PI · Government of India
               </span>
             </span>
@@ -165,7 +177,7 @@ const AppShell: React.FC<AppShellProps> = ({
 
           {/* Search — only rendered when the page wires it up */}
           {onSearchChange && (
-            <div className="relative mx-auto hidden max-w-md flex-1 md:block">
+            <div className="relative mx-auto hidden max-w-md flex-1 lg:block">
               <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
                 type="search"
@@ -180,7 +192,18 @@ const AppShell: React.FC<AppShellProps> = ({
             </div>
           )}
 
-          <div className={`flex items-center gap-1 text-white ${onSearchChange ? '' : 'ml-auto'}`}>
+          <div className={`ml-auto flex flex-shrink-0 items-center gap-0.5 text-white sm:gap-1 ${onSearchChange ? 'lg:ml-0' : ''}`}>
+            {onSearchChange && (
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((o) => !o)}
+                aria-expanded={mobileSearchOpen}
+                className="rounded-full p-2 transition-colors hover:bg-white/10 lg:hidden"
+                aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
+              >
+                {mobileSearchOpen ? <X size={17} /> : <Search size={17} />}
+              </button>
+            )}
             <button
               type="button"
               onClick={onNotificationsClick}
@@ -203,7 +226,7 @@ const AppShell: React.FC<AppShellProps> = ({
             <button
               type="button"
               onClick={toggleTheme}
-              className="rounded-full p-2 transition-colors hover:bg-white/10"
+              className="hidden rounded-full p-2 transition-colors hover:bg-white/10 sm:block"
               aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
               <span
@@ -240,6 +263,20 @@ const AppShell: React.FC<AppShellProps> = ({
                     role="menu"
                     className="animate-scale-in absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-gov-line bg-white py-1.5 shadow-gov-lg dark:border-slate-700 dark:bg-slate-800"
                   >
+                    {userName && (
+                      <div className="border-b border-gov-line px-4 pb-2.5 pt-1.5 sm:hidden dark:border-slate-700">
+                        <p className="truncate text-[13px] font-semibold text-gov-ink dark:text-white">{userName}</p>
+                        {userRole && <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{userRole}</p>}
+                      </div>
+                    )}
+                    <button
+                      role="menuitem"
+                      onClick={() => { setMenuOpen(false); toggleTheme(); }}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/60 sm:hidden"
+                    >
+                      {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                      {theme === 'dark' ? 'Light theme' : 'Dark theme'}
+                    </button>
                     <button
                       role="menuitem"
                       onClick={() => { setMenuOpen(false); navigate('/change-password'); }}
@@ -268,6 +305,24 @@ const AppShell: React.FC<AppShellProps> = ({
             </button>
           </div>
         </div>
+        {onSearchChange && mobileSearchOpen && (
+          <div className="animate-fade-in bg-gov-navy px-3 pb-2.5 pt-1 lg:hidden">
+            <div className="relative">
+              <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input
+                type="search"
+                autoFocus
+                value={searchValue ?? ''}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                className="w-full rounded-full border border-white/15 bg-white py-2.5 pl-10 pr-4 text-[16px] text-slate-700
+                  placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-gov-saffron
+                  dark:bg-slate-800 dark:text-white sm:text-[13px]"
+              />
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="flex">
@@ -287,13 +342,21 @@ const AppShell: React.FC<AppShellProps> = ({
               aria-hidden="true"
             />
             <aside
-              className="absolute left-0 top-0 flex h-full w-[264px] flex-col bg-white shadow-gov-lg dark:bg-slate-900"
+              className="animate-drawer-in absolute left-0 top-0 flex h-full w-[82vw] max-w-[300px] flex-col bg-white shadow-gov-lg dark:bg-slate-900"
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
             >
               <div className="flex items-center justify-between border-b border-gov-line px-4 py-3.5 dark:border-slate-800">
-                <span className="text-[13px] font-semibold text-gov-ink dark:text-white">Menu</span>
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gov-saffron text-[12px] font-bold text-gov-ink">
+                    {initial}
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block truncate text-[13px] font-semibold text-gov-ink dark:text-white">{userName ?? 'Menu'}</span>
+                    {userRole && <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">{userRole}</span>}
+                  </span>
+                </span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
@@ -304,14 +367,23 @@ const AppShell: React.FC<AppShellProps> = ({
                 </button>
               </div>
               {navList}
-              {sidebarFooter && <div className="px-3 pb-4">{sidebarFooter}</div>}
+              {sidebarFooter && <div className="px-3 pb-3">{sidebarFooter}</div>}
+              <div className="border-t border-gov-line px-3 py-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-accent-rose/30 px-3 py-2.5 text-[13px] font-semibold text-accent-rose transition-colors hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                >
+                  <LogOut size={15} /> Sign out
+                </button>
+              </div>
             </aside>
           </div>
         )}
 
         {/* ── Content ────────────────────────────────────────────────────── */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <main className="flex-1 px-4 py-6 md:px-6 lg:px-7">
+          <main className="shell-main flex-1 px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-7">
             <div className="mx-auto w-full max-w-[1340px]">{children}</div>
           </main>
 

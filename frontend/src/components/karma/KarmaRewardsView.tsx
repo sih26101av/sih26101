@@ -62,7 +62,7 @@ const Bar: React.FC<{ pct: number; tone?: "indigo" | "emerald" | "orange" | "red
 };
 
 const StatTile: React.FC<{ icon: React.ReactNode; label: string; children: React.ReactNode }> = ({ icon, label, children }) => (
-  <div className="gov-card p-5 flex flex-col gap-2 min-w-0">
+  <div className="gov-card p-4 sm:p-5 flex flex-col gap-2 min-w-0">
     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
       {icon}{label}
     </div>
@@ -340,7 +340,7 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
       )}
 
       {/* 2. Stat tiles */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <StatTile icon={<Trophy size={13} className="text-indigo-500" />} label="Balance">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[36px] font-black leading-none bg-gradient-to-br from-indigo-600 to-purple-500 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
@@ -382,7 +382,7 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
       </div>
 
       {/* 3. Level ladder */}
-      <div className="gov-card p-6">
+      <div className="gov-card p-4 sm:p-6">
         <SectionTitle icon={<Crown size={16} />} title={`Level ${level.rank}: ${level.name}`}
           subtitle={level.nextName ? `${level.pointsToNext} KP to reach ${level.nextName}` : "Top level reached. Well done, Karmayogi!"} />
         <Bar pct={level.progressPct} />
@@ -404,14 +404,14 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
       </div>
 
       {/* 4. How to earn */}
-      <div className="gov-card p-6">
+      <div className="gov-card p-4 sm:p-6">
         <SectionTitle icon={<Info size={16} />} title="How to earn Karma Points"
           subtitle="Karma Points reward real learning on iGOT Karmayogi and this platform. Points appear in your passbook as soon as you earn them." />
         <HowToEarn rules={rules} error={rulesError} breakdown={karma.breakdown} />
       </div>
 
       {/* 5. Rules & limits */}
-      <div className="gov-card p-6">
+      <div className="gov-card p-4 sm:p-6">
         <SectionTitle icon={<ShieldCheck size={16} />} title="Rules & limits"
           subtitle="These limits keep Karma fair and stop anyone from farming points." />
         <RulesAndLimits rules={rules} karma={karma} />
@@ -419,7 +419,7 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
 
       {/* CBP claim */}
       {claimable.length > 0 && (
-        <div className="gov-card p-6">
+        <div className="gov-card p-4 sm:p-6">
           <SectionTitle icon={<Gift size={16} />} title="Unclaimed CBP bonuses"
             subtitle="You completed these CBP-mandated courses. Claim +10 KP for each." />
           <div className="flex flex-col gap-2">
@@ -438,7 +438,7 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
       )}
 
       {/* 6. Passbook */}
-      <div className="gov-card p-6">
+      <div className="gov-card p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <SectionTitle icon={<BarChart2 size={16} />} title="Karma passbook"
             subtitle={`${karma.totalEvents} entries · every point you've earned, with the reason`} />
@@ -469,7 +469,7 @@ const KarmaRewardsView: React.FC<Props> = ({ karma: initial, userId }) => {
       </div>
 
       {/* 7. FAQ */}
-      <div className="gov-card p-6">
+      <div className="gov-card p-4 sm:p-6">
         <SectionTitle icon={<Info size={16} />} title="Frequently asked questions" />
         <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-700/50">
           {FAQ_ITEMS.map(([q, a]) => (

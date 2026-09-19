@@ -30,9 +30,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
           <p className="mt-1 pl-3 text-[12px] text-slate-500 dark:text-slate-400">{subtitle}</p>
         )}
       </div>
-      {action && <div className="flex flex-shrink-0 items-center gap-2">{action}</div>}
+      {action && <div className="flex max-w-full flex-wrap items-center gap-2 sm:flex-shrink-0">{action}</div>}
     </div>
-    <div className={`${padded ? 'px-5 pb-5' : 'pb-0'} ${bodyClassName}`}>{children}</div>
+    <div className={`${padded ? 'px-4 pb-4 sm:px-5 sm:pb-5' : 'pb-0'} ${bodyClassName}`}>{children}</div>
   </section>
 );
 

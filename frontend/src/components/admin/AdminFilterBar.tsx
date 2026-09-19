@@ -19,7 +19,7 @@ const SELECT =
 const FacetSelect: React.FC<{
   label: string; value?: string; options: FacetOption[]; onChange: (v?: string) => void;
 }> = ({ label, value, options, onChange }) => (
-  <label className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+  <label className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1 md:flex-none">
     <span className="sr-only">{label}</span>
     <select
       aria-label={label}
@@ -54,8 +54,8 @@ const AdminFilterBar: React.FC<{
   const active = Boolean(value.department || value.grade || value.office);
   return (
     <div className="panel mb-5 flex flex-col gap-3 p-3.5 lg:flex-row lg:items-center">
-      <div className="flex flex-1 flex-wrap items-center gap-2">
-        <Filter size={14} className="text-slate-400" aria-hidden="true" />
+      <div className="grid flex-1 grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <Filter size={14} className="hidden text-slate-400 sm:block" aria-hidden="true" />
         <FacetSelect label="Department" value={value.department} options={facets?.departments ?? []}
                      onChange={(department) => onChange({ ...value, department })} />
         <FacetSelect label="Grade" value={value.grade} options={facets?.grades ?? []}
@@ -66,7 +66,7 @@ const AdminFilterBar: React.FC<{
           <button
             type="button"
             onClick={() => onChange({})}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold text-slate-500 hover:text-gov-navy dark:text-slate-400 dark:hover:text-white"
+            className="flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold text-slate-500 hover:text-gov-navy dark:text-slate-400 dark:hover:text-white"
           >
             <X size={13} /> Clear
           </button>

@@ -98,7 +98,7 @@ const CompetencyOverviewTable: React.FC<Props> = ({
       </div>
 
       {/* Domain filters */}
-      <div className="flex flex-wrap gap-2 px-5 pb-4">
+      <div className="flex flex-wrap gap-2 px-4 pb-4 sm:px-5">
         <button
           type="button"
           aria-pressed={domain === 'all'}
@@ -120,8 +120,59 @@ const CompetencyOverviewTable: React.FC<Props> = ({
         ))}
       </div>
 
-      {/* Table (scrolls horizontally on small screens) */}
-      <div className="overflow-x-auto">
+      {/* Phones: stacked cards — the 6-column table can't fit a 375px screen */}
+      <ul className="divide-y divide-gov-line/70 border-t border-gov-line/70 dark:divide-slate-800 dark:border-slate-800 md:hidden">
+        {visible.map((entry) => {
+          const p = priorityOf(entry);
+          return (
+            <li key={entry.competency.compId} className="px-4 py-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="block text-[13px] font-semibold leading-snug text-gov-ink dark:text-white">{entry.competency.skillName}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                    {entry.competency.domain}
+                    {entry.isMandatory && (
+                      <span className="chip bg-gov-saffron/15 !px-1.5 !py-0 text-[10px] text-gov-saffron-deep dark:text-gov-saffron">
+                        Mandatory
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onFindCourses(entry.competency.skillName)}
+                  aria-label={`Find courses for ${entry.competency.skillName}`}
+                  className="-mr-1 flex-shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-gov-blue/10 hover:text-gov-navy dark:hover:text-white"
+                >
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+              <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">
+                <div>
+                  <span className="mb-1 block">Current</span>
+                  <LevelPips level={entry.currentLevel} tone="current" />
+                </div>
+                <div>
+                  <span className="mb-1 block">Target</span>
+                  <LevelPips level={entry.requiredLevel} tone="target" />
+                </div>
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <span className={`chip ${entry.gap > 0 ? 'bg-accent-rose-soft text-accent-rose dark:bg-rose-500/15 dark:text-rose-300' : 'bg-accent-green-soft text-accent-green dark:bg-emerald-500/15 dark:text-emerald-300'}`}>
+                  Gap {entry.gap}
+                </span>
+                <span className={`chip ${p.cls}`}>{p.label}</span>
+              </div>
+            </li>
+          );
+        })}
+        {visible.length === 0 && (
+          <li className="py-10 text-center text-[13px] text-slate-400">No competencies assessed in this domain yet.</li>
+        )}
+      </ul>
+
+      {/* Tablet and up: table (scrolls horizontally if the column is narrow) */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="gov-table min-w-[660px]">
           <thead>
             <tr>

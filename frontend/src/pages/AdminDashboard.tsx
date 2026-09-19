@@ -452,7 +452,7 @@ const AdminDashboard: React.FC = () => {
         <div className="animate-fade-up space-y-5">
           {overview.error && <ErrorBanner message={overview.error} onRetry={overview.refetch} />}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             <StatCard
               index={0} icon={Users} tone="blue" label="Officials" value={kpis?.totalOfficials ?? '—'}
               caption={filterText} onClick={() => setActiveTab('officials')}
@@ -688,7 +688,7 @@ const AdminDashboard: React.FC = () => {
           {filterBar()}
           {overview.error && <ErrorBanner message={overview.error} onRetry={overview.refetch} />}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <StatCard index={0} icon={CheckCircle2} tone="green" label="Compliant" value={statusCounts.compliant} />
             <StatCard index={1} icon={TrendingUp} tone="orange" label="In Progress" value={statusCounts.inProgress} />
             <StatCard index={2} icon={AlertTriangle} tone="rose" label="Training Required" value={statusCounts.required} />

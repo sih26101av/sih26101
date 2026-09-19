@@ -261,7 +261,7 @@ const HomeChatWidget: React.FC<HomeChatWidgetProps> = ({ onScrollToSection, onOp
         ref={panelRef}
         role="dialog"
         aria-label="Gyan AI assistant"
-        className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
+        className={`fixed bottom-24 right-2 z-50 flex max-h-[min(660px,calc(100dvh-7rem))] w-[calc(100vw-1rem)] sm:right-4 sm:w-[calc(100vw-2rem)] max-w-[400px] flex-col
           overflow-hidden rounded-[28px] border border-white/60 bg-white ring-1 ring-slate-900/[0.06]
           transition-all duration-300 ease-out sm:right-6
           ${isOpen ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-4 scale-95 opacity-0'}`}

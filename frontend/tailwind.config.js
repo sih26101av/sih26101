@@ -46,6 +46,10 @@ export default {
         'gov-lg': '0 2px 4px rgba(10,26,51,0.06), 0 22px 48px -20px rgba(10,26,51,0.35)',
       },
       keyframes: {
+        'drawer-in': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
         'fade-up': {
           '0%': { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -66,6 +70,7 @@ export default {
         },
       },
       animation: {
+        'drawer-in': 'drawer-in 0.28s cubic-bezier(0.2,0.7,0.2,1) both',
         'fade-up': 'fade-up 0.7s cubic-bezier(0.2,0.7,0.2,1) both',
         'fade-in': 'fade-in 0.6s ease-out both',
         'scale-in': 'scale-in 0.35s cubic-bezier(0.2,0.7,0.2,1) both',

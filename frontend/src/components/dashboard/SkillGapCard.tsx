@@ -238,7 +238,7 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
     : hasGap ? (isMandatory ? 'border-l-gov-saffron' : 'border-l-red-500') : 'border-l-gov-green';
 
   return (
-    <div className={`relative rounded-xl p-6 mb-4 bg-white dark:bg-slate-800/40 border border-gov-line dark:border-slate-700/50 border-l-4 ${borderTone} shadow-sm hover:shadow-gov overflow-hidden transition-all duration-300`}>
+    <div className={`relative rounded-xl p-4 sm:p-6 mb-4 bg-white dark:bg-slate-800/40 border border-gov-line dark:border-slate-700/50 border-l-4 ${borderTone} shadow-sm hover:shadow-gov overflow-hidden transition-all duration-300`}>
     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
       <div className="flex-1 relative z-10 w-full">
@@ -391,8 +391,8 @@ const GapRow: React.FC<GapRowProps> = ({ entry, onFindCourses, pathway, pathwayL
         </div>
       </div>
 
-      <div className="flex items-end gap-6 relative z-10">
-        <div className="mb-[26px]">
+      <div className="flex w-full items-end justify-center gap-6 relative z-10 pt-5 md:w-auto md:pt-0">
+        <div className="mb-[26px] hidden sm:block">
           <TargetRow target={requiredLevel} />
         </div>
         
@@ -473,8 +473,8 @@ const SkillGapCard: React.FC<SkillGapCardProps> = ({ skillGaps, onFindCourses, o
   );
 
   return (
-    <div className="gov-card p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+    <div className="gov-card p-4 sm:p-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-8 gap-4">
         <div>
           <h2 className="gov-heading text-[20px]">
             Competency &amp; Skill-Gap Analysis

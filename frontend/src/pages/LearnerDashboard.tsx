@@ -63,7 +63,7 @@ const SECTION_META: Record<TabType, { title: string; subtitle: string; crumb: st
 const LoadingSkeleton: React.FC = () => (
   <div className="space-y-5" aria-busy="true" aria-label="Loading dashboard">
     <div className="skeleton h-36" />
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
       {Array.from({ length: 5 }, (_, i) => <div key={i} className="skeleton h-28" />)}
     </div>
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -289,7 +289,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
               <div className="animate-fade-up space-y-5">
                 <ProfileHeader profile={profile} totalAssessed={totalAssessed} />
 
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
                   <StatCard index={0} icon={Briefcase} tone="blue" label="Competencies Assessed" value={totalAssessed} />
                   <StatCard index={1} icon={AlertTriangle} tone="rose" label="Active Gaps" value={activeGaps.length} onClick={() => setActiveTab("skill-gap")} />
                   <StatCard index={2} icon={Lock} tone="orange" label="Mandatory Gaps" value={mandatoryGaps.length} onClick={() => setActiveTab("skill-gap")} />
@@ -353,7 +353,7 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
             {/* ── Skill-Gap Centre ──────────────────────────────────────── */}
             {activeTab === "skill-gap" && (
               <div className="animate-fade-up space-y-5">
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                   <StatCard index={0} icon={Briefcase} tone="blue" label="Competencies Assessed" value={totalAssessed} />
                   <StatCard index={1} icon={AlertTriangle} tone="rose" label="Active Gaps" value={activeGaps.length} />
                   <StatCard index={2} icon={Lock} tone="orange" label="Mandatory Gaps" value={mandatoryGaps.length} />

@@ -318,7 +318,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         ref={chatPanelRef}
         role="dialog"
         aria-label="Gyan AI assistant"
-        className={`fixed bottom-24 right-4 z-50 flex max-h-[min(660px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[400px] flex-col
+        className={`fixed bottom-[4.75rem] right-2 z-50 flex max-h-[min(660px,calc(100dvh-6rem))] w-[calc(100vw-1rem)] sm:bottom-24 sm:max-h-[min(660px,calc(100dvh-8rem))] sm:w-[calc(100vw-3rem)] max-w-[400px] flex-col
           overflow-hidden rounded-[28px] border border-white/60 bg-white ring-1 ring-slate-900/[0.06]
           transition-all duration-300 ease-out sm:right-6
           ${isOpen
@@ -537,7 +537,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       <button
         id="chat-widget-bubble"
         onClick={() => setIsOpen(v => !v)}
-        className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full
+        className={`fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center sm:bottom-6 sm:right-6 sm:h-14 sm:w-14 justify-center rounded-full
           bg-gradient-to-br from-gov-ink to-gov-blue text-white
           shadow-[0_8px_32px_-8px_rgba(43,76,126,0.6)] transition-all duration-200
           hover:scale-110 hover:shadow-[0_12px_40px_-8px_rgba(43,76,126,0.8)] active:scale-95`}

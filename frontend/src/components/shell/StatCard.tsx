@@ -46,17 +46,17 @@ const StatCard: React.FC<StatCardProps> = ({
 
   const body = (
     <>
-      <div className="flex items-start gap-3.5">
-        <span className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${t.tile}`}>
-          <Icon size={20} className={t.icon} aria-hidden="true" />
+      <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:gap-3.5 xl:gap-3 2xl:gap-3.5">
+        <span className={`flex h-9 w-9 flex-shrink-0 sm:h-11 sm:w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${t.tile}`}>
+          <Icon size={18} className={t.icon} aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12.5px] font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="line-clamp-2 hyphens-auto text-[12px] font-medium leading-snug text-slate-500 dark:text-slate-400 sm:text-[12.5px]">{label}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             {typeof value === 'number' ? (
-              <CountUp end={value} duration={900} className="text-[25px] font-bold leading-none tracking-tight text-gov-ink dark:text-white" />
+              <CountUp end={value} duration={900} className="text-[22px] font-bold leading-none tracking-tight text-gov-ink dark:text-white sm:text-[25px]" />
             ) : (
-              <span className="text-[25px] font-bold leading-none tracking-tight text-gov-ink dark:text-white">{value}</span>
+              <span className="text-[22px] font-bold leading-none tracking-tight text-gov-ink dark:text-white sm:text-[25px]">{value}</span>
             )}
             {delta && (
               <span
@@ -89,7 +89,7 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 
   const shell =
-    'panel group animate-fade-up p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-gov';
+    'panel group animate-fade-up p-3.5 text-left sm:p-5 xl:p-4 2xl:p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-gov';
   const style = { animationDelay: `${index * 70}ms` } as React.CSSProperties;
 
   return onClick ? (

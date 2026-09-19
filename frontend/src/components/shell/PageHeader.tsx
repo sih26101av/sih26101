@@ -25,10 +25,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, breadcrumb, da
   });
 
   return (
-    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div className="mb-4 flex flex-col gap-3 sm:mb-5 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
         <h1 className="shell-title">{title}</h1>
-        {subtitle && <p className="mt-1.5 pl-3.5 text-[13px] text-slate-500 dark:text-slate-400">{subtitle}</p>}
+        {subtitle && <p className="mt-1.5 pl-3.5 text-[12.5px] sm:text-[13px] text-slate-500 dark:text-slate-400">{subtitle}</p>}
       </div>
 
       <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
@@ -45,7 +45,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, breadcrumb, da
           </nav>
         )}
         {actions}
-        <div className="panel flex items-center gap-2.5 px-3.5 py-2">
+        <div className="panel hidden items-center gap-2.5 px-3.5 py-2 sm:flex">
           <CalendarDays size={16} className="text-gov-blue dark:text-sky-400" aria-hidden="true" />
           <span className="leading-tight">
             <span className="block text-[12px] font-semibold text-gov-ink dark:text-white">{today}</span>
