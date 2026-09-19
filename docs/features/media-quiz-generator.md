@@ -24,7 +24,7 @@ Backend, `main-lms-backend/`:
 | `services/media_quiz/relevance.py` | Scores each chunk with multilingual-e5 (`ai/embedder.py` role `chat`) against the FRAC descriptions in `mock-igot-server/data/frac_competencies.json` (read-only). |
 | `services/media_quiz/question_gen.py` | Per-chunk generation, a synthesis pass and the validator. `generate_naive` is the eval baseline. |
 | `services/media_quiz/fact_check.py` | Checks answers against `reference_facts.json` (flags, never rejects), plus translation with ⟦T1⟧-protected terms. The per-answer check (`review_answer`) and the string translator (`translate_texts`) are shared with the document quiz (`services/doc_quiz`); `fact_check` / `translate_questions` wrap them and behave as before. |
-| `services/media_quiz/llm.py` | `gemini_json` for text and images (same `GEMINI_API_KEY`/`GEMINI_MODEL` as the document quiz) and `ollama_vision_json`. `DEFAULT_GEMINI_MODEL` (`gemini-3.5-flash-lite`) is the one model id for both quiz paths; `.env.example` matches it. |
+| `services/media_quiz/llm.py` | `gemini_json` for text and images, shared with the document quiz. Text prompts go to Groq first (`providers.py`: the `GROQ_API_KEYS` rotate on 429 and the `GROQ_MODELS` fail over), then Gemini. Images use Gemini only. See rag-quiz-generator.md § LLM providers. Also holds `ollama_vision_json`. `DEFAULT_GEMINI_MODEL` (`gemini-3.5-flash-lite`) is the one model id for both quiz paths; `.env.example` matches it. |
 | `services/media_quiz/pipeline.py` | `run()` orchestrates the steps; one job at a time (semaphore). Independent stages run concurrently (see *Performance*). `warm_up()` preloads the CPU models; the router starts it in a background thread at startup (`MEDIA_WARMUP=0` turns it off). `run_naive()` is the old behaviour. |
 | `scripts/eval_media_quiz.py` | Runs a test folder through the old and new pipelines and writes `results.csv` and `summary.md`. |
 | `requirements-media.txt` | Optional dependencies. Without them the endpoints return 503; the document quiz is unaffected. |
@@ -93,7 +93,7 @@ Frontend, `frontend/src/`:
    the best chunk is below the floor (`off_topic`, e.g. a biology lecture), no FRAC
    id is assigned and the skill is "General Learning".
 6. **Generate.**
-   - One Gemini call per group of 4 chunks. Questions must cite evidence ids
+   - One LLM call (Groq, then Gemini) per group of 4 chunks. Questions must cite evidence ids
      from their own chunk.
    - One synthesis call over a summary of the whole video. These questions must
      cite ≥2 chunks.

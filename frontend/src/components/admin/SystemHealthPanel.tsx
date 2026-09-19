@@ -35,7 +35,7 @@ const SystemHealthPanel: React.FC<{ compact?: boolean }> = ({ compact }) => {
   const [probe, setProbe] = React.useState(0);          // >0 → include the Gemini probe
   const { data, isLoading, error, refetch } = useAsync(() => fetchSystemHealth(probe > 0), `health|${probe}`);
   const components = data?.components ?? [];
-  const shown = compact ? components.filter((c) => ['igot', 'database', 'engine', 'embedder_catalog', 'embedder_chat', 'gemini'].includes(c.id)) : components;
+  const shown = compact ? components.filter((c) => ['igot', 'database', 'engine', 'embedder_catalog', 'embedder_chat', 'groq', 'gemini'].includes(c.id)) : components;
 
   return (
     <SectionCard

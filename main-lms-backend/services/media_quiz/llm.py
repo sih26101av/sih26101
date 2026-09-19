@@ -4,10 +4,16 @@ FILE: services/media_quiz/llm.py
 LLM calls for the media-quiz pipeline, kept separate from routers/rag.py so the
 two quiz paths can evolve independently.
 
-  gemini_json(prompt, images=None) — Gemini with JSON output (text or vision).
+  gemini_json(prompt, images=None) — JSON output for every Assessment Studio
+                                     LLM call. Text prompts go to Groq first
+                                     (GROQ_API_KEYS rotate on 429, GROQ_MODELS
+                                     fail over — see providers.py), then Gemini.
+                                     Prompts with images (vision) use Gemini only.
+  llm_json                         — alias of gemini_json.
+  llm_configured()                 — True if Groq or Gemini has a key.
   ollama_vision_json(prompt, image) — offline VLM (e.g. qwen2.5vl:3b) via a
                                      local Ollama server.
-Uses the same GEMINI_API_KEY / GEMINI_MODEL env vars as the document quiz.
+Env: GROQ_API_KEYS, GROQ_MODELS, GEMINI_API_KEY, GEMINI_MODEL.
 ─────────────────────────────────────────────────────────────────────────────
 """
 
@@ -40,7 +46,36 @@ class LLMUnavailable(RuntimeError):
 def gemini_key() -> str:
     load_dotenv()
     key = os.getenv("GEMINI_API_KEY", "").strip()
-    return "" if key in {"", "your-actual-api-key-here", "YOUR_GEMINI_API_KEY"} else key
+    return "" if key in {"", "your-actual-api-key-here", "your-gemini-api-key-here", "YOUR_GEMINI_API_KEY"} else key
+
+
+def llm_configured() -> bool:
+    """True when at least one text LLM (Groq or Gemini) has a key."""
+    from services.media_quiz.providers import groq_keys
+    return bool(groq_keys() or gemini_key())
+
+
+_GROQ_SYSTEM = ("You are a careful assistant for a government e-learning platform. Follow the user's "
+                "instructions exactly and respond with a single valid JSON object only — no prose, no code fences.")
+
+
+async def _groq_json(prompt: str, temperature: float) -> Any:
+    """Try each configured Groq model in order; each rotates its keys. Raises LLMUnavailable if all fail."""
+    from services.media_quiz.providers import ProviderError, configured_providers
+
+    errors: List[str] = []
+    for provider in configured_providers():
+        if not provider.available():
+            errors.append(f"{provider.name}: all keys cooling down")
+            continue
+        try:
+            return await provider.complete_json(_GROQ_SYSTEM, prompt, temperature=temperature)
+        except ProviderError as exc:
+            errors.append(str(exc))
+        except Exception as exc:  # unexpected payload shape etc. — fail over, don't crash the request
+            errors.append(f"{provider.name}: {exc.__class__.__name__}: {exc}")
+            logger.warning("[llm] %s failed: %s", provider.name, exc)
+    raise LLMUnavailable("; ".join(errors) or "no Groq providers configured")
 
 
 def parse_json(raw: str) -> Any:
@@ -56,9 +91,22 @@ def parse_json(raw: str) -> Any:
 
 
 async def gemini_json(prompt: str, images: Optional[List[bytes]] = None, temperature: float = 0.3) -> Any:
+    groq_error: Optional[LLMUnavailable] = None
+    if not images:
+        from services.media_quiz.providers import configured_providers
+        if configured_providers():
+            try:
+                return await _groq_json(prompt, temperature)
+            except LLMUnavailable as exc:
+                groq_error = exc
+                logger.warning("[llm] Groq failed, falling back to Gemini: %s", exc)
+
     key = gemini_key()
     if not key:
-        raise LLMUnavailable("GEMINI_API_KEY is not configured in main-lms-backend/.env.")
+        if groq_error:
+            raise LLMUnavailable(f"All Groq models/keys failed ({groq_error}) and GEMINI_API_KEY is not configured.")
+        raise LLMUnavailable("No LLM configured — set GROQ_API_KEYS or GEMINI_API_KEY in main-lms-backend/.env."
+                             if not images else "Vision needs GEMINI_API_KEY in main-lms-backend/.env.")
 
     import google.generativeai as genai
 
@@ -83,7 +131,11 @@ async def gemini_json(prompt: str, images: Optional[List[bytes]] = None, tempera
         except Exception as exc:
             last = exc
             logger.warning("[media-llm] %s failed: %s", name, exc)
-    raise LLMUnavailable(f"All Gemini models failed: {last}")
+    prefix = f"Groq failed ({groq_error}); " if groq_error else ""
+    raise LLMUnavailable(f"{prefix}All Gemini models failed: {last}")
+
+
+llm_json = gemini_json
 
 
 async def ollama_vision_json(prompt: str, image: bytes) -> Any:

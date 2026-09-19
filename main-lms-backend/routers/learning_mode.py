@@ -133,7 +133,7 @@ def _select_summary_text(chunks: List[Any], limit_chars: int = SUMMARY_EXCERPT_C
 
 
 async def _generate_overview(filename: str, chunks: List[Any]) -> tuple:
-    """(summary, topics, suggested_questions). Falls back to a plain summary if Gemini is unavailable."""
+    """(summary, topics, suggested_questions). Falls back to a plain summary if no LLM (Groq/Gemini) is available."""
     from services.media_quiz import llm
 
     excerpt = _select_summary_text(chunks)
@@ -312,7 +312,7 @@ async def start_learning_session(
     responses={
         400: {"model": ErrorResponse, "description": "Empty message."},
         404: {"model": ErrorResponse, "description": "Unknown or expired material_id."},
-        500: {"model": ErrorResponse, "description": "GEMINI_API_KEY not configured."},
+        500: {"model": ErrorResponse, "description": "No LLM configured (GROQ_API_KEYS / GEMINI_API_KEY)."},
         502: {"model": ErrorResponse, "description": "The LLM failed to answer."},
     },
 )
@@ -375,7 +375,7 @@ Learner's question: {message}
                              detail=f"The AI model didn't answer within {int(CHAT_TIMEOUT_S)} s — please ask again.")
     except LLMUnavailable as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                             detail=f"Learning Mode needs GEMINI_API_KEY configured: {exc}")
+                             detail=f"Learning Mode needs GROQ_API_KEYS or GEMINI_API_KEY configured: {exc}")
     except Exception as exc:
         logger.exception("[learning] chat generation failed: %s", exc)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Could not generate a study answer: {exc}")

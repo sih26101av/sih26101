@@ -763,26 +763,26 @@
   },
   "main-lms-backend/pyproject.toml": {
     "mtime": 1789673603.6622515,
-    "seen": 1789806477.0262058,
-    "ast_hash": "",
+    "seen": 1789808310.7173264,
+    "ast_hash": "3aae5bc823564af0264a8f12987346a3",
     "semantic_hash": ""
   },
   "mock-igot-server/courses.json": {
     "mtime": 1787910107.6273973,
-    "seen": 1789806477.0267107,
-    "ast_hash": "",
+    "seen": 1789808310.717634,
+    "ast_hash": "71329f11ced49a9f50e04902d3d2cbd1",
     "semantic_hash": ""
   },
   "mock-igot-server/courses_1.json": {
     "mtime": 1788437604.4831629,
-    "seen": 1789806477.0267153,
-    "ast_hash": "",
+    "seen": 1789808310.717637,
+    "ast_hash": "046561753341f88304417733c30b24c3",
     "semantic_hash": ""
   },
   "mock-igot-server/pyproject.toml": {
     "mtime": 1787893948.1103475,
-    "seen": 1789806477.026751,
-    "ast_hash": "",
+    "seen": 1789808310.7176764,
+    "ast_hash": "2b4a62c137e0e0cfb7c95fd14420f5bd",
     "semantic_hash": ""
   },
   "frontend/src/components/chat/GyanAvatar.tsx": {
@@ -1578,15 +1578,15 @@
     "semantic_hash": ""
   },
   "frontend/src/components/assessment/LearningChat.tsx": {
-    "mtime": 1789806993.4350295,
-    "seen": 1789807161.6143312,
-    "ast_hash": "51f33a33e731eaa228cd2a6df3a35f55",
+    "mtime": 1789807871.1154673,
+    "seen": 1789807961.5454624,
+    "ast_hash": "4d4e583b00e4a9285ab3aac77ed3c936",
     "semantic_hash": ""
   },
   "frontend/src/services/learningApi.ts": {
-    "mtime": 1789806684.936729,
-    "seen": 1789807161.6269681,
-    "ast_hash": "1bf77ce77f82144416645ad5a44ef5e3",
+    "mtime": 1789807863.941009,
+    "seen": 1789807961.558351,
+    "ast_hash": "168d7a862978fa473d5e46a3092c2102",
     "semantic_hash": ""
   },
   "frontend/src/services/pendingStudioUpload.ts": {
@@ -1596,15 +1596,15 @@
     "semantic_hash": ""
   },
   "main-lms-backend/routers/learning_mode.py": {
-    "mtime": 1789806663.3546069,
-    "seen": 1789807161.6391187,
-    "ast_hash": "79a719bd449d20890b51ad42406f03d0",
+    "mtime": 1789807854.100531,
+    "seen": 1789807961.5706868,
+    "ast_hash": "e719ccfe6771d8cc66271f51a8b7109a",
     "semantic_hash": ""
   },
   "docs/features/learning-mode.md": {
-    "mtime": 1789807102.5854683,
-    "seen": 1789807161.6691444,
-    "ast_hash": "8f0d8005d9d93886600640c4b8bc88ac",
+    "mtime": 1789807937.4999568,
+    "seen": 1789807961.5997562,
+    "ast_hash": "0f16cf2e1af1b8cfd23399e6298e4e8a",
     "semantic_hash": ""
   }
 }

@@ -48,7 +48,7 @@ from services import practice_assessment as pa
 from services.doc_quiz import calibration as calib
 from services.doc_quiz import items as qitems
 
-# Load environment variables (such as GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
+# Load environment variables (such as GROQ_API_KEYS, GEMINI_API_KEY, IGOT_COMPETENCIES_UPDATE_URL)
 load_dotenv()
 
 # PDF/PPTX extraction, LangChain and Gemini are imported inside the functions
@@ -604,19 +604,19 @@ async def _generate_questions(text: str, chunks: List[str], difficulty: str, n_q
                               question_types: str, language: str) -> Tuple[List[QuizQuestion], Dict[str, Any]]:
     """Cited, validated, multi-type questions (services/doc_quiz/generate.py) → QuizQuestion."""
     from services.doc_quiz import generate as gen
-    from services.media_quiz.llm import LLMUnavailable, gemini_key
+    from services.media_quiz.llm import LLMUnavailable, llm_configured
 
-    if not gemini_key():
+    if not llm_configured():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="GEMINI_API_KEY is not configured in the .env file. Please configure a valid Gemini API key.",
+            detail="No quiz LLM is configured — set GROQ_API_KEYS (comma-separated) or GEMINI_API_KEY in the .env file.",
         )
     try:
         raw, report = await gen.generate(text, chunks, difficulty=difficulty, n_questions=n_questions,
                                          types=gen.parse_types(question_types), language=language)
     except LLMUnavailable as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
-                            detail=f"Gemini API error during quiz generation: {exc}")
+                            detail=f"LLM error during quiz generation (Groq/Gemini): {exc}")
     if not raw:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

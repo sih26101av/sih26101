@@ -46,7 +46,7 @@ LLM's tag is used. Video, audio and YouTube quizzes grade through the same
   fallback. Linking happens at grading.
 - `_generate_questions(...)`:
   - calls `doc_quiz.generate.generate`;
-  - maps a missing key to 500, an LLM failure to 502, and "nothing survived
+  - maps "no Groq and no Gemini key" (`llm_configured()`) to 500, an LLM failure to 502, and "nothing survived
     validation" to 502 with `detail = {message, generation}`;
   - wraps the results as `QuizQuestion`;
   - runs `_with_calibration`, which stamps `item_key`, `llm_difficulty`,
@@ -147,7 +147,7 @@ LLM's tag is used. Video, audio and YouTube quizzes grade through the same
    - `numeric` is dropped, and the report says why, when the chosen chunks have
      fewer than 4 distinct figures.
 2. **Generate.**
-   - One Gemini call per group of 4 chunks, run concurrently, asking for about
+   - One LLM call (Groq, then Gemini) per group of 4 chunks, run concurrently, asking for about
      1.8× the requested count.
    - The prompt has per-type rules, the difficulty mix (`DIFFICULTY_MIX`,
      generalised from the old fixed 5-question mix) and plausibility rules for
@@ -285,15 +285,56 @@ These are pure functions, unit-tested in `tests/test_practice_assessment.py`.
   question (see above). `review_topics` is the legacy MCQ-only review; `/grade`
   no longer uses it.
 
-### Gemini model
+### LLM providers (Groq multi-key → Gemini)
 
-`services/media_quiz/llm.py` holds `DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"`,
-the single source of truth for both quiz paths. It is used when `GEMINI_MODEL` is
-unset, then falls back to `gemini-3.6-flash`, `gemini-3.5-flash` and
-`gemini-flash-latest`. `.env.example` sets the same id.
+Every Assessment Studio text prompt goes through
+`services/media_quiz/llm.gemini_json`: the document quiz, the media quiz, the
+fact-check and translation, and Learning Mode. `llm_json` is an alias. Calls
+go to Groq first and fall back to Gemini:
 
-The id was checked against the key's ListModels on 2026-09-19. The old
-`.env.example` value, `gemini-1.5-flash`, is no longer served.
+1. **Groq** (`services/media_quiz/providers.py`, ported from the
+   `a057bcf` grounded-quiz branch):
+   - `GROQ_API_KEYS` is comma-separated (`GROQ_API_KEY` is also accepted).
+     Keys rotate round-robin.
+   - A 429 or 413 response cools that key down for `retry-after`, or 30 s.
+   - A 401 or 403 disables the key for the life of the process.
+   - A 404, `model_not_found` or `decommissioned` disables the model.
+   - Rate limits are per (key, model), so each model in `GROQ_MODELS` keeps its
+     own cooldown table. When every key is cooling for one model, the next
+     model is tried. The default order is
+     `openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b`.
+   - It calls the REST API with `httpx` in JSON mode, with
+     `max_completion_tokens` 8192 and a 60 s timeout.
+   - The providers are cached once per process
+     (`configured_providers` / `reset_providers`), so cooldowns persist across
+     requests.
+2. **Gemini:** the text fallback, and the only path for **vision** (prompts
+   with `images`, i.e. video keyframes).
+   - `DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"` is used when
+     `GEMINI_MODEL` is unset.
+   - It then falls back to `gemini-3.6-flash`, `gemini-3.5-flash` and
+     `gemini-flash-latest`.
+
+`llm_configured()` is true when either Groq or Gemini has a key. `/upload`
+returns 500 only when neither does. When every provider fails, the error
+names the Groq errors and the Gemini one (502).
+
+The admin system-health panel shows a `groq` component with the key count,
+the models and how many are currently usable, and it makes no API call.
+Gemini missing while Groq is configured shows as `degraded`, because vision is
+off.
+
+Live run, 2026-09-19, Groq only with Gemini disabled: 2 keys × 3 models all
+answered. A bilingual 5-question document quiz took 21.5 s with 0 LLM errors
+and 45 of 45 Hindi fields translated; the same kind of run took 40–65 s on
+Gemini.
+`tests/test_llm_providers.py` (7 tests) covers:
+
+- key rotation on 429 and model failover;
+- disabling an invalid key;
+- Groq exhausted with no Gemini key;
+- vision bypassing Groq;
+- `parse_json_object`.
 
 ### Frontend
 
@@ -385,7 +426,7 @@ override so Gyan's document hand-off (`docs/features/chatbot-gyan.md`) can
 call it right after mount without waiting for `file` state to commit.
 
 The document pipeline reuses the media pipeline's pieces:
-- `llm.gemini_json` and `DEFAULT_GEMINI_MODEL`;
+- `llm.gemini_json` (Groq multi-key first, then Gemini) and `DEFAULT_GEMINI_MODEL`;
 - `fact_check.review_answer` and `translate_texts`, which were factored out so
   the media behaviour is unchanged;
 - `question_gen.numbers_in` and `_INTERNAL_REF`;
@@ -446,7 +487,7 @@ The document pipeline reuses the media pipeline's pieces:
   slices, not by topic).
 - `QUIZ_STORE` is in-memory: quizzes vanish on restart and are not shared
   across workers. `quiz_demo` is a hardcoded demo quiz.
-- Generation takes 40–65 s with translation, because the Gemini calls dominate.
+- Generation takes about 20 s on Groq, or 40–65 s on Gemini, with translation; the LLM calls dominate.
   The frontend loading text is time-based.
 - Linking needs the mock server running. Without it, the attempt is recorded
   but lands on the quiz's own tag or skill name.

@@ -24,7 +24,8 @@ Backend, `main-lms-backend/routers/learning_mode.py` (mounted at
 - `POST /start` (multipart `file`): extract → chunk (`_chunk_document_text`,
   evenly sampled down to `MAX_LEARNING_CHUNKS`=80 if the document is long) →
   locate → embed every chunk with the shared "chat" embedder
-  (`ai/embedder.py`, `kind="passage"`) → ask Gemini for a JSON
+  (`ai/embedder.py`, `kind="passage"`) → ask the LLM (`llm.gemini_json`: Groq
+  multi-key first, then Gemini; see rag-quiz-generator.md § LLM providers) for a JSON
   `{summary, topics[], suggested_questions[]}` overview. Stores the chunks and
   their embeddings in `LEARNING_STORE` under a `material_id`
   (`LM-XXXXXXXXXX`). If the embedder is unavailable, retrieval falls back to

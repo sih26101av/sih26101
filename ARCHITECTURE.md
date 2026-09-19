@@ -26,7 +26,8 @@ Browser ──JWT──► :8000 LMS backend ──x-authenticated-user-token─
    │                  ├─ FAISS + BM25 (in-process, built at startup)
    │                  ├─ ONNX INT8 multilingual embedder (singleton)
    │                  ├─ Neon Postgres via DATABASE_URL (auth, evidence, quiz attempts, karma; SQLite auth.db fallback)
-   │                  └─ Google Gemini (cloud, quiz generation + Hindi translation)
+   │                  └─ Groq (primary; multi-key rotation + model failover) → Google Gemini
+   │                     (fallback + vision) for quiz generation, Hindi translation, Learning Mode
    └─ /api/* proxied to :8000 by Vite dev server (chat only; most calls are absolute URLs)
 ```
 
@@ -222,11 +223,11 @@ pdfplumber/pypdf/python-pptx, chromadb + langchain-ollama (disconnected path).
 lucide-react. No state library; hooks + context only.
 
 **Models** — `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, ONNX INT8 preferred)
-for both chat intents and course search; Gemini (`GEMINI_MODEL`) for MCQs;
+for both chat intents and course search; Groq (`GROQ_MODELS`, rotating `GROQ_API_KEYS`) then Gemini (`GEMINI_MODEL`) for MCQs;
 Gemini (or RapidOCR + multilingual-e5 offline) for certificate parsing.
 
 **Env vars** (`main-lms-backend/.env`, see `.env.example`): `IGOT_MOCK_BASE_URL`,
-`IGOT_MOCK_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `IGOT_COMPETENCIES_UPDATE_URL`,
+`IGOT_MOCK_TOKEN`, `GROQ_API_KEYS`, `GROQ_MODELS`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `IGOT_COMPETENCIES_UPDATE_URL`,
 `OLLAMA_*`, `CHROMA_DB_DIR`, `CHUNK_SIZE`, `CHUNK_OVERLAP`.
 
 ---

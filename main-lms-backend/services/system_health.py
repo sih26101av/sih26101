@@ -4,7 +4,7 @@ admin system-health panel (GET /api/v1/admin/console/system-health).
 
 `basic()` is cheap and never does I/O — it is what /health returns (Render
 health check / keep-alive). `detailed()` adds live probes: the auth DB, the
-mock iGOT server, the embedders and (on request) Gemini.
+mock iGOT server, the embedders, Groq (key count) and (on request) Gemini.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import httpx
 
 from services import app_state
 
-_GEMINI_PLACEHOLDERS = {"", "your-actual-api-key-here", "YOUR_GEMINI_API_KEY"}
+_GEMINI_PLACEHOLDERS = {"", "your-actual-api-key-here", "your-gemini-api-key-here", "YOUR_GEMINI_API_KEY"}
 _RANK = {"ok": 0, "unknown": 1, "degraded": 2, "down": 3}
 
 
@@ -80,6 +80,11 @@ async def _probe_gemini(probe: bool) -> Dict[str, Any]:
     key = os.getenv("GEMINI_API_KEY", "").strip()
     model = os.getenv("GEMINI_MODEL", "").strip() or "default"
     if key in _GEMINI_PLACEHOLDERS:
+        from services.media_quiz.providers import groq_keys
+        if groq_keys():
+            return _component("gemini", "Gemini (quiz generation)", "degraded",
+                              "GEMINI_API_KEY is not configured — quizzes use Groq; video frame vision is off.",
+                              model=model)
         return _component("gemini", "Gemini (quiz generation)", "down",
                           "GEMINI_API_KEY is not configured — AI quizzes are unavailable.", model=model)
     if not probe:
@@ -97,6 +102,23 @@ async def _probe_gemini(probe: bool) -> Dict[str, Any]:
     ms = round((time.perf_counter() - t0) * 1000)
     return _component("gemini", "Gemini (quiz generation)", "ok", f"Reachable — {len(names)} models listed.",
                       model=model, latencyMs=ms)
+
+
+def _groq_component() -> Dict[str, Any]:
+    """Groq is the primary text LLM for quizzes; report key/model rotation state without calling it."""
+    from services.media_quiz.providers import configured_providers, groq_keys
+    keys = groq_keys()
+    if not keys:
+        return _component("groq", "Groq (primary quiz LLM)", "unknown",
+                          "GROQ_API_KEYS not configured — quizzes use Gemini only.")
+    providers = configured_providers()
+    usable = [p.model for p in providers if p.available()]
+    status = "ok" if usable else "degraded"
+    detail = (f"{len(keys)} key(s) rotating over {len(providers)} model(s); "
+              f"{len(usable)} model(s) currently usable." if usable else
+              "All keys are rate-limited or disabled — falling back to Gemini.")
+    return _component("groq", "Groq (primary quiz LLM)", status, detail,
+                      model=", ".join(p.model for p in providers), keyCount=len(keys))
 
 
 def _embedders() -> List[Dict[str, Any]]:
@@ -140,7 +162,7 @@ def _engine_and_data() -> List[Dict[str, Any]]:
 async def detailed(probe_gemini: bool = False) -> Dict[str, Any]:
     db, igot, gemini = await asyncio.gather(asyncio.to_thread(_probe_db), _probe_igot(),
                                             _probe_gemini(probe_gemini))
-    components = [igot, db, *_engine_and_data(), *_embedders(), gemini]
+    components = [igot, db, *_engine_and_data(), *_embedders(), _groq_component(), gemini]
     worst = max((c["status"] for c in components), key=lambda s: _RANK[s])
     overall = {"ok": "ok", "unknown": "ok", "degraded": "degraded", "down": "degraded"}[worst]
     if igot["status"] == "down" or db["status"] == "down":
