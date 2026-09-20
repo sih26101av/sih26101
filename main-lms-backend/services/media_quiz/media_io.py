@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import tempfile
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -292,10 +293,60 @@ def is_youtube_url(url: str) -> bool:
     return host in {"youtu.be", "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com"}
 
 
-def _yt_opts(**extra) -> dict:
+# YouTube blocks datacenter IPs with "Sign in to confirm you're not a bot", and the
+# block depends on which InnerTube player client asks. So extraction is retried over
+# a chain of clients (one attempt each, in order) before giving up; a cookies.txt
+# export or an outbound proxy fixes the cases no client gets through.
+YOUTUBE_PLAYER_CLIENTS = os.getenv("MEDIA_YOUTUBE_PLAYER_CLIENTS",
+                                   "default,tv_simply,android_vr,mweb,web_embedded")
+YOUTUBE_COOKIES_FILE = os.getenv("MEDIA_YOUTUBE_COOKIES_FILE", "").strip()
+YOUTUBE_COOKIES_BROWSER = os.getenv("MEDIA_YOUTUBE_COOKIES_FROM_BROWSER", "").strip()
+YOUTUBE_PROXY = os.getenv("MEDIA_YOUTUBE_PROXY", "").strip()
+
+YOUTUBE_BLOCKED_MESSAGE = (
+    "YouTube is blocking downloads from this server (its anti-bot check). "
+    "Upload the video or audio file instead — that path is unaffected. "
+    "(Server admin: set MEDIA_YOUTUBE_COOKIES_FILE to a cookies.txt export, or "
+    "MEDIA_YOUTUBE_PROXY, to restore YouTube links.)"
+)
+_BLOCKED_MARKERS = ("not a bot", "sign in to confirm", "confirm your age", "use --cookies",
+                    "cookies-from-browser", "too many requests", "http error 429",
+                    "failed to extract any player response", "no video formats found")
+
+
+def _yt_message(exc: BaseException) -> str:
+    """yt-dlp errors are multi-line and full of wiki links — keep the sentence that matters."""
+    msg = " ".join(str(exc).split())
+    msg = re.sub(r"^ERROR:\s*", "", msg)
+    msg = re.sub(r"^\[[^\]]+\]\s*[\w-]{3,24}:\s*", "", msg)       # "[youtube] dMRDzicSvXk: "
+    msg = re.sub(r"\s*(?:See|Also see)?\s*https?://\S+", "", msg)
+    return " ".join(msg.split())[:300] or exc.__class__.__name__
+
+
+def _is_blocked(exc: BaseException) -> bool:
+    low = str(exc).lower()
+    return any(m in low for m in _BLOCKED_MARKERS)
+
+
+def _yt_clients() -> List[str]:
+    return [c.strip() for c in YOUTUBE_PLAYER_CLIENTS.split(",") if c.strip()] or ["default"]
+
+
+def _yt_opts(client: Optional[str] = None, **extra) -> dict:
     opts = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True,
             # A JS runtime is needed for YouTube's signature challenges; node is common on dev machines.
             "js_runtimes": {"deno": {}, "node": {}}, "retries": 3, "socket_timeout": 30}
+    if client and client != "default":
+        # An unsupported name is only warned about by yt-dlp, so a bad env value
+        # costs one wasted attempt rather than breaking the request.
+        opts["extractor_args"] = {"youtube": {"player_client": [client]}}
+    if YOUTUBE_COOKIES_FILE and os.path.exists(YOUTUBE_COOKIES_FILE):
+        opts["cookiefile"] = YOUTUBE_COOKIES_FILE
+    elif YOUTUBE_COOKIES_BROWSER:
+        browser, _, profile = YOUTUBE_COOKIES_BROWSER.partition(":")
+        opts["cookiesfrombrowser"] = (browser.strip(), profile.strip() or None, None, None)
+    if YOUTUBE_PROXY:
+        opts["proxy"] = YOUTUBE_PROXY
     opts.update(extra)
     return opts
 
@@ -343,6 +394,26 @@ def _parse_json3(raw: bytes) -> List[Caption]:
     return out
 
 
+def _extract_info(yt_dlp, url: str) -> tuple[dict, str]:
+    """Metadata through the first player client YouTube doesn't block. Returns (info, client)."""
+    last: Optional[BaseException] = None
+    for client in _yt_clients():
+        try:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
+                info = ydl.extract_info(url, download=False)
+            if info:
+                if client != _yt_clients()[0]:
+                    logger.info("[youtube] player_client=%s got through", client)
+                return info, client
+            last = RuntimeError("yt-dlp returned no metadata")
+        except Exception as exc:                      # noqa: BLE001 — every client is retried
+            last = exc
+            logger.warning("[youtube] player_client=%s failed: %s", client, _yt_message(exc))
+            if not _is_blocked(exc):
+                break                                 # private / removed / bad link: other clients won't help
+    raise last or RuntimeError("yt-dlp returned no metadata")
+
+
 def download_youtube(url: str, workdir: str) -> MediaSource:
     try:
         import yt_dlp
@@ -352,41 +423,45 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
     if not is_youtube_url(url):
         raise MediaInputError("Only YouTube links (youtube.com / youtu.be) are supported.")
 
+    url = url.strip()
     try:
-        with yt_dlp.YoutubeDL(_yt_opts()) as ydl:
-            info = ydl.extract_info(url.strip(), download=False)
-            if info.get("_type") == "playlist" or info.get("entries"):
-                raise MediaInputError("Please paste a link to a single video, not a playlist.")
-            src = MediaSource(title=str(info.get("title") or "YouTube video"),
-                              duration=float(info.get("duration") or 0) or None)
-            if info.get("is_live"):
-                raise MediaInputError("Live streams are not supported.")
-            if (src.duration or 0) > YOUTUBE_MAX_DURATION_S:
-                raise MediaInputError(f"Video is {src.duration / 60:.0f} min long; the limit is "
-                                      f"{YOUTUBE_MAX_DURATION_S // 60} min.")
+        info, client = _extract_info(yt_dlp, url)
+        if info.get("_type") == "playlist" or info.get("entries"):
+            raise MediaInputError("Please paste a link to a single video, not a playlist.")
+        src = MediaSource(title=str(info.get("title") or "YouTube video"),
+                          duration=float(info.get("duration") or 0) or None)
+        if info.get("is_live"):
+            raise MediaInputError("Live streams are not supported.")
+        if (src.duration or 0) > YOUTUBE_MAX_DURATION_S:
+            raise MediaInputError(f"Video is {src.duration / 60:.0f} min long; the limit is "
+                                  f"{YOUTUBE_MAX_DURATION_S // 60} min.")
 
-            cap_url, kind, lang = _pick_captions(info)
-            if cap_url:
-                try:
+        cap_url, kind, lang = _pick_captions(info)
+        if cap_url:
+            try:
+                with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
                     caps = _parse_json3(ydl.urlopen(cap_url).read())
-                    if caps:
-                        src.captions, src.caption_kind, src.caption_lang = caps, kind, lang
-                        src.notes.append(f"speech from YouTube {kind} captions ({lang})")
-                except Exception as exc:
-                    logger.warning("[youtube] captions failed (%s) — falling back to audio + ASR", exc)
+                if caps:
+                    src.captions, src.caption_kind, src.caption_lang = caps, kind, lang
+                    src.notes.append(f"speech from YouTube {kind} captions ({lang})")
+            except Exception as exc:
+                logger.warning("[youtube] captions failed (%s) — falling back to audio + ASR", _yt_message(exc))
     except MediaInputError:
         raise
     except Exception as exc:
-        raise MediaInputError(f"Could not read that YouTube link: {exc}") from exc
+        if _is_blocked(exc):
+            raise MediaInputError(YOUTUBE_BLOCKED_MESSAGE) from exc
+        raise MediaInputError(f"Could not read that YouTube link: {_yt_message(exc)}") from exc
 
     def fetch(fmt: str, prefix: str) -> Optional[str]:
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(format=fmt, outtmpl=os.path.join(workdir, prefix + "_%(id)s.%(ext)s"))) as y:
-                got = y.extract_info(url.strip(), download=True)
+            with yt_dlp.YoutubeDL(_yt_opts(client=client, format=fmt,
+                                           outtmpl=os.path.join(workdir, prefix + "_%(id)s.%(ext)s"))) as y:
+                got = y.extract_info(url, download=True)
                 path = y.prepare_filename(got)
             return path if os.path.exists(path) and os.path.getsize(path) > 0 else None
         except Exception as exc:
-            logger.warning("[youtube] %s download failed: %s", prefix, exc)
+            logger.warning("[youtube] %s download failed: %s", prefix, _yt_message(exc))
             return None
 
     # Video and audio are separate streams: download them in parallel.

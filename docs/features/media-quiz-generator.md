@@ -178,6 +178,33 @@ separate streams needs an ffmpeg binary. So `download_youtube` fetches parts:
 When captions are available, the probe computes the speech ratio from the
 caption spans instead of running VAD.
 
+### Getting past the bot check
+
+YouTube answers most **datacenter IPs** — including the Oracle VM — with
+"Sign in to confirm you're not a bot", so links fail on the deployed server while
+they work from a laptop. Uploads are unaffected.
+
+Which InnerTube player client asks changes the answer, so `_extract_info` tries a
+chain of them, one `extract_info` each, and the client that got through is reused
+for the caption fetch and the stream downloads:
+`MEDIA_YOUTUBE_PLAYER_CLIENTS=default,tv_simply,android_vr,mweb,web_embedded`
+(`default` is whatever yt-dlp ships). An unsupported name only costs one wasted
+attempt — yt-dlp warns and skips it. The chain is only retried while the error
+looks like a block (`_is_blocked`); a private, removed or region-locked video
+stops at the first client.
+
+When no client gets through, give yt-dlp credentials or a different IP:
+`MEDIA_YOUTUBE_COOKIES_FILE` (a Netscape `cookies.txt` export — use a throwaway
+Google account, YouTube suspends accounts whose cookies are reused this way),
+`MEDIA_YOUTUBE_COOKIES_FROM_BROWSER` (dev machines only) or
+`MEDIA_YOUTUBE_PROXY`. `GET /capabilities` reports `youtube.player_clients`,
+`youtube.cookies` and `youtube.proxy` so you can see what the server has.
+
+Failures reach the learner as one sentence, not yt-dlp's multi-line dump
+(`_yt_message` strips the `ERROR: [youtube] <id>:` prefix and the wiki links); a
+block becomes `YOUTUBE_BLOCKED_MESSAGE`, which tells them to upload the file
+instead. Keep `yt-dlp` recent — only new releases keep up with the checks.
+
 ## In / out
 
 - **Upload response:** the document-quiz fields (`status, message, quiz_id, filename,
@@ -198,6 +225,20 @@ caption spans instead of running VAD.
 cd main-lms-backend
 pip install -r requirements-media.txt   # faster-whisper, opencv-headless, rapidocr_onnxruntime, yt-dlp
 ```
+
+**On a headless server also install the OpenCV system libraries:**
+
+```bash
+sudo apt-get install -y libgl1 libglib2.0-0
+```
+
+`rapidocr_onnxruntime` depends on the full `opencv-python` wheel, which is
+installed over `opencv-python-headless` and needs `libGL.so.1` at import time. If
+they're missing, `import cv2` raises and **only the video path breaks**: audio
+uploads and document quizzes keep working, so the symptom is a 503
+("A system library the video decoder needs is missing…") on video uploads alone.
+`deploy/oracle/setup.sh` installs them with the media extras, and
+`update.sh` installs them on any deploy where `import cv2` fails.
 
 The first ASR call downloads Whisper `small` (~480 MB; set it with
 `MEDIA_WHISPER_MODEL`, `MEDIA_WHISPER_DEVICE` and `MEDIA_WHISPER_COMPUTE`). No
@@ -264,6 +305,11 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 - **Not yet tested:** the real test set above, the Ollama VLM backend, and
   YouTube videos that have neither captions nor a downloadable video stream.
+- **YouTube on the Oracle VM is blocked** (see *Getting past the bot check*). The
+  player-client chain is the free attempt; whether any client gets through from a
+  given datacenter IP changes week to week. Cookies or a residential proxy are the
+  only dependable fixes, and neither is configured on the demo server — so for the
+  demo, upload the file.
 - **Dev server:** `uvicorn --reload` on Windows hangs on reload in this app. The
   old worker never exits, so new routes 404 until the server is restarted by
   hand. This isn't specific to this feature; after pulling changes, restart the

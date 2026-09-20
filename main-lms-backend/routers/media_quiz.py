@@ -22,6 +22,7 @@ import shutil
 import threading
 import uuid
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
@@ -48,6 +49,30 @@ async def _warm_media_models() -> None:
 MAX_MEDIA_BYTES = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "1024")) * 1024 * 1024
 MEDIA_EXTS = media_io.MEDIA_VIDEO_EXTS | media_io.MEDIA_AUDIO_EXTS
 DIFFICULTIES = {"Easy", "Medium", "Hard"}
+
+
+@lru_cache(maxsize=None)
+def _importable(module: str) -> bool:
+    """Really import it. find_spec() only proves the wheel is on disk — OpenCV's wheel
+    is installed but fails to load without libGL/libglib on a headless server."""
+    if importlib.util.find_spec(module) is None:
+        return False
+    try:
+        importlib.import_module(module)
+        return True
+    except Exception as exc:                    # noqa: BLE001 — a broken install is "not available"
+        logger.warning("[media] %s is installed but will not import: %s", module, exc)
+        return False
+
+
+def _missing_dep_message(exc: ImportError) -> str:
+    text = str(exc)
+    if ".so" in text or "DLL" in text:
+        # e.g. "libGL.so.1: cannot open shared object file" — rapidocr pulls in the full
+        # opencv-python wheel, which needs these system libraries even on a headless host.
+        return (f"A system library the video decoder needs is missing ({text}). On the server run: "
+                f"sudo apt-get install -y libgl1 libglib2.0-0")
+    return f"Media dependencies missing ({text}). Run: pip install -r requirements-media.txt"
 
 
 class MediaQuizQuestion(QuizQuestion):
@@ -102,8 +127,7 @@ async def _process(media: media_io.MediaSource, filename: str, ext: str, size: i
     except LLMUnavailable as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Question generation failed: {exc}")
     except ImportError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail=f"Media dependencies missing ({exc}). Run: pip install -r requirements-media.txt")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=_missing_dep_message(exc))
 
     skill_name = result.competency_name or "General Learning"
     questions = [MediaQuizQuestion(**q.to_dict(), difficulty=media_question_difficulty(difficulty, q.kind))
@@ -197,15 +221,19 @@ async def youtube_media(payload: YoutubeRequest) -> MediaQuizResponse:
 
 
 @router.get("/capabilities", summary="Which media backends are installed / configured")
-async def capabilities() -> JSONResponse:
-    has = lambda m: importlib.util.find_spec(m) is not None  # noqa: E731
+def capabilities() -> JSONResponse:          # sync: _importable() really imports, so keep it off the event loop
+    has = _importable
     return JSONResponse({
         "asr": {"available": has("faster_whisper"), "model": extractors.WHISPER_MODEL},
         "vad": {"available": has("faster_whisper"), "model": "silero (bundled with faster-whisper)"},
         "ocr": {"available": has("rapidocr_onnxruntime"), "engine": "RapidOCR (PaddleOCR models, ONNX)"},
         "video": {"available": has("cv2") and has("av")},
         "vlm": {"backend": extractors.vlm_backend(), "label": extractors.vlm_label()},
-        "youtube": {"available": has("yt_dlp"), "max_duration_s": media_io.YOUTUBE_MAX_DURATION_S},
+        "youtube": {"available": has("yt_dlp"), "max_duration_s": media_io.YOUTUBE_MAX_DURATION_S,
+                    # YouTube blocks datacenter IPs; these say which work-arounds are configured.
+                    "player_clients": media_io._yt_clients(),
+                    "cookies": bool(media_io.YOUTUBE_COOKIES_FILE or media_io.YOUTUBE_COOKIES_BROWSER),
+                    "proxy": bool(media_io.YOUTUBE_PROXY)},
         "accepted_extensions": sorted(MEDIA_EXTS),
         "max_upload_mb": MAX_MEDIA_BYTES // (1024 * 1024),
     })

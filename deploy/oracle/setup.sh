@@ -33,6 +33,10 @@ python3 -m venv "$REPO/venv"
 "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements.txt" -r "$REPO/mock-igot-server/requirements.txt"
 if [ "${WITH_MEDIA:-0}" = "1" ]; then
   "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements-media.txt"
+  # rapidocr depends on the full opencv-python wheel (not headless), which will not
+  # import on a server without these — video uploads then fail with
+  # "libGL.so.1: cannot open shared object file".
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1 libglib2.0-0
 fi
 
 echo "==> Embedding models + caches"

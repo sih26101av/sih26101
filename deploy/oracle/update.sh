@@ -13,8 +13,24 @@ echo "==> Now at $(git log -1 --format='%h %an: %s')"
 PIP="$REPO/venv/bin/pip"
 REQS=(-r main-lms-backend/requirements.txt -r mock-igot-server/requirements.txt)
 # Keep media support if it was installed at setup time.
-"$PIP" show faster-whisper >/dev/null 2>&1 && REQS+=(-r main-lms-backend/requirements-media.txt)
+MEDIA=0
+"$PIP" show faster-whisper >/dev/null 2>&1 && { MEDIA=1; REQS+=(-r main-lms-backend/requirements-media.txt); }
 "$PIP" install --quiet "${REQS[@]}"
+
+# OpenCV comes from rapidocr as the full (non-headless) wheel, which needs these
+# system libraries. Without them video uploads 503 with "libGL.so.1: cannot open
+# shared object file" while audio keeps working. Idempotent: only runs when broken.
+if [ "$MEDIA" = "1" ] && ! "$REPO/venv/bin/python" -c "import cv2" >/dev/null 2>&1; then
+  echo "==> cv2 will not import; installing libgl1 libglib2.0-0"
+  # Never fail the deploy over this: without it only video uploads break.
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq || true
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1 libglib2.0-0 || true
+  if "$REPO/venv/bin/python" -c "import cv2" >/dev/null 2>&1; then
+    echo "==> cv2 imports now"
+  else
+    echo "!! cv2 still will not import — video uploads will 503 (audio and documents keep working)"
+  fi
+fi
 
 # Pick up edits to the unit files too.
 sudo cp deploy/oracle/mock-igot.service deploy/oracle/lms-backend.service /etc/systemd/system/

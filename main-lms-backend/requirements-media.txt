@@ -15,7 +15,13 @@ faster-whisper>=1.1.0          # ASR (CTranslate2) + bundled Silero VAD + PyAV d
 av>=12.0.0                     # container / stream probing (pulled in by faster-whisper)
 opencv-python-headless>=4.9    # frame sampling, scene-change detection
 rapidocr_onnxruntime>=1.3.0    # text detection (probe) + recognition (keyframes)
-yt-dlp>=2024.8.6               # YouTube links
+# NOTE: rapidocr depends on the FULL opencv-python wheel, which wins over the
+# headless one above and needs libGL / libglib at import time. On a headless
+# server: sudo apt-get install -y libgl1 libglib2.0-0 (deploy/oracle/update.sh
+# does this automatically), or video uploads 503 while audio still works.
+# YouTube links. Keep this recent: YouTube's anti-bot checks change often and
+# only new releases can get past them.
+yt-dlp>=2026.8.19
 
 # Offline VLM (optional): install Ollama and `ollama pull qwen2.5vl:3b`, then set
 # MEDIA_VLM_BACKEND=ollama. Default is Gemini vision (cloud, demo-only).
