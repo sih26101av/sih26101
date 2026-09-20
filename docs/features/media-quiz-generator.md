@@ -131,7 +131,10 @@ out **identical** to the sequential version.
   Library default: 1 × 4. Results are written in window order.
 - **OCR:** RapidOCR's ONNX sessions are rebuilt with `MEDIA_OCR_THREADS`=2 intra-op
   threads. By default each session takes every core, and on a single frame most of
-  those threads just spin. `MEDIA_OCR_WORKERS` frames are then recognised in
+  those threads just spin. RapidOCR's det/cls/rec sub-engines are resolved by name
+  (`probe._sub_engine`): they are `text_det` / `text_cls` / `text_rec` since 1.3.9
+  and `text_detector` / `text_recognizer` in older builds, so a hard-coded layout
+  silently skips the tuning here and crashes the text-density probe. `MEDIA_OCR_WORKERS` frames are then recognised in
   parallel, and the probe's text detector uses the same pool. Timeline writes stay
   sequential, in keyframe order.
 - **YouTube:** when there are no captions, the video-only and audio-only streams

@@ -67,13 +67,35 @@ _ocr = None
 _ocr_lock = threading.Lock()
 
 
+def _sub_engine(eng, *names):
+    """RapidOCR's det/cls/rec sub-engines. The attribute names differ across releases
+    (text_det / text_rec since 1.3.9, text_detector / text_recognizer in older builds),
+    so resolve them by name instead of hard-coding one layout: guessing wrong silently
+    disabled the thread tuning below and crashed text_density() on every video."""
+    for n in names:
+        part = getattr(eng, n, None)
+        if part is not None:
+            return part
+    return None
+
+
+def _detector(eng):
+    return _sub_engine(eng, "text_det", "text_detector")
+
+
 def _limit_threads(eng) -> None:
     """Rebuild RapidOCR's det/cls/rec sessions with OCR_THREADS intra-op threads (same
     models and options). Stock sessions are kept if the library layout differs."""
     import onnxruntime as ort
 
     try:
-        holders = [eng.text_detector.infer, eng.text_cls.infer, eng.text_recognizer.session]
+        parts = [(_detector(eng), "infer"),
+                 (_sub_engine(eng, "text_cls", "text_classifier"), "infer"),
+                 (_sub_engine(eng, "text_rec", "text_recognizer"), "session")]
+        holders = [h for h in (getattr(p, a, None) for p, a in parts if p is not None)
+                   if h is not None and hasattr(h, "session")]
+        if len(holders) < len(parts):
+            logger.info("[ocr] only %d/%d RapidOCR sessions found for thread tuning", len(holders), len(parts))
         for h in holders:
             so = ort.SessionOptions()
             so.log_severity_level = 4
@@ -147,7 +169,11 @@ def speech_regions(audio: Optional[np.ndarray]) -> List[Tuple[float, float]]:
 def text_density(frames: List[np.ndarray]) -> float:
     if not frames:
         return 0.0
-    det = get_ocr().text_detector
+    det = _detector(get_ocr())
+    if det is None:
+        # Better a routing decision made without text density than a 500 on every video.
+        logger.warning("[probe] this RapidOCR build exposes no text detector; skipping text density")
+        return 0.0
 
     def has_text(f) -> bool:
         try:
