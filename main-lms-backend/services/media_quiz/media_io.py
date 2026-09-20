@@ -445,28 +445,42 @@ def youtube_diagnosis(url: str) -> dict:
     out["js_runtimes"] = {name: shutil.which(name) for name in ("deno", "node", "bun")}
     out["cookies"] = bool(YOUTUBE_COOKIES_FILE or YOUTUBE_COOKIES_BROWSER)
     out["proxy"] = bool(YOUTUBE_PROXY)
-    out["pot_provider"] = _pot_provider_installed()
+    out["pot_provider"] = _safe(_pot_provider_installed)
 
     for client in _yt_clients():
         try:
             with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
-                info = ydl.extract_info(url.strip(), download=False, process=False)
+                info = ydl.extract_info(url.strip(), download=False)
             cap, kind, lang = _pick_captions(info or {})
             out["clients"][client] = {"ok": True, "title": (info or {}).get("title"),
                                       "captions": bool(cap), "caption_kind": kind, "caption_lang": lang}
         except Exception as exc:                  # noqa: BLE001 — this is the diagnosis
             out["clients"][client] = {"ok": False, "blocked": _is_blocked(exc), "error": _yt_message(exc)}
 
-    out["watch_page"] = _watch_page_probe(out["video_id"])
+    out["watch_page"] = _safe(_watch_page_probe, out["video_id"])
     return out
+
+
+def _safe(fn, *args):
+    """A diagnosis that raises is useless — report the failure as its own answer."""
+    try:
+        return fn(*args)
+    except Exception as exc:                      # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 def _pot_provider_installed() -> bool:
     import importlib.util
 
-    # The bgutil PO-token provider ships as a yt-dlp plugin package.
-    return any(importlib.util.find_spec(m) is not None
-               for m in ("yt_dlp_plugins.extractor.getpot_bgutil", "bgutil_ytdlp_pot_provider"))
+    # The bgutil PO-token provider ships as a yt-dlp plugin package. find_spec() on a
+    # dotted name imports the parent, which raises when the plugin isn't installed.
+    for m in ("yt_dlp_plugins.extractor.getpot_bgutil", "bgutil_ytdlp_pot_provider"):
+        try:
+            if importlib.util.find_spec(m) is not None:
+                return True
+        except (ImportError, ValueError):
+            continue
+    return False
 
 
 def _watch_page_probe(video_id: Optional[str]) -> dict:

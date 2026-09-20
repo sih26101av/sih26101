@@ -237,7 +237,11 @@ async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSv
 
     if not media_io.is_youtube_url(url):
         raise HTTPException(status_code=400, detail="Only YouTube links can be diagnosed.")
-    return JSONResponse(await asyncio.to_thread(media_io.youtube_diagnosis, url))
+    try:
+        return JSONResponse(await asyncio.to_thread(media_io.youtube_diagnosis, url))
+    except Exception as exc:                    # noqa: BLE001 — a diagnosis must always answer
+        logger.exception("[media] youtube diagnosis failed")
+        return JSONResponse({"error": f"{type(exc).__name__}: {exc}"}, status_code=200)
 
 
 @router.get("/capabilities", summary="Which media backends are installed / configured")
