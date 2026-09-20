@@ -302,6 +302,8 @@ YOUTUBE_PLAYER_CLIENTS = os.getenv("MEDIA_YOUTUBE_PLAYER_CLIENTS",
 YOUTUBE_COOKIES_FILE = os.getenv("MEDIA_YOUTUBE_COOKIES_FILE", "").strip()
 YOUTUBE_COOKIES_BROWSER = os.getenv("MEDIA_YOUTUBE_COOKIES_FROM_BROWSER", "").strip()
 YOUTUBE_PROXY = os.getenv("MEDIA_YOUTUBE_PROXY", "").strip()
+WATCH_PAGE_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                 "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
 
 YOUTUBE_BLOCKED_MESSAGE = (
     "YouTube is blocking downloads from this server (its anti-bot check). "
@@ -412,6 +414,84 @@ def _extract_info(yt_dlp, url: str) -> tuple[dict, str]:
             if not _is_blocked(exc):
                 break                                 # private / removed / bad link: other clients won't help
     raise last or RuntimeError("yt-dlp returned no metadata")
+
+
+def youtube_video_id(url: str) -> Optional[str]:
+    from urllib.parse import parse_qs, urlparse
+
+    u = urlparse(url.strip())
+    if (u.hostname or "").lower() == "youtu.be":
+        return (u.path.lstrip("/").split("/") or [None])[0] or None
+    if u.path.startswith(("/shorts/", "/embed/", "/live/")):
+        return u.path.split("/")[2] or None
+    return (parse_qs(u.query).get("v") or [None])[0]
+
+
+def youtube_diagnosis(url: str) -> dict:
+    """What can this host actually do with YouTube? Reports the yt-dlp version, the
+    JavaScript runtimes on PATH (without one, yt-dlp drops to its js-less client set),
+    the outcome per player client, and whether a plain watch-page GET is served or
+    walled. Downloads nothing. This is the one dependency that breaks by IP reputation
+    rather than by code, so it is worth being able to ask the server itself."""
+    import shutil
+
+    out: dict = {"url": url, "video_id": youtube_video_id(url), "clients": {}}
+    try:
+        import yt_dlp
+        out["yt_dlp"] = yt_dlp.version.__version__
+    except ImportError as exc:
+        return {**out, "error": f"yt-dlp not installed: {exc}"}
+
+    out["js_runtimes"] = {name: shutil.which(name) for name in ("deno", "node", "bun")}
+    out["cookies"] = bool(YOUTUBE_COOKIES_FILE or YOUTUBE_COOKIES_BROWSER)
+    out["proxy"] = bool(YOUTUBE_PROXY)
+    out["pot_provider"] = _pot_provider_installed()
+
+    for client in _yt_clients():
+        try:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
+                info = ydl.extract_info(url.strip(), download=False, process=False)
+            cap, kind, lang = _pick_captions(info or {})
+            out["clients"][client] = {"ok": True, "title": (info or {}).get("title"),
+                                      "captions": bool(cap), "caption_kind": kind, "caption_lang": lang}
+        except Exception as exc:                  # noqa: BLE001 — this is the diagnosis
+            out["clients"][client] = {"ok": False, "blocked": _is_blocked(exc), "error": _yt_message(exc)}
+
+    out["watch_page"] = _watch_page_probe(out["video_id"])
+    return out
+
+
+def _pot_provider_installed() -> bool:
+    import importlib.util
+
+    # The bgutil PO-token provider ships as a yt-dlp plugin package.
+    return any(importlib.util.find_spec(m) is not None
+               for m in ("yt_dlp_plugins.extractor.getpot_bgutil", "bgutil_ytdlp_pot_provider"))
+
+
+def _watch_page_probe(video_id: Optional[str]) -> dict:
+    """A plain GET of the watch page is a different surface from the InnerTube player
+    API, so it can still answer when the player API says "not a bot"."""
+    if not video_id:
+        return {"skipped": "no video id"}
+    import httpx
+
+    try:
+        r = httpx.get(f"https://www.youtube.com/watch?v={video_id}",
+                      headers={"User-Agent": WATCH_PAGE_UA, "Accept-Language": "en-US,en;q=0.9"},
+                      timeout=20.0, follow_redirects=True)
+    except Exception as exc:                      # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    body = r.text
+    return {
+        "status": r.status_code,
+        "bytes": len(body),
+        "has_caption_tracks": "captionTracks" in body,
+        "has_player_response": "ytInitialPlayerResponse" in body,
+        # A consent interstitial or a bot wall instead of the video page.
+        "consent_wall": "consent.youtube.com" in str(r.url) or "/sorry/" in str(r.url),
+        "final_url": str(r.url)[:200],
+    }
 
 
 def download_youtube(url: str, workdir: str) -> MediaSource:

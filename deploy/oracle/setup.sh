@@ -40,6 +40,15 @@ if [ "${WITH_MEDIA:-0}" = "1" ]; then
   "$REPO/venv/bin/pip" uninstall -y opencv-python opencv-contrib-python >/dev/null 2>&1 || true
   "$REPO/venv/bin/pip" install --force-reinstall opencv-python-headless
   "$REPO/venv/bin/python" -c "import cv2; print('==> cv2', cv2.__version__)"
+  # yt-dlp needs a JavaScript runtime for YouTube's signature challenges; without one
+  # it drops to its deprecated js-less client set. Deno is a single static binary.
+  DENO_ARCH="$(uname -m)"
+  if [ "$DENO_ARCH" = "x86_64" ] || [ "$DENO_ARCH" = "aarch64" ]; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y unzip
+    curl -fsSL -o /tmp/deno.zip       "https://github.com/denoland/deno/releases/latest/download/deno-${DENO_ARCH}-unknown-linux-gnu.zip"
+    sudo unzip -o -q /tmp/deno.zip -d /usr/local/bin && sudo chmod +x /usr/local/bin/deno
+    rm -f /tmp/deno.zip
+  fi
 fi
 
 echo "==> Embedding models + caches"

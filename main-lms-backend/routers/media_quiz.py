@@ -228,6 +228,18 @@ async def youtube_media(payload: YoutubeRequest) -> MediaQuizResponse:
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+@router.get("/youtube/diagnose", summary="Why YouTube links fail from this host")
+async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSvXk") -> JSONResponse:
+    """YouTube blocks by IP reputation, so the same link works from a laptop and fails
+    from the server. This reports what this host can reach — yt-dlp version, JS runtimes,
+    per-player-client outcome, watch-page reachability — without downloading anything."""
+    import asyncio
+
+    if not media_io.is_youtube_url(url):
+        raise HTTPException(status_code=400, detail="Only YouTube links can be diagnosed.")
+    return JSONResponse(await asyncio.to_thread(media_io.youtube_diagnosis, url))
+
+
 @router.get("/capabilities", summary="Which media backends are installed / configured")
 def capabilities() -> JSONResponse:          # sync: _importable() really imports, so keep it off the event loop
     has = _importable

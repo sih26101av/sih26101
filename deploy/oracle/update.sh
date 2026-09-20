@@ -54,6 +54,27 @@ if [ "$MEDIA" = "1" ]; then
   fi
 fi
 
+# yt-dlp needs a JavaScript runtime for YouTube's signature challenges. Without one
+# it falls back to its js-less client set, which YouTube has deprecated and which
+# trips the "not a bot" check sooner. Deno is a single static binary, so install it
+# straight from the release zip rather than piping a script into sudo sh.
+if [ "$MEDIA" = "1" ] && ! command -v deno >/dev/null 2>&1; then
+  echo "==> installing Deno (yt-dlp JavaScript runtime)"
+  DENO_ARCH="$(uname -m)"
+  case "$DENO_ARCH" in
+    x86_64|aarch64) ;;
+    *) DENO_ARCH="" ;;
+  esac
+  if [ -n "$DENO_ARCH" ]; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y unzip >/dev/null 2>&1 || true
+    if curl -fsSL -o /tmp/deno.zip       "https://github.com/denoland/deno/releases/latest/download/deno-${DENO_ARCH}-unknown-linux-gnu.zip"; then
+      sudo unzip -o -q /tmp/deno.zip -d /usr/local/bin && sudo chmod +x /usr/local/bin/deno || true
+    fi
+    rm -f /tmp/deno.zip
+  fi
+  command -v deno >/dev/null 2>&1 && echo "==> deno $(deno --version | head -1)"     || echo "!! no Deno — yt-dlp stays in js-less mode (YouTube links only)"
+fi
+
 # Pick up edits to the unit files too.
 sudo cp deploy/oracle/mock-igot.service deploy/oracle/lms-backend.service /etc/systemd/system/
 sudo sed -i "s|/home/ubuntu/sih26101|$REPO|g; s|^User=ubuntu|User=$USER|" \
