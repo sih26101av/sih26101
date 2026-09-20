@@ -33,10 +33,13 @@ python3 -m venv "$REPO/venv"
 "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements.txt" -r "$REPO/mock-igot-server/requirements.txt"
 if [ "${WITH_MEDIA:-0}" = "1" ]; then
   "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements-media.txt"
-  # rapidocr depends on the full opencv-python wheel (not headless), which will not
-  # import on a server without these — video uploads then fail with
-  # "libGL.so.1: cannot open shared object file".
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1 libglib2.0-0
+  # rapidocr depends on the full opencv-python wheel, which pip installs over the
+  # headless one and which needs libGL/libglib at import time — on a headless
+  # server video uploads then fail with "libGL.so.1: cannot open shared object
+  # file". Put the headless wheel back; it is the same cv2 without the GUI calls.
+  "$REPO/venv/bin/pip" uninstall -y opencv-python opencv-contrib-python >/dev/null 2>&1 || true
+  "$REPO/venv/bin/pip" install --force-reinstall opencv-python-headless
+  "$REPO/venv/bin/python" -c "import cv2; print('==> cv2', cv2.__version__)"
 fi
 
 echo "==> Embedding models + caches"

@@ -226,19 +226,26 @@ cd main-lms-backend
 pip install -r requirements-media.txt   # faster-whisper, opencv-headless, rapidocr_onnxruntime, yt-dlp
 ```
 
-**On a headless server also install the OpenCV system libraries:**
+**On a headless server, put the headless OpenCV wheel back afterwards:**
 
 ```bash
-sudo apt-get install -y libgl1 libglib2.0-0
+pip uninstall -y opencv-python opencv-contrib-python
+pip install --force-reinstall opencv-python-headless
 ```
 
-`rapidocr_onnxruntime` depends on the full `opencv-python` wheel, which is
-installed over `opencv-python-headless` and needs `libGL.so.1` at import time. If
-they're missing, `import cv2` raises and **only the video path breaks**: audio
-uploads and document quizzes keep working, so the symptom is a 503
-("A system library the video decoder needs is missing…") on video uploads alone.
-`deploy/oracle/setup.sh` installs them with the media extras, and
-`update.sh` installs them on any deploy where `import cv2` fails.
+`rapidocr_onnxruntime` depends on the **full** `opencv-python` wheel, so pip
+installs it over `opencv-python-headless` — and that wheel needs `libGL.so.1` at
+import time, which a headless VM doesn't have. `import cv2` then raises and
+**only the video path breaks**: audio uploads and document quizzes keep working,
+so the symptom is a 503 ("A system library the video decoder needs is missing…")
+on video uploads alone. Both wheels own `cv2/`, so the uninstall takes those files
+with it — hence `--force-reinstall`. Re-running `pip install -r
+requirements-media.txt` undoes this, so it has to come last.
+
+`deploy/oracle/setup.sh` does it with the media extras, and `update.sh` repairs it
+on any deploy where `import cv2` fails, falling back to `apt-get install libgl1
+libglib2.0-0t64` (one package per call — the names differ across Ubuntu releases
+and apt aborts the whole transaction over a single unknown name).
 
 The first ASR call downloads Whisper `small` (~480 MB; set it with
 `MEDIA_WHISPER_MODEL`, `MEDIA_WHISPER_DEVICE` and `MEDIA_WHISPER_COMPUTE`). No
