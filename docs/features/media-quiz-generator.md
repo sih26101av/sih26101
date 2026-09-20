@@ -227,9 +227,16 @@ The Oracle VM is in the harder case, and measuring it settled the question
 (2026-09-20, `141-148-192-11.sslip.io`):
 
 ```
-default / tv_simply / android_vr / mweb / web_embedded → "Sign in to confirm you're not a bot"
-watch page (browser UA, 1.3 MB)  → playability: LOGIN_REQUIRED, caption_tracks: []
+default, android_vr, ios, web_embedded, mweb   → "Sign in to confirm you're not a bot"
+tv_simply                                      → title only: no captions, no formats
+android, tv, tv_embedded, web, web_safari, web_creator → same wall
+watch page (browser UA, 1.3 MB)                → playability: LOGIN_REQUIRED, caption_tracks: []
 ```
+
+The second and third lines were measured through `?clients=…`, which overrides the
+chain for one call — so this is not "the configured clients fail", it is every
+client yt-dlp has. `tv_simply` reaching a title and nothing else is the shape of
+the wall: identity is served, content is not.
 
 Every InnerTube client **and** the plain watch page are refused, so there is no
 surface left for code to read: the captions work above cannot help a host in this
@@ -266,7 +273,9 @@ than being sent to set up cookies they already set up.
 
 `GET /youtube/diagnose?url=…` answers what this host can actually do — yt-dlp
 version, JS runtimes, per-client captions **and format counts**, watch-page
-reachability — and ends with a `verdict`:
+reachability — and ends with a `verdict`. `&clients=android,tv,web_safari` tries
+those instead of the configured chain, which is how a candidate client gets tested
+against the real IP without a redeploy (nothing else can settle it):
 
 ```json
 "verdict": {"can_generate_quiz": true, "can_use_video_frames": false, "speech_from": "captions"}
