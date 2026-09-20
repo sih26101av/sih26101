@@ -364,6 +364,7 @@ def _yt_message(exc: BaseException) -> str:
     msg = " ".join(str(exc).split())
     msg = re.sub(r"^ERROR:\s*", "", msg)
     msg = re.sub(r"^\[[^\]]+\]\s*[\w-]{3,24}:\s*", "", msg)       # "[youtube] dMRDzicSvXk: "
+    msg = re.sub(r"^\[[^\]]+\]\s*", "", msg)                      # "[youtube] " (captured via the logger)
     msg = re.sub(r"\s*(?:See|Also see)?\s*https?://\S+", "", msg)
     return " ".join(msg.split())[:300] or exc.__class__.__name__
 
@@ -424,6 +425,32 @@ _COOKIES_CACHE: Optional[str] = None
 
 def has_cookies() -> bool:
     return bool(cookies_path() or YOUTUBE_COOKIES_BROWSER)
+
+
+class _Collect:
+    """`ignore_no_formats_error` stops yt-dlp raising, but the reason — "Sign in to
+    confirm you're not a bot", "Video unavailable" — is still reported through its
+    logger. Without capturing it, an empty response is indistinguishable from a dead
+    link, and the learner gets the wrong explanation."""
+
+    def __init__(self) -> None:
+        self.lines: List[str] = []
+
+    def debug(self, msg: str) -> None:
+        pass
+
+    def info(self, msg: str) -> None:
+        pass
+
+    def warning(self, msg: str) -> None:
+        self.lines.append(str(msg))
+
+    def error(self, msg: str) -> None:
+        self.lines.append(str(msg))
+
+    @property
+    def text(self) -> str:
+        return " ".join(self.lines)
 
 
 def _yt_clients() -> List[str]:
@@ -561,22 +588,29 @@ def _probe_clients(yt_dlp, url: str) -> tuple[List[_Attempt], Optional[BaseExcep
     attempts: List[_Attempt] = []
     last: Optional[BaseException] = None
     for client in _yt_clients():
+        said = _Collect()
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True)) as ydl:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True,
+                                           logger=said, no_warnings=False)) as ydl:
                 info = ydl.extract_info(url, download=False)
             if not info:
-                last = RuntimeError("yt-dlp returned no metadata")
+                last = RuntimeError(said.text or "yt-dlp returned no metadata")
                 continue
             if info.get("_type") == "playlist" or info.get("entries"):
                 raise MediaInputError("Please paste a link to a single video, not a playlist.")
             cap_url, kind, lang = _pick_captions(info)
             vf, af = _count_formats(info)
             if not (info.get("duration") or cap_url or vf or af):
-                # ignore_no_formats_error also swallows "Video unavailable": yt-dlp then
-                # hands back a placeholder ("youtube video #<id>", no duration, no
-                # channel). Another client may still do better, so keep going.
-                logger.warning("[youtube] player_client=%s returned an empty placeholder", client)
-                last = RuntimeError("the video is unavailable (private, removed, or the link is wrong).")
+                # ignore_no_formats_error also swallows the refusal: yt-dlp then hands
+                # back a placeholder ("youtube video #<id>", no duration, no channel).
+                # What it swallowed decides the message, so carry its own words — a bot
+                # wall and a deleted video look identical from the info dict alone.
+                logger.warning("[youtube] player_client=%s returned an empty placeholder: %s",
+                               client, _yt_message(RuntimeError(said.text))[:160])
+                last = RuntimeError(said.text or
+                                    "the video is unavailable (private, removed, or the link is wrong).")
+                if _is_fatal(last) and not _is_blocked(last):
+                    break                         # the video is gone; five more clients won't find it
                 continue
             attempts.append(_Attempt(client, info, cap_url, kind, lang, vf, af))
             logger.info("[youtube] player_client=%s ok: captions=%s formats=%d video / %d audio",
@@ -628,11 +662,20 @@ def youtube_diagnosis(url: str) -> dict:
     out["pot_provider"] = _safe(_pot_provider_installed)
 
     for client in _yt_clients():
+        said = _Collect()
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True)) as ydl:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True,
+                                           logger=said, no_warnings=False)) as ydl:
                 info = ydl.extract_info(url.strip(), download=False)
             cap, kind, lang = _pick_captions(info or {})
             vf, af = _count_formats(info or {})
+            if not ((info or {}).get("duration") or cap or vf or af):
+                # An empty placeholder is a refusal yt-dlp was told not to raise.
+                # Reporting it as "ok" would hide exactly what this endpoint is for.
+                why = RuntimeError(said.text)
+                out["clients"][client] = {"ok": False, "blocked": _is_blocked(why),
+                                          "gated": _is_gated(why), "error": _yt_message(why)}
+                continue
             out["clients"][client] = {"ok": True, "title": (info or {}).get("title"),
                                       "captions": bool(cap), "caption_kind": kind, "caption_lang": lang,
                                       # 0 formats with captions present is the normal datacenter
@@ -760,7 +803,15 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
 
     if not attempts:
         exc = last_error or RuntimeError("yt-dlp returned no metadata")
-        if _is_blocked(exc) or _is_gated(exc):
+        # Order matters. A refused request often *also* reports "No video formats
+        # found", and a removed video reports it too, so the unambiguous wording has
+        # to be tested first or every dead link is blamed on the anti-bot check.
+        if _is_blocked(exc):
+            raise MediaInputError(_blocked_message()) from exc
+        if _is_fatal(exc):
+            raise MediaInputError("That video is unavailable — it may be private, removed, "
+                                  "age-restricted or region-locked.") from exc
+        if _is_gated(exc):
             raise MediaInputError(_blocked_message()) from exc
         raise MediaInputError(f"Could not read that YouTube link: {_yt_message(exc)}") from exc
 
