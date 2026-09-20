@@ -233,7 +233,15 @@ watch page (browser UA, 1.3 MB)  → playability: LOGIN_REQUIRED, caption_tracks
 
 Every InnerTube client **and** the plain watch page are refused, so there is no
 surface left for code to read: the captions work above cannot help a host in this
-state, and no chain of player clients will. The request has to carry credentials
+state, and no chain of player clients will.
+
+The watch page is not a way around this even when it *is* served. Measured from a
+residential IP on 2026-09-20: the page returns 200 with `captionTracks` present,
+and every one of those `baseUrl`s — plain, `&fmt=json3`, or `&c=WEB` — answers
+**200 with an empty body**. `timedtext` now wants a PO token too, so
+`fetch_watch_page` / `parse_player_response` / `watch_page_caption_tracks` are
+worth keeping for the diagnosis and are not a caption source. Captions come from
+yt-dlp, which signs those URLs. The request has to carry credentials
 or leave from another address. `deploy/oracle/youtube-access.sh` does each option
 and then re-runs the diagnosis:
 
