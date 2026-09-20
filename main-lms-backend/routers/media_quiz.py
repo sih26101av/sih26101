@@ -128,6 +128,14 @@ async def _process(media: media_io.MediaSource, filename: str, ext: str, size: i
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Question generation failed: {exc}")
     except ImportError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=_missing_dep_message(exc))
+    except media_io.MediaInputError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:                    # noqa: BLE001
+        # Anything else is a bug or an unreadable file. Without this the learner gets
+        # uvicorn's bare "Internal Server Error" page and the cause is only in the log.
+        logger.exception("[media] pipeline failed for %s (%s)", filename, source)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Could not process this file: {type(exc).__name__}: {exc}")
 
     skill_name = result.competency_name or "General Learning"
     questions = [MediaQuizQuestion(**q.to_dict(), difficulty=media_question_difficulty(difficulty, q.kind))
