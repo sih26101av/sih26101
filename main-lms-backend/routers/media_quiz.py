@@ -229,7 +229,8 @@ async def youtube_media(payload: YoutubeRequest) -> MediaQuizResponse:
 
 
 @router.get("/youtube/diagnose", summary="Why YouTube links fail from this host")
-async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSvXk") -> JSONResponse:
+async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSvXk",
+                           clients: Optional[str] = None) -> JSONResponse:
     """YouTube blocks by IP reputation, so the same link works from a laptop and fails
     from the server. This reports what this host can reach — yt-dlp version, JS runtimes,
     per-player-client outcome, watch-page reachability — without downloading anything."""
@@ -238,7 +239,8 @@ async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSv
     if not media_io.is_youtube_url(url):
         raise HTTPException(status_code=400, detail="Only YouTube links can be diagnosed.")
     try:
-        return JSONResponse(await asyncio.to_thread(media_io.youtube_diagnosis, url))
+        chain = [c.strip() for c in clients.split(",") if c.strip()] if clients else None
+        return JSONResponse(await asyncio.to_thread(media_io.youtube_diagnosis, url, chain))
     except Exception as exc:                    # noqa: BLE001 — a diagnosis must always answer
         logger.exception("[media] youtube diagnosis failed")
         return JSONResponse({"error": f"{type(exc).__name__}: {exc}"}, status_code=200)

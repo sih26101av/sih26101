@@ -336,16 +336,23 @@ YOUTUBE_STALE_COOKIES_MESSAGE = (
 )
 
 
+def _no_speech_message() -> str:
+    return YOUTUBE_STALE_COOKIES_MESSAGE if has_cookies() else YOUTUBE_NO_SPEECH_MESSAGE
+
+
 def _blocked_message() -> str:
     # Configured-but-refused is a different job from never-configured: one needs a fresh
     # export, the other needs a first one. Saying "set cookies" to an admin who already
     # did sends them looking in the wrong place.
     return YOUTUBE_STALE_COOKIES_MESSAGE if has_cookies() else YOUTUBE_BLOCKED_MESSAGE
+# Not "this video has no captions": on a walled host YouTube returns the title and
+# withholds the caption tracks, so blaming the video sends the learner to look for a
+# different one when every video will do the same thing from this server.
 YOUTUBE_NO_SPEECH_MESSAGE = (
-    "This video has no captions, and YouTube would not serve its audio to this server "
-    "(anti-bot check), so there is nothing to build questions from. Try a video that has "
-    "captions, or upload the file instead. (Server admin: MEDIA_YOUTUBE_COOKIES_B64 or "
-    "MEDIA_YOUTUBE_PROXY restores the audio download.)"
+    "YouTube gave this server the video's details but refused its captions, audio and "
+    "video (its anti-bot check), so there is nothing to build questions from. Upload the "
+    "video or audio file instead — that path is unaffected. (Server admin: "
+    "MEDIA_YOUTUBE_COOKIES_B64, MEDIA_YOUTUBE_POT_URL or MEDIA_YOUTUBE_PROXY restores it.)"
 )
 _BLOCKED_MARKERS = ("not a bot", "sign in to confirm", "confirm your age", "use --cookies",
                     "cookies-from-browser", "too many requests", "http error 429",
@@ -638,12 +645,16 @@ def youtube_video_id(url: str) -> Optional[str]:
     return (parse_qs(u.query).get("v") or [None])[0]
 
 
-def youtube_diagnosis(url: str) -> dict:
+def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
     """What can this host actually do with YouTube? Reports the yt-dlp version, the
     JavaScript runtimes on PATH (without one, yt-dlp drops to its js-less client set),
     the outcome per player client, and whether a plain watch-page GET is served or
     walled. Downloads nothing. This is the one dependency that breaks by IP reputation
-    rather than by code, so it is worth being able to ask the server itself."""
+    rather than by code, so it is worth being able to ask the server itself.
+
+    `clients` overrides the configured chain, so a candidate player client can be tried
+    against the deployed host before it is made the default — which IP reputation is the
+    only way to settle."""
     import shutil
 
     out: dict = {"url": url, "video_id": youtube_video_id(url), "clients": {}}
@@ -661,7 +672,7 @@ def youtube_diagnosis(url: str) -> dict:
     out["proxy"] = bool(YOUTUBE_PROXY)
     out["pot_provider"] = _safe(_pot_provider_installed)
 
-    for client in _yt_clients():
+    for client in (clients or _yt_clients()):
         said = _Collect()
         try:
             with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True,
@@ -879,9 +890,15 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
             src.notes.append("speech transcribed from the audio track (no captions)")
     if not src.captions and not src.audio_path:
         # Nothing to read and nothing to listen to.
-        if not src.video_path:
-            raise MediaInputError(YOUTUBE_NO_SPEECH_MESSAGE)
-        src.notes.append("no captions and no audio track — questions come from on-screen text only")
+        if src.video_path:
+            src.notes.append("no captions and no audio track — questions come from on-screen text only")
+        elif audio_clients:
+            # A stream was offered and the download still failed: a transfer problem,
+            # not a refusal, so don't send the admin looking for cookies.
+            raise MediaInputError("Could not download this video's audio from YouTube. "
+                                  "Upload the video or audio file instead.")
+        else:
+            raise MediaInputError(_no_speech_message())
     return src
 
 
