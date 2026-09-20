@@ -297,23 +297,66 @@ def is_youtube_url(url: str) -> bool:
 # block depends on which InnerTube player client asks. So extraction is retried over
 # a chain of clients (one attempt each, in order) before giving up; a cookies.txt
 # export or an outbound proxy fixes the cases no client gets through.
-YOUTUBE_PLAYER_CLIENTS = os.getenv("MEDIA_YOUTUBE_PLAYER_CLIENTS",
-                                   "default,tv_simply,android_vr,mweb,web_embedded")
+#
+# The two failures are *different* and must not be conflated (this is what broke the
+# deployed server): a client can be walled at the metadata stage ("not a bot"), or it
+# can hand over metadata and captions perfectly well while serving **no downloadable
+# formats**, because on an untrusted IP YouTube gates the media URLs behind a PO
+# token. The second case is not a block — captions alone are enough for a quiz — so
+# format availability is never allowed to decide whether a client "worked".
+YOUTUBE_PLAYER_CLIENTS = os.getenv(
+    "MEDIA_YOUTUBE_PLAYER_CLIENTS",
+    # android_vr and ios are the ones that still hand out media URLs on datacenter IPs;
+    # the web family usually answers with metadata + captions but no formats.
+    "default,android_vr,ios,tv_simply,web_embedded,mweb")
 YOUTUBE_COOKIES_FILE = os.getenv("MEDIA_YOUTUBE_COOKIES_FILE", "").strip()
+# A server has no browser to export from and no convenient way to receive a file:
+# the repo is reset --hard on every deploy and .env is the only writable, persistent,
+# gitignored thing on it. So cookies.txt can also arrive as one base64 line in .env.
+YOUTUBE_COOKIES_B64 = os.getenv("MEDIA_YOUTUBE_COOKIES_B64", "").strip()
 YOUTUBE_COOKIES_BROWSER = os.getenv("MEDIA_YOUTUBE_COOKIES_FROM_BROWSER", "").strip()
 YOUTUBE_PROXY = os.getenv("MEDIA_YOUTUBE_PROXY", "").strip()
+# Optional bgutil PO-token provider (`docker run -p 4416:4416 brainicism/bgutil-ytdlp-pot-provider`
+# plus `pip install bgutil-ytdlp-pot-provider`). With it the web clients get their
+# formats back on a datacenter IP, which restores video frames / OCR.
+YOUTUBE_POT_URL = os.getenv("MEDIA_YOUTUBE_POT_URL", "").strip()
 WATCH_PAGE_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                  "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
 
 YOUTUBE_BLOCKED_MESSAGE = (
-    "YouTube is blocking downloads from this server (its anti-bot check). "
-    "Upload the video or audio file instead — that path is unaffected. "
-    "(Server admin: set MEDIA_YOUTUBE_COOKIES_FILE to a cookies.txt export, or "
-    "MEDIA_YOUTUBE_PROXY, to restore YouTube links.)"
+    "YouTube is blocking this server (its anti-bot check) and would not return the "
+    "video's captions or audio. Upload the video or audio file instead — that path is "
+    "unaffected. (Server admin: set MEDIA_YOUTUBE_COOKIES_B64 to a cookies.txt export, "
+    "or MEDIA_YOUTUBE_PROXY, to restore YouTube links.)"
+)
+YOUTUBE_STALE_COOKIES_MESSAGE = (
+    "YouTube rejected this server's saved sign-in — the cookies have expired. Upload the "
+    "video or audio file instead. (Server admin: export a fresh cookies.txt and update "
+    "MEDIA_YOUTUBE_COOKIES_B64; YouTube invalidates them when the account is used elsewhere.)"
+)
+
+
+def _blocked_message() -> str:
+    # Configured-but-refused is a different job from never-configured: one needs a fresh
+    # export, the other needs a first one. Saying "set cookies" to an admin who already
+    # did sends them looking in the wrong place.
+    return YOUTUBE_STALE_COOKIES_MESSAGE if has_cookies() else YOUTUBE_BLOCKED_MESSAGE
+YOUTUBE_NO_SPEECH_MESSAGE = (
+    "This video has no captions, and YouTube would not serve its audio to this server "
+    "(anti-bot check), so there is nothing to build questions from. Try a video that has "
+    "captions, or upload the file instead. (Server admin: MEDIA_YOUTUBE_COOKIES_B64 or "
+    "MEDIA_YOUTUBE_PROXY restores the audio download.)"
 )
 _BLOCKED_MARKERS = ("not a bot", "sign in to confirm", "confirm your age", "use --cookies",
                     "cookies-from-browser", "too many requests", "http error 429",
-                    "failed to extract any player response", "no video formats found")
+                    "failed to extract any player response")
+# Not a block: YouTube answered, but withheld the media URLs from this IP. Captions still work.
+_GATED_MARKERS = ("no video formats found", "requested format is not available",
+                  "only images are available", "po token", "missing a url")
+# The video itself is the problem — no other player client will do better.
+_FATAL_MARKERS = ("private video", "removed by the uploader", "account associated with this video",
+                  "members-only", "join this channel", "requires payment", "video is unavailable",
+                  "not available in your country", "who has blocked it on copyright")
 
 
 def _yt_message(exc: BaseException) -> str:
@@ -330,20 +373,84 @@ def _is_blocked(exc: BaseException) -> bool:
     return any(m in low for m in _BLOCKED_MARKERS)
 
 
+def _is_gated(exc: BaseException) -> bool:
+    """YouTube answered but withheld the media URLs (PO token). Captions may still work."""
+    low = str(exc).lower()
+    return any(m in low for m in _GATED_MARKERS)
+
+
+def _is_fatal(exc: BaseException) -> bool:
+    """Something about the video itself — retrying other player clients is pointless."""
+    low = str(exc).lower()
+    return any(m in low for m in _FATAL_MARKERS)
+
+
+def cookies_path() -> Optional[str]:
+    """The cookies.txt yt-dlp should use, materialising MEDIA_YOUTUBE_COOKIES_B64 onto
+    disk the first time. yt-dlp writes refreshed cookies back, so it needs a real file
+    in a directory that survives a deploy — not a temp file."""
+    if YOUTUBE_COOKIES_FILE:
+        return YOUTUBE_COOKIES_FILE if os.path.exists(YOUTUBE_COOKIES_FILE) else None
+    if not YOUTUBE_COOKIES_B64:
+        return None
+    global _COOKIES_CACHE
+    if _COOKIES_CACHE:
+        return _COOKIES_CACHE
+    import base64
+
+    path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".yt-cookies.txt"))
+    try:
+        raw = base64.b64decode(YOUTUBE_COOKIES_B64, validate=False)
+        if b"\t" not in raw:
+            logger.error("[youtube] MEDIA_YOUTUBE_COOKIES_B64 does not decode to a Netscape "
+                         "cookies.txt (no tabs) — ignoring it")
+            return None
+        with open(path, "wb") as fh:
+            fh.write(raw)
+        try:
+            os.chmod(path, 0o600)                 # it is a live Google session
+        except OSError:
+            pass
+    except Exception as exc:                      # noqa: BLE001 — bad env must not break the request
+        logger.error("[youtube] could not write cookies from MEDIA_YOUTUBE_COOKIES_B64: %s", exc)
+        return None
+    logger.info("[youtube] cookies written to %s from MEDIA_YOUTUBE_COOKIES_B64", path)
+    _COOKIES_CACHE = path
+    return path
+
+
+_COOKIES_CACHE: Optional[str] = None
+
+
+def has_cookies() -> bool:
+    return bool(cookies_path() or YOUTUBE_COOKIES_BROWSER)
+
+
 def _yt_clients() -> List[str]:
-    return [c.strip() for c in YOUTUBE_PLAYER_CLIENTS.split(",") if c.strip()] or ["default"]
+    clients = [c.strip() for c in YOUTUBE_PLAYER_CLIENTS.split(",") if c.strip()] or ["default"]
+    if YOUTUBE_POT_URL and not any(c.startswith("web") for c in clients):
+        # A PO token only means anything to the web-family clients, so configuring a
+        # provider without one of them in the chain would buy nothing.
+        clients += ["web_safari", "web"]
+    return clients
 
 
 def _yt_opts(client: Optional[str] = None, **extra) -> dict:
     opts = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True,
             # A JS runtime is needed for YouTube's signature challenges; node is common on dev machines.
             "js_runtimes": {"deno": {}, "node": {}}, "retries": 3, "socket_timeout": 30}
+    args: dict = {}
     if client and client != "default":
         # An unsupported name is only warned about by yt-dlp, so a bad env value
         # costs one wasted attempt rather than breaking the request.
-        opts["extractor_args"] = {"youtube": {"player_client": [client]}}
-    if YOUTUBE_COOKIES_FILE and os.path.exists(YOUTUBE_COOKIES_FILE):
-        opts["cookiefile"] = YOUTUBE_COOKIES_FILE
+        args["youtube"] = {"player_client": [client]}
+    if YOUTUBE_POT_URL:
+        args["youtubepot-bgutilhttp"] = {"base_url": [YOUTUBE_POT_URL]}
+    if args:
+        opts["extractor_args"] = args
+    jar = cookies_path()
+    if jar:
+        opts["cookiefile"] = jar
     elif YOUTUBE_COOKIES_BROWSER:
         browser, _, profile = YOUTUBE_COOKIES_BROWSER.partition(":")
         opts["cookiesfrombrowser"] = (browser.strip(), profile.strip() or None, None, None)
@@ -368,7 +475,11 @@ def _pick_captions(info: dict) -> tuple[Optional[str], Optional[str], Optional[s
             return url, "manual", lang
     auto = info.get("automatic_captions") or {}
     # "<lang>-orig" is the ASR of the spoken language; plain "<lang>" tracks are machine translations.
-    candidates = [k for k in auto if k.endswith("-orig")] + ([video_lang] if video_lang in auto else [])
+    # YouTube now lists several "-orig" tracks on some videos, in no fixed order, so the
+    # video's own language wins — an English track on a Hindi lecture is the worse read.
+    orig = sorted((k for k in auto if k.endswith("-orig")),
+                  key=lambda k: (k.split("-")[0].lower() != video_lang, k))
+    candidates = orig + ([video_lang] if video_lang in auto else [])
     for lang in candidates:
         url = json3(auto[lang])
         if url:
@@ -396,24 +507,90 @@ def _parse_json3(raw: bytes) -> List[Caption]:
     return out
 
 
-def _extract_info(yt_dlp, url: str) -> tuple[dict, str]:
-    """Metadata through the first player client YouTube doesn't block. Returns (info, client)."""
+@dataclass
+class _Attempt:
+    """What one player client managed to get. A client is useful if it returned captions
+    *or* a downloadable stream — not only if it returned both."""
+    client: str
+    info: dict
+    caption_url: Optional[str] = None
+    caption_kind: Optional[str] = None
+    caption_lang: Optional[str] = None
+    video_formats: int = 0
+    audio_formats: int = 0
+
+    @property
+    def has_captions(self) -> bool:
+        return bool(self.caption_url)
+
+    @property
+    def has_media(self) -> bool:
+        return bool(self.video_formats or self.audio_formats)
+
+    @property
+    def score(self) -> tuple:
+        # Captions outrank streams: they are the speech evidence the quiz is built on,
+        # and they cost no download. Among equals, prefer the one with video frames.
+        return (self.has_captions, self.video_formats > 0, self.audio_formats > 0,
+                self.video_formats + self.audio_formats)
+
+
+def _count_formats(info: dict) -> tuple[int, int]:
+    """(video-only/muxed formats we could use for frames, audio-bearing formats)."""
+    video = audio = 0
+    for f in info.get("formats") or []:
+        if not f.get("url"):
+            continue
+        has_v = f.get("vcodec") not in (None, "none") and f.get("ext") != "mhtml"
+        has_a = f.get("acodec") not in (None, "none")
+        if has_v and (f.get("height") or 0) <= 720:
+            video += 1
+        if has_a:
+            audio += 1
+    return video, audio
+
+
+def _probe_clients(yt_dlp, url: str) -> tuple[List[_Attempt], Optional[BaseException]]:
+    """Ask every player client in the chain what it can give us, and keep them all.
+
+    `ignore_no_formats_error` is the important flag: without it, a client that is
+    perfectly willing to hand over the title and the caption tracks still raises
+    "No video formats found" on an untrusted IP, and the whole link fails even though
+    everything the quiz needs was already in the response.
+    """
+    attempts: List[_Attempt] = []
     last: Optional[BaseException] = None
     for client in _yt_clients():
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True)) as ydl:
                 info = ydl.extract_info(url, download=False)
-            if info:
-                if client != _yt_clients()[0]:
-                    logger.info("[youtube] player_client=%s got through", client)
-                return info, client
-            last = RuntimeError("yt-dlp returned no metadata")
+            if not info:
+                last = RuntimeError("yt-dlp returned no metadata")
+                continue
+            if info.get("_type") == "playlist" or info.get("entries"):
+                raise MediaInputError("Please paste a link to a single video, not a playlist.")
+            cap_url, kind, lang = _pick_captions(info)
+            vf, af = _count_formats(info)
+            if not (info.get("duration") or cap_url or vf or af):
+                # ignore_no_formats_error also swallows "Video unavailable": yt-dlp then
+                # hands back a placeholder ("youtube video #<id>", no duration, no
+                # channel). Another client may still do better, so keep going.
+                logger.warning("[youtube] player_client=%s returned an empty placeholder", client)
+                last = RuntimeError("the video is unavailable (private, removed, or the link is wrong).")
+                continue
+            attempts.append(_Attempt(client, info, cap_url, kind, lang, vf, af))
+            logger.info("[youtube] player_client=%s ok: captions=%s formats=%d video / %d audio",
+                        client, kind or "none", vf, af)
+            if cap_url and vf:
+                break                                 # nothing better to find
+        except MediaInputError:
+            raise
         except Exception as exc:                      # noqa: BLE001 — every client is retried
             last = exc
             logger.warning("[youtube] player_client=%s failed: %s", client, _yt_message(exc))
-            if not _is_blocked(exc):
-                break                                 # private / removed / bad link: other clients won't help
-    raise last or RuntimeError("yt-dlp returned no metadata")
+            if _is_fatal(exc):
+                break                                 # private / removed: other clients won't help
+    return attempts, last
 
 
 def youtube_video_id(url: str) -> Optional[str]:
@@ -446,21 +623,33 @@ def youtube_diagnosis(url: str) -> dict:
 
     out["arch"] = f"{platform.system()}/{platform.machine()}"
     out["js_runtimes"] = {name: shutil.which(name) for name in ("deno", "node", "bun")}
-    out["cookies"] = bool(YOUTUBE_COOKIES_FILE or YOUTUBE_COOKIES_BROWSER)
+    out["cookies"] = has_cookies()
     out["proxy"] = bool(YOUTUBE_PROXY)
     out["pot_provider"] = _safe(_pot_provider_installed)
 
     for client in _yt_clients():
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
+            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True)) as ydl:
                 info = ydl.extract_info(url.strip(), download=False)
             cap, kind, lang = _pick_captions(info or {})
+            vf, af = _count_formats(info or {})
             out["clients"][client] = {"ok": True, "title": (info or {}).get("title"),
-                                      "captions": bool(cap), "caption_kind": kind, "caption_lang": lang}
+                                      "captions": bool(cap), "caption_kind": kind, "caption_lang": lang,
+                                      # 0 formats with captions present is the normal datacenter
+                                      # answer, and still enough for a captions-only quiz.
+                                      "video_formats": vf, "audio_formats": af}
         except Exception as exc:                  # noqa: BLE001 — this is the diagnosis
-            out["clients"][client] = {"ok": False, "blocked": _is_blocked(exc), "error": _yt_message(exc)}
+            out["clients"][client] = {"ok": False, "blocked": _is_blocked(exc),
+                                      "gated": _is_gated(exc), "error": _yt_message(exc)}
 
     out["watch_page"] = _safe(_watch_page_probe, out["video_id"])
+    ok = [c for c in out["clients"].values() if c.get("ok")]
+    out["verdict"] = {
+        "can_generate_quiz": any(c.get("captions") or c.get("audio_formats") for c in ok),
+        "can_use_video_frames": any(c.get("video_formats") for c in ok),
+        "speech_from": ("captions" if any(c.get("captions") for c in ok)
+                        else "audio+asr" if any(c.get("audio_formats") for c in ok) else None),
+    }
     return out
 
 
@@ -563,62 +752,85 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
 
     url = url.strip()
     try:
-        info, client = _extract_info(yt_dlp, url)
-        if info.get("_type") == "playlist" or info.get("entries"):
-            raise MediaInputError("Please paste a link to a single video, not a playlist.")
-        src = MediaSource(title=str(info.get("title") or "YouTube video"),
-                          duration=float(info.get("duration") or 0) or None)
-        if info.get("is_live"):
-            raise MediaInputError("Live streams are not supported.")
-        if (src.duration or 0) > YOUTUBE_MAX_DURATION_S:
-            raise MediaInputError(f"Video is {src.duration / 60:.0f} min long; the limit is "
-                                  f"{YOUTUBE_MAX_DURATION_S // 60} min.")
-
-        cap_url, kind, lang = _pick_captions(info)
-        if cap_url:
-            try:
-                with yt_dlp.YoutubeDL(_yt_opts(client=client)) as ydl:
-                    caps = _parse_json3(ydl.urlopen(cap_url).read())
-                if caps:
-                    src.captions, src.caption_kind, src.caption_lang = caps, kind, lang
-                    src.notes.append(f"speech from YouTube {kind} captions ({lang})")
-            except Exception as exc:
-                logger.warning("[youtube] captions failed (%s) — falling back to audio + ASR", _yt_message(exc))
+        attempts, last_error = _probe_clients(yt_dlp, url)
     except MediaInputError:
         raise
-    except Exception as exc:
-        if _is_blocked(exc):
-            raise MediaInputError(YOUTUBE_BLOCKED_MESSAGE) from exc
+    except Exception as exc:                          # noqa: BLE001 — turned into a sentence below
+        attempts, last_error = [], exc
+
+    if not attempts:
+        exc = last_error or RuntimeError("yt-dlp returned no metadata")
+        if _is_blocked(exc) or _is_gated(exc):
+            raise MediaInputError(_blocked_message()) from exc
         raise MediaInputError(f"Could not read that YouTube link: {_yt_message(exc)}") from exc
 
-    def fetch(fmt: str, prefix: str) -> Optional[str]:
+    best = max(attempts, key=lambda a: a.score)
+    info = best.info
+    if info.get("is_live"):
+        raise MediaInputError("Live streams are not supported.")
+    src = MediaSource(title=str(info.get("title") or "YouTube video"),
+                      duration=float(info.get("duration") or 0) or None)
+    if (src.duration or 0) > YOUTUBE_MAX_DURATION_S:
+        raise MediaInputError(f"Video is {src.duration / 60:.0f} min long; the limit is "
+                              f"{YOUTUBE_MAX_DURATION_S // 60} min.")
+
+    # Captions, from any client that has them — a client can be denied the media URLs
+    # and still serve the caption tracks, which is the common case on a datacenter IP.
+    for att in sorted((a for a in attempts if a.has_captions), key=lambda a: a.score, reverse=True):
         try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client, format=fmt,
-                                           outtmpl=os.path.join(workdir, prefix + "_%(id)s.%(ext)s"))) as y:
-                got = y.extract_info(url, download=True)
-                path = y.prepare_filename(got)
-            return path if os.path.exists(path) and os.path.getsize(path) > 0 else None
-        except Exception as exc:
-            logger.warning("[youtube] %s download failed: %s", prefix, _yt_message(exc))
-            return None
+            with yt_dlp.YoutubeDL(_yt_opts(client=att.client)) as ydl:
+                caps = _parse_json3(ydl.urlopen(att.caption_url).read())
+        except Exception as exc:                      # noqa: BLE001 — try the next client
+            logger.warning("[youtube] captions via %s failed: %s", att.client, _yt_message(exc))
+            continue
+        if caps:
+            src.captions, src.caption_kind, src.caption_lang = caps, att.caption_kind, att.caption_lang
+            src.notes.append(f"speech from YouTube {att.caption_kind} captions ({att.caption_lang})")
+            break
+        logger.warning("[youtube] captions via %s were empty", att.client)
+
+    def fetch(fmt: str, prefix: str, clients: List[str]) -> Optional[str]:
+        """Download one stream, trying each client that advertised a usable format."""
+        for client in clients:
+            try:
+                with yt_dlp.YoutubeDL(_yt_opts(client=client, format=fmt,
+                                               outtmpl=os.path.join(workdir, prefix + "_%(id)s.%(ext)s"))) as y:
+                    got = y.extract_info(url, download=True)
+                    path = y.prepare_filename(got)
+                if os.path.exists(path) and os.path.getsize(path) > 0:
+                    return path
+            except Exception as exc:                  # noqa: BLE001 — next client
+                logger.warning("[youtube] %s download via %s failed: %s", prefix, client, _yt_message(exc))
+        return None
+
+    def order(kind: str) -> List[str]:
+        """Clients that said they have this kind of stream, best first."""
+        return [a.client for a in sorted(attempts, key=lambda a: a.score, reverse=True)
+                if getattr(a, kind) > 0]
 
     # Video and audio are separate streams: download them in parallel.
     from concurrent.futures import ThreadPoolExecutor
 
+    video_clients, audio_clients = order("video_formats"), order("audio_formats")
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="yt") as pool:
-        video_job = pool.submit(fetch, _YT_VIDEO_FORMAT, "v")
-        audio_job = pool.submit(fetch, _YT_AUDIO_FORMAT, "a") if not src.captions else None
-        src.video_path = video_job.result()
+        video_job = pool.submit(fetch, _YT_VIDEO_FORMAT, "v", video_clients) if video_clients else None
+        audio_job = (pool.submit(fetch, _YT_AUDIO_FORMAT, "a", audio_clients)
+                     if audio_clients and not src.captions else None)
+        src.video_path = video_job.result() if video_job else None
         audio_path = audio_job.result() if audio_job else None
     if not src.video_path:
-        src.notes.append("video frames unavailable — speech only")
+        # Frames are optional: the quiz is built from speech, and on-screen text only
+        # adds OCR evidence. Losing them is a note, not a failure.
+        src.notes.append("video frames unavailable from this server — speech only")
     if not src.captions:
         src.audio_path = audio_path
         if src.audio_path:
             src.notes.append("speech transcribed from the audio track (no captions)")
-    if not src.video_path and not src.audio_path and not src.captions:
-        raise MediaInputError("Could not download that YouTube video (it may be private, age-restricted "
-                              "or region-blocked).")
+    if not src.captions and not src.audio_path:
+        # Nothing to read and nothing to listen to.
+        if not src.video_path:
+            raise MediaInputError(YOUTUBE_NO_SPEECH_MESSAGE)
+        src.notes.append("no captions and no audio track — questions come from on-screen text only")
     return src
 
 

@@ -17,6 +17,15 @@ MEDIA=0
 "$PIP" show faster-whisper >/dev/null 2>&1 && { MEDIA=1; REQS+=(-r main-lms-backend/requirements-media.txt); }
 "$PIP" install --quiet "${REQS[@]}"
 
+# yt-dlp is the one dependency that goes stale on a calendar, not on a version bump:
+# YouTube changes its player and anti-bot checks every few weeks and only a fresh
+# release keeps up. requirements-media.txt pins a floor, which pip considers
+# satisfied forever, so upgrade it explicitly on every deploy.
+if [ "$MEDIA" = "1" ]; then
+  "$PIP" install --quiet --upgrade yt-dlp || true
+  echo "==> yt-dlp $("$REPO/venv/bin/python" -c 'import yt_dlp; print(yt_dlp.version.__version__)' 2>/dev/null || echo '?')"
+fi
+
 # rapidocr depends on the FULL opencv-python wheel, which pip installs over the
 # headless one and which needs libGL/libglib at import time. On a headless server
 # `import cv2` then raises and video uploads 503 with "libGL.so.1: cannot open

@@ -102,3 +102,35 @@ Seed users once, and only if the Neon database is new: `cd main-lms-backend && .
 | Browser shows a CORS error | `CORS_ORIGINS` doesn't exactly match the Vercel origin (scheme included, no trailing slash) |
 | Logged out on page reload | The refresh cookie was blocked: check `COOKIE_SAMESITE=none`. Safari and strict third-party-cookie settings block it anyway; a custom domain on both sides (`app.x` + `api.x`) fixes that |
 | Dashboard slow right after a restart | Normal. Routes wait for the AI warm-up (`/health` → `ready`) |
+
+## YouTube links on the VM
+
+Uploads always work. **YouTube links depend on the VM's IP reputation**, not on the
+code: YouTube answers Oracle's ranges with "Sign in to confirm you're not a bot", so
+the same link works from a laptop and fails from the server.
+
+Ask the server what it can actually reach — this downloads nothing:
+
+```bash
+bash ~/sih26101/deploy/oracle/youtube-access.sh          # diagnose only
+```
+
+It prints a per-player-client result and a verdict. Then, in increasing order of
+effort:
+
+```bash
+bash deploy/oracle/youtube-access.sh --pot                # free; may not beat an IP wall
+bash deploy/oracle/youtube-access.sh --cookies ~/yt.txt   # dependable
+bash deploy/oracle/youtube-access.sh --proxy http://user:pass@host:port
+```
+
+For `--cookies`: install a "Get cookies.txt" browser extension, sign in to YouTube
+with a **throwaway** Google account (YouTube suspends accounts whose cookies are used
+from a server), export `youtube.com` in **Netscape** format, then
+`scp yt-cookies.txt ubuntu@<ip>:~/yt.txt` and run the command above. The script
+base64s it into `.env`, restarts the backend and re-runs the diagnosis. Cookies
+expire; re-run it when links start failing again.
+
+Also free and worth a try if the IP is the problem: in the Oracle console, release the
+instance's ephemeral public IP and attach a new one — reputation is per address.
+Remember to update DNS / the `sslip.io` hostname and `ORACLE_HOST` afterwards.

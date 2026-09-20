@@ -256,8 +256,9 @@ def capabilities() -> JSONResponse:          # sync: _importable() really import
         "youtube": {"available": has("yt_dlp"), "max_duration_s": media_io.YOUTUBE_MAX_DURATION_S,
                     # YouTube blocks datacenter IPs; these say which work-arounds are configured.
                     "player_clients": media_io._yt_clients(),
-                    "cookies": bool(media_io.YOUTUBE_COOKIES_FILE or media_io.YOUTUBE_COOKIES_BROWSER),
-                    "proxy": bool(media_io.YOUTUBE_PROXY)},
+                    "cookies": media_io.has_cookies(),
+                    "proxy": bool(media_io.YOUTUBE_PROXY),
+                    "pot_provider": bool(media_io.YOUTUBE_POT_URL)},
         "accepted_extensions": sorted(MEDIA_EXTS),
         "max_upload_mb": MAX_MEDIA_BYTES // (1024 * 1024),
     })

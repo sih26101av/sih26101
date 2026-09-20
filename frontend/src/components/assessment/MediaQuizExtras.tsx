@@ -108,6 +108,11 @@ export const MediaAnalysisCard: React.FC<{ report: MediaReport; skillName?: stri
           </div>
         ))}
       </dl>
+      {!!report.source_notes?.length && (
+        <p className="mt-3 text-[11.5px] text-slate-500 dark:text-slate-400">
+          {report.source_notes.join(" · ")}
+        </p>
+      )}
       {report.vlm_backend.includes("demo-only") && (
         <p className="mt-3 text-[11.5px] text-slate-500 dark:text-slate-400">
           Screen descriptions use a cloud vision model (demo-only). The offline deployment uses a local Qwen2.5-VL.

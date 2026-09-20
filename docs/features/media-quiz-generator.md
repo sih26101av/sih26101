@@ -17,7 +17,7 @@ Backend, `main-lms-backend/`:
 | File | Role |
 |---|---|
 | `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards). Stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`, the quiz `difficulty`, and a `difficulty` on each question (`practice_assessment.media_question_difficulty`: the target level, one step harder for `synthesis` questions). `/grade` uses these for the difficulty-aware skill update. Generation is unchanged. |
-| `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource` (see *YouTube* below). |
+| `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource`, built from `_probe_clients`' per-client `_Attempt`s (see *YouTube* below); `youtube_diagnosis` answers what this host can reach. |
 | `services/media_quiz/probe.py` | Computes `speech_ratio` (Silero VAD bundled with faster-whisper), `text_density` (RapidOCR **detector only**, one frame every ~10 s) and `screen_activity`, then `route()`. |
 | `services/media_quiz/extractors.py` | ASR (faster-whisper, per-window language, `task="transcribe"`, Whisper cut-offs), OCR on keyframes (RapidOCR, which runs the PaddleOCR models on ONNX) and the VLM (Gemini for demos, or Ollama Qwen2.5-VL offline). |
 | `services/media_quiz/evidence.py` | `Timeline` holds the shared evidence records and prunes them by confidence; `build_chunks` does slide/speech alignment. |
@@ -169,7 +169,8 @@ separate streams needs an ffmpeg binary. So `download_youtube` fetches parts:
 
 1. **Metadata** through yt-dlp, with `js_runtimes` deno/node, which are needed
    for YouTube's signature challenges. Playlists and live streams are rejected.
-   The length limit is `MEDIA_YOUTUBE_MAX_DURATION_S`=4 h.
+   The length limit is `MEDIA_YOUTUBE_MAX_DURATION_S`=4 h. Every player client in
+   the chain is asked (see *Getting past the bot check*) and the best answer wins.
 2. **Captions:** manual subtitles first (preferring the video's language), then
    the *original-language* auto captions (`<lang>-orig`). Machine-translated
    tracks are never used. Captions are read as json3, `[Music]` cues are dropped,
@@ -183,30 +184,91 @@ caption spans instead of running VAD.
 
 ### Getting past the bot check
 
-YouTube answers most **datacenter IPs** — including the Oracle VM — with
-"Sign in to confirm you're not a bot", so links fail on the deployed server while
-they work from a laptop. Uploads are unaffected.
+From a **datacenter IP** — including the Oracle VM — YouTube answers differently
+than it does from a laptop, in two ways that must not be confused:
 
-Which InnerTube player client asks changes the answer, so `_extract_info` tries a
-chain of them, one `extract_info` each, and the client that got through is reused
-for the caption fetch and the stream downloads:
-`MEDIA_YOUTUBE_PLAYER_CLIENTS=default,tv_simply,android_vr,mweb,web_embedded`
-(`default` is whatever yt-dlp ships). An unsupported name only costs one wasted
-attempt — yt-dlp warns and skips it. The chain is only retried while the error
-looks like a block (`_is_blocked`); a private, removed or region-locked video
-stops at the first client.
+| Symptom | What it means | Does it stop a quiz? |
+|---|---|---|
+| "Sign in to confirm you're not a bot" | The request was refused outright | Yes — nothing comes back |
+| Metadata and caption tracks arrive, but **zero downloadable formats** | The media URLs are gated behind a PO token; the rest of the response is fine | **No** — captions are the speech evidence |
 
-When no client gets through, give yt-dlp credentials or a different IP:
-`MEDIA_YOUTUBE_COOKIES_FILE` (a Netscape `cookies.txt` export — use a throwaway
-Google account, YouTube suspends accounts whose cookies are reused this way),
-`MEDIA_YOUTUBE_COOKIES_FROM_BROWSER` (dev machines only) or
-`MEDIA_YOUTUBE_PROXY`. `GET /capabilities` reports `youtube.player_clients`,
-`youtube.cookies` and `youtube.proxy` so you can see what the server has.
+The second case is the common one, and it used to fail the whole link: yt-dlp
+raises `No video formats found` / `Requested format is not available` while
+resolving the *format selector*, even though the title and the caption tracks were
+already in hand. So the metadata pass now runs with `ignore_no_formats_error=True`
+and **format availability never decides whether a client "worked"**.
+
+`_probe_clients` asks every client in
+`MEDIA_YOUTUBE_PLAYER_CLIENTS=default,android_vr,ios,tv_simply,web_embedded,mweb`
+(`default` is whatever yt-dlp ships; an unsupported name only costs one wasted
+attempt) and keeps each one's `_Attempt`: captions found, and how many video /
+audio formats it advertised. It stops early only when one client has both, and
+gives up early only on `_FATAL_MARKERS` (private, removed, members-only), because
+a client that can't deliver is not evidence about the video itself. Then:
+
+- **Captions** are fetched from the highest-scoring client that has them —
+  `_Attempt.score` ranks captions above streams, since they cost no download and
+  are what the questions are built from. If that client's caption fetch fails, the
+  next one is tried.
+- **Streams** are downloaded only from clients that advertised a usable format,
+  best first. `android_vr` and `ios` are the ones that still hand out media URLs
+  on datacenter IPs, which is why they now come early in the chain.
+- **No video stream is not a failure.** The source is marked
+  `video frames unavailable from this server — speech only`, the probe routes it as
+  `talking_head`, and the quiz loses only the OCR evidence. It is also much faster
+  (no scan, no OCR: ~45 s for a 93-min lecture).
+- Only when there are **no captions and no audio** does the link fail, with
+  `YOUTUBE_NO_SPEECH_MESSAGE`; when nothing came back at all, with
+  `YOUTUBE_BLOCKED_MESSAGE`.
+
+#### When the wall is the IP itself
+
+The Oracle VM is in the harder case, and measuring it settled the question
+(2026-09-20, `141-148-192-11.sslip.io`):
+
+```
+default / tv_simply / android_vr / mweb / web_embedded → "Sign in to confirm you're not a bot"
+watch page (browser UA, 1.3 MB)  → playability: LOGIN_REQUIRED, caption_tracks: []
+```
+
+Every InnerTube client **and** the plain watch page are refused, so there is no
+surface left for code to read: the captions work above cannot help a host in this
+state, and no chain of player clients will. The request has to carry credentials
+or leave from another address. `deploy/oracle/youtube-access.sh` does each option
+and then re-runs the diagnosis:
+
+| Command | What it does | Dependable? |
+|---|---|---|
+| `--pot` | Docker bgutil PO-token provider on :4416 + the yt-dlp plugin, sets `MEDIA_YOUTUBE_POT_URL`. Also appends `web_safari,web` to the client chain, since a PO token means nothing to the other clients. | Free, but it attests the *client*, not the IP — it may not beat a LOGIN_REQUIRED wall |
+| `--cookies <file>` | base64s a Netscape `cookies.txt` into `MEDIA_YOUTUBE_COOKIES_B64` | Yes, until the cookies expire |
+| `--proxy <url>` | sets `MEDIA_YOUTUBE_PROXY` | Yes, with a residential/mobile proxy |
+
+Cookies arrive as base64 in `.env` because that is the only writable, persistent,
+gitignored thing on the VM — `update.sh` runs `git reset --hard`. `cookies_path()`
+materialises them to `main-lms-backend/.yt-cookies.txt` (mode 600, gitignored) the
+first time, because yt-dlp needs a real file it can write refreshed cookies back
+to. Use a **throwaway** Google account: YouTube suspends accounts whose cookies are
+used from a server. When cookies are configured and YouTube still refuses, the
+learner is told the saved sign-in expired (`YOUTUBE_STALE_COOKIES_MESSAGE`) rather
+than being sent to set up cookies they already set up.
+
+`MEDIA_YOUTUBE_COOKIES_FROM_BROWSER` still exists for dev machines.
+`GET /capabilities` reports `youtube.player_clients`, `youtube.cookies`,
+`youtube.proxy` and `youtube.pot_provider`.
+
+`GET /youtube/diagnose?url=…` answers what this host can actually do — yt-dlp
+version, JS runtimes, per-client captions **and format counts**, watch-page
+reachability — and ends with a `verdict`:
+
+```json
+"verdict": {"can_generate_quiz": true, "can_use_video_frames": false, "speech_from": "captions"}
+```
 
 Failures reach the learner as one sentence, not yt-dlp's multi-line dump
-(`_yt_message` strips the `ERROR: [youtube] <id>:` prefix and the wiki links); a
-block becomes `YOUTUBE_BLOCKED_MESSAGE`, which tells them to upload the file
-instead. Keep `yt-dlp` recent — only new releases keep up with the checks.
+(`_yt_message` strips the `ERROR: [youtube] <id>:` prefix and the wiki links).
+Keep `yt-dlp` recent — only new releases keep up with the checks; `setup.sh` and
+`update.sh` both `pip install --upgrade yt-dlp`, because the floor pinned in
+`requirements-media.txt` counts as satisfied forever.
 
 ## In / out
 
@@ -313,13 +375,18 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
-- **Not yet tested:** the real test set above, the Ollama VLM backend, and
-  YouTube videos that have neither captions nor a downloadable video stream.
-- **YouTube on the Oracle VM is blocked** (see *Getting past the bot check*). The
-  player-client chain is the free attempt; whether any client gets through from a
-  given datacenter IP changes week to week. Cookies or a residential proxy are the
-  only dependable fixes, and neither is configured on the demo server — so for the
-  demo, upload the file.
+- **Not yet tested:** the real test set above, the Ollama VLM backend, and the
+  bgutil PO-token provider on the VM.
+- **YouTube from a datacenter IP** has two failure levels and they need different
+  answers (see *Getting past the bot check*):
+  - *Formats gated, metadata and captions fine* — handled in code now, verified by
+    forcing the client chain onto clients that answer this way. The quiz is built
+    from captions, loses only OCR evidence, and is much faster.
+  - *Everything refused (LOGIN_REQUIRED)* — what the Oracle VM actually returns as
+    of 2026-09-20. Code cannot fix this; run `deploy/oracle/youtube-access.sh`.
+    Until it is run, uploads are the demo path.
+  Run `GET /youtube/diagnose` on the server to see which case you are in rather
+  than guessing — its `verdict` answers it in one line.
 - **Dev server:** `uvicorn --reload` on Windows hangs on reload in this app. The
   old worker never exits, so new routes 404 until the server is restarted by
   hand. This isn't specific to this feature; after pulling changes, restart the

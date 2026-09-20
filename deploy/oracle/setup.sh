@@ -33,6 +33,9 @@ python3 -m venv "$REPO/venv"
 "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements.txt" -r "$REPO/mock-igot-server/requirements.txt"
 if [ "${WITH_MEDIA:-0}" = "1" ]; then
   "$REPO/venv/bin/pip" install -r "$REPO/main-lms-backend/requirements-media.txt"
+  # YouTube's player and anti-bot checks move every few weeks; the pinned floor in
+  # requirements-media.txt counts as satisfied forever, so ask for the newest.
+  "$REPO/venv/bin/pip" install --upgrade yt-dlp
   # rapidocr depends on the full opencv-python wheel, which pip installs over the
   # headless one and which needs libGL/libglib at import time — on a headless
   # server video uploads then fail with "libGL.so.1: cannot open shared object

@@ -64,6 +64,10 @@ export interface MediaReport {
   generation?: { raw_candidates: number; accepted: number; rejected_total: number; rejected: Record<string, number> };
   fact_check?: { checked: number; flagged: number; ok: number; no_reference: number };
   timings?: Record<string, number>;
+  /** Where the material came from, e.g. "speech from YouTube auto captions (hi)".
+   *  A deployed server is often refused YouTube's media URLs and builds the quiz
+   *  from captions alone, so say so rather than silently dropping on-screen text. */
+  source_notes?: string[];
 }
 
 export interface MediaQuizResponse {
