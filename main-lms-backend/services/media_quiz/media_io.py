@@ -442,6 +442,9 @@ def youtube_diagnosis(url: str) -> dict:
     except ImportError as exc:
         return {**out, "error": f"yt-dlp not installed: {exc}"}
 
+    import platform
+
+    out["arch"] = f"{platform.system()}/{platform.machine()}"
     out["js_runtimes"] = {name: shutil.which(name) for name in ("deno", "node", "bun")}
     out["cookies"] = bool(YOUTUBE_COOKIES_FILE or YOUTUBE_COOKIES_BROWSER)
     out["proxy"] = bool(YOUTUBE_PROXY)
@@ -483,28 +486,69 @@ def _pot_provider_installed() -> bool:
     return False
 
 
-def _watch_page_probe(video_id: Optional[str]) -> dict:
-    """A plain GET of the watch page is a different surface from the InnerTube player
-    API, so it can still answer when the player API says "not a bot"."""
-    if not video_id:
-        return {"skipped": "no video id"}
+def fetch_watch_page(video_id: str) -> tuple[str, str]:
+    """(html, final url) for a plain watch-page GET — a different surface from the
+    InnerTube player API, so it can still answer when that one says "not a bot"."""
     import httpx
 
+    r = httpx.get(f"https://www.youtube.com/watch?v={video_id}",
+                  headers={"User-Agent": WATCH_PAGE_UA, "Accept-Language": "en-US,en;q=0.9",
+                           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"},
+                  timeout=25.0, follow_redirects=True)
+    return r.text, str(r.url)
+
+
+def parse_player_response(html: str) -> Optional[dict]:
+    """The ytInitialPlayerResponse object embedded in the watch page. It is followed by
+    arbitrary JS, so decode it with a JSON decoder rather than matching braces by regex."""
+    import json
+
+    marker = re.search(r"ytInitialPlayerResponse\s*=\s*\{", html)
+    if not marker:
+        return None
     try:
-        r = httpx.get(f"https://www.youtube.com/watch?v={video_id}",
-                      headers={"User-Agent": WATCH_PAGE_UA, "Accept-Language": "en-US,en;q=0.9"},
-                      timeout=20.0, follow_redirects=True)
+        obj, _ = json.JSONDecoder().raw_decode(html[marker.end() - 1:])
+        return obj if isinstance(obj, dict) else None
+    except ValueError:
+        return None
+
+
+def watch_page_caption_tracks(pr: dict) -> List[dict]:
+    caps = (pr.get("captions") or {}).get("playerCaptionsTracklistRenderer") or {}
+    return [t for t in (caps.get("captionTracks") or []) if t.get("baseUrl")]
+
+
+def _watch_page_probe(video_id: Optional[str]) -> dict:
+    if not video_id:
+        return {"skipped": "no video id"}
+    try:
+        html, final_url = fetch_watch_page(video_id)
     except Exception as exc:                      # noqa: BLE001
         return {"error": f"{type(exc).__name__}: {exc}"}
-    body = r.text
-    return {
-        "status": r.status_code,
-        "bytes": len(body),
-        "has_caption_tracks": "captionTracks" in body,
-        "has_player_response": "ytInitialPlayerResponse" in body,
+
+    out = {
+        "bytes": len(html),
+        "has_player_response": "ytInitialPlayerResponse" in html,
         # A consent interstitial or a bot wall instead of the video page.
-        "consent_wall": "consent.youtube.com" in str(r.url) or "/sorry/" in str(r.url),
-        "final_url": str(r.url)[:200],
+        "consent_wall": "consent.youtube.com" in final_url or "/sorry/" in final_url,
+        "final_url": final_url[:200],
+    }
+    pr = parse_player_response(html)
+    if not pr:
+        return {**out, "player_response_parsed": False}
+    status = pr.get("playabilityStatus") or {}
+    tracks = watch_page_caption_tracks(pr)
+    return {
+        **out,
+        "player_response_parsed": True,
+        # LOGIN_REQUIRED here means the bot wall reached the page itself, and only
+        # cookies / a PO token / another IP can help. OK means captions are usable.
+        "playability": status.get("status"),
+        "playability_reason": str(status.get("reason") or "")[:160],
+        "has_streaming_data": "streamingData" in pr,
+        "caption_tracks": [{"lang": t.get("languageCode"), "kind": t.get("kind")} for t in tracks],
+        "title": (pr.get("videoDetails") or {}).get("title"),
+        "duration_s": (pr.get("videoDetails") or {}).get("lengthSeconds"),
     }
 
 
