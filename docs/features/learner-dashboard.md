@@ -36,6 +36,7 @@ sections, all fed by the single `useLearnerDashboard` fetch.
 - `src/components/shell/` — shared with the admin dashboard and Assessment Studio:
   - `AppShell.tsx` — tricolour strip + navy NSO topbar (search, notifications, theme,
     account menu, sign-out) + sticky sidebar (mobile drawer under `lg`) + footer.
+    See "Responsive layout" below for the phone/tablet behaviour.
     Takes `groups`/`activeId`/`onNavigate`; owns no data. Optional `sidebarArt`
     slot renders between nav and `sidebarFooter` (desktop only; admin doesn't use it).
   - `PageHeader.tsx` — title, subtitle, breadcrumb, date chip, action slot.
@@ -146,6 +147,34 @@ sections, all fed by the single `useLearnerDashboard` fetch.
   `animate-fade-up`. `bg-mesh.png`, `hero-bg-dark.png`, `hero-bg-topo.png` and
   `bg-mesh1.png` are leftover unused assets in `public/`.
 - All pages now share the system. Chat widgets keep their own styling.
+
+## Responsive layout (phones 360–430px, tablets 768–1024px)
+
+Breakpoints are Tailwind's (`sm` 640, `md` 768, `lg` 1024, `xl` 1280). Verified by
+screenshots at 375 / 768 / 1024 / 1366 with no horizontal page scroll.
+
+- **Shell (`AppShell`)** — below `lg` the sidebar is a slide-in drawer (`animate-drawer-in`,
+  82vw max 300px) with the user's name/role at the top and a Sign out button; tapping any
+  item (including the current one) closes it, and page scroll is locked while it is open.
+  The topbar search is inline only from `lg`; below that a search icon opens a full-width
+  search row under the bar (16px text so iOS doesn't zoom). Below `sm` the title reads
+  "NSO Training Portal" and the theme toggle moves into the account menu.
+  `<main>` carries `shell-main`: `index.css` gives every grid child inside it
+  `min-width: 0`, so a wide table/chart can't stretch its grid column past the screen
+  (this was the cause of the 633px-wide dashboard on phones).
+- **`PageHeader`** hides the date chip below `sm`; **`SectionCard`** actions wrap on phones;
+  `.panel-head` and `.shell-title` are tighter below `sm`.
+- **`StatCard`** stacks the icon above a 2-line (hyphenated) label below `sm`. The overview's
+  five tiles go 2 → 3 (`md`) → 5 (`xl`) columns, the odd last tile spans two on phones.
+- **`ProfileHeader`** drops the banner art below `sm` (compact avatar, chips full width,
+  date chip hidden) and only goes side-by-side from `xl` — at `lg` the sidebar leaves
+  ~720px, too narrow for the two-column hero.
+- **`CompetencyOverviewTable`** renders stacked cards below `md` and the table from `md`.
+- **`SkillGapCard`** hides the redundant target pips below `sm` and centres the gauge.
+- **Chat widgets** — the panel is `100vw − 1rem` wide on phones with `dvh`-based height;
+  the bubble is 48px at `bottom-4 right-4` on phones.
+- **Karma** summary tiles are 2 × 2 on phones.
+- Admin: see [admin-dashboard.md](admin-dashboard.md) (filter bar, KPI grids).
 
 ## In / out
 

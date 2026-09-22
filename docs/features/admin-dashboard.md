@@ -41,6 +41,10 @@ aggregate at a time. It never downloads and aggregates the whole roster.
     [workforce-insights.md](workforce-insights.md).
   - `reports` has six export cards: roster, behind on mandatory, emerging skills,
     trends, departments and shortages. Each card has CSV and PDF.
+- **Mobile/tablet.** KPI tiles are 2-up (dashboard) and 3-up (analytics status) on
+  phones; data tables (roster, behind-on-mandatory, Insights) scroll horizontally inside
+  their panel. Shell behaviour is shared — see "Responsive layout" in
+  [learner-dashboard.md](learner-dashboard.md).
 - `src/hooks/useAdminData.ts`:
   - `useAsync(fn, key)` is a generic loader with refetch; it drops stale
     responses.
@@ -48,7 +52,7 @@ aggregate at a time. It never downloads and aggregates the whole roster.
     `useAdminRoster(filters, page, size, search, status)`, `filterKey`.
 - `src/components/admin/`:
   - `AdminFilterBar.tsx`: the three facet selects with headcounts, `ExportButton`
-    and `facetLabels`.
+    and `facetLabels`. Below `sm` the selects stack full width (filter icon hidden).
   - `TrendsPanel.tsx`: one point per day for the range (30d / 90d / 1y).
     - **Training rates (%)**: trained in the last 12 months
       (`trainedLast12mPct`), mandatory completion, and competencies at target.

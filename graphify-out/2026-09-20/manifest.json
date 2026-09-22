@@ -764,25 +764,25 @@
   "main-lms-backend/pyproject.toml": {
     "mtime": 1789673603.6622515,
     "seen": 1789900671.8491054,
-    "ast_hash": "",
+    "ast_hash": "3aae5bc823564af0264a8f12987346a3",
     "semantic_hash": ""
   },
   "mock-igot-server/courses.json": {
     "mtime": 1787910107.6273973,
     "seen": 1789900671.8494132,
-    "ast_hash": "",
+    "ast_hash": "71329f11ced49a9f50e04902d3d2cbd1",
     "semantic_hash": ""
   },
   "mock-igot-server/courses_1.json": {
     "mtime": 1788437604.4831629,
     "seen": 1789900671.849416,
-    "ast_hash": "",
+    "ast_hash": "046561753341f88304417733c30b24c3",
     "semantic_hash": ""
   },
   "mock-igot-server/pyproject.toml": {
     "mtime": 1787893948.1103475,
     "seen": 1789900671.8494375,
-    "ast_hash": "",
+    "ast_hash": "2b4a62c137e0e0cfb7c95fd14420f5bd",
     "semantic_hash": ""
   },
   "frontend/src/components/chat/GyanAvatar.tsx": {
