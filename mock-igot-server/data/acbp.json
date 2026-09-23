@@ -9,66 +9,76 @@
  "cycle": "FY2026-27",
  "organisationMandatory": [
   {
-   "courseId": "do_11336414759508895859",
-   "title": "Introduction to Anonymisation of Microdata",
+   "courseId": "do_11314154255481310091",
+   "title": "Basics of IT Act Compliance",
    "competencyId": "comp_data_privacy_026",
    "level": 1,
-   "hours": 1.0,
+   "hours": 0.75,
    "aparLinked": true,
    "reason": "Organisation-wide ACBP course (information security and data privacy)"
   }
  ],
  "roles": {
-  "role_capd_additional_director_general": {
+  "role_admin_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 3.5,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_admin_assistant_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11358407987818083427",
+     "title": "Foundations of Leave and Transfer Rules",
+     "competencyId": "comp_estab_rules_174",
+     "level": 2,
+     "hours": 4.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
     }
    ]
   },
   "role_capd_assistant_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
-     "competencyId": "comp_sdg_monitor_015",
+     "courseId": "do_11396488518034791653",
+     "title": "Essentials of Revision Analysis and Bias Tests",
+     "competencyId": "comp_revision_policy_132",
      "level": 2,
-     "hours": 4.0,
+     "hours": 7.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
    ]
   },
-  "role_capd_deputy_director_general": {
+  "role_capd_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 3.75,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
    ]
   },
-  "role_capd_director": {
-   "mandatoryCourses": []
-  },
   "role_capd_senior_statistical_officer": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
-     "competencyId": "comp_sdg_monitor_015",
+     "courseId": "do_11396488518034791653",
+     "title": "Essentials of Revision Analysis and Bias Tests",
+     "competencyId": "comp_revision_policy_132",
      "level": 2,
-     "hours": 4.0,
+     "hours": 7.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -77,37 +87,24 @@
   "role_dpd_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 1.25,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
-    }
-   ]
-  },
-  "role_dpd_assistant_director": {
-   "mandatoryCourses": [
-    {
-     "courseId": "do_11351428425497468385",
-     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
-     "competencyId": "comp_big_data_006",
-     "level": 2,
-     "hours": 2.0,
-     "aparLinked": true,
-     "reason": "Role ACBP course on the office's lead subject"
     }
    ]
   },
   "role_dpd_deputy_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11351428425497468385",
-     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
+     "courseId": "do_11366168570636570528",
+     "title": "Foundations of Administrative Data Integration",
      "competencyId": "comp_big_data_006",
      "level": 2,
-     "hours": 2.0,
+     "hours": 2.5,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -116,11 +113,11 @@
   "role_dpd_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 3.75,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -129,44 +126,28 @@
   "role_dpd_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11349929015634380525",
+     "title": "Practitioner Course in Following Up After Feedback",
+     "competencyId": "comp_feedback_205",
      "level": 3,
-     "hours": 2.5,
+     "hours": 1.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
-    }
-   ]
-  },
-  "role_dpd_joint_director": {
-   "mandatoryCourses": [
-    {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
-     "level": 3,
-     "hours": 2.5,
-     "aparLinked": true,
-     "reason": "Role ACBP course for senior officers"
-    }
-   ]
-  },
-  "role_dpd_junior_statistical_officer": {
-   "mandatoryCourses": [
-    {
-     "courseId": "do_11351428425497468385",
-     "title": "Essentials of Big Data for Official Statistics: Record Linkage",
-     "competencyId": "comp_big_data_006",
-     "level": 2,
-     "hours": 2.0,
-     "aparLinked": true,
-     "reason": "Role ACBP course on the office's lead subject"
     }
    ]
   },
   "role_dqad_additional_director_general": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
+     "level": 3,
+     "hours": 2.25,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_dqad_deputy_director": {
    "mandatoryCourses": [
@@ -184,11 +165,11 @@
   "role_dqad_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11393654866554856064",
+     "title": "Hands-on Inclusive Recruitment Practice",
+     "competencyId": "comp_inclusion_198",
      "level": 3,
-     "hours": 3.5,
+     "hours": 4.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -197,11 +178,11 @@
   "role_dqad_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11336998577183171227",
-     "title": "Practitioner Course in Writing Clear Official Notes",
-     "competencyId": "comp_comm_032",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -210,11 +191,11 @@
   "role_dqad_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11349929015634380525",
+     "title": "Practitioner Course in Following Up After Feedback",
+     "competencyId": "comp_feedback_205",
      "level": 3,
-     "hours": 2.5,
+     "hours": 1.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -233,14 +214,56 @@
     }
    ]
   },
+  "role_dsl_assistant_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11387893040396795144",
+     "title": "Essentials of Machine Learning for Official Statistics: Bias, Explainability and Responsible ML",
+     "competencyId": "comp_ml_stats_005",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_dsl_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11393654866554856064",
+     "title": "Hands-on Inclusive Recruitment Practice",
+     "competencyId": "comp_inclusion_198",
+     "level": 3,
+     "hours": 4.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_dsl_joint_director": {
+   "mandatoryCourses": []
+  },
+  "role_dsl_junior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11387893040396795144",
+     "title": "Essentials of Machine Learning for Official Statistics: Bias, Explainability and Responsible ML",
+     "competencyId": "comp_ml_stats_005",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
   "role_esd_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 1.25,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -249,11 +272,11 @@
   "role_esd_deputy_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11359781481158028077",
-     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "courseId": "do_11361763603662193145",
+     "title": "Essentials of Economic Census Operations: Field Organisation and Supervision",
      "competencyId": "comp_econ_census_007",
      "level": 2,
-     "hours": 1.5,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -262,11 +285,11 @@
   "role_esd_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "courseId": "do_11309296011723963464",
+     "title": "Hands-on Setting Priorities",
      "competencyId": "comp_strategic_031",
      "level": 3,
-     "hours": 1.25,
+     "hours": 6.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -275,9 +298,9 @@
   "role_esd_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11318660599113084957",
+     "title": "Hands-on User Consultations",
+     "competencyId": "comp_comm_032",
      "level": 3,
      "hours": 3.5,
      "aparLinked": true,
@@ -288,11 +311,11 @@
   "role_esd_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11349929015634380525",
+     "title": "Practitioner Course in Following Up After Feedback",
+     "competencyId": "comp_feedback_205",
      "level": 3,
-     "hours": 2.5,
+     "hours": 1.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -301,11 +324,11 @@
   "role_esd_junior_statistical_officer": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11359781481158028077",
-     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "courseId": "do_11361763603662193145",
+     "title": "Essentials of Economic Census Operations: Field Organisation and Supervision",
      "competencyId": "comp_econ_census_007",
      "level": 2,
-     "hours": 1.5,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -314,11 +337,11 @@
   "role_esd_senior_statistical_officer": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11359781481158028077",
-     "title": "Fundamentals of Economic Census Operations: Coverage Checks and Post-enumeration Survey",
+     "courseId": "do_11361763603662193145",
+     "title": "Essentials of Economic Census Operations: Field Organisation and Supervision",
      "competencyId": "comp_econ_census_007",
      "level": 2,
-     "hours": 1.5,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -327,11 +350,11 @@
   "role_fod_east_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11309296011723963464",
+     "title": "Hands-on Setting Priorities",
+     "competencyId": "comp_strategic_031",
      "level": 3,
-     "hours": 3.5,
+     "hours": 6.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -353,11 +376,11 @@
   "role_fod_east_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 3.75,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -366,11 +389,11 @@
   "role_fod_east_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11320564003433352229",
+     "title": "Practitioner Course in Mentoring Junior Officers",
+     "competencyId": "comp_coaching_196",
      "level": 3,
-     "hours": 3.75,
+     "hours": 15.0,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -379,11 +402,11 @@
   "role_fod_east_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11349929015634380525",
+     "title": "Practitioner Course in Following Up After Feedback",
+     "competencyId": "comp_feedback_205",
      "level": 3,
-     "hours": 2.5,
+     "hours": 1.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -392,11 +415,11 @@
   "role_fod_north_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 1.25,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -418,11 +441,11 @@
   "role_fod_north_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11393654866554856064",
+     "title": "Hands-on Inclusive Recruitment Practice",
+     "competencyId": "comp_inclusion_198",
      "level": 3,
-     "hours": 3.5,
+     "hours": 4.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -441,14 +464,66 @@
     }
    ]
   },
+  "role_intl_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11320813469590326685",
+     "title": "Foundations of Comparability Across Countries",
+     "competencyId": "comp_intl_standards_133",
+     "level": 2,
+     "hours": 4.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
+  "role_ipmd_deputy_director_general": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11309296011723963464",
+     "title": "Hands-on Setting Priorities",
+     "competencyId": "comp_strategic_031",
+     "level": 3,
+     "hours": 6.5,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_ipmd_joint_director": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11391103857570436993",
+     "title": "Applied Decision Making: Decisions with Uncertain Estimates",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 1.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
+  },
+  "role_ipmd_senior_statistical_officer": {
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11348365310167698089",
+     "title": "Foundations of Infrastructure Project Monitoring: Online Project Monitoring System Data",
+     "competencyId": "comp_project_monitor_100",
+     "level": 2,
+     "hours": 4.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course on the office's lead subject"
+    }
+   ]
+  },
   "role_isw_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11374583073836434823",
+     "title": "Practitioner Course in Systems Thinking: Avoiding Local Fixes with Global Cost",
+     "competencyId": "comp_systems_think_201",
      "level": 3,
-     "hours": 3.75,
+     "hours": 2.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -470,11 +545,11 @@
   "role_isw_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11374583073836434823",
+     "title": "Practitioner Course in Systems Thinking: Avoiding Local Fixes with Global Cost",
+     "competencyId": "comp_systems_think_201",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -483,11 +558,11 @@
   "role_isw_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11336998577183171227",
-     "title": "Practitioner Course in Writing Clear Official Notes",
-     "competencyId": "comp_comm_032",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -535,11 +610,11 @@
   "role_nad_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 3.75,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -561,11 +636,11 @@
   "role_nad_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11374583073836434823",
+     "title": "Practitioner Course in Systems Thinking: Avoiding Local Fixes with Global Cost",
+     "competencyId": "comp_systems_think_201",
      "level": 3,
-     "hours": 3.75,
+     "hours": 2.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -574,11 +649,11 @@
   "role_nad_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11364933926796853547",
-     "title": "Applied Change Management: Managing Resistance to Change",
-     "competencyId": "comp_change_mgmt_035",
+     "courseId": "do_11320564003433352229",
+     "title": "Practitioner Course in Mentoring Junior Officers",
+     "competencyId": "comp_coaching_196",
      "level": 3,
-     "hours": 3.75,
+     "hours": 15.0,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -611,16 +686,26 @@
    ]
   },
   "role_nssta_additional_director_general": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11345503920326128787",
+     "title": "Hands-on Change Management: Personal Adaptability",
+     "competencyId": "comp_change_mgmt_035",
+     "level": 3,
+     "hours": 3.0,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_nssta_deputy_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11372675153046877291",
-     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
-     "competencyId": "comp_survey_design_002",
+     "courseId": "do_11384747419451679609",
+     "title": "Fundamentals of Training Design and Delivery: Training Needs Analysis",
+     "competencyId": "comp_training_design_181",
      "level": 2,
-     "hours": 1.0,
+     "hours": 3.5,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -629,11 +714,11 @@
   "role_nssta_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11320564003433352229",
+     "title": "Practitioner Course in Mentoring Junior Officers",
+     "competencyId": "comp_coaching_196",
      "level": 3,
-     "hours": 1.25,
+     "hours": 15.0,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -642,11 +727,11 @@
   "role_nssta_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11336998577183171227",
-     "title": "Practitioner Course in Writing Clear Official Notes",
-     "competencyId": "comp_comm_032",
+     "courseId": "do_11304501264035929421",
+     "title": "Applied Negotiation and Influencing: Building a Case with Evidence",
+     "competencyId": "comp_negotiation_192",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -655,11 +740,11 @@
   "role_nssta_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11349929015634380525",
+     "title": "Practitioner Course in Following Up After Feedback",
+     "competencyId": "comp_feedback_205",
      "level": 3,
-     "hours": 2.5,
+     "hours": 1.25,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -668,11 +753,11 @@
   "role_nssta_statistical_investigator_grade_i": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11372675153046877291",
-     "title": "Fundamentals of Survey Sampling: Rotational Panel Designs",
-     "competencyId": "comp_survey_design_002",
+     "courseId": "do_11384747419451679609",
+     "title": "Fundamentals of Training Design and Delivery: Training Needs Analysis",
+     "competencyId": "comp_training_design_181",
      "level": 2,
-     "hours": 1.0,
+     "hours": 3.5,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -681,11 +766,11 @@
   "role_psd_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 1.25,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -707,11 +792,11 @@
   "role_psd_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11320564003433352229",
+     "title": "Practitioner Course in Mentoring Junior Officers",
+     "competencyId": "comp_coaching_196",
      "level": 3,
-     "hours": 3.5,
+     "hours": 15.0,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -720,18 +805,28 @@
   "role_psd_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11374583073836434823",
+     "title": "Practitioner Course in Systems Thinking: Avoiding Local Fixes with Global Cost",
+     "competencyId": "comp_systems_think_201",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
    ]
   },
   "role_psd_joint_director": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11391103857570436993",
+     "title": "Applied Decision Making: Decisions with Uncertain Estimates",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 1.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_psd_junior_statistical_officer": {
    "mandatoryCourses": [
@@ -775,11 +870,11 @@
   "role_sdrd_additional_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
-     "competencyId": "comp_strategic_031",
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
      "level": 3,
-     "hours": 1.25,
+     "hours": 0.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -801,25 +896,35 @@
   "role_sdrd_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11326841448305463102",
-     "title": "Practitioner Course in Strategic Thinking: Anticipating Data User Needs",
+     "courseId": "do_11309296011723963464",
+     "title": "Hands-on Setting Priorities",
      "competencyId": "comp_strategic_031",
      "level": 3,
-     "hours": 1.25,
+     "hours": 6.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
    ]
   },
   "role_sdrd_director": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
+     "level": 3,
+     "hours": 0.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_sdrd_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11318660599113084957",
+     "title": "Hands-on User Consultations",
+     "competencyId": "comp_comm_032",
      "level": 3,
      "hours": 3.5,
      "aparLinked": true,
@@ -841,16 +946,26 @@
    ]
   },
   "role_ssd_additional_director_general": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11391103857570436993",
+     "title": "Applied Decision Making: Decisions with Uncertain Estimates",
+     "competencyId": "comp_decision_037",
+     "level": 3,
+     "hours": 1.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_ssd_assistant_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
+     "courseId": "do_11368863700416458517",
+     "title": "Foundations of SDG Indicator Metadata",
      "competencyId": "comp_sdg_monitor_015",
      "level": 2,
-     "hours": 4.0,
+     "hours": 5.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -859,11 +974,11 @@
   "role_ssd_deputy_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
+     "courseId": "do_11368863700416458517",
+     "title": "Foundations of SDG Indicator Metadata",
      "competencyId": "comp_sdg_monitor_015",
      "level": 2,
-     "hours": 4.0,
+     "hours": 5.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -872,27 +987,37 @@
   "role_ssd_deputy_director_general": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11383171926591869234",
-     "title": "Applied Cognitive Biases in Decisions",
-     "competencyId": "comp_decision_037",
+     "courseId": "do_11393654866554856064",
+     "title": "Hands-on Inclusive Recruitment Practice",
+     "competencyId": "comp_inclusion_198",
      "level": 3,
-     "hours": 3.5,
+     "hours": 4.5,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
    ]
   },
   "role_ssd_director": {
-   "mandatoryCourses": []
+   "mandatoryCourses": [
+    {
+     "courseId": "do_11334882262095513384",
+     "title": "Practitioner Course in Leadership: Delegation and Accountability",
+     "competencyId": "comp_leadership_032",
+     "level": 3,
+     "hours": 0.75,
+     "aparLinked": true,
+     "reason": "Role ACBP course for senior officers"
+    }
+   ]
   },
   "role_ssd_joint_director": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11311765506151950049",
-     "title": "Practitioner Course in Innovation: Pilots and Experiments",
-     "competencyId": "comp_innov_038",
+     "courseId": "do_11374583073836434823",
+     "title": "Practitioner Course in Systems Thinking: Avoiding Local Fixes with Global Cost",
+     "competencyId": "comp_systems_think_201",
      "level": 3,
-     "hours": 2.5,
+     "hours": 2.75,
      "aparLinked": true,
      "reason": "Role ACBP course for senior officers"
     }
@@ -901,11 +1026,11 @@
   "role_ssd_junior_statistical_officer": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
+     "courseId": "do_11368863700416458517",
+     "title": "Foundations of SDG Indicator Metadata",
      "competencyId": "comp_sdg_monitor_015",
      "level": 2,
-     "hours": 4.0,
+     "hours": 5.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -914,11 +1039,11 @@
   "role_ssd_senior_statistical_officer": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
+     "courseId": "do_11368863700416458517",
+     "title": "Foundations of SDG Indicator Metadata",
      "competencyId": "comp_sdg_monitor_015",
      "level": 2,
-     "hours": 4.0,
+     "hours": 5.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -927,11 +1052,11 @@
   "role_ssd_statistical_investigator_grade_i": {
    "mandatoryCourses": [
     {
-     "courseId": "do_11323476390042336611",
-     "title": "Fundamentals of Data Flows from Line Ministries",
+     "courseId": "do_11368863700416458517",
+     "title": "Foundations of SDG Indicator Metadata",
      "competencyId": "comp_sdg_monitor_015",
      "level": 2,
-     "hours": 4.0,
+     "hours": 5.25,
      "aparLinked": true,
      "reason": "Role ACBP course on the office's lead subject"
     }
@@ -1052,7 +1177,7 @@
    "learningHoursPerQuarter": 30
   },
   "usr_191910073": {
-   "roleId": "role_dpd_joint_director",
+   "roleId": "role_dsl_joint_director",
    "learningHoursPerQuarter": 16
   },
   "usr_129713590": {
@@ -1060,7 +1185,7 @@
    "learningHoursPerQuarter": 16
   },
   "usr_106391818": {
-   "roleId": "role_dpd_director",
+   "roleId": "role_dsl_director",
    "learningHoursPerQuarter": 14
   },
   "usr_156930079": {
@@ -1072,7 +1197,7 @@
    "learningHoursPerQuarter": 24
   },
   "usr_298435923": {
-   "roleId": "role_capd_assistant_director",
+   "roleId": "role_admin_assistant_director",
    "learningHoursPerQuarter": 14
   },
   "usr_590788362": {
@@ -1088,7 +1213,7 @@
    "learningHoursPerQuarter": 24
   },
   "usr_286828884": {
-   "roleId": "role_capd_deputy_director_general",
+   "roleId": "role_ipmd_deputy_director_general",
    "learningHoursPerQuarter": 16
   },
   "usr_505475993": {
@@ -1132,7 +1257,7 @@
    "learningHoursPerQuarter": 30
   },
   "usr_572744267": {
-   "roleId": "role_dqad_deputy_director_general",
+   "roleId": "role_ipmd_deputy_director_general",
    "learningHoursPerQuarter": 16
   },
   "usr_671758865": {
@@ -1148,7 +1273,7 @@
    "learningHoursPerQuarter": 24
   },
   "usr_631425891": {
-   "roleId": "role_dqad_senior_statistical_officer",
+   "roleId": "role_intl_senior_statistical_officer",
    "learningHoursPerQuarter": 30
   },
   "usr_828413374": {
@@ -1240,7 +1365,7 @@
    "learningHoursPerQuarter": 20
   },
   "usr_322996651": {
-   "roleId": "role_dpd_assistant_director",
+   "roleId": "role_dsl_assistant_director",
    "learningHoursPerQuarter": 24
   },
   "usr_839805543": {
@@ -1276,7 +1401,7 @@
    "learningHoursPerQuarter": 20
   },
   "usr_664790986": {
-   "roleId": "role_dqad_deputy_director",
+   "roleId": "role_ipmd_senior_statistical_officer",
    "learningHoursPerQuarter": 30
   },
   "usr_161447023": {
@@ -1292,7 +1417,7 @@
    "learningHoursPerQuarter": 14
   },
   "usr_226395063": {
-   "roleId": "role_capd_additional_director_general",
+   "roleId": "role_admin_additional_director_general",
    "learningHoursPerQuarter": 16
   },
   "usr_333566606": {
@@ -1300,7 +1425,7 @@
    "learningHoursPerQuarter": 14
   },
   "usr_313915836": {
-   "roleId": "role_dpd_junior_statistical_officer",
+   "roleId": "role_dsl_junior_statistical_officer",
    "learningHoursPerQuarter": 30
   },
   "usr_640913819": {
@@ -1336,7 +1461,7 @@
    "learningHoursPerQuarter": 16
   },
   "usr_158531054": {
-   "roleId": "role_dpd_director",
+   "roleId": "role_dsl_director",
    "learningHoursPerQuarter": 14
   },
   "usr_511749730": {
@@ -1352,7 +1477,7 @@
    "learningHoursPerQuarter": 20
   },
   "usr_904519313": {
-   "roleId": "role_dpd_joint_director",
+   "roleId": "role_dsl_joint_director",
    "learningHoursPerQuarter": 20
   },
   "usr_607792264": {
@@ -1508,7 +1633,7 @@
    "learningHoursPerQuarter": 24
   },
   "usr_937451724": {
-   "roleId": "role_dqad_joint_director",
+   "roleId": "role_ipmd_joint_director",
    "learningHoursPerQuarter": 16
   },
   "usr_518514926": {

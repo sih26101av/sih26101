@@ -323,6 +323,9 @@ app.include_router(recommendation_feedback_router)
 from routers import admin_console
 app.include_router(admin_console.router)
 app.include_router(admin_console.learner_router)
+# Gyan on the admin console — same assistant, plus a tier that reads admin data.
+from routers.admin_chat import router as admin_chat_router
+app.include_router(admin_chat_router)
     
     
 
@@ -782,7 +785,8 @@ async def get_recommendations_by_user_id(
                 optional cross-encoder re-rank of the top 20
       Stage 3 — final = 0.6*relevance + 0.4*quality (Bayesian-shrunk rating, log-pop)
       Picks   — per gap, interleaved by level with formats spread (self-paced /
-                classroom / lab) among near-equal courses
+                classroom / lab) among near-equal courses, then ordered by
+                finalScore so the list agrees with the score on every card
     Mandatory ACBP courses (the departmental training plan) are always listed
     first with mandatory=true. Courses the learner thumbed down are skipped
     (mandatory ones excepted). UNASSESSED competencies are not ranked as gaps;

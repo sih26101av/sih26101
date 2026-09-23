@@ -450,3 +450,198 @@ const COPY: Record<ChatLanguage, ChatCopy> = {
 export function chatCopy(code: ChatLanguage): ChatCopy {
   return COPY[code] ?? COPY.en;
 }
+
+// ─── Admin console copy ──────────────────────────────────────────────────────
+//
+// The admin widget shares every string above (greeting, hints, yes/no, the
+// nav-confirm wording, the error bubble) and adds only what is specific to the
+// console. Kept in its own table so the learner copy stays one block per
+// language, and merged over English so a new language shows English prompts
+// rather than blank chips.
+
+/** Capability-card captions on the admin console. */
+interface AdminLabelCopy {
+  workforce: string;
+  compliance: string;
+  official: string;
+  insights: string;
+}
+
+/** Prompts the admin cards and suggestions actually send. */
+interface AdminAskCopy {
+  overview: string;
+  mandatory: string;
+  official: string;
+  emerging: string;
+  compliance: string;
+  shortages: string;
+  departments: string;
+  health: string;
+}
+
+export interface AdminChatCopy {
+  tagline: string;
+  subtitle: string;
+  placeholder: string;
+  label: AdminLabelCopy;
+  ask: AdminAskCopy;
+}
+
+const ADMIN_COPY: Record<ChatLanguage, AdminChatCopy> = {
+  en: {
+    tagline: 'Admin console',
+    subtitle: 'Ask me about the roster, compliance, or any official by name.',
+    placeholder: 'Ask about the workforce, or name an official…',
+    label: { workforce: 'Workforce', compliance: 'Mandatory Training', official: 'An Official', insights: 'What to Train Next' },
+    ask: {
+      overview: 'Give me an overview of the workforce',
+      mandatory: 'How is mandatory ACBP training going?',
+      official: 'Tell me about an official',
+      emerging: 'What should we train next year?',
+      compliance: 'What is the training compliance?',
+      shortages: 'Which competencies have the biggest shortage?',
+      departments: 'Which departments are lagging?',
+      health: 'Is the system healthy?',
+    },
+  },
+  hi: {
+    tagline: 'प्रशासन कंसोल',
+    subtitle: 'रोस्टर, अनुपालन या किसी भी अधिकारी के बारे में पूछें।',
+    placeholder: 'कार्यबल के बारे में पूछें, या अधिकारी का नाम लिखें…',
+    label: { workforce: 'कार्यबल', compliance: 'अनिवार्य प्रशिक्षण', official: 'एक अधिकारी', insights: 'आगे क्या प्रशिक्षण' },
+    ask: {
+      overview: 'कार्यबल का अवलोकन दीजिए',
+      mandatory: 'अनिवार्य ACBP प्रशिक्षण की स्थिति क्या है?',
+      official: 'किसी अधिकारी के बारे में बताइए',
+      emerging: 'अगले साल क्या प्रशिक्षण देना चाहिए?',
+      compliance: 'प्रशिक्षण अनुपालन कितना है?',
+      shortages: 'किन दक्षताओं की सबसे बड़ी कमी है?',
+      departments: 'कौन से विभाग पीछे हैं?',
+      health: 'सिस्टम ठीक चल रहा है क्या?',
+    },
+  },
+  hi_latn: {
+    tagline: 'Admin console',
+    subtitle: 'Roster, compliance ya kisi bhi official ke baare mein poochhein.',
+    placeholder: 'Workforce ke baare mein poochhein, ya official ka naam likhein…',
+    label: { workforce: 'Workforce', compliance: 'Mandatory Training', official: 'Ek Official', insights: 'Aage Kya Train Karein' },
+    ask: {
+      overview: 'Workforce ka overview dijiye',
+      mandatory: 'Mandatory ACBP training ka status kya hai?',
+      official: 'Kisi official ke baare mein batao',
+      emerging: 'Agle saal kya train karna chahiye?',
+      compliance: 'Training compliance kitna hai?',
+      shortages: 'Kis competency ki sabse zyada kami hai?',
+      departments: 'Kaunse departments peeche hain?',
+      health: 'System theek chal raha hai kya?',
+    },
+  },
+  mr: {
+    tagline: 'प्रशासन कन्सोल',
+    subtitle: 'रोस्टर, अनुपालन किंवा कोणत्याही अधिकाऱ्याबद्दल विचारा.',
+    placeholder: 'कार्यबलाबद्दल विचारा, किंवा अधिकाऱ्याचे नाव लिहा…',
+    label: { workforce: 'कार्यबल', compliance: 'अनिवार्य प्रशिक्षण', official: 'एक अधिकारी', insights: 'पुढे काय प्रशिक्षण' },
+    ask: {
+      overview: 'कार्यबलाचा आढावा द्या',
+      mandatory: 'अनिवार्य ACBP प्रशिक्षणाची स्थिती काय आहे?',
+      official: 'एका अधिकाऱ्याबद्दल सांगा',
+      emerging: 'पुढच्या वर्षी काय प्रशिक्षण द्यावे?',
+      compliance: 'प्रशिक्षण अनुपालन किती आहे?',
+      shortages: 'कोणत्या क्षमतांची सर्वात मोठी कमतरता आहे?',
+      departments: 'कोणते विभाग मागे आहेत?',
+      health: 'सिस्टम व्यवस्थित चालू आहे का?',
+    },
+  },
+  gu: {
+    tagline: 'વહીવટ કન્સોલ',
+    subtitle: 'રોસ્ટર, અનુપાલન અથવા કોઈપણ અધિકારી વિશે પૂછો.',
+    placeholder: 'કાર્યબળ વિશે પૂછો, અથવા અધિકારીનું નામ લખો…',
+    label: { workforce: 'કાર્યબળ', compliance: 'ફરજિયાત તાલીમ', official: 'એક અધિકારી', insights: 'આગળ શું તાલીમ' },
+    ask: {
+      overview: 'કાર્યબળનો સારાંશ આપો',
+      mandatory: 'ફરજિયાત ACBP તાલીમની સ્થિતિ શું છે?',
+      official: 'એક અધિકારી વિશે કહો',
+      emerging: 'આવતા વર્ષે શું તાલીમ આપવી જોઈએ?',
+      compliance: 'તાલીમ અનુપાલન કેટલું છે?',
+      shortages: 'કઈ ક્ષમતાઓની સૌથી મોટી અછત છે?',
+      departments: 'કયા વિભાગો પાછળ છે?',
+      health: 'સિસ્ટમ બરાબર ચાલે છે કે?',
+    },
+  },
+  te: {
+    tagline: 'అడ్మిన్ కన్సోల్',
+    subtitle: 'రోస్టర్, అనుసరణ లేదా ఏ అధికారి గురించైనా అడగండి.',
+    placeholder: 'సిబ్బంది గురించి అడగండి, లేదా అధికారి పేరు రాయండి…',
+    label: { workforce: 'సిబ్బంది', compliance: 'తప్పనిసరి శిక్షణ', official: 'ఒక అధికారి', insights: 'తదుపరి శిక్షణ' },
+    ask: {
+      overview: 'సిబ్బంది సారాంశం ఇవ్వండి',
+      mandatory: 'తప్పనిసరి ACBP శిక్షణ స్థితి ఏమిటి?',
+      official: 'ఒక అధికారి గురించి చెప్పండి',
+      emerging: 'వచ్చే ఏడాది ఏ శిక్షణ ఇవ్వాలి?',
+      compliance: 'శిక్షణ అనుసరణ ఎంత ఉంది?',
+      shortages: 'ఏ సామర్థ్యాలలో అతిపెద్ద కొరత ఉంది?',
+      departments: 'ఏ శాఖలు వెనుకబడ్డాయి?',
+      health: 'సిస్టమ్ సరిగ్గా పనిచేస్తోందా?',
+    },
+  },
+  ta: {
+    tagline: 'நிர்வாக கன்சோல்',
+    subtitle: 'பட்டியல், இணக்கம் அல்லது எந்த அலுவலரைப் பற்றியும் கேளுங்கள்.',
+    placeholder: 'பணியாளர்கள் பற்றிக் கேளுங்கள், அல்லது அலுவலர் பெயரை எழுதுங்கள்…',
+    label: { workforce: 'பணியாளர்', compliance: 'கட்டாயப் பயிற்சி', official: 'ஒரு அலுவலர்', insights: 'அடுத்து என்ன பயிற்சி' },
+    ask: {
+      overview: 'பணியாளர் குழுவின் சுருக்கத்தைக் கொடுங்கள்',
+      mandatory: 'கட்டாய ACBP பயிற்சியின் நிலை என்ன?',
+      official: 'ஒரு அலுவலரைப் பற்றிச் சொல்லுங்கள்',
+      emerging: 'அடுத்த ஆண்டு என்ன பயிற்சி அளிக்க வேண்டும்?',
+      compliance: 'பயிற்சி இணக்கம் எவ்வளவு?',
+      shortages: 'எந்தத் திறன்களில் பெரிய பற்றாக்குறை உள்ளது?',
+      departments: 'எந்தத் துறைகள் பின்தங்கியுள்ளன?',
+      health: 'அமைப்பு சரியாக இயங்குகிறதா?',
+    },
+  },
+  or: {
+    tagline: 'ପ୍ରଶାସନ କନସୋଲ',
+    subtitle: 'ରୋଷ୍ଟର, ଅନୁପାଳନ କିମ୍ବା ଯେକୌଣସି ଅଧିକାରୀଙ୍କ ବିଷୟରେ ପଚାରନ୍ତୁ।',
+    placeholder: 'କର୍ମଶକ୍ତି ବିଷୟରେ ପଚାରନ୍ତୁ, କିମ୍ବା ଅଧିକାରୀଙ୍କ ନାମ ଲେଖନ୍ତୁ…',
+    label: { workforce: 'କର୍ମଶକ୍ତି', compliance: 'ବାଧ୍ୟତାମୂଳକ ତାଲିମ', official: 'ଜଣେ ଅଧିକାରୀ', insights: 'ପରବର୍ତ୍ତୀ ତାଲିମ' },
+    ask: {
+      overview: 'କର୍ମଶକ୍ତିର ସାରାଂଶ ଦିଅନ୍ତୁ',
+      mandatory: 'ବାଧ୍ୟତାମୂଳକ ACBP ତାଲିମର ସ୍ଥିତି କ’ଣ?',
+      official: 'ଜଣେ ଅଧିକାରୀଙ୍କ ବିଷୟରେ କୁହନ୍ତୁ',
+      emerging: 'ଆସନ୍ତା ବର୍ଷ କ’ଣ ତାଲିମ ଦେବା ଉଚିତ?',
+      compliance: 'ତାଲିମ ଅନୁପାଳନ କେତେ?',
+      shortages: 'କେଉଁ ଦକ୍ଷତାର ସବୁଠାରୁ ବଡ଼ ଅଭାବ?',
+      departments: 'କେଉଁ ବିଭାଗ ପଛରେ ଅଛନ୍ତି?',
+      health: 'ସିଷ୍ଟମ ଠିକ୍ ଚାଲୁଛି କି?',
+    },
+  },
+  bn: {
+    tagline: 'প্রশাসন কনসোল',
+    subtitle: 'রোস্টার, অনুবর্তিতা বা যেকোনো আধিকারিক সম্পর্কে জিজ্ঞাসা করুন।',
+    placeholder: 'কর্মীবাহিনী সম্পর্কে জিজ্ঞাসা করুন, বা আধিকারিকের নাম লিখুন…',
+    label: { workforce: 'কর্মীবাহিনী', compliance: 'বাধ্যতামূলক প্রশিক্ষণ', official: 'একজন আধিকারিক', insights: 'পরবর্তী প্রশিক্ষণ' },
+    ask: {
+      overview: 'কর্মীবাহিনীর সারসংক্ষেপ দিন',
+      mandatory: 'বাধ্যতামূলক ACBP প্রশিক্ষণের অবস্থা কী?',
+      official: 'একজন আধিকারিক সম্পর্কে বলুন',
+      emerging: 'আগামী বছর কী প্রশিক্ষণ দেওয়া উচিত?',
+      compliance: 'প্রশিক্ষণ অনুবর্তিতা কত?',
+      shortages: 'কোন দক্ষতার সবচেয়ে বড় ঘাটতি?',
+      departments: 'কোন বিভাগগুলি পিছিয়ে আছে?',
+      health: 'সিস্টেম ঠিকঠাক চলছে কি?',
+    },
+  },
+};
+
+/** Admin-console copy for a language, falling back to English for anything unmapped. */
+export function adminChatCopy(code: ChatLanguage): AdminChatCopy {
+  const row = ADMIN_COPY[code];
+  if (!row) return ADMIN_COPY.en;
+  return {
+    ...ADMIN_COPY.en,
+    ...row,
+    label: { ...ADMIN_COPY.en.label, ...row.label },
+    ask: { ...ADMIN_COPY.en.ask, ...row.ask },
+  };
+}

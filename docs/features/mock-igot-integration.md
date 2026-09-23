@@ -51,7 +51,7 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   - `GET /api/courses/enriched` — the same courses in the older "enriched" shape.
   - `GET /api/external/igot/catalog` (legacy).
 - **FRAC endpoints:**
-  - `GET /api/frac/competencies` — the 40 catalogue competencies. Each item has
+  - `GET /api/frac/competencies` — the 205 catalogue competencies. Each item has
     the admin shape (`competency_id, name, category, description`) plus the full
     FRAC record (`id, competencyType, children, decayClass, gsbpm`).
     `?dictionary=igot` returns the 331-entry CID dictionary instead.
@@ -110,7 +110,13 @@ data it serves is **synthetic**: one deterministic generator writes it (see
   disk.
 - **Inputs:**
   - `mockdata/domain.py` — hand-written competencies, topics, offices, GSBPM map,
-    overlaps and ladder holes.
+    overlaps and ladder holes. Its last section merges in the dictionary
+    extension and adds the office pools, holes, crosswalk rules and prerequisite
+    edges the new families need.
+  - `mockdata/domain_extra.py` — competencies 041-205 in six families, each with
+    its own short name, description, topics, GSBPM sub-processes, overlaps and
+    catalogue depth (`core` / `standard` / `thin`, which sets how many courses,
+    items and comparison episodes it gets).
   - `mockdata/roster_seed.json` — frozen identities.
   - `competencies.json` — for the crosswalk.
 - **Builders:** `build_frac`, `build_catalog`, `build_crosswalk`,

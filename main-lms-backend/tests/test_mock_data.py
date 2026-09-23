@@ -57,7 +57,8 @@ def test_every_file_is_labelled_synthetic(data):
 
 def test_role_competencies_and_tags_use_catalogue_ids(data):
     frac_ids = {c["id"] for c in data["frac_competencies.json"]}
-    assert len(frac_ids) == 40
+    assert len(frac_ids) == len(D.COMPETENCIES) >= 200
+    assert frac_ids >= set(D.CORE_COMPETENCY_IDS)          # the original 40 ids never move
     for u in data["userdata.json"]:
         assert u["competencies"] == u["profileDetails"]["competencies"]
         assert {c["id"] for c in u["competencies"]} <= frac_ids
@@ -110,9 +111,10 @@ def test_ladders_are_complete_except_documented_holes(data):
     for c in data["course_catalog.json"]:
         for t in _tags(c):
             levels[t["id"]].add(int(t["competencyLevel"][-1]))
+    assert set(levels) == {c[0] for c in D.COMPETENCIES}          # every competency has courses
     holes = {cid: sorted(set(range(1, 6)) - lv) for cid, lv in levels.items() if lv != set(range(1, 6))}
     assert holes == {k: sorted(v) for k, v in D.LADDER_HOLES.items()}
-    assert sum(1 for lv in levels.values() if lv == set(range(1, 6))) >= 34
+    assert sum(1 for lv in levels.values() if lv == set(range(1, 6))) >= 160
 
 
 def test_title_level_words_match_the_tag_level(data):
@@ -261,8 +263,13 @@ def test_course_outcomes_are_consistent_with_catalogue_and_roster(data):
         primary = next(t for t in _tags(courses[o["courseId"]]) if t["primary"])
         assert o["competencyId"] == primary["id"] and o["courseLevel"] == int(primary["competencyLevel"][-1])
         assert o["enrolled"] <= o["completed"]
-    assert len(doc["comparisons"]) == 40 * gen.CONTROLS_PER_COMPETENCY
     truth = data["_truth/planted_effects.json"]
+    planted_comps = {next(t["id"] for t in _tags(courses[cid]) if t["primary"])
+                     for cid in truth["zeroUpliftCourses"]}
+    assert len(doc["comparisons"]) == sum(
+        max(gen.CONTROLS_PER_COMPETENCY[D.CATALOG_DEPTH[c[0]]],
+            gen.CONTROLS_PLANTED_COMPETENCY if c[0] in planted_comps else 0)
+        for c in D.COMPETENCIES)
     for cid in truth["zeroUpliftCourses"]:
         assert sum(o["courseId"] == cid for o in doc["outcomes"]) >= 20      # popular → enough data
         assert abs(truth["trueUplift"][cid]) < 0.1
@@ -315,9 +322,12 @@ def test_item_bank_is_labelled_synthetic_and_covers_every_level(data):
         assert 0 <= it["answerIndex"] < len(it["options"]) == 4 and it["calibration"] == "synthetic"
         assert gen.ITEM_A_RANGE[0] <= it["a"] <= gen.ITEM_A_RANGE[1]
         assert it["bloom"] == gen.BLOOM[it["level"]]
-    assert len(by_comp) == 40
-    for items in by_comp.values():
-        assert sorted(collections.Counter(i["level"] for i in items).items()) == [(l, gen.ITEMS_PER_LEVEL) for l in range(1, 6)]
+    assert set(by_comp) == {c[0] for c in D.COMPETENCIES}
+    for cid, items in by_comp.items():
+        per_level = gen.ITEMS_PER_LEVEL_THIN if D.CATALOG_DEPTH[cid] == "thin" else gen.ITEMS_PER_LEVEL
+        assert per_level >= gen.RESPONSES_PER_OFFICIAL / 5      # enough items for the response log
+        assert sorted(collections.Counter(i["level"] for i in items).items()) == [
+            (lvl, per_level) for lvl in range(1, 6)]
     ids = {i["itemId"] for i in bank["items"]}
     assert len(ids) == len(bank["items"]) and all(r["itemId"] in ids for r in bank["responses"])
 

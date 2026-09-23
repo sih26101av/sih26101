@@ -1,0 +1,112 @@
+{
+  "admin_overview": [
+    "workforce ka overview dijiye",
+    "dashboard ka summary batao",
+    "abhi ke main numbers kya hain"
+  ],
+  "admin_officials": [
+    "roster mein kitne officials hain",
+    "total officers kitne hain",
+    "kitne log registered hain"
+  ],
+  "admin_compliance": [
+    "training compliance kitna hai",
+    "kitne officials compliant hain",
+    "compliance percentage batao"
+  ],
+  "admin_mandatory": [
+    "mandatory training ka status kya hai",
+    "ACBP completion kitni hui",
+    "kitne officials mandatory course mein peeche hain"
+  ],
+  "admin_departments": [
+    "department wise compliance dikhao",
+    "kaunsa department sabse aage hai",
+    "vibhag ke hisaab se numbers batao"
+  ],
+  "admin_shortages": [
+    "kis competency ki sabse zyada kami hai",
+    "sabse bade skill gaps kaunse hain",
+    "shortage kahan hai"
+  ],
+  "admin_emerging": [
+    "agle saal kya train karna chahiye",
+    "emerging skills report dikhao",
+    "36 mahine mein kaunsi skill risk mein hai"
+  ],
+  "admin_trends": [
+    "numbers time ke saath kaise badle",
+    "pichle 90 din ka trend dikhao",
+    "kya compliance sudhar raha hai"
+  ],
+  "admin_health": [
+    "system theek chal raha hai kya",
+    "service status check karo",
+    "system health report dikhao"
+  ],
+  "admin_nudges": [
+    "recent nudges dikhao",
+    "kise reminder bheja gaya",
+    "kitne nudge bheje gaye"
+  ],
+  "admin_assignments": [
+    "kaunse training plans assign hue hain",
+    "assigned courses dikhao",
+    "assignment ki progress batao"
+  ],
+  "admin_needs_training": [
+    "kise training chahiye",
+    "kaunse officials compliant nahi hain",
+    "training required officials dikhao"
+  ],
+  "admin_user_lookup": [
+    "is official ke baare mein batao",
+    "kisi user ki detail dikhao",
+    "ek employee ki profile do"
+  ],
+  "admin_capabilities": [
+    "aap yahan kya kar sakte ho",
+    "admin ke liye kaise madad karoge",
+    "main aapse kya pooch sakta hoon"
+  ],
+  "navigation_admin_dashboard": [
+    "admin dashboard kholo",
+    "main dashboard par le chalo"
+  ],
+  "navigation_admin_officials": [
+    "officials tab kholo",
+    "roster page dikhao"
+  ],
+  "navigation_admin_competencies": [
+    "FRAC competencies tab kholo",
+    "competency dictionary dikhao"
+  ],
+  "navigation_admin_analytics": [
+    "analytics tab kholo",
+    "analytics section par le chalo"
+  ],
+  "navigation_admin_emerging": [
+    "emerging skills tab kholo",
+    "emerging skills par le chalo"
+  ],
+  "navigation_admin_actions": [
+    "actions tab kholo",
+    "training assign wale page par le chalo"
+  ],
+  "navigation_admin_insights": [
+    "workforce insights tab kholo",
+    "insights par le chalo"
+  ],
+  "navigation_admin_reports": [
+    "reports tab kholo",
+    "export page par le chalo"
+  ],
+  "navigation_learner_dashboard": [
+    "learner dashboard kholo",
+    "official ka dashboard dikhao"
+  ],
+  "navigation_home": [
+    "home page par le chalo",
+    "landing page kholo"
+  ]
+}

@@ -17,10 +17,10 @@
   {
    "cidId": "CID0010",
    "cidName": "Technology roadmapping",
-   "fracId": null,
+   "fracId": "comp_transport_stats_057",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "transport|railway|road|logistic|aviation|shipping"
   },
   {
    "cidId": "CID0011",
@@ -73,10 +73,10 @@
   {
    "cidId": "CID00128",
    "cidName": "Network Systems Maintenance",
-   "fracId": null,
+   "fracId": "comp_network_145",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "network|system administration|server management"
   },
   {
    "cidId": "CID0013",
@@ -121,26 +121,26 @@
   {
    "cidId": "CID00144",
    "cidName": "Network Planning and Operations",
-   "fracId": null,
+   "fracId": "comp_network_145",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "network|system administration|server management"
   },
   {
    "cidId": "CID00148",
    "cidName": "Escalator and Travelator Maintenance",
-   "fracId": null,
+   "fracId": "comp_tourism_stats_058",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "touris|hospitality|travel"
   },
   {
    "cidId": "CID0015",
    "cidName": "Internet of Things Management",
-   "fracId": null,
+   "fracId": "comp_mobile_data_159",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "sensor|internet of things|\\biot\\b|mobile network data"
   },
   {
    "cidId": "CID00152",
@@ -177,26 +177,26 @@
   {
    "cidId": "CID00164",
    "cidName": "Security Governance & Risk Compliance",
-   "fracId": null,
+   "fracId": "comp_capital_mkt_066",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "capital market|securit|corporate sector|company affairs"
   },
   {
    "cidId": "CID0017",
    "cidName": "Gender Sensitivity",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID00174",
    "cidName": "Import and Export Documentation Administration",
-   "fracId": null,
+   "fracId": "comp_trade_stats_059",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "trade|export|import|customs|tariff"
   },
   {
    "cidId": "CID00177",
@@ -209,10 +209,10 @@
   {
    "cidId": "CID0018",
    "cidName": "Crisis Situations Management/Disaster Management",
-   "fracId": null,
+   "fracId": "comp_climate_stats_055",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "climate|disaster|emergency|resilience of infrastructure"
   },
   {
    "cidId": "CID00181",
@@ -257,18 +257,18 @@
   {
    "cidId": "CID00205",
    "cidName": "Service Branding and Coaching",
-   "fracId": null,
+   "fracId": "comp_coaching_196",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "coach|mentor"
   },
   {
    "cidId": "CID00208",
    "cidName": "Environment and Social Governance",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID0021",
@@ -321,10 +321,10 @@
   {
    "cidId": "CID00222",
    "cidName": "Human Resource Policies and Legislation Framework Management",
-   "fracId": null,
+   "fracId": "comp_estab_rules_174",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "establishment|service rules|cadre|recruitment|human resource"
   },
   {
    "cidId": "CID00223",
@@ -337,10 +337,10 @@
   {
    "cidId": "CID00224",
    "cidName": "Human Resource Practices Implementation",
-   "fracId": null,
+   "fracId": "comp_estab_rules_174",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "establishment|service rules|cadre|recruitment|human resource"
   },
   {
    "cidId": "CID00225",
@@ -385,10 +385,10 @@
   {
    "cidId": "CID0024",
    "cidName": "Environmental Planning",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00249",
@@ -401,10 +401,10 @@
   {
    "cidId": "CID0025",
    "cidName": "Scenario Planning",
-   "fracId": null,
+   "fracId": "comp_forecasting_112",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "forecast|projection|scenario"
   },
   {
    "cidId": "CID00251",
@@ -521,10 +521,10 @@
   {
    "cidId": "CID0027",
    "cidName": "Environmental Impact Assessment",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00272",
@@ -561,42 +561,42 @@
   {
    "cidId": "CID00284",
    "cidName": "Regulatory Compliance",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00285",
    "cidName": "Regulatory and Legal Advisory",
-   "fracId": null,
+   "fracId": "comp_court_cases_177",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "court|litigation|legal|judicial|\\bact\\b interpretation"
   },
   {
    "cidId": "CID00286",
    "cidName": "Risk Management",
-   "fracId": null,
+   "fracId": "comp_risk_mgmt_189",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "risk|business continuity|contingency"
   },
   {
    "cidId": "CID00287",
    "cidName": "Regulatory Compliance",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00289",
    "cidName": "Regulatory Risk Assessment",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00290",
@@ -633,10 +633,10 @@
   {
    "cidId": "CID00297",
    "cidName": "Public Health Resource Management",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID003",
@@ -665,10 +665,10 @@
   {
    "cidId": "CID00305",
    "cidName": "Travel Information System Maintenance",
-   "fracId": null,
+   "fracId": "comp_tourism_stats_058",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "touris|hospitality|travel"
   },
   {
    "cidId": "CID00306",
@@ -713,18 +713,18 @@
   {
    "cidId": "CID00318",
    "cidName": "Education for Health and Wellbeing - Programme Development",
-   "fracId": null,
+   "fracId": "comp_education_stats_044",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "educat|school|literacy|curriculum"
   },
   {
    "cidId": "CID00320",
    "cidName": "Operational Risk Management",
-   "fracId": null,
+   "fracId": "comp_risk_mgmt_189",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "risk|business continuity|contingency"
   },
   {
    "cidId": "CID00322",
@@ -737,10 +737,10 @@
   {
    "cidId": "CID00323",
    "cidName": "Knowledge Management",
-   "fracId": null,
+   "fracId": "comp_knowledge_mgmt_182",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "knowledge management|institutional memory|best practice"
   },
   {
    "cidId": "CID00324",
@@ -809,10 +809,10 @@
   {
    "cidId": "CID00337",
    "cidName": "Train Supervisory System Maintenance",
-   "fracId": null,
+   "fracId": "comp_field_supervision_127",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "supervis|inspection of field"
   },
   {
    "cidId": "CID00339",
@@ -833,10 +833,10 @@
   {
    "cidId": "CID00343",
    "cidName": "Environmental Audits (EA)",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00346",
@@ -857,10 +857,10 @@
   {
    "cidId": "CID00351",
    "cidName": "Transport Management System Administration",
-   "fracId": null,
+   "fracId": "comp_transport_stats_057",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "transport|railway|road|logistic|aviation|shipping"
   },
   {
    "cidId": "CID00353",
@@ -881,34 +881,34 @@
   {
    "cidId": "CID00355",
    "cidName": "Audit and Compliance",
-   "fracId": null,
+   "fracId": "comp_audit_response_176",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "audit|\\bcag\\b|accountability of expenditure"
   },
   {
    "cidId": "CID0036",
    "cidName": "Attention to Detail",
-   "fracId": null,
+   "fracId": "comp_attention_detail_200",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "attention to detail|accuracy|thoroughness|meticul"
   },
   {
    "cidId": "CID00360",
    "cidName": "Benchmarking",
-   "fracId": null,
+   "fracId": "comp_benchmarking_113",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "benchmark|reconcil|disaggregation of series"
   },
   {
    "cidId": "CID00361",
    "cidName": "Learning and Development",
-   "fracId": null,
+   "fracId": "comp_training_design_181",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "training|capacity building|learning and development|faculty"
   },
   {
    "cidId": "CID00364",
@@ -977,10 +977,10 @@
   {
    "cidId": "CID00374",
    "cidName": "Self Awareness and Self Control",
-   "fracId": null,
+   "fracId": "comp_emotional_int_191",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "emotional|self.awareness|mindful"
   },
   {
    "cidId": "CID00375",
@@ -1017,18 +1017,18 @@
   {
    "cidId": "CID0038",
    "cidName": "Taking Accountability",
-   "fracId": null,
+   "fracId": "comp_accountability_199",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "accountab|ownership|result orient"
   },
   {
    "cidId": "CID00381",
    "cidName": "Coaching and Mentoring",
-   "fracId": null,
+   "fracId": "comp_coaching_196",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "coach|mentor"
   },
   {
    "cidId": "CID00383",
@@ -1049,10 +1049,10 @@
   {
    "cidId": "CID00387",
    "cidName": "Audit Frameworks",
-   "fracId": null,
+   "fracId": "comp_audit_response_176",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "audit|\\bcag\\b|accountability of expenditure"
   },
   {
    "cidId": "CID00393",
@@ -1145,10 +1145,10 @@
   {
    "cidId": "CID00407",
    "cidName": "Data Mining and Modelling",
-   "fracId": null,
+   "fracId": "comp_mining_stats_063",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "mining|mineral|coal|geolog"
   },
   {
    "cidId": "CID00408",
@@ -1193,34 +1193,34 @@
   {
    "cidId": "CID00412",
    "cidName": "Gender Equality",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID00413",
    "cidName": "Sustainable Energy Infrastructure Design",
-   "fracId": null,
+   "fracId": "comp_energy_stats_053",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "energy|electricit|power sector|renewable"
   },
   {
    "cidId": "CID00414",
    "cidName": "Forestry Livelihood Management",
-   "fracId": null,
+   "fracId": "comp_forest_stats_056",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "forest|biodivers|wildlife|natural resource"
   },
   {
    "cidId": "CID00415",
    "cidName": "Climate-Resilient Development",
-   "fracId": null,
+   "fracId": "comp_climate_stats_055",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "climate|disaster|emergency|resilience of infrastructure"
   },
   {
    "cidId": "CID00416",
@@ -1289,10 +1289,10 @@
   {
    "cidId": "CID00431",
    "cidName": "Conflict Management",
-   "fracId": null,
+   "fracId": "comp_conflict_res_197",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "conflict"
   },
   {
    "cidId": "CID00434",
@@ -1305,18 +1305,18 @@
   {
    "cidId": "CID00435",
    "cidName": "Food Waste Management",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00436",
    "cidName": "Gender-sensitive Disaster Risk Management (DRM)",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID00438",
@@ -1329,10 +1329,10 @@
   {
    "cidId": "CID00439",
    "cidName": "Climate Change and Health",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID0044",
@@ -1409,10 +1409,10 @@
   {
    "cidId": "CID00452",
    "cidName": "Health Programme Evaluation",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID00453",
@@ -1425,34 +1425,34 @@
   {
    "cidId": "CID00455",
    "cidName": "Policy Implementation",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00456",
    "cidName": "Policy Analysis",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00457",
    "cidName": "Regulatory Policy",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00458",
    "cidName": "Policy Development",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00459",
@@ -1497,10 +1497,10 @@
   {
    "cidId": "CID00463",
    "cidName": "Policy Design",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00464",
@@ -1513,18 +1513,18 @@
   {
    "cidId": "CID00466",
    "cidName": "Gender and Energy",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID00467",
    "cidName": "Public Health Systems",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID00472",
@@ -1561,10 +1561,10 @@
   {
    "cidId": "CID00486",
    "cidName": "Technology Road Mapping",
-   "fracId": null,
+   "fracId": "comp_transport_stats_057",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "transport|railway|road|logistic|aviation|shipping"
   },
   {
    "cidId": "CID0049",
@@ -1609,10 +1609,10 @@
   {
    "cidId": "CID00499",
    "cidName": "Health Promotion",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID0050",
@@ -1649,10 +1649,10 @@
   {
    "cidId": "CID00505",
    "cidName": "Labour Relations Management",
-   "fracId": null,
+   "fracId": "comp_labour_stats_041",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "labour|employment|workforce|unemploy"
   },
   {
    "cidId": "CID00506",
@@ -1681,18 +1681,18 @@
   {
    "cidId": "CID00509",
    "cidName": "Human Resource Service Quality Management",
-   "fracId": null,
+   "fracId": "comp_estab_rules_174",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "establishment|service rules|cadre|recruitment|human resource"
   },
   {
    "cidId": "CID00510",
    "cidName": "Human Resource Systems Management",
-   "fracId": null,
+   "fracId": "comp_estab_rules_174",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "establishment|service rules|cadre|recruitment|human resource"
   },
   {
    "cidId": "CID00511",
@@ -1745,10 +1745,10 @@
   {
    "cidId": "CID00518",
    "cidName": "Diversity and Inclusion Management",
-   "fracId": null,
+   "fracId": "comp_inclusion_198",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "diversity|inclusion|equity|sensitivity"
   },
   {
    "cidId": "CID00519",
@@ -1761,18 +1761,18 @@
   {
    "cidId": "CID0053",
    "cidName": "Risk Management",
-   "fracId": null,
+   "fracId": "comp_risk_mgmt_189",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "risk|business continuity|contingency"
   },
   {
    "cidId": "CID0055",
    "cidName": "Recruitment Channel Management",
-   "fracId": null,
+   "fracId": "comp_estab_rules_174",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "establishment|service rules|cadre|recruitment|human resource"
   },
   {
    "cidId": "CID00559",
@@ -1857,10 +1857,10 @@
   {
    "cidId": "CID00620",
    "cidName": "Handling Parliamentary Proceedings",
-   "fracId": null,
+   "fracId": "comp_parliament_171",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "parliament|legislative|assurance"
   },
   {
    "cidId": "CID00621",
@@ -1889,10 +1889,10 @@
   {
    "cidId": "CID00624",
    "cidName": "Conflict Management ",
-   "fracId": null,
+   "fracId": "comp_conflict_res_197",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "conflict"
   },
   {
    "cidId": "CID00626",
@@ -2001,10 +2001,10 @@
   {
    "cidId": "CID00640",
    "cidName": "Self-Awareness",
-   "fracId": null,
+   "fracId": "comp_emotional_int_191",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "emotional|self.awareness|mindful"
   },
   {
    "cidId": "CID00641",
@@ -2025,18 +2025,18 @@
   {
    "cidId": "CID00643",
    "cidName": "Knowledge Management",
-   "fracId": null,
+   "fracId": "comp_knowledge_mgmt_182",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "knowledge management|institutional memory|best practice"
   },
   {
    "cidId": "CID00644",
    "cidName": "Regulatory Compliance",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00645",
@@ -2049,10 +2049,10 @@
   {
    "cidId": "CID00646",
    "cidName": "Policy management",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID00647",
@@ -2065,18 +2065,18 @@
   {
    "cidId": "CID00649",
    "cidName": "Adherence to Vigilance Guidelines",
-   "fracId": null,
+   "fracId": "comp_vigilance_173",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "vigilance|disciplinary|conduct rules|corruption"
   },
   {
    "cidId": "CID00652",
    "cidName": "Workplace health and safety",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID00653",
@@ -2105,18 +2105,18 @@
   {
    "cidId": "CID00657",
    "cidName": "Monitoring and Evaluation",
-   "fracId": null,
+   "fracId": "comp_scheme_eval_187",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "monitoring and evaluation|scheme evaluation|programme evaluation"
   },
   {
    "cidId": "CID00658",
    "cidName": "Environment, Sustainability and Governance",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00659",
@@ -2129,10 +2129,10 @@
   {
    "cidId": "CID00660",
    "cidName": "Learning and Development",
-   "fracId": null,
+   "fracId": "comp_training_design_181",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "training|capacity building|learning and development|faculty"
   },
   {
    "cidId": "CID00663",
@@ -2153,18 +2153,18 @@
   {
    "cidId": "CID00670",
    "cidName": "Control of Pollution",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID00671",
    "cidName": "Waste management and Resource Efficiency",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID0073",
@@ -2289,10 +2289,10 @@
   {
    "cidId": "CID0093",
    "cidName": "Consultation and Consensus Building",
-   "fracId": null,
+   "fracId": "comp_construction_stats_062",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "construction|infrastructure development|building"
   },
   {
    "cidId": "CID0094",
@@ -2313,10 +2313,10 @@
   {
    "cidId": "CID0096",
    "cidName": "Result Orientation",
-   "fracId": null,
+   "fracId": "comp_accountability_199",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "accountab|ownership|result orient"
   },
   {
    "cidId": "CID01202",
@@ -2369,26 +2369,26 @@
   {
    "cidId": "CID0254",
    "cidName": "Attention to Detail ",
-   "fracId": null,
+   "fracId": "comp_attention_detail_200",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "attention to detail|accuracy|thoroughness|meticul"
   },
   {
    "cidId": "CID0258",
    "cidName": "Taking Accountability",
-   "fracId": null,
+   "fracId": "comp_accountability_199",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "accountab|ownership|result orient"
   },
   {
    "cidId": "CID0261",
    "cidName": "Consultation and Consensus Building",
-   "fracId": null,
+   "fracId": "comp_construction_stats_062",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "construction|infrastructure development|building"
   },
   {
    "cidId": "CID0262",
@@ -2409,10 +2409,10 @@
   {
    "cidId": "CID0265",
    "cidName": "Result Orientation",
-   "fracId": null,
+   "fracId": "comp_accountability_199",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "accountab|ownership|result orient"
   },
   {
    "cidId": "CID0266",
@@ -2457,10 +2457,10 @@
   {
    "cidId": "CID0791",
    "cidName": "Gender Sensitivity",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID0798",
@@ -2481,34 +2481,34 @@
   {
    "cidId": "CID0814",
    "cidName": "Gender and Energy",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID0815",
    "cidName": "Public Health Systems",
-   "fracId": null,
+   "fracId": "comp_health_stats_045",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "health|medical|hospital|disease"
   },
   {
    "cidId": "CID0822",
    "cidName": "Policy Design",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID0827",
    "cidName": "Policy Development ",
-   "fracId": null,
+   "fracId": "comp_policy_analysis_188",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "policy|regulat|legislation drafting"
   },
   {
    "cidId": "CID0849",
@@ -2545,34 +2545,34 @@
   {
    "cidId": "CID101",
    "cidName": "Climate Change Policy Design",
-   "fracId": null,
+   "fracId": "comp_climate_stats_055",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "climate|disaster|emergency|resilience of infrastructure"
   },
   {
    "cidId": "CID102",
    "cidName": "Prevention of Gender-based Violence (G-BV)",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID104",
    "cidName": "Gender-sensitive Disaster Risk Management (DRM)",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID105",
    "cidName": "Gender Equality",
-   "fracId": null,
+   "fracId": "comp_gender_stats_047",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "gender|women|empowerment of women"
   },
   {
    "cidId": "CID106",
@@ -2593,10 +2593,10 @@
   {
    "cidId": "CID107",
    "cidName": "Forestry Livelihood Management",
-   "fracId": null,
+   "fracId": "comp_forest_stats_056",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "forest|biodivers|wildlife|natural resource"
   },
   {
    "cidId": "CID1074",
@@ -2609,18 +2609,18 @@
   {
    "cidId": "CID108",
    "cidName": "Sustainable Energy Infrastructure Design",
-   "fracId": null,
+   "fracId": "comp_energy_stats_053",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "energy|electricit|power sector|renewable"
   },
   {
    "cidId": "CID109",
    "cidName": "Climate-Resilient Development",
-   "fracId": null,
+   "fracId": "comp_climate_stats_055",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "climate|disaster|emergency|resilience of infrastructure"
   },
   {
    "cidId": "CID20139",
@@ -2641,18 +2641,18 @@
   {
    "cidId": "CID2029",
    "cidName": "Environment and Social Governance",
-   "fracId": null,
+   "fracId": "comp_environment_stats_054",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "environment|ecolog|pollution|waste"
   },
   {
    "cidId": "CID2041",
    "cidName": "Knowledge Management",
-   "fracId": null,
+   "fracId": "comp_knowledge_mgmt_182",
    "confirmed": false,
-   "method": "none",
-   "rule": null
+   "method": "keyword_rule",
+   "rule": "knowledge management|institutional memory|best practice"
   }
  ]
 }

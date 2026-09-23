@@ -1,0 +1,163 @@
+{
+  "admin_overview": [
+    "give me an overview of the workforce",
+    "summarise the admin dashboard",
+    "what are the key numbers right now",
+    "show me the headline KPIs",
+    "overall training status summary",
+    "overview",
+    "summary",
+    "the key numbers",
+    "kpis"
+  ],
+  "admin_officials": [
+    "how many officials are on the roster",
+    "total headcount of officials",
+    "how many people are registered",
+    "number of officers in the NSO roster",
+    "how large is the workforce",
+    "headcount",
+    "roster size"
+  ],
+  "admin_compliance": [
+    "what is the training compliance",
+    "how many officials are compliant",
+    "compliance percentage",
+    "how many have completed at least one course",
+    "what share of the roster is trained",
+    "compliance"
+  ],
+  "admin_mandatory": [
+    "how is mandatory training going",
+    "ACBP completion status",
+    "how many officials are behind on mandatory courses",
+    "mandatory course completion percentage",
+    "who has pending capacity building courses"
+  ],
+  "admin_departments": [
+    "compliance by department",
+    "which department is doing best",
+    "departmental training breakdown",
+    "which departments are lagging",
+    "show me department wise numbers"
+  ],
+  "admin_shortages": [
+    "which competencies have the biggest shortage",
+    "top skill gaps across the workforce",
+    "where are the competency shortages",
+    "what skills are we short of",
+    "shortage index by competency"
+  ],
+  "admin_emerging": [
+    "what should we train next year",
+    "emerging skills report",
+    "which competencies are at risk in 36 months",
+    "show the emerging skills shortlist",
+    "future skill demand forecast",
+    "emerging skills"
+  ],
+  "admin_trends": [
+    "how have the numbers changed over time",
+    "training trend over the last 90 days",
+    "show me the trend line",
+    "is compliance improving",
+    "course completions per week",
+    "trends"
+  ],
+  "admin_health": [
+    "is the system healthy",
+    "check the service status",
+    "system health report",
+    "are all components up",
+    "is the iGOT connection working",
+    "system health",
+    "service status"
+  ],
+  "admin_nudges": [
+    "show recent nudges",
+    "who was nudged recently",
+    "nudge history",
+    "how many reminders were sent",
+    "list the reminders sent to officials",
+    "nudges"
+  ],
+  "admin_assignments": [
+    "what training plans have been assigned",
+    "show the assigned courses",
+    "list the training assignments",
+    "which plans are overdue",
+    "assignment progress",
+    "assignments"
+  ],
+  "admin_needs_training": [
+    "who needs training",
+    "which officials require training",
+    "list officials with no completed course",
+    "who is not compliant",
+    "officials needing attention"
+  ],
+  "admin_user_lookup": [
+    "tell me about this official",
+    "show details for a particular user",
+    "what is the status of this officer",
+    "give me the profile of an official",
+    "look up an employee record"
+  ],
+  "admin_capabilities": [
+    "what can you do here",
+    "how can you help me as an admin",
+    "what admin questions can I ask",
+    "what do you know about this console",
+    "help me use this dashboard"
+  ],
+  "navigation_admin_dashboard": [
+    "open the admin dashboard",
+    "go to the overview tab",
+    "take me to the main dashboard"
+  ],
+  "navigation_admin_officials": [
+    "open the officials tab",
+    "show me the roster page",
+    "go to the officials list"
+  ],
+  "navigation_admin_competencies": [
+    "open the FRAC competencies tab",
+    "show the competency dictionary",
+    "go to competencies"
+  ],
+  "navigation_admin_analytics": [
+    "open the analytics tab",
+    "take me to analytics",
+    "go to the analytics section"
+  ],
+  "navigation_admin_emerging": [
+    "open the emerging skills tab",
+    "take me to emerging skills",
+    "go to the emerging skills page"
+  ],
+  "navigation_admin_actions": [
+    "open the actions tab",
+    "take me to assign training",
+    "go to the nudges and assignments page"
+  ],
+  "navigation_admin_insights": [
+    "open the workforce insights tab",
+    "take me to insights",
+    "go to the SCIL insights page"
+  ],
+  "navigation_admin_reports": [
+    "open the reports tab",
+    "take me to the exports",
+    "go to the reports page"
+  ],
+  "navigation_learner_dashboard": [
+    "open the learner dashboard",
+    "take me to the official view",
+    "switch to the learner dashboard"
+  ],
+  "navigation_home": [
+    "go to the home page",
+    "take me to the landing page",
+    "back to the public site"
+  ]
+}

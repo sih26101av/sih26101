@@ -26,7 +26,7 @@ admin response carries `dataNote: "Computed on synthetic mock data — demo only
 **Data**
 - `data/gsbpm_map.json` holds the GSBPM v5.1 phases and sub-processes (plus
   unnumbered overarching processes `OA.*`) and `competencies: {fracId: [sub-process ids]}`.
-- `data/offices.json` holds 12 offices. For each: the sub-processes it runs this
+- `data/offices.json` holds 16 offices. For each: the sub-processes it runs this
   cycle (`FY2026-27-Q2`), with `officerHours` = headcount × 480 h × share, and
   its statistical `products`.
 - Every official has `jobProfile.officeId`.
@@ -43,8 +43,9 @@ admin response carries `dataNote: "Computed on synthetic mock data — demo only
    sub-process. The report lists those sub-processes and their share of hours
    as the reason, and gives the reason for each out-of-scope competency too.
 
-Nothing is a hard-coded count. On the generated data, 13 sub-processes cover
-80.8% of 709k officer-hours; 28 competencies are in scope and 12 are out.
+Nothing is a hard-coded count. On the generated data, 15 sub-processes cover
+81.1% of 819k officer-hours; 172 of the 205 competencies are in scope and 33
+are out.
 
 **Endpoint:** `GET /api/v1/admin/gsbpm/scope?officeId=` returns
 ```json

@@ -240,6 +240,331 @@
    },
    "source": "expert",
    "rationale": "Serving data users needs clear communication."
+  },
+  {
+   "id": "pre_019",
+   "from": {
+    "competencyId": "comp_survey_design_002",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_calibration_102",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Calibration adjusts the design weights a sampling design produces."
+  },
+  {
+   "id": "pre_020",
+   "from": {
+    "competencyId": "comp_calibration_102",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_var_estimation_106",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Variance estimation has to account for the weighting steps."
+  },
+  {
+   "id": "pre_021",
+   "from": {
+    "competencyId": "comp_survey_design_002",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_small_area_101",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Small area estimators are judged against the direct design-based estimate."
+  },
+  {
+   "id": "pre_022",
+   "from": {
+    "competencyId": "comp_nat_accounts_001",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_io_tables_083",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Supply-use balancing is the national accounts production boundary in table form."
+  },
+  {
+   "id": "pre_023",
+   "from": {
+    "competencyId": "comp_nat_accounts_001",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_qna_086",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Quarterly accounts extrapolate the annual national accounts."
+  },
+  {
+   "id": "pre_024",
+   "from": {
+    "competencyId": "comp_index_numbers_004",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_deflators_088",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Deflation is index-number theory applied to volume measurement."
+  },
+  {
+   "id": "pre_025",
+   "from": {
+    "competencyId": "comp_price_stats_003",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_producer_price_090",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Producer price indices reuse the consumer price collection machinery."
+  },
+  {
+   "id": "pre_026",
+   "from": {
+    "competencyId": "comp_trade_stats_059",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_bop_081",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "The current account is built on merchandise trade statistics."
+  },
+  {
+   "id": "pre_027",
+   "from": {
+    "competencyId": "comp_gfs_080",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_flow_funds_082",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "The government sector's financial account comes from government finance statistics."
+  },
+  {
+   "id": "pre_028",
+   "from": {
+    "competencyId": "comp_environment_stats_054",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_satellite_acct_087",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Environmental accounts are the largest satellite account in practice."
+  },
+  {
+   "id": "pre_029",
+   "from": {
+    "competencyId": "comp_labour_stats_041",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_informal_sector_043",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Informal employment is defined on the labour force framework."
+  },
+  {
+   "id": "pre_030",
+   "from": {
+    "competencyId": "comp_db_design_029",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_data_eng_136",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Pipelines move data between modelled tables."
+  },
+  {
+   "id": "pre_031",
+   "from": {
+    "competencyId": "comp_data_eng_136",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_dwh_139",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "A warehouse is loaded by pipelines."
+  },
+  {
+   "id": "pre_032",
+   "from": {
+    "competencyId": "comp_python_stats_017",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_nlp_153",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Text processing work is taught in Python."
+  },
+  {
+   "id": "pre_033",
+   "from": {
+    "competencyId": "comp_ml_stats_005",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_mlops_155",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "You cannot operate models you cannot build."
+  },
+  {
+   "id": "pre_034",
+   "from": {
+    "competencyId": "comp_questionnaire_115",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_capi_116",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "A CAPI instrument encodes a designed questionnaire."
+  },
+  {
+   "id": "pre_035",
+   "from": {
+    "competencyId": "comp_survey_ops_126",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_field_supervision_127",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Supervision presupposes knowing how the round is organised."
+  },
+  {
+   "id": "pre_036",
+   "from": {
+    "competencyId": "comp_econometrics_111",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_causal_inf_108",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Causal designs are estimated with regression machinery."
+  },
+  {
+   "id": "pre_037",
+   "from": {
+    "competencyId": "comp_data_privacy_026",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_disclosure_105",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Disclosure control is the statistical arm of confidentiality protection."
+  },
+  {
+   "id": "pre_038",
+   "from": {
+    "competencyId": "comp_disclosure_105",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_dp_161",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Formal privacy is judged against traditional disclosure control."
+  },
+  {
+   "id": "pre_039",
+   "from": {
+    "competencyId": "comp_admin_data_125",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_record_linkage_104",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Linkage is how administrative sources are joined to survey data."
+  },
+  {
+   "id": "pre_040",
+   "from": {
+    "competencyId": "comp_cloud_infra_027",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_containers_143",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Containers are scheduled on cloud infrastructure."
+  },
+  {
+   "id": "pre_041",
+   "from": {
+    "competencyId": "comp_version_ctrl_141",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_devops_142",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Delivery pipelines are triggered from version control."
+  },
+  {
+   "id": "pre_042",
+   "from": {
+    "competencyId": "comp_comm_032",
+    "level": 2
+   },
+   "to": {
+    "competencyId": "comp_public_speaking_203",
+    "level": 3
+   },
+   "source": "expert",
+   "rationale": "Presenting is communication in front of an audience."
+  },
+  {
+   "id": "pre_043",
+   "from": {
+    "competencyId": "comp_leadership_032",
+    "level": 3
+   },
+   "to": {
+    "competencyId": "comp_coaching_196",
+    "level": 4
+   },
+   "source": "expert",
+   "rationale": "Coaching is a leadership practice, not a separate craft."
   }
  ]
 }

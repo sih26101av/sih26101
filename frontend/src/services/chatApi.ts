@@ -27,6 +27,14 @@ export interface ChatMessage {
   detectedLanguage?: ChatLanguage;
 }
 
+/** What every chat transport resolves to — the backend's reply, normalised. */
+export interface ChatReply {
+  reply: string;
+  detectedLanguage: ChatLanguage;
+  navigateAction?: NavigateAction;
+  navigateActions: NavigateAction[];
+}
+
 export interface NavigateAction {
   type: 'scroll' | 'tab' | 'modal' | 'redirect' | 'theme' | 'language';
   target: string;          // e.g. '#features', 'my-courses', 'login', '/', 'dark', 'hi', 'en'
@@ -281,7 +289,7 @@ export async function sendChatMessage(
    *  itself and only falls back to this, so Devanagari input still gets a
    *  Devanagari reply even when the picker says EN. */
   preferredLanguage?: ChatLanguage,
-): Promise<{ reply: string; detectedLanguage: ChatLanguage; navigateAction?: NavigateAction; navigateActions: NavigateAction[] }> {
+): Promise<ChatReply> {
 
   const payload: ChatApiPayload = {
     user_id: officialId,

@@ -430,6 +430,860 @@
   "comp_citizen_039": [
    "7.4",
    "7.5"
+  ],
+  "comp_labour_stats_041": [
+   "2.2",
+   "5.2",
+   "5.7",
+   "6.1",
+   "6.3"
+  ],
+  "comp_wage_stats_042": [
+   "5.5",
+   "5.7",
+   "6.1",
+   "6.3"
+  ],
+  "comp_informal_sector_043": [
+   "2.4",
+   "4.1",
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_education_stats_044": [
+   "1.5",
+   "5.1",
+   "6.1",
+   "6.3"
+  ],
+  "comp_health_stats_045": [
+   "1.5",
+   "5.1",
+   "6.1",
+   "6.3"
+  ],
+  "comp_nutrition_stats_046": [
+   "5.5",
+   "5.7",
+   "6.1"
+  ],
+  "comp_gender_stats_047": [
+   "1.3",
+   "5.5",
+   "6.1",
+   "7.2"
+  ],
+  "comp_child_stats_048": [
+   "5.5",
+   "6.1",
+   "6.3"
+  ],
+  "comp_disability_stats_049": [
+   "2.2",
+   "5.5",
+   "6.1"
+  ],
+  "comp_elderly_stats_050": [
+   "5.5",
+   "6.1",
+   "6.3"
+  ],
+  "comp_housing_stats_051": [
+   "2.3",
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_water_sanitation_052": [
+   "5.5",
+   "6.1",
+   "7.2"
+  ],
+  "comp_energy_stats_053": [
+   "5.1",
+   "5.7",
+   "6.1",
+   "6.2"
+  ],
+  "comp_environment_stats_054": [
+   "1.4",
+   "5.1",
+   "5.7",
+   "6.1",
+   "OA.SM"
+  ],
+  "comp_climate_stats_055": [
+   "1.5",
+   "5.1",
+   "6.1",
+   "6.3"
+  ],
+  "comp_forest_stats_056": [
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_transport_stats_057": [
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_tourism_stats_058": [
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_trade_stats_059": [
+   "5.1",
+   "5.2",
+   "5.7",
+   "6.2"
+  ],
+  "comp_services_stats_060": [
+   "2.4",
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_msme_stats_061": [
+   "4.1",
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_construction_stats_062": [
+   "5.1",
+   "5.5",
+   "5.7",
+   "6.1"
+  ],
+  "comp_mining_stats_063": [
+   "5.1",
+   "5.3",
+   "5.7"
+  ],
+  "comp_banking_stats_064": [
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_insurance_stats_065": [
+   "5.1",
+   "5.5",
+   "6.1"
+  ],
+  "comp_capital_mkt_066": [
+   "5.1",
+   "5.3",
+   "5.7",
+   "6.2"
+  ],
+  "comp_telecom_stats_067": [
+   "5.1",
+   "5.7",
+   "6.1"
+  ],
+  "comp_ict_stats_068": [
+   "2.2",
+   "5.7",
+   "6.1"
+  ],
+  "comp_ecommerce_stats_069": [
+   "1.5",
+   "5.1",
+   "5.7"
+  ],
+  "comp_rnd_stats_070": [
+   "1.4",
+   "5.7",
+   "6.1"
+  ],
+  "comp_crime_stats_071": [
+   "5.2",
+   "5.3",
+   "6.1"
+  ],
+  "comp_governance_stats_072": [
+   "1.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_migration_stats_073": [
+   "2.2",
+   "5.5",
+   "6.1"
+  ],
+  "comp_timeuse_stats_074": [
+   "2.2",
+   "2.3",
+   "5.2",
+   "6.1"
+  ],
+  "comp_social_consumption_075": [
+   "2.3",
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_civil_reg_076": [
+   "4.3",
+   "5.1",
+   "5.3",
+   "6.1"
+  ],
+  "comp_sample_reg_077": [
+   "2.4",
+   "4.3",
+   "5.5",
+   "6.2"
+  ],
+  "comp_census_pop_078": [
+   "2.3",
+   "4.1",
+   "4.2",
+   "4.3",
+   "4.4"
+  ],
+  "comp_business_register_079": [
+   "4.1",
+   "5.1",
+   "OA.DM",
+   "OA.QM"
+  ],
+  "comp_gfs_080": [
+   "5.1",
+   "5.2",
+   "5.7",
+   "6.1"
+  ],
+  "comp_bop_081": [
+   "5.1",
+   "5.7",
+   "6.2"
+  ],
+  "comp_flow_funds_082": [
+   "5.1",
+   "5.5",
+   "5.7"
+  ],
+  "comp_io_tables_083": [
+   "5.1",
+   "5.5",
+   "5.7",
+   "6.2"
+  ],
+  "comp_capital_stock_084": [
+   "5.5",
+   "5.7",
+   "6.1"
+  ],
+  "comp_regional_accounts_085": [
+   "5.5",
+   "5.7",
+   "6.2",
+   "OA.SM"
+  ],
+  "comp_qna_086": [
+   "5.5",
+   "5.7",
+   "6.1",
+   "6.5"
+  ],
+  "comp_satellite_acct_087": [
+   "5.1",
+   "5.7",
+   "6.1",
+   "OA.SM"
+  ],
+  "comp_deflators_088": [
+   "5.5",
+   "5.7",
+   "6.2"
+  ],
+  "comp_ppp_089": [
+   "4.3",
+   "5.7",
+   "6.2"
+  ],
+  "comp_producer_price_090": [
+   "2.4",
+   "4.3",
+   "5.7",
+   "6.2"
+  ],
+  "comp_housing_price_091": [
+   "5.1",
+   "5.5",
+   "5.7"
+  ],
+  "comp_service_price_092": [
+   "2.2",
+   "4.3",
+   "5.7"
+  ],
+  "comp_cost_living_093": [
+   "2.3",
+   "5.5",
+   "5.7",
+   "6.1"
+  ],
+  "comp_agri_census_094": [
+   "4.1",
+   "4.3",
+   "5.7",
+   "6.1"
+  ],
+  "comp_livestock_stats_095": [
+   "4.3",
+   "5.5",
+   "5.7",
+   "6.1"
+  ],
+  "comp_horticulture_096": [
+   "4.3",
+   "5.5",
+   "5.7"
+  ],
+  "comp_irrigation_stats_097": [
+   "4.3",
+   "5.1",
+   "5.7"
+  ],
+  "comp_rural_dev_098": [
+   "5.1",
+   "5.3",
+   "6.1"
+  ],
+  "comp_mplads_099": [
+   "5.1",
+   "5.3",
+   "6.1",
+   "OA.FM"
+  ],
+  "comp_project_monitor_100": [
+   "5.1",
+   "5.3",
+   "6.1",
+   "OA.PM"
+  ],
+  "comp_small_area_101": [
+   "2.5",
+   "5.5",
+   "6.1",
+   "6.2"
+  ],
+  "comp_calibration_102": [
+   "5.6",
+   "6.1",
+   "6.2"
+  ],
+  "comp_imputation_103": [
+   "5.3",
+   "5.4",
+   "6.2"
+  ],
+  "comp_record_linkage_104": [
+   "5.1",
+   "OA.DM",
+   "OA.QM"
+  ],
+  "comp_disclosure_105": [
+   "6.4",
+   "5.8",
+   "OA.QM"
+  ],
+  "comp_var_estimation_106": [
+   "5.6",
+   "6.1",
+   "6.2"
+  ],
+  "comp_bayesian_107": [
+   "2.5",
+   "5.5",
+   "6.1"
+  ],
+  "comp_causal_inf_108": [
+   "6.1",
+   "6.3",
+   "8.2"
+  ],
+  "comp_exp_design_109": [
+   "2.3",
+   "3.6",
+   "8.2"
+  ],
+  "comp_multivariate_110": [
+   "5.5",
+   "6.1",
+   "6.3"
+  ],
+  "comp_econometrics_111": [
+   "6.1",
+   "6.3"
+  ],
+  "comp_forecasting_112": [
+   "6.1",
+   "6.3",
+   "1.5"
+  ],
+  "comp_benchmarking_113": [
+   "5.5",
+   "5.7",
+   "6.2"
+  ],
+  "comp_outlier_114": [
+   "5.3",
+   "5.4",
+   "6.2",
+   "OA.QM"
+  ],
+  "comp_questionnaire_115": [
+   "2.2",
+   "2.3",
+   "3.1",
+   "3.6"
+  ],
+  "comp_capi_116": [
+   "3.1",
+   "3.5",
+   "4.2",
+   "4.3"
+  ],
+  "comp_mixed_mode_117": [
+   "2.3",
+   "4.2",
+   "4.3",
+   "8.2"
+  ],
+  "comp_panel_survey_118": [
+   "2.4",
+   "4.1",
+   "5.6",
+   "6.1"
+  ],
+  "comp_frame_maintenance_119": [
+   "4.1",
+   "OA.DM",
+   "OA.QM"
+  ],
+  "comp_nonsampling_120": [
+   "8.1",
+   "8.2",
+   "OA.QM"
+  ],
+  "comp_pes_121": [
+   "4.4",
+   "8.1",
+   "8.2"
+  ],
+  "comp_classification_122": [
+   "5.2",
+   "OA.MM",
+   "OA.SM"
+  ],
+  "comp_metadata_sdmx_123": [
+   "OA.MM",
+   "7.1",
+   "7.2",
+   "3.3"
+  ],
+  "comp_data_ethics_124": [
+   "OA.QM",
+   "OA.DM",
+   "1.2"
+  ],
+  "comp_admin_data_125": [
+   "1.5",
+   "5.1",
+   "OA.DM",
+   "OA.QM"
+  ],
+  "comp_survey_ops_126": [
+   "4.2",
+   "4.3",
+   "4.4",
+   "OA.PM"
+  ],
+  "comp_field_supervision_127": [
+   "4.3",
+   "4.4",
+   "5.3",
+   "OA.QM"
+  ],
+  "comp_interview_skills_128": [
+   "4.3",
+   "4.4"
+  ],
+  "comp_data_scrutiny_129": [
+   "5.3",
+   "5.4",
+   "OA.QM"
+  ],
+  "comp_tabulation_130": [
+   "6.1",
+   "6.5",
+   "7.2"
+  ],
+  "comp_microdata_release_131": [
+   "6.4",
+   "7.2",
+   "7.5",
+   "OA.DM"
+  ],
+  "comp_revision_policy_132": [
+   "6.5",
+   "7.3",
+   "8.1"
+  ],
+  "comp_intl_standards_133": [
+   "OA.SM",
+   "7.2",
+   "8.2"
+  ],
+  "comp_statistical_law_134": [
+   "OA.SM",
+   "OA.QM",
+   "1.6"
+  ],
+  "comp_stat_coordination_135": [
+   "OA.SM",
+   "OA.PM",
+   "1.2"
+  ],
+  "comp_data_eng_136": [
+   "3.2",
+   "3.4",
+   "5.1",
+   "5.8"
+  ],
+  "comp_spark_137": [
+   "3.2",
+   "5.1",
+   "5.7"
+  ],
+  "comp_data_lake_138": [
+   "3.2",
+   "5.1",
+   "5.8",
+   "OA.DM"
+  ],
+  "comp_dwh_139": [
+   "3.2",
+   "5.8",
+   "7.1",
+   "OA.DM"
+  ],
+  "comp_nosql_140": [
+   "3.2",
+   "5.8",
+   "OA.DM"
+  ],
+  "comp_version_ctrl_141": [
+   "3.2",
+   "3.7",
+   "OA.DM"
+  ],
+  "comp_devops_142": [
+   "3.4",
+   "3.5",
+   "3.7"
+  ],
+  "comp_containers_143": [
+   "3.4",
+   "3.5",
+   "3.7"
+  ],
+  "comp_linux_144": [
+   "3.4",
+   "3.5",
+   "5.1"
+  ],
+  "comp_network_145": [
+   "3.4",
+   "3.7",
+   "OA.DM"
+  ],
+  "comp_cybersecurity_ops_146": [
+   "3.5",
+   "3.7",
+   "OA.DM"
+  ],
+  "comp_identity_mgmt_147": [
+   "3.4",
+   "3.7",
+   "OA.DM"
+  ],
+  "comp_web_dev_148": [
+   "3.3",
+   "7.1",
+   "7.2"
+  ],
+  "comp_mobile_dev_149": [
+   "3.1",
+   "3.5",
+   "4.3"
+  ],
+  "comp_ux_design_150": [
+   "2.1",
+   "3.3",
+   "7.2",
+   "7.5"
+  ],
+  "comp_open_data_151": [
+   "7.1",
+   "7.2",
+   "7.4",
+   "OA.MM"
+  ],
+  "comp_sre_152": [
+   "3.5",
+   "3.7",
+   "7.1"
+  ],
+  "comp_nlp_153": [
+   "5.2",
+   "5.4",
+   "6.3"
+  ],
+  "comp_cv_satellite_154": [
+   "4.3",
+   "5.1",
+   "5.5"
+  ],
+  "comp_mlops_155": [
+   "3.2",
+   "3.5",
+   "5.4"
+  ],
+  "comp_ai_governance_156": [
+   "OA.QM",
+   "OA.DM",
+   "8.2"
+  ],
+  "comp_genai_157": [
+   "3.2",
+   "7.5",
+   "OA.PM"
+  ],
+  "comp_web_scraping_158": [
+   "4.3",
+   "5.1",
+   "OA.QM"
+  ],
+  "comp_mobile_data_159": [
+   "1.5",
+   "4.3",
+   "5.1"
+  ],
+  "comp_synthetic_data_160": [
+   "5.8",
+   "6.4",
+   "3.6"
+  ],
+  "comp_dp_161": [
+   "6.4",
+   "OA.DM",
+   "OA.QM"
+  ],
+  "comp_bi_tools_162": [
+   "7.1",
+   "7.2",
+   "6.3"
+  ],
+  "comp_excel_adv_163": [
+   "5.7",
+   "6.1"
+  ],
+  "comp_stata_164": [
+   "5.4",
+   "5.6",
+   "6.1"
+  ],
+  "comp_julia_matlab_165": [
+   "3.2",
+   "5.5"
+  ],
+  "comp_reproducible_166": [
+   "3.2",
+   "3.7",
+   "OA.MM"
+  ],
+  "comp_testing_qa_167": [
+   "3.5",
+   "3.6",
+   "OA.QM"
+  ],
+  "comp_req_analysis_168": [
+   "1.1",
+   "1.3",
+   "2.6",
+   "3.6"
+  ],
+  "comp_it_procurement_169": [
+   "OA.FM",
+   "3.7",
+   "OA.PM"
+  ],
+  "comp_enterprise_arch_170": [
+   "2.6",
+   "3.3",
+   "3.7",
+   "OA.PM"
+  ],
+  "comp_parliament_171": [
+   "7.5",
+   "OA.PM"
+  ],
+  "comp_rajbhasha_172": [
+   "7.2",
+   "OA.PM"
+  ],
+  "comp_vigilance_173": [
+   "OA.PM",
+   "OA.QM"
+  ],
+  "comp_estab_rules_174": [
+   "OA.PM"
+  ],
+  "comp_pension_175": [
+   "OA.PM",
+   "OA.FM"
+  ],
+  "comp_audit_response_176": [
+   "OA.FM",
+   "OA.QM",
+   "8.3"
+  ],
+  "comp_court_cases_177": [
+   "OA.PM",
+   "7.5"
+  ],
+  "comp_grievance_178": [
+   "7.5",
+   "8.1"
+  ],
+  "comp_records_mgmt_179": [
+   "OA.DM",
+   "OA.PM"
+  ],
+  "comp_intl_coop_180": [
+   "OA.SM",
+   "OA.PM",
+   "1.2"
+  ],
+  "comp_training_design_181": [
+   "OA.PM",
+   "8.1",
+   "8.2"
+  ],
+  "comp_knowledge_mgmt_182": [
+   "OA.MM",
+   "OA.PM",
+   "8.3"
+  ],
+  "comp_event_mgmt_183": [
+   "7.4",
+   "OA.PM",
+   "OA.FM"
+  ],
+  "comp_media_relations_184": [
+   "7.3",
+   "7.4",
+   "7.5"
+  ],
+  "comp_social_media_185": [
+   "7.4",
+   "7.5"
+  ],
+  "comp_gender_budget_186": [
+   "1.3",
+   "6.1",
+   "OA.FM"
+  ],
+  "comp_scheme_eval_187": [
+   "8.1",
+   "8.2",
+   "8.3"
+  ],
+  "comp_policy_analysis_188": [
+   "1.1",
+   "1.3",
+   "6.3",
+   "8.3"
+  ],
+  "comp_risk_mgmt_189": [
+   "OA.PM",
+   "OA.QM",
+   "3.7"
+  ],
+  "comp_disaster_mgmt_190": [
+   "4.2",
+   "4.3",
+   "6.1"
+  ],
+  "comp_emotional_int_191": [
+   "OA.PM",
+   "1.2"
+  ],
+  "comp_negotiation_192": [
+   "1.2",
+   "OA.PM",
+   "OA.FM"
+  ],
+  "comp_time_mgmt_193": [
+   "OA.PM"
+  ],
+  "comp_resilience_194": [
+   "OA.PM",
+   "4.3"
+  ],
+  "comp_learning_agility_195": [
+   "8.3",
+   "OA.PM"
+  ],
+  "comp_coaching_196": [
+   "OA.PM"
+  ],
+  "comp_conflict_res_197": [
+   "OA.PM",
+   "1.2"
+  ],
+  "comp_inclusion_198": [
+   "OA.PM",
+   "7.5"
+  ],
+  "comp_accountability_199": [
+   "OA.PM",
+   "OA.QM"
+  ],
+  "comp_attention_detail_200": [
+   "5.3",
+   "6.2",
+   "OA.QM"
+  ],
+  "comp_systems_think_201": [
+   "2.6",
+   "8.2",
+   "OA.SM"
+  ],
+  "comp_digital_mindset_202": [
+   "3.6",
+   "8.3",
+   "OA.PM"
+  ],
+  "comp_public_speaking_203": [
+   "7.4",
+   "1.2"
+  ],
+  "comp_teamwork_remote_204": [
+   "1.2",
+   "4.2",
+   "OA.PM"
+  ],
+  "comp_feedback_205": [
+   "OA.PM",
+   "8.3"
   ]
  }
 }

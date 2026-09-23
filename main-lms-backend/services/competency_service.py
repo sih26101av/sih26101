@@ -57,6 +57,38 @@ ADJACENT_COMPETENCIES: Dict[str, list] = {
     "comp_ml_stats_005":      ["comp_python_stats_017", "comp_cloud_infra_027"],
     "comp_data_viz_019":      ["comp_python_stats_017", "comp_r_analytics_018"],
     "comp_cloud_infra_027":   ["comp_ml_stats_005"],
+    # Macro accounts and prices — each pair shares a compilation framework, so
+    # evidence on one is partial evidence on the other.
+    "comp_io_tables_083":     ["comp_nat_accounts_001", "comp_deflators_088"],
+    "comp_qna_086":           ["comp_nat_accounts_001", "comp_time_series_013"],
+    "comp_regional_accounts_085": ["comp_nat_accounts_001"],
+    "comp_deflators_088":     ["comp_index_numbers_004", "comp_io_tables_083"],
+    "comp_producer_price_090": ["comp_price_stats_003", "comp_index_numbers_004"],
+    "comp_cost_living_093":   ["comp_poverty_014", "comp_price_stats_003"],
+    "comp_gfs_080":           ["comp_public_fin_025"],
+    # Survey methodology — the estimation chain: design → weights → variance.
+    "comp_calibration_102":   ["comp_survey_design_002", "comp_var_estimation_106"],
+    "comp_var_estimation_106": ["comp_survey_design_002", "comp_calibration_102"],
+    "comp_small_area_101":    ["comp_survey_design_002"],
+    "comp_questionnaire_115": ["comp_survey_design_002"],
+    "comp_labour_stats_041":  ["comp_survey_design_002", "comp_informal_sector_043"],
+    "comp_informal_sector_043": ["comp_labour_stats_041", "comp_econ_census_007"],
+    "comp_tabulation_130":    ["comp_statistical_sw_030"],
+    # Field operations — one craft split across three competencies.
+    "comp_survey_ops_126":    ["comp_field_supervision_127"],
+    "comp_field_supervision_127": ["comp_survey_ops_126", "comp_data_scrutiny_129"],
+    "comp_data_scrutiny_129": ["comp_field_supervision_127"],
+    # Data / platform engineering.
+    "comp_data_eng_136":      ["comp_db_design_029", "comp_dwh_139", "comp_python_stats_017"],
+    "comp_dwh_139":           ["comp_db_design_029", "comp_data_eng_136"],
+    "comp_devops_142":        ["comp_containers_143", "comp_cloud_infra_027"],
+    "comp_containers_143":    ["comp_cloud_infra_027", "comp_devops_142"],
+    "comp_nlp_153":           ["comp_ml_stats_005", "comp_python_stats_017"],
+    "comp_mlops_155":         ["comp_ml_stats_005", "comp_devops_142"],
+    "comp_bi_tools_162":      ["comp_data_viz_019"],
+    "comp_econometrics_111":  ["comp_r_analytics_018", "comp_statistical_sw_030"],
+    # Confidentiality: the statistical and the legal/security side of one job.
+    "comp_disclosure_105":    ["comp_data_privacy_026"],
 }
 
 SYNERGY_CAP = 0.15  # maximum bonus from adjacency, regardless of how many fire

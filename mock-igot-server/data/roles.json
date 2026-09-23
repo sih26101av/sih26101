@@ -8,30 +8,70 @@
  },
  "roles": [
   {
-   "roleId": "role_capd_additional_director_general",
-   "officeId": "off_capd",
+   "roleId": "role_admin_additional_director_general",
+   "officeId": "off_admin",
    "designation": "Additional Director General",
    "tier": "TIER1_APEX",
    "competencies": [
     {
-     "id": "comp_sdg_monitor_015",
+     "id": "comp_estab_rules_174",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_rtt_022",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_negotiation_192",
      "requiredLevel": 5
     },
     {
-     "id": "comp_data_viz_019",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 5
+     "id": "comp_public_speaking_203",
+     "requiredLevel": 4
     },
     {
      "id": "comp_leadership_032",
      "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_admin_assistant_director",
+   "officeId": "off_admin",
+   "designation": "Assistant Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_estab_rules_174",
+     "requiredLevel": 2
     },
     {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 5
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_procurement_021",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_court_cases_177",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_records_mgmt_179",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_rtt_022",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_attention_detail_200",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_emotional_int_191",
+     "requiredLevel": 3
     }
    ]
   },
@@ -42,19 +82,19 @@
    "tier": "TIER3_MID",
    "competencies": [
     {
-     "id": "comp_sdg_monitor_015",
+     "id": "comp_revision_policy_132",
      "requiredLevel": 3
     },
     {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_sdg_monitor_015",
      "requiredLevel": 4
     },
     {
-     "id": "comp_e_gov_023",
+     "id": "comp_knowledge_mgmt_182",
      "requiredLevel": 3
     },
     {
-     "id": "comp_data_viz_019",
+     "id": "comp_rtt_022",
      "requiredLevel": 3
     },
     {
@@ -62,40 +102,8 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_time_mgmt_193",
      "requiredLevel": 3
-    }
-   ]
-  },
-  {
-   "roleId": "role_capd_deputy_director_general",
-   "officeId": "off_capd",
-   "designation": "Deputy Director General",
-   "tier": "TIER1_APEX",
-   "competencies": [
-    {
-     "id": "comp_sdg_monitor_015",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_nat_accounts_001",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_viz_019",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_strategic_031",
-     "requiredLevel": 5
     }
    ]
   },
@@ -106,19 +114,19 @@
    "tier": "TIER2_SENIOR",
    "competencies": [
     {
-     "id": "comp_sdg_monitor_015",
+     "id": "comp_revision_policy_132",
      "requiredLevel": 4
     },
     {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_open_data_151",
      "requiredLevel": 4
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_data_gov_016",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_viz_019",
+     "id": "comp_social_media_185",
      "requiredLevel": 3
     },
     {
@@ -126,7 +134,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_decision_037",
      "requiredLevel": 3
     }
    ]
@@ -138,31 +146,23 @@
    "tier": "TIER3_MID",
    "competencies": [
     {
-     "id": "comp_sdg_monitor_015",
+     "id": "comp_revision_policy_132",
      "requiredLevel": 3
     },
     {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_microdata_release_131",
      "requiredLevel": 4
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_open_data_151",
      "requiredLevel": 3
     },
     {
-     "id": "comp_report_writing_020",
+     "id": "comp_ux_design_150",
      "requiredLevel": 4
     },
     {
-     "id": "comp_rtt_022",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_prob_solve_033",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_integrity_034",
+     "id": "comp_accountability_199",
      "requiredLevel": 4
     }
    ]
@@ -175,18 +175,18 @@
    "competencies": [
     {
      "id": "comp_big_data_006",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_ml_stats_005",
      "requiredLevel": 5
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_imputation_103",
      "requiredLevel": 4
     },
     {
-     "id": "comp_strategic_031",
+     "id": "comp_python_stats_017",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_leadership_032",
      "requiredLevel": 4
     },
     {
@@ -194,44 +194,8 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 5
-    }
-   ]
-  },
-  {
-   "roleId": "role_dpd_assistant_director",
-   "officeId": "off_dpd",
-   "designation": "Assistant Director",
-   "tier": "TIER3_MID",
-   "competencies": [
-    {
-     "id": "comp_big_data_006",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_survey_design_002",
+     "id": "comp_inclusion_198",
      "requiredLevel": 4
-    },
-    {
-     "id": "comp_ml_stats_005",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_db_design_029",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_data_privacy_026",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_innov_038",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_comm_032",
-     "requiredLevel": 2
     }
    ]
   },
@@ -243,26 +207,22 @@
    "competencies": [
     {
      "id": "comp_big_data_006",
-     "requiredLevel": 4
+     "requiredLevel": 3
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_mlops_155",
      "requiredLevel": 2
     },
     {
-     "id": "comp_db_design_029",
-     "requiredLevel": 3
+     "id": "comp_cybersecurity_ops_146",
+     "requiredLevel": 2
     },
     {
-     "id": "comp_api_int_028",
-     "requiredLevel": 3
+     "id": "comp_identity_mgmt_147",
+     "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_comm_032",
+     "id": "comp_accountability_199",
      "requiredLevel": 2
     }
    ]
@@ -278,23 +238,23 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_ml_stats_005",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_gov_016",
+     "id": "comp_survey_design_002",
      "requiredLevel": 4
     },
     {
-     "id": "comp_project_mgmt_024",
-     "requiredLevel": 3
+     "id": "comp_cloud_infra_027",
+     "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_negotiation_192",
      "requiredLevel": 5
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_systems_think_201",
      "requiredLevel": 5
     }
    ]
@@ -310,88 +270,24 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_ml_stats_005",
+     "id": "comp_imputation_103",
      "requiredLevel": 4
-    },
-    {
-     "id": "comp_python_stats_017",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_api_int_028",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_innov_038",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
-    }
-   ]
-  },
-  {
-   "roleId": "role_dpd_joint_director",
-   "officeId": "off_dpd",
-   "designation": "Joint Director",
-   "tier": "TIER2_SENIOR",
-   "competencies": [
-    {
-     "id": "comp_big_data_006",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_ml_stats_005",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_cloud_infra_027",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_innov_038",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
-    }
-   ]
-  },
-  {
-   "roleId": "role_dpd_junior_statistical_officer",
-   "officeId": "off_dpd",
-   "designation": "Junior Statistical Officer",
-   "tier": "TIER4_JUNIOR",
-   "competencies": [
-    {
-     "id": "comp_big_data_006",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_survey_design_002",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_data_privacy_026",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_cloud_infra_027",
-     "requiredLevel": 3
     },
     {
      "id": "comp_db_design_029",
-     "requiredLevel": 2
+     "requiredLevel": 4
     },
     {
-     "id": "comp_prob_solve_033",
+     "id": "comp_containers_143",
      "requiredLevel": 3
     },
     {
-     "id": "comp_integrity_034",
-     "requiredLevel": 2
+     "id": "comp_feedback_205",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_innov_038",
+     "requiredLevel": 4
     }
    ]
   },
@@ -406,28 +302,24 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_industry_stats_010",
+     "id": "comp_pes_121",
      "requiredLevel": 5
     },
     {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 4
+     "id": "comp_report_writing_020",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_data_privacy_026",
-     "requiredLevel": 4
+     "id": "comp_testing_qa_167",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
-     "requiredLevel": 4
+     "id": "comp_negotiation_192",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 4
+     "id": "comp_systems_think_201",
+     "requiredLevel": 5
     }
    ]
   },
@@ -442,15 +334,19 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_outlier_114",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_privacy_026",
+     "id": "comp_testing_qa_167",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_comm_032",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_attention_detail_200",
      "requiredLevel": 3
     }
    ]
@@ -470,11 +366,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_inclusion_198",
      "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     }
    ]
@@ -490,15 +386,15 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_outlier_114",
      "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_testing_qa_167",
      "requiredLevel": 5
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 3
     },
     {
@@ -515,26 +411,26 @@
    "competencies": [
     {
      "id": "comp_survey_design_002",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_price_stats_003",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_industry_stats_010",
      "requiredLevel": 5
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_outlier_114",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_nonsampling_120",
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 4
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_feedback_205",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_inclusion_198",
      "requiredLevel": 4
     }
    ]
@@ -550,24 +446,152 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_price_stats_003",
-     "requiredLevel": 2
+     "id": "comp_nonsampling_120",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_reproducible_166",
+     "requiredLevel": 3
     },
     {
      "id": "comp_data_privacy_026",
      "requiredLevel": 3
     },
     {
-     "id": "comp_statistical_sw_030",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 3
+     "id": "comp_report_writing_020",
+     "requiredLevel": 2
     },
     {
      "id": "comp_comm_032",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dsl_assistant_director",
+   "officeId": "off_dsl",
+   "designation": "Assistant Director",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_nlp_153",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_mobile_data_159",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_cloud_infra_027",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_mlops_155",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_public_speaking_203",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dsl_director",
+   "officeId": "off_dsl",
+   "designation": "Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_web_scraping_158",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_genai_157",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_fin_025",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_cloud_infra_027",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_inclusion_198",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_feedback_205",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_dsl_joint_director",
+   "officeId": "off_dsl",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_mobile_data_159",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_python_stats_017",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_conflict_res_197",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_change_mgmt_035",
+     "requiredLevel": 3
+    }
+   ]
+  },
+  {
+   "roleId": "role_dsl_junior_statistical_officer",
+   "officeId": "off_dsl",
+   "designation": "Junior Statistical Officer",
+   "tier": "TIER4_JUNIOR",
+   "competencies": [
+    {
+     "id": "comp_ml_stats_005",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_big_data_006",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_reproducible_166",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_mlops_155",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_teamwork_remote_204",
+     "requiredLevel": 2
     }
    ]
   },
@@ -582,7 +606,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_industry_stats_010",
      "requiredLevel": 4
     },
     {
@@ -590,11 +614,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_strategic_031",
+     "id": "comp_leadership_032",
      "requiredLevel": 4
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 5
     }
    ]
@@ -614,7 +638,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_trade_stats_059",
      "requiredLevel": 4
     },
     {
@@ -622,11 +646,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_project_mgmt_024",
+     "id": "comp_report_writing_020",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_attention_detail_200",
      "requiredLevel": 2
     }
    ]
@@ -643,18 +667,18 @@
     },
     {
      "id": "comp_project_mgmt_024",
-     "requiredLevel": 4
+     "requiredLevel": 5
     },
     {
      "id": "comp_strategic_031",
      "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_decision_037",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_inclusion_198",
      "requiredLevel": 4
     }
    ]
@@ -670,7 +694,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_industry_stats_010",
      "requiredLevel": 5
     },
     {
@@ -678,11 +702,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_comm_032",
      "requiredLevel": 4
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     }
    ]
@@ -698,23 +722,23 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_industry_stats_010",
      "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_excel_adv_163",
      "requiredLevel": 4
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_data_gov_016",
      "requiredLevel": 3
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_feedback_205",
      "requiredLevel": 5
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_change_mgmt_035",
      "requiredLevel": 4
     }
    ]
@@ -730,11 +754,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_business_register_079",
      "requiredLevel": 2
     },
     {
-     "id": "comp_industry_stats_010",
+     "id": "comp_trade_stats_059",
      "requiredLevel": 3
     },
     {
@@ -742,15 +766,15 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_db_design_029",
+     "id": "comp_report_writing_020",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_integrity_034",
      "requiredLevel": 2
     },
     {
-     "id": "comp_prob_solve_033",
+     "id": "comp_accountability_199",
      "requiredLevel": 2
     }
    ]
@@ -766,24 +790,28 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_industry_stats_010",
+     "id": "comp_msme_stats_061",
      "requiredLevel": 2
+    },
+    {
+     "id": "comp_metadata_sdmx_123",
+     "requiredLevel": 4
     },
     {
      "id": "comp_project_mgmt_024",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_statistical_sw_030",
      "requiredLevel": 3
     },
     {
-     "id": "comp_db_design_029",
+     "id": "comp_excel_adv_163",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_comm_032",
      "requiredLevel": 2
+    },
+    {
+     "id": "comp_accountability_199",
+     "requiredLevel": 4
     }
    ]
   },
@@ -795,23 +823,23 @@
    "competencies": [
     {
      "id": "comp_survey_design_002",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_econ_census_007",
      "requiredLevel": 5
     },
     {
-     "id": "comp_e_gov_023",
+     "id": "comp_survey_ops_126",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_records_mgmt_179",
      "requiredLevel": 5
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_inclusion_198",
+     "requiredLevel": 4
     }
    ]
   },
@@ -826,24 +854,24 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_econ_census_007",
+     "id": "comp_survey_ops_126",
      "requiredLevel": 3
     },
     {
-     "id": "comp_price_stats_003",
-     "requiredLevel": 4
+     "id": "comp_spatial_stat_012",
+     "requiredLevel": 2
     },
     {
      "id": "comp_data_privacy_026",
      "requiredLevel": 3
     },
     {
-     "id": "comp_prob_solve_033",
+     "id": "comp_learning_agility_195",
      "requiredLevel": 3
     },
     {
-     "id": "comp_collab_036",
-     "requiredLevel": 3
+     "id": "comp_comm_032",
+     "requiredLevel": 4
     }
    ]
   },
@@ -858,24 +886,24 @@
      "requiredLevel": 5
     },
     {
-     "id": "comp_spatial_stat_012",
-     "requiredLevel": 4
+     "id": "comp_census_pop_078",
+     "requiredLevel": 3
     },
     {
-     "id": "comp_data_privacy_026",
+     "id": "comp_records_mgmt_179",
      "requiredLevel": 5
     },
     {
-     "id": "comp_e_gov_023",
-     "requiredLevel": 4
+     "id": "comp_excel_adv_163",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_leadership_032",
      "requiredLevel": 4
     },
     {
      "id": "comp_strategic_031",
-     "requiredLevel": 4
+     "requiredLevel": 5
     },
     {
      "id": "comp_decision_037",
@@ -894,19 +922,19 @@
      "requiredLevel": 5
     },
     {
-     "id": "comp_econ_census_007",
+     "id": "comp_survey_ops_126",
      "requiredLevel": 3
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_data_gov_016",
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_coaching_196",
      "requiredLevel": 3
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_decision_037",
      "requiredLevel": 4
     }
    ]
@@ -922,19 +950,19 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_spatial_stat_012",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_public_fin_025",
+     "id": "comp_interview_skills_128",
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_e_gov_023",
      "requiredLevel": 4
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_feedback_205",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_systems_think_201",
      "requiredLevel": 3
     }
    ]
@@ -947,22 +975,22 @@
    "competencies": [
     {
      "id": "comp_survey_design_002",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_spatial_stat_012",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_data_scrutiny_129",
      "requiredLevel": 4
     },
     {
-     "id": "comp_strategic_031",
+     "id": "comp_e_gov_023",
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_leadership_032",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_systems_think_201",
      "requiredLevel": 4
     }
    ]
@@ -978,7 +1006,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_agri_stats_009",
+     "id": "comp_field_supervision_127",
      "requiredLevel": 3
     },
     {
@@ -986,15 +1014,15 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_e_gov_023",
+     "id": "comp_risk_mgmt_189",
      "requiredLevel": 4
     },
     {
-     "id": "comp_collab_036",
+     "id": "comp_decision_037",
      "requiredLevel": 3
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_accountability_199",
      "requiredLevel": 3
     }
    ]
@@ -1010,23 +1038,27 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_econ_census_007",
+     "id": "comp_agri_stats_009",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_excel_adv_163",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_project_mgmt_024",
      "requiredLevel": 3
     },
     {
-     "id": "comp_e_gov_023",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_privacy_026",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_decision_037",
+     "id": "comp_inclusion_198",
      "requiredLevel": 4
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_coaching_196",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_public_speaking_203",
      "requiredLevel": 4
     }
    ]
@@ -1042,11 +1074,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_spatial_stat_012",
+     "id": "comp_capi_116",
      "requiredLevel": 3
     },
     {
-     "id": "comp_econ_census_007",
+     "id": "comp_survey_ops_126",
      "requiredLevel": 2
     },
     {
@@ -1054,12 +1086,140 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_e_gov_023",
+     "id": "comp_procurement_021",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_intl_senior_statistical_officer",
+   "officeId": "off_intl",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_intl_standards_133",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_sdg_monitor_015",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_rajbhasha_172",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_data_gov_016",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_report_writing_020",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_teamwork_remote_204",
+     "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ipmd_deputy_director_general",
+   "officeId": "off_ipmd",
+   "designation": "Deputy Director General",
+   "tier": "TIER1_APEX",
+   "competencies": [
+    {
+     "id": "comp_project_monitor_100",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_mplads_099",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_risk_mgmt_189",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_strategic_031",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_systems_think_201",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
+    }
+   ]
+  },
+  {
+   "roleId": "role_ipmd_joint_director",
+   "officeId": "off_ipmd",
+   "designation": "Joint Director",
+   "tier": "TIER2_SENIOR",
+   "competencies": [
+    {
+     "id": "comp_project_monitor_100",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_mplads_099",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_risk_mgmt_189",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_decision_037",
+     "requiredLevel": 5
     },
     {
      "id": "comp_comm_032",
      "requiredLevel": 4
+    }
+   ]
+  },
+  {
+   "roleId": "role_ipmd_senior_statistical_officer",
+   "officeId": "off_ipmd",
+   "designation": "Senior Statistical Officer",
+   "tier": "TIER3_MID",
+   "competencies": [
+    {
+     "id": "comp_project_monitor_100",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_project_mgmt_024",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_mplads_099",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_data_viz_019",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 3
     }
    ]
   },
@@ -1074,23 +1234,23 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_business_register_079",
      "requiredLevel": 5
     },
     {
-     "id": "comp_db_design_029",
+     "id": "comp_testing_qa_167",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_systems_think_201",
      "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
+     "id": "comp_inclusion_198",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_strategic_031",
+     "id": "comp_negotiation_192",
      "requiredLevel": 5
     }
    ]
@@ -1103,23 +1263,19 @@
    "competencies": [
     {
      "id": "comp_industry_stats_010",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_business_register_079",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_testing_qa_167",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_time_mgmt_193",
      "requiredLevel": 4
-    },
-    {
-     "id": "comp_index_numbers_004",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_db_design_029",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_prob_solve_033",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 3
     }
    ]
   },
@@ -1134,7 +1290,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 5
     },
     {
@@ -1142,11 +1298,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_systems_think_201",
      "requiredLevel": 4
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 3
     }
    ]
@@ -1162,15 +1318,15 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_econ_census_007",
-     "requiredLevel": 4
+     "id": "comp_energy_stats_053",
+     "requiredLevel": 5
     },
     {
      "id": "comp_survey_design_002",
-     "requiredLevel": 3
+     "requiredLevel": 5
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_db_design_029",
      "requiredLevel": 4
     },
     {
@@ -1178,12 +1334,12 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
-     "requiredLevel": 5
+     "id": "comp_feedback_205",
+     "requiredLevel": 3
     }
    ]
   },
@@ -1198,7 +1354,11 @@
      "requiredLevel": 1
     },
     {
-     "id": "comp_econ_census_007",
+     "id": "comp_energy_stats_053",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_tabulation_130",
      "requiredLevel": 2
     },
     {
@@ -1206,11 +1366,7 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_prob_solve_033",
+     "id": "comp_time_mgmt_193",
      "requiredLevel": 2
     }
    ]
@@ -1226,19 +1382,19 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_index_numbers_004",
      "requiredLevel": 4
     },
     {
-     "id": "comp_python_stats_017",
+     "id": "comp_excel_adv_163",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_time_mgmt_193",
      "requiredLevel": 4
     },
     {
      "id": "comp_decision_037",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_collab_036",
      "requiredLevel": 4
     }
    ]
@@ -1254,11 +1410,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 2
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_survey_design_002",
      "requiredLevel": 3
     },
     {
@@ -1266,19 +1422,19 @@
      "requiredLevel": 3
     },
     {
+     "id": "comp_excel_adv_163",
+     "requiredLevel": 3
+    },
+    {
      "id": "comp_data_gov_016",
      "requiredLevel": 3
     },
     {
-     "id": "comp_python_stats_017",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_comm_032",
+     "id": "comp_prob_solve_033",
      "requiredLevel": 1
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_attention_detail_200",
      "requiredLevel": 3
     }
    ]
@@ -1294,20 +1450,20 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_time_series_013",
-     "requiredLevel": 4
+     "id": "comp_deflators_088",
+     "requiredLevel": 5
     },
     {
      "id": "comp_project_mgmt_024",
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
-     "requiredLevel": 4
+     "id": "comp_coaching_196",
+     "requiredLevel": 5
     }
    ]
   },
@@ -1319,27 +1475,27 @@
    "competencies": [
     {
      "id": "comp_nat_accounts_001",
-     "requiredLevel": 3
+     "requiredLevel": 4
     },
     {
      "id": "comp_gdp_nowcast_011",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_time_series_013",
      "requiredLevel": 3
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_tabulation_130",
      "requiredLevel": 3
     },
     {
      "id": "comp_data_gov_016",
-     "requiredLevel": 4
+     "requiredLevel": 3
     },
     {
-     "id": "comp_report_writing_020",
+     "id": "comp_learning_agility_195",
      "requiredLevel": 4
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 2
     }
    ]
   },
@@ -1351,27 +1507,23 @@
    "competencies": [
     {
      "id": "comp_nat_accounts_001",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_industry_stats_010",
      "requiredLevel": 4
     },
     {
-     "id": "comp_r_analytics_018",
-     "requiredLevel": 3
+     "id": "comp_construction_stats_062",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_metadata_sdmx_123",
      "requiredLevel": 4
     },
     {
-     "id": "comp_leadership_032",
-     "requiredLevel": 5
+     "id": "comp_systems_think_201",
+     "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
-     "requiredLevel": 5
+     "id": "comp_coaching_196",
+     "requiredLevel": 4
     }
    ]
   },
@@ -1386,24 +1538,24 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_industry_stats_010",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_regional_accounts_085",
      "requiredLevel": 3
     },
     {
-     "id": "comp_time_series_013",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_coaching_196",
      "requiredLevel": 5
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_systems_think_201",
      "requiredLevel": 4
-    },
-    {
-     "id": "comp_innov_038",
-     "requiredLevel": 5
     }
    ]
   },
@@ -1418,11 +1570,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_gdp_nowcast_011",
+     "id": "comp_industry_stats_010",
      "requiredLevel": 2
     },
     {
-     "id": "comp_time_series_013",
+     "id": "comp_regional_accounts_085",
      "requiredLevel": 3
     },
     {
@@ -1434,11 +1586,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_citizen_039",
+     "id": "comp_digital_mindset_202",
      "requiredLevel": 2
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_prob_solve_033",
      "requiredLevel": 3
     }
    ]
@@ -1454,28 +1606,24 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_time_series_013",
+     "id": "comp_capital_stock_084",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_tabulation_130",
+     "requiredLevel": 4
     },
     {
      "id": "comp_data_gov_016",
-     "requiredLevel": 2
+     "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_r_analytics_018",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_integrity_034",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_prob_solve_033",
+     "id": "comp_metadata_sdmx_123",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_teamwork_remote_204",
+     "requiredLevel": 2
     }
    ]
   },
@@ -1486,11 +1634,11 @@
    "tier": "TIER1_APEX",
    "competencies": [
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_training_design_181",
      "requiredLevel": 5
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_sdg_monitor_015",
      "requiredLevel": 5
     },
     {
@@ -1498,11 +1646,11 @@
      "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_change_mgmt_035",
      "requiredLevel": 5
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_inclusion_198",
      "requiredLevel": 5
     }
    ]
@@ -1514,36 +1662,36 @@
    "tier": "TIER3_MID",
    "competencies": [
     {
-     "id": "comp_survey_design_002",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_training_design_181",
      "requiredLevel": 2
     },
     {
-     "id": "comp_sdg_monitor_015",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_e_gov_023",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_project_mgmt_024",
+     "id": "comp_nat_accounts_001",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_policy_analysis_188",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_records_mgmt_179",
+     "requiredLevel": 4
     },
     {
      "id": "comp_public_fin_025",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
-     "requiredLevel": 2
+     "id": "comp_report_writing_020",
+     "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
-     "requiredLevel": 3
+     "id": "comp_decision_037",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_attention_detail_200",
+     "requiredLevel": 2
     }
    ]
   },
@@ -1554,19 +1702,19 @@
    "tier": "TIER1_APEX",
    "competencies": [
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_training_design_181",
      "requiredLevel": 4
     },
     {
-     "id": "comp_procurement_021",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_public_fin_025",
+     "id": "comp_report_writing_020",
      "requiredLevel": 5
     },
     {
-     "id": "comp_strategic_031",
+     "id": "comp_data_gov_016",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_coaching_196",
      "requiredLevel": 5
     },
     {
@@ -1575,7 +1723,7 @@
     },
     {
      "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
+     "requiredLevel": 5
     }
    ]
   },
@@ -1586,23 +1734,23 @@
    "tier": "TIER2_SENIOR",
    "competencies": [
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_training_design_181",
      "requiredLevel": 5
     },
     {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_survey_design_002",
      "requiredLevel": 3
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_e_gov_023",
      "requiredLevel": 4
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_coaching_196",
      "requiredLevel": 4
     }
    ]
@@ -1614,27 +1762,27 @@
    "tier": "TIER2_SENIOR",
    "competencies": [
     {
+     "id": "comp_training_design_181",
+     "requiredLevel": 4
+    },
+    {
      "id": "comp_survey_design_002",
      "requiredLevel": 4
     },
     {
-     "id": "comp_nat_accounts_001",
+     "id": "comp_public_fin_025",
      "requiredLevel": 4
     },
     {
-     "id": "comp_project_mgmt_024",
+     "id": "comp_event_mgmt_183",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_innov_038",
+     "id": "comp_feedback_205",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_conflict_res_197",
      "requiredLevel": 4
     }
    ]
@@ -1646,11 +1794,11 @@
    "tier": "TIER4_JUNIOR",
    "competencies": [
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_training_design_181",
      "requiredLevel": 3
     },
     {
-     "id": "comp_price_stats_003",
+     "id": "comp_knowledge_mgmt_182",
      "requiredLevel": 2
     },
     {
@@ -1662,11 +1810,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_e_gov_023",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_prob_solve_033",
      "requiredLevel": 2
     }
    ]
@@ -1683,23 +1831,23 @@
     },
     {
      "id": "comp_index_numbers_004",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_strategic_031",
      "requiredLevel": 4
+    },
+    {
+     "id": "comp_db_design_029",
+     "requiredLevel": 5
     },
     {
      "id": "comp_leadership_032",
-     "requiredLevel": 5
+     "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
+    },
+    {
+     "id": "comp_inclusion_198",
+     "requiredLevel": 5
     }
    ]
   },
@@ -1714,16 +1862,20 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_big_data_006",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_data_eng_136",
      "requiredLevel": 2
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_comm_032",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_attention_detail_200",
+     "requiredLevel": 4
     }
    ]
   },
@@ -1738,16 +1890,16 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_db_design_029",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_decision_037",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_leadership_032",
+     "id": "comp_web_scraping_158",
      "requiredLevel": 4
+    },
+    {
+     "id": "comp_coaching_196",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_inclusion_198",
+     "requiredLevel": 5
     }
    ]
   },
@@ -1766,19 +1918,19 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_python_stats_017",
      "requiredLevel": 3
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_db_design_029",
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_systems_think_201",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_comm_032",
      "requiredLevel": 5
     }
    ]
@@ -1791,30 +1943,30 @@
    "competencies": [
     {
      "id": "comp_price_stats_003",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_service_price_092",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_producer_price_090",
      "requiredLevel": 5
     },
     {
-     "id": "comp_survey_design_002",
+     "id": "comp_db_design_029",
      "requiredLevel": 3
     },
     {
-     "id": "comp_index_numbers_004",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_report_writing_020",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_gov_016",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_leadership_032",
+     "id": "comp_data_eng_136",
      "requiredLevel": 4
     },
     {
      "id": "comp_decision_037",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_resilience_194",
      "requiredLevel": 4
     }
    ]
@@ -1827,31 +1979,31 @@
    "competencies": [
     {
      "id": "comp_price_stats_003",
-     "requiredLevel": 3
+     "requiredLevel": 2
     },
     {
      "id": "comp_index_numbers_004",
      "requiredLevel": 3
     },
     {
+     "id": "comp_web_scraping_158",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_tabulation_130",
+     "requiredLevel": 2
+    },
+    {
      "id": "comp_data_gov_016",
      "requiredLevel": 2
     },
     {
-     "id": "comp_db_design_029",
+     "id": "comp_accountability_199",
      "requiredLevel": 2
     },
     {
-     "id": "comp_report_writing_020",
+     "id": "comp_time_mgmt_193",
      "requiredLevel": 2
-    },
-    {
-     "id": "comp_integrity_034",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_collab_036",
-     "requiredLevel": 1
     }
    ]
   },
@@ -1866,16 +2018,20 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_big_data_006",
+     "id": "comp_producer_price_090",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_data_eng_136",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_collab_036",
      "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
+     "requiredLevel": 4
     }
    ]
   },
@@ -1890,7 +2046,7 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_index_numbers_004",
+     "id": "comp_big_data_006",
      "requiredLevel": 3
     },
     {
@@ -1898,16 +2054,16 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_web_scraping_158",
      "requiredLevel": 3
     },
     {
-     "id": "comp_citizen_039",
+     "id": "comp_learning_agility_195",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_teamwork_remote_204",
      "requiredLevel": 2
-    },
-    {
-     "id": "comp_comm_032",
-     "requiredLevel": 3
     }
    ]
   },
@@ -1922,15 +2078,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_r_analytics_018",
-     "requiredLevel": 4
+     "id": "comp_reproducible_166",
+     "requiredLevel": 5
     },
     {
-     "id": "comp_public_fin_025",
-     "requiredLevel": 4
-    },
-    {
-     "id": "comp_strategic_031",
+     "id": "comp_data_gov_016",
      "requiredLevel": 4
     },
     {
@@ -1938,7 +2090,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_inclusion_198",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_negotiation_192",
      "requiredLevel": 4
     }
    ]
@@ -1954,27 +2110,27 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_poverty_014",
-     "requiredLevel": 3
-    },
-    {
      "id": "comp_r_analytics_018",
      "requiredLevel": 3
     },
     {
-     "id": "comp_python_stats_017",
+     "id": "comp_timeuse_stats_074",
      "requiredLevel": 3
     },
     {
      "id": "comp_data_gov_016",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_statistical_sw_030",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_metadata_sdmx_123",
+     "requiredLevel": 2
+    },
+    {
+     "id": "comp_reproducible_166",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_integrity_034",
      "requiredLevel": 4
     }
    ]
@@ -1990,7 +2146,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_stata_164",
      "requiredLevel": 4
     },
     {
@@ -1998,7 +2154,7 @@
      "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_inclusion_198",
      "requiredLevel": 5
     }
    ]
@@ -2014,11 +2170,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_poverty_014",
+     "id": "comp_agri_stats_009",
      "requiredLevel": 4
     },
     {
-     "id": "comp_r_analytics_018",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 3
     },
     {
@@ -2026,7 +2182,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_decision_037",
      "requiredLevel": 3
     }
    ]
@@ -2042,7 +2198,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_r_analytics_018",
+     "id": "comp_var_estimation_106",
      "requiredLevel": 4
     },
     {
@@ -2050,19 +2206,19 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_statistical_sw_030",
      "requiredLevel": 4
     },
     {
-     "id": "comp_python_stats_017",
+     "id": "comp_metadata_sdmx_123",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_comm_032",
      "requiredLevel": 3
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_coaching_196",
      "requiredLevel": 4
     }
    ]
@@ -2078,11 +2234,11 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_statistical_sw_030",
+     "id": "comp_cost_living_093",
      "requiredLevel": 3
     },
     {
-     "id": "comp_r_analytics_018",
+     "id": "comp_calibration_102",
      "requiredLevel": 3
     },
     {
@@ -2090,11 +2246,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_prob_solve_033",
+     "id": "comp_comm_032",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_accountability_199",
      "requiredLevel": 4
     }
    ]
@@ -2107,27 +2263,27 @@
    "competencies": [
     {
      "id": "comp_sdg_monitor_015",
-     "requiredLevel": 4
+     "requiredLevel": 5
     },
     {
-     "id": "comp_public_fin_025",
-     "requiredLevel": 5
+     "id": "comp_data_viz_019",
+     "requiredLevel": 4
     },
     {
      "id": "comp_project_mgmt_024",
      "requiredLevel": 5
     },
     {
-     "id": "comp_leadership_032",
+     "id": "comp_decision_037",
      "requiredLevel": 5
     },
     {
      "id": "comp_change_mgmt_035",
-     "requiredLevel": 4
+     "requiredLevel": 5
     },
     {
-     "id": "comp_strategic_031",
-     "requiredLevel": 5
+     "id": "comp_systems_think_201",
+     "requiredLevel": 4
     }
    ]
   },
@@ -2142,19 +2298,23 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_data_viz_019",
+     "id": "comp_nutrition_stats_046",
      "requiredLevel": 2
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_microdata_release_131",
      "requiredLevel": 3
     },
     {
-     "id": "comp_r_analytics_018",
+     "id": "comp_bi_tools_162",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
+     "id": "comp_collab_036",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_attention_detail_200",
      "requiredLevel": 4
     }
    ]
@@ -2167,22 +2327,22 @@
    "competencies": [
     {
      "id": "comp_sdg_monitor_015",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_poverty_014",
-     "requiredLevel": 2
-    },
-    {
-     "id": "comp_r_analytics_018",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
+     "id": "comp_education_stats_044",
      "requiredLevel": 3
     },
     {
-     "id": "comp_collab_036",
+     "id": "comp_gender_budget_186",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_public_speaking_203",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_attention_detail_200",
      "requiredLevel": 4
     }
    ]
@@ -2198,23 +2358,23 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_poverty_014",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_data_gov_016",
+     "id": "comp_health_stats_045",
      "requiredLevel": 4
     },
     {
-     "id": "comp_decision_037",
-     "requiredLevel": 5
-    },
-    {
-     "id": "comp_leadership_032",
+     "id": "comp_data_viz_019",
      "requiredLevel": 4
     },
     {
-     "id": "comp_strategic_031",
+     "id": "comp_inclusion_198",
+     "requiredLevel": 5
+    },
+    {
+     "id": "comp_public_speaking_203",
+     "requiredLevel": 4
+    },
+    {
+     "id": "comp_coaching_196",
      "requiredLevel": 4
     }
    ]
@@ -2230,15 +2390,15 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_dem_analysis_008",
+     "id": "comp_gender_stats_047",
      "requiredLevel": 4
     },
     {
-     "id": "comp_public_fin_025",
+     "id": "comp_data_viz_019",
      "requiredLevel": 4
     },
     {
-     "id": "comp_data_gov_016",
+     "id": "comp_report_writing_020",
      "requiredLevel": 5
     },
     {
@@ -2246,7 +2406,7 @@
      "requiredLevel": 4
     },
     {
-     "id": "comp_change_mgmt_035",
+     "id": "comp_innov_038",
      "requiredLevel": 5
     }
    ]
@@ -2262,23 +2422,23 @@
      "requiredLevel": 5
     },
     {
-     "id": "comp_dem_analysis_008",
+     "id": "comp_gender_stats_047",
      "requiredLevel": 4
     },
     {
-     "id": "comp_poverty_014",
+     "id": "comp_environment_stats_054",
      "requiredLevel": 4
     },
     {
-     "id": "comp_report_writing_020",
+     "id": "comp_gender_budget_186",
      "requiredLevel": 4
     },
     {
-     "id": "comp_innov_038",
+     "id": "comp_systems_think_201",
      "requiredLevel": 5
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_conflict_res_197",
      "requiredLevel": 4
     }
    ]
@@ -2294,11 +2454,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_poverty_014",
+     "id": "comp_dem_analysis_008",
      "requiredLevel": 2
     },
     {
-     "id": "comp_dem_analysis_008",
+     "id": "comp_poverty_014",
      "requiredLevel": 2
     },
     {
@@ -2306,11 +2466,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_data_viz_019",
+     "id": "comp_gender_budget_186",
      "requiredLevel": 2
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_integrity_034",
      "requiredLevel": 2
     }
    ]
@@ -2323,23 +2483,23 @@
    "competencies": [
     {
      "id": "comp_sdg_monitor_015",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_data_viz_019",
-     "requiredLevel": 3
-    },
-    {
-     "id": "comp_dem_analysis_008",
      "requiredLevel": 4
+    },
+    {
+     "id": "comp_water_sanitation_052",
+     "requiredLevel": 3
+    },
+    {
+     "id": "comp_child_stats_048",
+     "requiredLevel": 3
     },
     {
      "id": "comp_report_writing_020",
      "requiredLevel": 4
     },
     {
-     "id": "comp_integrity_034",
-     "requiredLevel": 2
+     "id": "comp_teamwork_remote_204",
+     "requiredLevel": 4
     }
    ]
   },
@@ -2354,11 +2514,11 @@
      "requiredLevel": 3
     },
     {
-     "id": "comp_poverty_014",
+     "id": "comp_education_stats_044",
      "requiredLevel": 2
     },
     {
-     "id": "comp_dem_analysis_008",
+     "id": "comp_poverty_014",
      "requiredLevel": 3
     },
     {
@@ -2366,11 +2526,11 @@
      "requiredLevel": 2
     },
     {
-     "id": "comp_data_viz_019",
+     "id": "comp_report_writing_020",
      "requiredLevel": 3
     },
     {
-     "id": "comp_comm_032",
+     "id": "comp_prob_solve_033",
      "requiredLevel": 3
     }
    ]

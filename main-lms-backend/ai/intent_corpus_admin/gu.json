@@ -1,0 +1,88 @@
+{
+  "admin_overview": [
+    "કાર્યબળનો સારાંશ આપો",
+    "ડેશબોર્ડનો સારાંશ કહો"
+  ],
+  "admin_officials": [
+    "રોસ્ટરમાં કેટલા અધિકારીઓ છે",
+    "કુલ અધિકારીઓની સંખ્યા કેટલી"
+  ],
+  "admin_compliance": [
+    "તાલીમ અનુપાલન કેટલું છે",
+    "કેટલા અધિકારીઓ અનુપાલનમાં છે"
+  ],
+  "admin_mandatory": [
+    "ફરજિયાત તાલીમની સ્થિતિ શું છે",
+    "કેટલા અધિકારીઓ ફરજિયાત કોર્સમાં પાછળ છે"
+  ],
+  "admin_departments": [
+    "વિભાગ પ્રમાણે અનુપાલન બતાવો",
+    "કયો વિભાગ સૌથી આગળ છે"
+  ],
+  "admin_shortages": [
+    "કઈ ક્ષમતાઓની સૌથી મોટી અછત છે",
+    "સૌથી મોટા skill gap કયા છે"
+  ],
+  "admin_emerging": [
+    "આવતા વર્ષે શું તાલીમ આપવી જોઈએ",
+    "ઉભરતા કૌશલ્યોનો અહેવાલ બતાવો"
+  ],
+  "admin_trends": [
+    "સમય સાથે આંકડા કેવી રીતે બદલાયા",
+    "છેલ્લા ૯૦ દિવસનો વલણ બતાવો"
+  ],
+  "admin_health": [
+    "સિસ્ટમ બરાબર ચાલે છે કે",
+    "સેવાની સ્થિતિ તપાસો"
+  ],
+  "admin_nudges": [
+    "તાજેતરના રીમાઇન્ડર બતાવો",
+    "કોને nudge મોકલ્યું"
+  ],
+  "admin_assignments": [
+    "કઈ તાલીમ યોજનાઓ સોંપાઈ છે",
+    "સોંપાયેલા કોર્સ બતાવો"
+  ],
+  "admin_needs_training": [
+    "કોને તાલીમની જરૂર છે",
+    "કયા અધિકારીઓ અનુપાલનમાં નથી"
+  ],
+  "admin_user_lookup": [
+    "આ અધિકારી વિશે કહો",
+    "એક કર્મચારીની વિગતો બતાવો"
+  ],
+  "admin_capabilities": [
+    "તમે અહીં શું કરી શકો છો",
+    "admin તરીકે કેવી મદદ કરશો"
+  ],
+  "navigation_admin_dashboard": [
+    "admin ડેશબોર્ડ ખોલો"
+  ],
+  "navigation_admin_officials": [
+    "અધિકારી ટેબ ખોલો"
+  ],
+  "navigation_admin_competencies": [
+    "FRAC ક્ષમતા ટેબ ખોલો"
+  ],
+  "navigation_admin_analytics": [
+    "analytics ટેબ ખોલો"
+  ],
+  "navigation_admin_emerging": [
+    "ઉભરતા કૌશલ્ય ટેબ ખોલો"
+  ],
+  "navigation_admin_actions": [
+    "actions ટેબ ખોલો"
+  ],
+  "navigation_admin_insights": [
+    "workforce insights ટેબ ખોલો"
+  ],
+  "navigation_admin_reports": [
+    "reports ટેબ ખોલો"
+  ],
+  "navigation_learner_dashboard": [
+    "learner ડેશબોર્ડ ખોલો"
+  ],
+  "navigation_home": [
+    "હોમ પેજ પર લઈ જાઓ"
+  ]
+}

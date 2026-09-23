@@ -161,7 +161,7 @@ def build_catalog(frac: list) -> tuple[list, dict]:
         for level in range(1, 6):
             if level in D.LADDER_HOLES.get(cid, []):
                 continue
-            n = weighted(rng, {2: 0.5, 3: 0.4, 4: 0.1})
+            n = weighted(rng, D.COURSES_PER_CELL[D.CATALOG_DEPTH[cid]])
             for _k in range(n):
                 topic = topic_order[t_ptr % len(topic_order)]
                 topic2 = topic_order[(t_ptr + 1) % len(topic_order)]
@@ -261,8 +261,12 @@ def build_catalog(frac: list) -> tuple[list, dict]:
     # B5 plant: a few popular, highly-rated self-paced courses whose true
     # uplift will be ~0 (the ratings/popularity are made to look great).
     prng = rng_for("catalog:zero-uplift")
+    # Plant them on the deep subjects: a flagship course with thousands of
+    # enrolments is what the measured-uplift estimator has to be able to doubt,
+    # and only a "core" competency carries enough outcome records to do it.
     pool = [c for c in courses if c["format"] == "self_paced_course" and c["level"] in (2, 3)
-            and json.loads(c["competencies_v3"])[0]["competencyType"] == "Domain"]
+            and json.loads(c["competencies_v3"])[0]["competencyType"] == "Domain"
+            and D.CATALOG_DEPTH[json.loads(c["competencies_v3"])[0]["id"]] == "core"]
     planted = prng.sample(pool, N_POPULAR_ZERO_UPLIFT)
     for c in planted:
         c["rating"] = round(prng.uniform(4.55, 4.85), 2)
@@ -869,8 +873,15 @@ MATURATION_BASE = 0.03       # growth over one assessment interval without a cou
 MATURATION_SLOPE = 0.05      # … per level of prior ability: strong officers grow faster → confounds naive estimates
 ASSESSMENT_NOISE_SD = 0.20   # measurement error of each θ assessment
 TAKERS_PER_ENROLMENTS = 250  # one outcome record per 250 platform enrolments …
-TAKERS_MIN, TAKERS_MAX = 2, 30   # … clipped to [2, 30] learners per course
-CONTROLS_PER_COMPETENCY = 60     # non-taker comparison episodes per competency, spread over all ability levels
+TAKERS_MIN = 2                   # … clipped to [2, TAKERS_MAX[depth]] learners per course
+TAKERS_MAX = {"core": 30, "standard": 14, "thin": 8}        # niche courses have fewer learners on the platform
+CONTROLS_PER_COMPETENCY = {"core": 60, "standard": 20, "thin": 10}
+CONTROLS_PLANTED_COMPETENCY = 150   # competencies carrying a planted zero-uplift course (see below)
+PLANTED_ZERO_TAKERS = 60            # takers on a planted zero-uplift course: these have 6k-16k enrolments,
+                                    # so the [2, TAKERS_MAX] clip is what would otherwise hold them back
+# ^ non-taker comparison episodes per competency, spread over all ability levels. The uplift estimator needs a
+#   comparison group per competency; the deep subjects carry enough of them for a usable confidence interval,
+#   the long tail only enough to show the interval widening.
 PLANTED_GROUP_TAKERS = 18        # min platform takers per course in a planted-precedence group
 PLANTED_PRIOR_SHARE = 0.5        # share of those takers who did the planted prerequisite first
 EDU_FIELDS = {"statistics": 0.3, "economics": 0.25, "mathematics": 0.1, "computer science": 0.1,
@@ -955,9 +966,12 @@ def build_outcomes(catalog: list, enrollments: list, users: list, facts: dict, h
     # 2. other iGOT learners (anonymised) — volume follows platform enrolments
     comps = [c[0] for c in D.COMPETENCIES]
     for c in sorted(catalog, key=lambda c: c["identifier"]):
-        n = int(min(TAKERS_MAX, max(TAKERS_MIN, round((c.get("enrollment_count") or 500) / TAKERS_PER_ENROLMENTS))))
         tag = primary[c["identifier"]]
         comp, level = tag["id"], int(tag["competencyLevel"][-1])
+        cap = TAKERS_MAX[D.CATALOG_DEPTH[comp]]
+        n = int(min(cap, max(TAKERS_MIN, round((c.get("enrollment_count") or 500) / TAKERS_PER_ENROLMENTS))))
+        if c["identifier"] in zero:
+            n = PLANTED_ZERO_TAKERS
         rule = precedence.get((comp, level))
         if rule:
             n = max(n, PLANTED_GROUP_TAKERS)       # enough learners for the planted effect to be testable
@@ -977,9 +991,16 @@ def build_outcomes(catalog: list, enrollments: list, users: list, facts: dict, h
                                    enrolled, completed, _covariates(rng, pre)))
 
     # 3. comparison episodes: learners with the competency who took no course on it
+    #    The four planted zero-uplift courses are the point of the whole file, so
+    #    their competency gets a comparison group big enough that the estimator's
+    #    confidence interval is driven by the (absent) effect and not by how few
+    #    non-takers happened to sit near the takers' ability.
+    planted_comps = {primary[cid]["id"] for cid in zero}
     comparisons = []
     for comp in comps:
-        for k in range(CONTROLS_PER_COMPETENCY):
+        n_controls = max(CONTROLS_PER_COMPETENCY[D.CATALOG_DEPTH[comp]],
+                         CONTROLS_PLANTED_COMPETENCY if comp in planted_comps else 0)
+        for k in range(n_controls):
             pre = rng.uniform(0.1, 4.9)
             growth = MATURATION_BASE + MATURATION_SLOPE * pre
             end = ref_minus(rng.uniform(20, HISTORY_YEARS * 365), rng)
@@ -1178,6 +1199,7 @@ def build_hrms(users: list) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 ITEMS_PER_LEVEL = 3                    # 3 × 5 levels = 15 items per competency (the CAT maximum)
+ITEMS_PER_LEVEL_THIN = 2               # niche subjects: a smaller bank (10 items, still above the CAT floor)
 ITEM_A_RANGE = (0.8, 2.0)              # discrimination on the level scale
 ITEM_B_SD = 0.35                       # difficulty b ~ N(level − 0.5, 0.35)
 RESPONSES_PER_OFFICIAL = 8             # synthetic response log size
@@ -1196,9 +1218,10 @@ def build_item_bank(users: list, facts: dict) -> dict:
     items = []
     for cid, _name, _ctype, _decay, _desc, topics in D.COMPETENCIES:
         short = D.SHORT_NAMES[cid]
+        per_level = ITEMS_PER_LEVEL_THIN if D.CATALOG_DEPTH[cid] == "thin" else ITEMS_PER_LEVEL
         for level in range(1, 6):
-            for k in range(ITEMS_PER_LEVEL):
-                topic = topics[(level * ITEMS_PER_LEVEL + k) % len(topics)]
+            for k in range(per_level):
+                topic = topics[(level * per_level + k) % len(topics)]
                 others = [t for t in topics if t != topic]
                 distractors = rng.sample(others, 3)
                 options = [f"The standard treatment of {topic}"] + [f"The treatment of {d}" for d in distractors]

@@ -42,6 +42,9 @@ import type {
 } from '../types/domain';
 import { refresh } from './authApi';
 import { API_BASE_URL } from '../config';
+// Gyan's action shape is defined with the chat client; the admin console
+// returns the same one. Type-only, so nothing is imported at runtime.
+import type { NavigateAction } from './chatApi';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const LMS_BASE_URL  = API_BASE_URL;
@@ -1024,6 +1027,36 @@ export const fetchEmergingSkills = (f: AdminFilters) =>
 
 export const fetchSystemHealth = (probeGemini = false) =>
   lmsFetch<SystemHealth>(`${CONSOLE}/system-health${probeGemini ? '?probeGemini=true' : ''}`, 'system-health');
+
+// ── Gyan on the admin console (routers/admin_chat.py) ───────────────────────
+// Unlike the learner widget's POST /api/v1/chat, this endpoint is admin-only
+// and reads live console data, so it goes through lmsFetch for the bearer token
+// and the 401 refresh. There is no browser fallback: an answer that invented
+// roster numbers would be worse than no answer, so a failure surfaces as the
+// widget's error bubble.
+export interface AdminChatBody {
+  message: string;
+  history?: { role: string; content: string }[];
+  preferred_language?: string;
+  /** The dashboard's filter bar, so an unscoped question answers about the current view. */
+  filters?: AdminFilters;
+  full_name?: string;
+}
+
+export interface AdminChatResponse {
+  reply: string;
+  detected_language: string;
+  engine: string;
+  intent?: string | null;
+  navigate_action?: NavigateAction | null;
+  navigate_actions?: NavigateAction[];
+}
+
+export const sendAdminChatMessage = (body: AdminChatBody) =>
+  lmsFetch<AdminChatResponse>(`${CONSOLE}/chat`, 'admin-chat', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 
 export type AdminExportKind = 'roster' | 'mandatory-behind' | 'emerging-skills' | 'trends' | 'departments' | 'shortages';
 

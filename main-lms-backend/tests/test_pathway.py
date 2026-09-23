@@ -100,11 +100,41 @@ def test_course_levels_are_kept(engine):
 
 # ── Level-gated flat recommendations ──────────────────────────────────────────
 
-def test_beginner_gets_next_levels_in_order_never_advanced_or_basic(engine):
+def test_beginner_gets_next_levels_never_advanced_or_basic(engine):
     recs = engine.get_recommendations([_gap(engine, "comp_a", 1, 4)], limit_per_gap=3)
     levels = [r.courseLevel for r in recs]
     assert levels and all(1 < lvl <= 4 for lvl in levels)       # no L1 refresher, no L5
-    assert levels[:2] == [2, 4]                                   # best of each level, lowest first
+    assert set(levels[:2]) == {2, 4}          # one pick per level in the band, not two L2s
+
+
+def test_recommendations_are_shown_best_match_first(engine):
+    """Bug #11: the block used to come back in level order, so a weak course sat
+    above a much better one with its own score printed next to it."""
+    recs = engine.get_recommendations([_gap(engine, "comp_a", 1, 4)], limit_per_gap=3)
+    clean = [r.finalScore for r in recs if r.tagSupported is not False and not r.upliftFlag]
+    assert clean == sorted(clean, reverse=True)
+    assert recs[-1].courseId == "a2x"         # the mis-tagged course stays last, top ratings or not
+
+
+def test_no_course_is_scored_zero_just_for_being_last(engine):
+    """Bugs #9/#10: relevance and quality were min-maxed inside the shortlist, so
+    the weakest candidate of every pool scored exactly 0.000 however good it was."""
+    recs = engine.get_recommendations([_gap(engine, "comp_a", 0, 5)], limit_per_gap=10)
+    assert len(recs) >= 3
+    assert all(r.finalScore > 0.0 and r.relevanceScore > 0.0 and r.qualityScore > 0.0
+               for r in recs)
+
+
+def test_quality_does_not_depend_on_which_shortlist_the_course_is_in(engine):
+    a4 = next(d for d in engine._catalog if d.identifier == "a4")
+    assert engine._quality_score(a4) == engine._quality_score(a4, engine._catalog[:2])
+
+
+def test_course_with_no_ratings_takes_the_catalogue_average_not_zero(engine):
+    """~9% of the real catalogue carries no rating or enrolment data (Bug #7)."""
+    a2 = next(d for d in engine._catalog if d.identifier == "a2")
+    assert a2.rating is None and a2.enrollment_count is None and a2.completion_rate is None
+    assert engine._quality_score(a2) == pytest.approx(engine._neutral_quality(), abs=1e-4)
 
 
 def test_expert_only_sees_courses_above_their_level(engine):

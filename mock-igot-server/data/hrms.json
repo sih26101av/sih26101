@@ -17,44 +17,68 @@
   "HCES": "Household Consumption Expenditure Survey",
   "SDG-NIF": "SDG National Indicator Framework progress report",
   "EnviStats": "EnviStats India",
-  "Economic Census": "Economic Census"
+  "Economic Census": "Economic Census",
+  "Infra-Projects": "Central sector infrastructure project monitoring report",
+  "MPLADS": "MPLADS implementation and fund utilisation report"
  },
  "productCriticalCompetencies": {
   "NAS": [
    "comp_nat_accounts_001",
    "comp_gdp_nowcast_011",
-   "comp_index_numbers_004"
+   "comp_index_numbers_004",
+   "comp_io_tables_083",
+   "comp_qna_086",
+   "comp_deflators_088"
   ],
   "CPI": [
    "comp_price_stats_003",
-   "comp_index_numbers_004"
+   "comp_index_numbers_004",
+   "comp_cost_living_093"
   ],
   "IIP": [
    "comp_index_numbers_004",
-   "comp_industry_stats_010"
+   "comp_industry_stats_010",
+   "comp_producer_price_090"
   ],
   "ASI": [
    "comp_industry_stats_010",
-   "comp_survey_design_002"
+   "comp_survey_design_002",
+   "comp_business_register_079"
   ],
   "PLFS": [
    "comp_survey_design_002",
-   "comp_statistical_sw_030"
+   "comp_statistical_sw_030",
+   "comp_labour_stats_041",
+   "comp_calibration_102"
   ],
   "HCES": [
    "comp_survey_design_002",
-   "comp_poverty_014"
+   "comp_poverty_014",
+   "comp_cost_living_093"
   ],
   "SDG-NIF": [
    "comp_sdg_monitor_015",
-   "comp_data_viz_019"
+   "comp_data_viz_019",
+   "comp_intl_standards_133",
+   "comp_gender_stats_047"
   ],
   "EnviStats": [
-   "comp_sdg_monitor_015"
+   "comp_sdg_monitor_015",
+   "comp_environment_stats_054"
   ],
   "Economic Census": [
    "comp_econ_census_007",
-   "comp_survey_design_002"
+   "comp_survey_design_002",
+   "comp_business_register_079"
+  ],
+  "Infra-Projects": [
+   "comp_project_monitor_100",
+   "comp_construction_stats_062",
+   "comp_project_mgmt_024"
+  ],
+  "MPLADS": [
+   "comp_mplads_099",
+   "comp_public_fin_025"
   ]
  },
  "officials": {
@@ -312,9 +336,7 @@
    "dateOfBirth": "1986-09-25",
    "dateOfJoining": "2012-04-07",
    "superannuationDate": "2046-09-30",
-   "products": [
-    "HCES"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_129713590": {
@@ -330,10 +352,7 @@
    "dateOfBirth": "1972-03-19",
    "dateOfJoining": "2002-06-11",
    "superannuationDate": "2032-03-31",
-   "products": [
-    "ASI",
-    "HCES"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_156930079": {
@@ -356,9 +375,7 @@
    "dateOfBirth": "1997-06-03",
    "dateOfJoining": "2025-05-24",
    "superannuationDate": "2057-06-30",
-   "products": [
-    "SDG-NIF"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_590788362": {
@@ -393,7 +410,7 @@
    "dateOfJoining": "2003-05-16",
    "superannuationDate": "2037-01-31",
    "products": [
-    "NAS"
+    "Infra-Projects"
    ],
    "serviceStatus": "in_service"
   },
@@ -489,8 +506,8 @@
    "dateOfJoining": "2004-03-24",
    "superannuationDate": "2035-12-31",
    "products": [
-    "ASI",
-    "PLFS"
+    "Infra-Projects",
+    "MPLADS"
    ],
    "serviceStatus": "in_service"
   },
@@ -527,7 +544,7 @@
    "dateOfJoining": "2017-09-07",
    "superannuationDate": "2049-01-31",
    "products": [
-    "ASI"
+    "SDG-NIF"
    ],
    "serviceStatus": "in_service"
   },
@@ -729,9 +746,7 @@
    "dateOfBirth": "1998-11-07",
    "dateOfJoining": "2024-05-29",
    "superannuationDate": "2058-11-30",
-   "products": [
-    "HCES"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_839805543": {
@@ -811,7 +826,7 @@
    "dateOfJoining": "2017-06-22",
    "superannuationDate": "2052-04-30",
    "products": [
-    "ASI"
+    "MPLADS"
    ],
    "serviceStatus": "in_service"
   },
@@ -846,10 +861,7 @@
    "dateOfBirth": "1970-01-29",
    "dateOfJoining": "2000-04-15",
    "superannuationDate": "2030-01-31",
-   "products": [
-    "NAS",
-    "SDG-NIF"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_333566606": {
@@ -865,9 +877,7 @@
    "dateOfBirth": "1991-10-29",
    "dateOfJoining": "2015-06-24",
    "superannuationDate": "2051-10-31",
-   "products": [
-    "PLFS"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_640913819": {
@@ -946,9 +956,7 @@
    "dateOfBirth": "1980-11-27",
    "dateOfJoining": "2008-03-29",
    "superannuationDate": "2040-11-30",
-   "products": [
-    "PLFS"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_511749730": {
@@ -982,9 +990,7 @@
    "dateOfBirth": "1983-11-05",
    "dateOfJoining": "2014-08-19",
    "superannuationDate": "2043-11-30",
-   "products": [
-    "ASI"
-   ],
+   "products": [],
    "serviceStatus": "in_service"
   },
   "usr_607792264": {
@@ -1342,8 +1348,8 @@
    "dateOfJoining": "2013-04-22",
    "superannuationDate": "2051-09-30",
    "products": [
-    "CPI",
-    "PLFS"
+    "Infra-Projects",
+    "MPLADS"
    ],
    "serviceStatus": "in_service"
   },

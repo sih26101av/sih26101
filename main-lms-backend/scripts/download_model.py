@@ -17,6 +17,8 @@ Render Build Command:
 
 Environment variables (optional):
     HF_TOKEN              — HuggingFace token (higher rate limits)
+    --reranker            — also fetch the optional Stage 2b cross-encoder
+                            (ai/reranker.py); off by default, ~470 MB.
     EMBEDDER_ONNX_FILE    — ONNX file inside the model repo (default onnx/model.onnx).
                             A quantised export (e.g. onnx/model_qint8_avx512_vnni.onnx)
                             cuts RAM ~4× but shifts scores slightly — re-run
@@ -29,6 +31,7 @@ import logging
 import os
 import shutil
 import sys
+from typing import List, Optional
 
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, BACKEND_DIR)
@@ -50,26 +53,57 @@ def _fetch(repo: str, filename: str, dest: str) -> None:
     shutil.copyfile(src, dest)
 
 
-def download(name: str) -> None:
+def download(name: str, config_files: Optional[List[str]] = None,
+             onnx_candidates: Optional[List[str]] = None) -> None:
     target = onnx_model_dir(name)
     model_path = os.path.join(target, "model.onnx")
     if os.path.exists(model_path):
         logger.info("OK %s already cached (%.1f MB).", name, os.path.getsize(model_path) / 1_048_576)
         return
 
-    logger.info("Downloading %s (%s) …", name, ONNX_FILE)
+    candidates = onnx_candidates or [ONNX_FILE]
+    logger.info("Downloading %s (%s) …", name, candidates[0])
     tmp = target + ".partial"
     shutil.rmtree(tmp, ignore_errors=True)
-    for f in CONFIG_FILES:
+    for f in (CONFIG_FILES if config_files is None else config_files):
         _fetch(name, f, os.path.join(tmp, f))
     try:
         _fetch(name, "tokenizer.json", os.path.join(tmp, "tokenizer.json"))
     except Exception:
         _fetch(name, "onnx/tokenizer.json", os.path.join(tmp, "tokenizer.json"))
-    _fetch(name, ONNX_FILE, os.path.join(tmp, "model.onnx"))   # last: its presence marks "complete"
+    for i, onnx_file in enumerate(candidates):        # last: its presence marks "complete"
+        try:
+            _fetch(name, onnx_file, os.path.join(tmp, "model.onnx"))
+            break
+        except Exception:
+            if i == len(candidates) - 1:
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise
     shutil.rmtree(target, ignore_errors=True)
     os.replace(tmp, target)
     logger.info("OK %s -> %s (%.1f MB).", name, target, os.path.getsize(model_path) / 1_048_576)
+
+
+def download_reranker() -> None:
+    """
+    Opt-in: the Stage 2b cross-encoder (ai/reranker.py). It is a separate
+    ~470 MB model and the engine runs fine without it, so it is NOT part of the
+    default build step — run `python scripts/download_model.py --reranker` and
+    set ENABLE_CROSS_ENCODER=1 to use it. A cross-encoder repo has no
+    sentence-transformers pooling config, and not every one ships an ONNX
+    export; without one, install sentence-transformers and the reranker loads
+    the PyTorch weights instead.
+    """
+    from ai.reranker import reranker_name
+
+    name = reranker_name()
+    try:
+        download(name, config_files=[],
+                 onnx_candidates=["onnx/model.onnx", "model.onnx", "onnx/model_quantized.onnx"])
+    except Exception as exc:
+        logger.warning("No ONNX export for %s (%s). Install sentence-transformers to "
+                       "run it from the PyTorch weights, or export it yourself into %s.",
+                       name, exc, onnx_model_dir(name))
 
 
 def warm() -> None:
@@ -88,6 +122,8 @@ def warm() -> None:
 def main() -> None:
     for name in sorted({model_name(role) for role in DEFAULT_MODELS}):
         download(name)
+    if "--reranker" in sys.argv:
+        download_reranker()
     if "--no-warm" not in sys.argv:
         try:
             warm()

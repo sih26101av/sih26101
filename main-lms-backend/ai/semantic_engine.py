@@ -225,3 +225,95 @@ def vectorize_profile(skill_gaps: list[dict]) -> dict:
         "domain_breakdown": dict(domain_counts),
         "tier": tier,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Secondary corpora — currently only the admin console (routers/admin_chat.py)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CorpusIndex:
+    """
+    An independently-tuned prototype index over `ai/<dirname>/<lang>.json`.
+
+    The learner corpus above stays a module-level singleton because it is
+    encoded during startup warm-up and its accuracy is tracked by
+    scripts/eval_intents.py. A secondary corpus is kept out of it on purpose:
+    adding admin intents there would change every learner classification and
+    break `test_chat_messages.test_every_classifier_intent_has_a_reply`.
+
+    Two deliberate differences from the learner index:
+      • lazy — prototypes are encoded on the first admin question, not at
+        startup (disk-memoised by `encode_cached`, so it is a one-off);
+      • no language pooling — every prototype is searched whatever the query's
+        language. The admin vocabulary is small and largely English loanwords
+        ("compliance", "ACBP", "dashboard"), so a Marathi question is better
+        served by the English and Hindi prototypes than confined to the two
+        Marathi ones.
+    """
+
+    def __init__(self, dirname: str) -> None:
+        self.dirname = dirname
+        self.corpus: dict[str, dict[str, list[str]]] = {}
+        self.intents: tuple[str, ...] = ()
+        self._labels = np.array([], dtype=object)
+        self._sentences: list[str] = []
+        self._vecs: Optional[np.ndarray] = None
+        self._load()
+
+    def _load(self) -> None:
+        directory = os.path.join(os.path.dirname(__file__), self.dirname)
+        for lang in CORPUS_LANGUAGES:
+            path = os.path.join(directory, f"{lang}.json")
+            if not os.path.exists(path):        # a language may not be translated yet
+                continue
+            with open(path, encoding="utf-8") as fh:
+                for intent, phrases in json.load(fh).items():
+                    self.corpus.setdefault(intent, {})[lang] = phrases
+        self.intents = tuple(sorted(self.corpus))
+        labels: list[str] = []
+        for intent in self.intents:
+            for phrases in self.corpus[intent].values():
+                labels.extend([intent] * len(phrases))
+                self._sentences.extend(phrases)
+        self._labels = np.array(labels)
+
+    def ensure(self) -> None:
+        if self._vecs is not None or not self._sentences:
+            return
+        try:
+            logger.info("[SemanticEngine/%s] Encoding %d prototypes (%d intents)…",
+                        self.dirname, len(self._sentences), len(self.intents))
+            self._vecs = encode_cached("chat", self._sentences, kind="query", embedder=get_embedder("chat"))
+        except Exception as exc:
+            logger.warning("[SemanticEngine/%s] Could not encode prototypes: %s", self.dirname, exc)
+            self._vecs = None
+
+    def is_ready(self) -> bool:
+        return is_embedder_ready("chat") and self._vecs is not None
+
+    def classify(self, query: str, lang: str) -> tuple[str, float]:
+        """(best_intent, confidence) on the same cosine scale as classify_intent."""
+        self.ensure()
+        if self._vecs is None:
+            return "general", 0.0
+        try:
+            text = _correct_tokens(query) if lang in LATIN_LANGUAGES else query
+            query_vec = get_embedder("chat").encode(text, normalize_embeddings=True, show_progress_bar=False)
+            if query_vec.ndim == 2:
+                query_vec = query_vec[0]
+            sims = self._vecs @ query_vec
+        except Exception as exc:
+            logger.warning("[SemanticEngine/%s] classification failed: %s", self.dirname, exc)
+            return "general", 0.0
+        best_intent, best = "general", 0.0
+        for intent in self.intents:
+            intent_sims = sims[self._labels == intent]
+            if not intent_sims.size:
+                continue
+            score = float(np.sort(intent_sims)[-min(TOP_K, intent_sims.size):].mean())
+            if score > best:
+                best_intent, best = intent, score
+        return best_intent, best
+
+
+ADMIN_INDEX = CorpusIndex("intent_corpus_admin")

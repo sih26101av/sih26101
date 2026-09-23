@@ -70,6 +70,12 @@ def summary(db: Session) -> Dict[str, Any]:
         ({"courseId": cid, **counts,
           "net": counts.get("thumbs_up", 0) - counts.get("thumbs_down", 0)} for cid, counts in per_course.items()),
         key=lambda c: (-(c.get("click", 0) + c.get("enrol", 0)), c["courseId"]))
-    return {"courses": courses,
-            "byRank": [{"rank": r, **c} for r, c in sorted(by_rank.items())],
-            "events": sorted(EVENTS)}
+    # Real click-through per rank: the UI logs an impression for every card it
+    # actually put in front of a learner, so clicks finally have a denominator.
+    # `ctr` is null for a rank with no impressions recorded yet (older rows).
+    by_rank_rows = []
+    for r, c in sorted(by_rank.items()):
+        shown = c.get("impression", 0)
+        by_rank_rows.append({"rank": r, **c,
+                             "ctr": round(c.get("click", 0) / shown, 4) if shown else None})
+    return {"courses": courses, "byRank": by_rank_rows, "events": sorted(EVENTS)}

@@ -6,7 +6,7 @@
  * SkillGapCard / CompetencyOverviewTable trigger via `onFindCourses`.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import CourseCard from './CourseCard';
 import { fetchMyRecommendationVotes, sendRecommendationFeedback } from '../../services/api';
@@ -62,10 +62,32 @@ const RecommendationsPanel: React.FC<Props> = ({
       .then(v => { if (v) setVotes(v); });
   };
 
-  const matched = filter ? sorted.filter((r) => matches(r, filter)) : sorted;
+  const matched = useMemo(
+    () => (filter ? sorted.filter((r) => matches(r, filter)) : sorted),
+    [sorted, filter],
+  );
   // A filter that matches nothing falls back to the full list rather than an empty grid.
   const fellBack = Boolean(filter) && matched.length === 0 && sorted.length > 0;
-  const shown = (fellBack ? sorted : matched).slice(0, limit ?? undefined);
+  const shown = useMemo(
+    () => (fellBack ? sorted : matched).slice(0, limit ?? undefined),
+    [fellBack, sorted, matched, limit],
+  );
+
+  // Impressions: what was actually put in front of the learner, at which rank.
+  // Without these the admin click-through-by-rank report has clicks but no
+  // denominator. Once per course per panel, best-effort, never blocks a render.
+  const seen = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const fresh = shown.filter((r) => !seen.current.has(r.course.courseId));
+    if (fresh.length === 0) return;
+    fresh.forEach((rec) => {
+      seen.current.add(rec.course.courseId);
+      sendRecommendationFeedback(rec, 'impression', {
+        surface: limit ? 'overview' : 'recommendations',
+        filtered: Boolean(filter) && !fellBack,
+      });
+    });
+  }, [shown, filter, fellBack, limit]);
 
   if (sorted.length === 0) {
     return (

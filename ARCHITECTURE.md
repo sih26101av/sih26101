@@ -61,8 +61,8 @@ request. All mock data is synthetic and comes from one deterministic generator,
 | `auth/` | JWT access tokens + httpOnly refresh cookie, bcrypt hashing, `users_auth` table, RBAC dependencies, `seed.py` (one-shot user seeding from the mock server) |
 | `adapters/` | `ILearningPlatformAdapter` port + `MockIgotAdapter` HTTP adapter to port 8001 |
 | `services/` | `competency_service.py` (6-term baseline formula), `baseline_assembler.py` (evidence gathering), `recommendation_service.py` (3-stage hybrid engine), `karma_engine.py` (Strategy-based points), `document_extractor.py` (certificate → FRAC: Gemini, else OCR + e5), `media_quiz/` (probe → route → evidence timeline → cited MCQs) |
-| `ai/` | `embedder.py` (shared ONNX/sentence-transformers singleton), `semantic_engine.py` (chatbot intent classifier), `rag_engine.py` + `vector_store.py` + `seed_knowledge.py` (Ollama/ChromaDB — **disconnected**, Tier 3) |
-| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `learning_mode.py` (NotebookLM-style study chat over an uploaded document, mounted at `/api/v1/rag/learning`), `competency.py` (certificate upload + admin verification, baseline calc), `career.py` (next-role career readiness, level disputes), `recommendation_feedback.py` (clicks / enrolments / thumbs), `diagnostic.py` (adaptive level check), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload), `insights.py` (SCIL v6 admin views), `admin_console.py` (admin KPIs / roster pages / trends / assignments / nudges / emerging skills / system health / CSV exports) |
+| `ai/` | `embedder.py` (shared ONNX/sentence-transformers singleton), `semantic_engine.py` (chatbot intent classifier + `CorpusIndex`/`ADMIN_INDEX` for the admin corpus), `rag_engine.py` + `vector_store.py` + `seed_knowledge.py` (Ollama/ChromaDB — **disconnected**, Tier 3) |
+| `routers/` | `chatbot.py` (Gyan), `rag.py` (document→quiz + grading), `media_quiz.py` (video/audio/YouTube→quiz, mounted at `/api/v1/rag/media`), `learning_mode.py` (NotebookLM-style study chat over an uploaded document, mounted at `/api/v1/rag/learning`), `competency.py` (certificate upload + admin verification, baseline calc), `career.py` (next-role career readiness, level disputes), `recommendation_feedback.py` (clicks / enrolments / thumbs), `diagnostic.py` (adaptive level check), `karma.py`, `ai_tools.py` (Ollama/Chroma health + knowledge upload), `insights.py` (SCIL v6 admin views), `admin_console.py` (admin KPIs / roster pages / trends / assignments / nudges / emerging skills / system health / CSV exports), `admin_chat.py` (Gyan's admin tier, same prefix and role guard) |
 | `models/` | `models.py` (SQLAlchemy domain + evidence/quiz/karma tables), `domain.py` (Pydantic response schemas) |
 | `scripts/` | `download_model.py` (build step: ONNX exports → `ai/.cache/onnx/`, pre-warms `ai/.cache/emb/`), `quantize_model.py` (legacy `model_int8.onnx`), `eval_intents.py` |
 
@@ -113,8 +113,10 @@ self-or-admin only (`_ensure_can_view`).
 Same resolved levels → `calculate_gaps` (Stage 0 priority `gap·target/5`, UNASSESSED
 skipped → `needsDiagnostic`) → `get_recommendations`: FRAC-tag + level filter
 `current < courseLevel ≤ target` (Stage 1) → dense + BM25 sparse + RRF fusion +
-TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3), interleaved by
-level, concatenated in gap-priority order.
+TPAC boost (Stage 2) → `0.6·relevance + 0.4·quality` (Stage 3) — both on an
+absolute catalogue-wide scale, so scores are comparable across gaps and pools —
+picked interleaved by level, then shown best match first, concatenated in
+gap-priority order.
 
 **Learning pathway** (`GET /api/v1/learner/{id}/pathway`)
 Same resolved levels → `build_pathway` per competency (one course per FRAC level,
@@ -184,6 +186,17 @@ synthetic mock data.
 backend runs regex intercepts → semantic intent classification → templated reply,
 optionally returning `navigate_action(s)` the frontend executes (tab switch,
 scroll, theme, language, login modal).
+
+**Admin chat** (`POST /api/v1/admin/console/chat`, `require_role("admin")`) — the
+same assistant with a second, admin-only tier. This one is the other way round:
+the frontend posts **no** data beyond the message and the filter bar, and the
+backend reads the console's own cached roster, `services/admin_analytics`, the
+workforce snapshot and `services/system_health` to answer about KPIs,
+compliance, ACBP progress, departments, shortages, emerging skills, trends,
+nudges, assigned plans and **one named official** (by `usr_…`, `EMP-…`, email or
+fuzzy name). Two prototype corpora are scored on the same embedder — the admin
+one (`ai/intent_corpus_admin/`) and the learner one — and the higher score wins,
+so every earlier capability still answers. See `docs/features/chatbot-gyan.md`.
 
 **Chat → Assessment Studio hand-off** — Gyan stays offline (no LLM key), so it
 never reads an attached document itself. The learner attaches a file in the

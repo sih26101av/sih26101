@@ -1,0 +1,88 @@
+{
+  "admin_overview": [
+    "কর্মীবাহিনীর সারসংক্ষেপ দিন",
+    "ড্যাশবোর্ডের সারাংশ বলুন"
+  ],
+  "admin_officials": [
+    "রোস্টারে কতজন আধিকারিক আছেন",
+    "মোট আধিকারিকের সংখ্যা কত"
+  ],
+  "admin_compliance": [
+    "প্রশিক্ষণ অনুবর্তিতা কত",
+    "কতজন আধিকারিক compliant"
+  ],
+  "admin_mandatory": [
+    "বাধ্যতামূলক প্রশিক্ষণের অবস্থা কী",
+    "কতজন বাধ্যতামূলক কোর্সে পিছিয়ে আছেন"
+  ],
+  "admin_departments": [
+    "বিভাগ অনুযায়ী অনুবর্তিতা দেখান",
+    "কোন বিভাগ সবচেয়ে এগিয়ে"
+  ],
+  "admin_shortages": [
+    "কোন দক্ষতার সবচেয়ে বড় ঘাটতি",
+    "সবচেয়ে বড় skill gap কোনগুলি"
+  ],
+  "admin_emerging": [
+    "আগামী বছর কী প্রশিক্ষণ দেওয়া উচিত",
+    "উদীয়মান দক্ষতার রিপোর্ট দেখান"
+  ],
+  "admin_trends": [
+    "সময়ের সাথে সংখ্যাগুলি কীভাবে বদলেছে",
+    "গত ৯০ দিনের প্রবণতা দেখান"
+  ],
+  "admin_health": [
+    "সিস্টেম ঠিকঠাক চলছে কি",
+    "পরিষেবার অবস্থা পরীক্ষা করুন"
+  ],
+  "admin_nudges": [
+    "সাম্প্রতিক অনুস্মারক দেখান",
+    "কাকে nudge পাঠানো হয়েছে"
+  ],
+  "admin_assignments": [
+    "কোন প্রশিক্ষণ পরিকল্পনা বরাদ্দ হয়েছে",
+    "বরাদ্দ করা কোর্স দেখান"
+  ],
+  "admin_needs_training": [
+    "কাদের প্রশিক্ষণ দরকার",
+    "কোন আধিকারিকরা compliant নন"
+  ],
+  "admin_user_lookup": [
+    "এই আধিকারিক সম্পর্কে বলুন",
+    "একজন কর্মচারীর বিবরণ দেখান"
+  ],
+  "admin_capabilities": [
+    "আপনি এখানে কী করতে পারেন",
+    "admin হিসেবে কীভাবে সাহায্য করবেন"
+  ],
+  "navigation_admin_dashboard": [
+    "admin ড্যাশবোর্ড খুলুন"
+  ],
+  "navigation_admin_officials": [
+    "আধিকারিক ট্যাব খুলুন"
+  ],
+  "navigation_admin_competencies": [
+    "FRAC দক্ষতা ট্যাব খুলুন"
+  ],
+  "navigation_admin_analytics": [
+    "analytics ট্যাব খুলুন"
+  ],
+  "navigation_admin_emerging": [
+    "উদীয়মান দক্ষতা ট্যাব খুলুন"
+  ],
+  "navigation_admin_actions": [
+    "actions ট্যাব খুলুন"
+  ],
+  "navigation_admin_insights": [
+    "workforce insights ট্যাব খুলুন"
+  ],
+  "navigation_admin_reports": [
+    "reports ট্যাব খুলুন"
+  ],
+  "navigation_learner_dashboard": [
+    "learner ড্যাশবোর্ড খুলুন"
+  ],
+  "navigation_home": [
+    "হোম পেজে নিয়ে চলুন"
+  ]
+}

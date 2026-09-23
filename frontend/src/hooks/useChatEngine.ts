@@ -10,7 +10,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { SkillGapEntry, CourseRecommendation } from '../types/domain';
-import { sendChatMessage, type ChatLanguage, type ChatMessage, type NavigateAction } from '../services/chatApi';
+import { sendChatMessage, type ChatLanguage, type ChatMessage, type ChatReply, type NavigateAction } from '../services/chatApi';
 import { chatCopy } from '../i18n/chatLanguages';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,6 +19,19 @@ export interface PendingNavAction {
   action: NavigateAction;
   confirming: boolean;
 }
+
+/**
+ * Where a widget's messages go. The default is `sendChatMessage`
+ * (POST /api/v1/chat, browser fallback on failure); the admin console swaps in
+ * its own authenticated call to /api/v1/admin/console/chat. Everything below —
+ * typing delay, action execution, the confirmation banner — is identical
+ * whichever endpoint answers.
+ */
+export type ChatTransport = (
+  message: string,
+  history: ChatMessage[],
+  lang: ChatLanguage,
+) => Promise<ChatReply>;
 
 export interface UseChatEngineOptions {
   officialId: string;
@@ -33,6 +46,8 @@ export interface UseChatEngineOptions {
   onNavigate?: (action: NavigateAction) => void;
   onThemeToggle?: (target: 'dark' | 'light' | 'toggle') => void;
   onLanguageChange?: (target: ChatLanguage) => void;
+  /** Overrides the default POST /api/v1/chat call. */
+  transport?: ChatTransport;
 }
 
 export interface UseChatEngineReturn {
@@ -60,6 +75,7 @@ export function useChatEngine({
   onNavigate,
   onThemeToggle,
   onLanguageChange,
+  transport,
 }: UseChatEngineOptions): UseChatEngineReturn {
   const [messages, setMessages]       = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping]       = useState(false);
@@ -86,12 +102,14 @@ export function useChatEngine({
     setIsTyping(true);
 
     try {
-      const { reply, detectedLanguage, navigateAction, navigateActions } = await sendChatMessage(
-        officialId, trimmed, messages,
-        jobRole, department, skillGaps, recommendations,
-        fullName, govId, context,
-        lang,   // widget language — used when the message itself gives no signal
-      );
+      const { reply, detectedLanguage, navigateAction, navigateActions } = transport
+        ? await transport(trimmed, messages, lang)
+        : await sendChatMessage(
+            officialId, trimmed, messages,
+            jobRole, department, skillGaps, recommendations,
+            fullName, govId, context,
+            lang,   // widget language — used when the message itself gives no signal
+          );
 
       await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
 
@@ -137,7 +155,7 @@ export function useChatEngine({
     } finally {
       setIsTyping(false);
     }
-  }, [isTyping, messages, officialId, jobRole, department, fullName, govId, skillGaps, recommendations, context, lang, onThemeToggle, onLanguageChange]);
+  }, [isTyping, messages, officialId, jobRole, department, fullName, govId, skillGaps, recommendations, context, lang, transport, onThemeToggle, onLanguageChange]);
 
   const confirmNav = useCallback(() => {
     if (!pendingNav) return;

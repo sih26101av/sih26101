@@ -160,9 +160,9 @@ def test_mandatory_courses_always_included_with_badge(engine):
 
 def test_why_recommended_describes_the_level_step(engine):
     recs = engine.get_recommendations([_gap(engine, "comp_a", 1, 4)], limit_per_gap=3)
-    first = recs[0]
-    assert first.why["gap"]["competencyId"] == "comp_a"
-    assert first.why["levelStep"] == {"from": 1, "to": first.courseLevel, "kind": "next_step"}
+    step_up = next(r for r in recs if r.courseLevel == 2)
+    assert step_up.why["gap"]["competencyId"] == "comp_a"
+    assert step_up.why["levelStep"] == {"from": 1, "to": 2, "kind": "next_step"}
 
 
 def test_stored_embeddings_are_reused_only_when_text_matches(tmp_path, monkeypatch):
@@ -201,7 +201,19 @@ def test_latest_vote_wins_and_clear_removes_it(db):
     assert fs.user_votes(db, "u") == {"c1": "down"}
     summary = fs.summary(db)
     assert {c["courseId"] for c in summary["courses"]} == {"c1", "c2", "c3"}
-    assert summary["byRank"] == [{"rank": 1, "click": 1}]
+    # No impressions logged at that rank yet → a click count but no rate to claim.
+    assert summary["byRank"] == [{"rank": 1, "click": 1, "ctr": None}]
+
+
+def test_click_through_by_rank_needs_the_impressions_the_ui_logs(db):
+    from services import feedback_service as fs
+    for course in ("c1", "c2", "c3", "c4"):
+        fs.record(db, "u", course, "impression", rank=1)
+    fs.record(db, "u", "c1", "click", rank=1)
+    fs.record(db, "u", "c9", "impression", rank=2)
+    row = {r["rank"]: r for r in fs.summary(db)["byRank"]}
+    assert row[1]["impression"] == 4 and row[1]["click"] == 1 and row[1]["ctr"] == 0.25
+    assert row[2]["ctr"] == 0.0
 
 
 @pytest.mark.parametrize("mu, shown, status", [(4.3, 3, "RAISED"), (3.1, 3, "CONFIRMED"),

@@ -19,7 +19,11 @@ three can never disagree.
   - `_calculate_recency_multiplier` — true half-life decay (`0.5^(t/h)`) on
     certificate age, 3y Domain/Technical, 8y Behavioural, floor 0.2.
   - `compute_synergy(comp_id, verified_scores_by_comp)` — bonus only for pairs in
-    `ADJACENT_COMPETENCIES` (now keyed by the real FRAC catalogue ids), cap 0.15.
+    `ADJACENT_COMPETENCIES` (keyed by the real FRAC catalogue ids), cap 0.15.
+    35 competencies now have an adjacency entry: the original 9 plus the
+    macro-accounts, survey-methodology, field-operations and data-engineering
+    families added with the 205-competency dictionary. Competencies outside the
+    table simply get no synergy — never a blanket same-category credit.
   - Self-report is discounted ×0.6; seniority is zeroed for Domain/Technical.
 - `main-lms-backend/services/baseline_assembler.py`
   - `BaselineAssembler(course_comp_map, rater_offsets=None)` — map is `{courseId: {compId: FRAC level}}`

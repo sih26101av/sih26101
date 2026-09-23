@@ -14,6 +14,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -45,6 +46,8 @@ import SystemHealthPanel from '../components/admin/SystemHealthPanel';
 import EmergingSkills from '../components/admin/EmergingSkills';
 import AdminActions from '../components/admin/AdminActions';
 import CertificateReviewQueue from '../components/admin/CertificateReviewQueue';
+import AdminChatWidget from '../components/admin/AdminChatWidget';
+import { useAuth } from '../context/AuthContext';
 import { describeFilters, printReport, type ReportSection } from '../components/admin/adminReport';
 
 type AdminTab = 'dashboard' | 'officials' | 'competencies' | 'analytics' | 'emerging' | 'actions' | 'insights' | 'reports';
@@ -184,6 +187,8 @@ const SkillTableRow: React.FC<{ skill: SkillRow }> = ({ skill }) => (
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const AdminDashboard: React.FC = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [filters, setFilters] = useState<AdminFilters>({});
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -405,6 +410,7 @@ const AdminDashboard: React.FC = () => {
   );
 
   return (
+    <>
     <AppShell
       groups={navGroups}
       activeId={activeTab}
@@ -762,6 +768,24 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
     </AppShell>
+
+      {/* ── Gyan, on the admin console ───────────────────────────────────── */}
+      {/* The filter bar rides along, so an unscoped question ("what is the
+          compliance?") answers about whatever is on screen. */}
+      <AdminChatWidget
+        adminName={authUser?.username}
+        filters={filters}
+        onNavigate={(action) => {
+          if (action.type === 'tab') {
+            const tabs: AdminTab[] = ['dashboard', 'officials', 'competencies', 'analytics',
+                                      'emerging', 'actions', 'insights', 'reports'];
+            if ((tabs as string[]).includes(action.target)) setActiveTab(action.target as AdminTab);
+          } else if (action.type === 'redirect') {
+            navigate(action.target);
+          }
+        }}
+      />
+    </>
   );
 };
 

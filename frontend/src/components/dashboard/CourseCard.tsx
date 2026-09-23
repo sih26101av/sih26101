@@ -52,12 +52,15 @@ interface MatchScoreBarProps {
   quality:       number;
 }
 
+// The backend score is now an absolute scale (a course scores the same whatever
+// it is shown next to), so the bands mean something fixed: 80+ is a strong match
+// for this competency and level, 65+ solid, below that worth a second look.
 const MatchScoreBar: React.FC<MatchScoreBarProps> = ({ score, relevance, quality }) => {
   const [showTip, setShowTip] = useState(false);
   const pct     = Math.round(score    * 100);
   const relPct  = Math.round(relevance * 100);
   const qualPct = Math.round(quality   * 100);
-  const color   = pct >= 90 ? 'bg-green-500' : pct >= 75 ? 'bg-blue-500' : 'bg-amber-400';
+  const color   = pct >= 80 ? 'bg-green-500' : pct >= 65 ? 'bg-blue-500' : 'bg-amber-400';
 
   return (
     <div className="relative">
@@ -178,6 +181,13 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation, vote, onFeedbac
             relevance={relevanceScore ?? 0}
             quality={qualityScore ?? 0}
           />
+          {mandatory && (
+            /* A mandatory course is listed first because the ACBP requires it —
+               not because it scored highest. Say so, so the rank reads honestly. */
+            <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+              Listed first because your ACBP requires it, not because of this score.
+            </p>
+          )}
         </div>
 
         {/* Gap link */}

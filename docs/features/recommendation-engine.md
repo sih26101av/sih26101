@@ -5,6 +5,12 @@ Level-aware hybrid retrieval: prioritise gaps, filter the catalogue by FRAC tag
 then turn the ranked courses into a step-by-step learning path per competency and
 one study order across all gaps.
 
+**Scores are absolute.** Relevance and quality are both measured against the
+catalogue, never min-maxed inside the shortlist, so a course scores the same
+whatever it is shown next to, two gaps' scores are comparable, and the weakest
+candidate of a pool is no longer forced to 0.000. The list is shown best match
+first; the order to *study* the courses in is the pathway's job, not this list's.
+
 ## Code
 
 `main-lms-backend/services/recommendation_service.py` — `HybridRecommendationEngine`
@@ -46,14 +52,29 @@ one study order across all gaps.
   (`_TPAC_BOOST`: verified 1.25×, inferred 1.10×, none 1×). Query = official
   FRAC name + description of `gap.catalogue_key` (cached per competency in
   `_query_cache`). No tagged courses at all → full-corpus FAISS `semantic_fallback`.
+- `_relevance(idx, comp, q_emb, bm25, lex_ref, rrf_raw)` / `_blend_relevance` —
+  **the relevance scale**, absolute in [0,1]:
+  `0.45·semantic + 0.20·lexical + 0.35·fusion`.
+  *semantic* = `logistic((cos − µ) / σ)` of the cosine to the FRAC anchor against
+  the **untagged null** (`_untagged_null`: mean/std of the cosines of the courses
+  *not* tagged with the competency) — 0.5 means "as close as a typical untagged
+  course"; *lexical* = `b / (b + _lex_ref(bm25))`, saturating at the corpus median
+  of the query's positive BM25 scores; *fusion* = `rrf / _RRF_MAX` where
+  `_RRF_MAX = 2/(k+1)` is the score of a course ranked 1st on both lists.
+  With no pool behind the course — a `semantic_fallback`, or an ACBP course
+  scored on its own (`_score_one`) — the fusion term is dropped and the other two
+  are re-weighted to carry the whole score.
 - `_score_candidates(gap, levels, exclude_ids)` — Stages 1–3 for one gap:
   `final = 0.6·relevance + 0.4·quality`, `courseLevel`, `tagSupported`, reasons,
   `modality`, `why` (`_why`). **Stage 2b** `_cross_encoder_norm`: when
   `ENABLE_CROSS_ENCODER=1`, `ai/reranker.py` scores the top 20 by RRF with a
   multilingual cross-encoder (`cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`,
-  ONNX in `ai/.cache/onnx/<model>/` or sentence-transformers). Relevance then
-  becomes `0.5·RRF_norm + 0.5·CE_norm`, and anything outside the top 20 gets
-  CE = 0. It is off by default and falls back silently (`reranked` is `null`).
+  ONNX in `ai/.cache/onnx/<model>/` or sentence-transformers;
+  `python scripts/download_model.py --reranker` fetches it). The logits go
+  through a **sigmoid** (their natural calibration), and only the re-ranked head
+  is blended: `0.5·relevance + 0.5·P(relevant)`. A course the re-ranker never
+  looked at keeps its own relevance instead of being zeroed for it. Off by
+  default, falls back silently (`reranked` is `null`).
 - `_why(gap, doc, course_level, uplift, tag_supported)` — structured "why recommended":
   `{gap{competencyId,competencyName,currentLevel,targetLevel,gap},
   levelStep{from,to,kind: next_step|on_the_way|stretch|untagged_level|mandatory},
@@ -65,26 +86,46 @@ one study order across all gaps.
 - `mandatory_recommendations(mandatory, exclude_ids, gaps, names)` — ACBP courses as
   `RecommendationResult(mandatory=True, matchType="acbp_mandatory")` with a
   Mandatory badge; courses outside the catalogue are still listed from ACBP fields.
+  They are **scored like any other course** (`_score_one`) instead of the flat
+  `finalScore = 1.0` they used to claim — an ACBP course outside the catalogue is
+  embedded from its title and takes `_neutral_quality()`. Listed APAR-linked
+  first, then best match; the Mandatory badge, not a fabricated score, is what
+  pins them to the top (the card says so).
 - `_spread_modalities(ordered, k)` — per-gap picks. A candidate in an unseen format
   (`self_paced | classroom | virtual_lab`) replaces a repeat when it is at the
   same level, within the next 3, and within 0.15 finalScore. Picks keep
-  their interleaved order.
-  Sorted content-supported tags first, then `finalScore`.
-- `_tag_support_threshold(comp)` — median cosine of courses *not* tagged with the
-  competency; a tagged course at or below it has `tagSupported=False` (its
-  author-declared tag isn't backed by content → preferred last, flagged for review).
+  their interleaved order until `_by_score` re-orders the block for display.
+  `_score_candidates` itself still returns content-supported tags first, then
+  `finalScore` — `build_pathway` reads that order.
+- `_untagged_null(comp, q_emb)` — (median, mean, std) of the cosines of the
+  courses *not* tagged with the competency: the null distribution for "an
+  unrelated course", derived from the data with no tuned constant. The median is
+  `_tag_support_threshold` (a tagged course at or below it has
+  `tagSupported=False` — its author-declared tag isn't backed by content →
+  preferred last, flagged for review); the mean and std calibrate the semantic
+  half of the relevance score. Cached per competency.
 - `set_measured_uplift(estimates)` / `course_meta()` — SCIL v6 §6 coverage
   learning: per-course measured uplift from outcome data
   (`uplift_service.estimate_uplift`, run at startup). Results carry
   `measuredUplift` / `upliftFlag`; an uplift-flagged course is ordered like an
   unsupported tag (last resort at its level, reason note) — see
   [workforce-insights.md](workforce-insights.md). Not blended into `finalScore`.
-- `_quality_score` — **Stage 3** `0.35·completion + 0.35·rating + 0.20·log-pop +
-  0.10·tpac_flag`, min-max within the shortlist; ratings use Bayesian shrinkage.
+- `_quality_score(doc)` — **Stage 3** `0.35·completion + 0.35·rating +
+  0.20·log-pop + 0.10·tpac_flag` on an **absolute catalogue-wide scale**
+  (`_build_quality_norms`, run once at build time): completion is the published
+  rate as-is, rating is the Bayesian-shrunk stars mapped 1..5 → 0..1, popularity
+  is `log1p(enrolments)/log1p(p95 enrolments)` capped at 1. A course *missing* a
+  field takes the catalogue mean of that component — ~9% of the catalogue has no
+  rating or enrolment data at all and used to score 0 for it.
+  `_neutral_quality()` is the same average for a course the catalogue does not
+  have. The `shortlist` argument is still accepted and ignored.
 - `get_recommendations(gaps, limit_per_gap, enrolled_ids)` — level-gated: only
   courses with `current < courseLevel ≤ target` (nearest level above target as a
-  flagged stretch if the band is empty); picks interleaved by level (best of each
-  level, lowest first). Blocks concatenated in gap-priority order, no global re-sort.
+  flagged stretch if the band is empty). Level interleaving and the modality
+  spread choose *which* courses to show (a ladder across levels, mixed formats),
+  then `_by_score` orders the block **best match first** so the list agrees with
+  the score printed on each card; a flagged tag / ~0 measured uplift still sorts
+  last. Blocks concatenated in gap-priority order, no global re-sort.
 - `build_pathway(comp_id, comp_name, current_level, target_level, confidence, basis,
   evidence_level, completed_ids, in_progress, role_comp_id, crosswalk)` — **Stage 4**:
   one course per FRAC level from current+1 to target. Step kinds:
@@ -155,7 +196,9 @@ all reading `_learner_competency_state` — see
   `POST /api/v1/recommendations/feedback {courseId, event, competencyId?, rank?, finalScore?, context?}`
   with `event ∈ impression|click|enrol|thumbs_up|thumbs_down|clear_vote`;
   `GET /api/v1/recommendations/feedback/mine` → `{votes{courseId: up|down}}` (latest vote wins);
-  `GET /api/v1/admin/recommendations/feedback` → per-course counts + click-through by rank.
+  `GET /api/v1/admin/recommendations/feedback` → per-course counts + click-through
+  by rank (`byRank[].ctr` = clicks / impressions, `null` until that rank has
+  impressions).
   Not gated on warm-up (`_UNGATED`).
 - `get_learning_pathway` — `build_pathway` per role competency (catalogue id from
   the crosswalk, role id echoed back), each pathway gets the row's `opportunity`,
@@ -165,8 +208,14 @@ Frontend: `src/services/api.ts::fetchRecommendations` (maps `why`, `mandatory`, 
 `courseLevel`, `tpacSource`, `measuredUplift`), `sendRecommendationFeedback`,
 `fetchMyRecommendationVotes`, `fetchLearningPathways`;
 `components/dashboard/CourseCard.tsx` (Mandatory badge, format + level line, "Why
-recommended?" summary + level step + badges, 👍/👎, title click and Enroll logged);
-`RecommendationsPanel.tsx` owns the vote state (optimistic) and sends feedback; `components/dashboard/LearningPathway.tsx`
+recommended?" summary + level step + badges, 👍/👎, title click and Enroll logged).
+Its `MatchScoreBar` bands read against the absolute scale — ≥80 green, ≥65 blue,
+amber below — and a mandatory card says in one line that it is listed first
+because the ACBP requires it, not because of its score.
+`RecommendationsPanel.tsx` owns the vote state (optimistic), sends feedback, and
+logs one **impression** per card it actually shows (once per course per panel,
+best-effort), which is the denominator the admin click-through report needs;
+`components/dashboard/LearningPathway.tsx`
 (`PathwayLadder` timeline, `StudyPlanSummary`), rendered from `SkillGapCard.tsx`
 ("View learning path" per gap, study order on top; needs `officialId` prop).
 
@@ -234,11 +283,19 @@ channel at its FRAC level — for crosswalked competencies too (`comp_aliases`).
 
 ## TODOs / edge cases
 
-- Mock data (regenerated, SCIL v6 Phase A): role competencies now use the
-  catalogue ids (100% `exact` crosswalk), tag support is 100% (was 52%), 34/40
-  competencies have a full L1–L5 ladder with documented holes (see
-  `mock-igot-server/data/README.md`), durations are realistic (median 7 h).
+- Mock data (regenerated, SCIL v6 Phase A, then scaled to a full FRAC-size
+  dictionary): role competencies use the catalogue ids (100% `exact`
+  crosswalk), and the catalogue is now **205 competencies / 1,785 courses**
+  (was 40 / 514). Tag support is 100% of 2,115 tag↔course pairs (was 52% before
+  Phase A), 166 of 205 competencies have a full L1–L5 ladder and the other 39
+  are documented holes (see `mock-igot-server/data/README.md`). Durations stay
+  realistic (median 5.5 h; 1.25 h micro-learning, 12 h workshop, 48 h TPAC).
   `tagSupported` / `tagReviewFlags` still guard against mis-tags in real data.
+- **Startup cost scales with the catalogue:** 1,785 courses is 3.5× the vectors
+  to encode. A cold machine with no disk cache and no rows in `courses` spends
+  about 45 s on catalogue embeddings before the engine is ready; with either
+  cache warm it is unchanged. `scripts/download_model.py` pre-warms the disk
+  cache as a deploy build step.
 - Semantic / curated crosswalk mappings are unconfirmed; SCIL v6 wants a human
   confirmation queue.
 - Course vectors are stored in the DB (`courses`) and memoised on disk; crosswalk
@@ -249,12 +306,20 @@ channel at its FRAC level — for crosswalked competencies too (`comp_aliases`).
   (up to `WARMUP_WAIT_SECONDS`, default 240) instead of getting that 503.
 - TPAC boost now follows provenance (verified 1.25×, inferred 1.10×), consistent with
   Stage 3's 1.0 / 0.5 flag. Both multipliers are reasoned defaults.
-- Cross-encoder: the default model is not in `scripts/download_model.py`. Enabling it
-  in production needs an ONNX export in `ai/.cache/onnx/<model>/` (or PyTorch),
-  and the 50/50 RRF/CE blend is not tuned on relevance labels.
+- Cross-encoder: `python scripts/download_model.py --reranker` fetches it (opt-in,
+  ~470 MB, not part of the default build step); if the repo ships no ONNX export
+  the script says so and `sentence-transformers` runs the PyTorch weights instead.
+  The 50/50 relevance/CE blend is still not tuned on relevance labels.
+- The relevance weights (0.45 / 0.20 / 0.35) and the 0.6 / 0.4 final split are
+  reasoned defaults, not fitted — there are no relevance judgements to fit them
+  on. The calibration they sit on (the untagged null, the BM25 median, the p95
+  enrolment reference) is all derived from the catalogue.
+- Because every candidate is tag-filtered *and* level-gated, real scores cluster
+  in roughly 0.70–0.90. That band is the honest one: these courses really are all
+  plausible. The old 0.00–1.00 spread was the shortlist's rank in disguise.
 - Thumbs-down hides a course from that learner only. Feedback is logged, not yet
-  learned from: no bandit or re-weighting, and impressions are not sent by the
-  UI, so CTR by rank uses clicks only.
+  learned from: no bandit or re-weighting. Impressions *are* sent now, so
+  `byRank[].ctr` is a real rate — but only for ranks seen since that change.
 - Not implemented from SCIL v6: data-inferred cross-competency prerequisite edges,
   bandit learning from the feedback log. Cross-encoder re-ranking (opt-in),
   mandatory ACBP in recommendations, modality spread, opportunity tie-break

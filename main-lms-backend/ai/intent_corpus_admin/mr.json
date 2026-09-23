@@ -1,0 +1,88 @@
+{
+  "admin_overview": [
+    "कार्यबलाचा आढावा द्या",
+    "डॅशबोर्डचा सारांश सांगा"
+  ],
+  "admin_officials": [
+    "रोस्टरमध्ये किती अधिकारी आहेत",
+    "एकूण अधिकाऱ्यांची संख्या किती"
+  ],
+  "admin_compliance": [
+    "प्रशिक्षण अनुपालन किती आहे",
+    "किती अधिकारी अनुपालनात आहेत"
+  ],
+  "admin_mandatory": [
+    "अनिवार्य प्रशिक्षणाची स्थिती काय आहे",
+    "किती अधिकारी अनिवार्य कोर्समध्ये मागे आहेत"
+  ],
+  "admin_departments": [
+    "विभागानुसार अनुपालन दाखवा",
+    "कोणता विभाग सर्वात पुढे आहे"
+  ],
+  "admin_shortages": [
+    "कोणत्या क्षमतांची सर्वात मोठी कमतरता आहे",
+    "सर्वात मोठे skill gap कोणते"
+  ],
+  "admin_emerging": [
+    "पुढच्या वर्षी काय प्रशिक्षण द्यावे",
+    "उदयोन्मुख कौशल्यांचा अहवाल दाखवा"
+  ],
+  "admin_trends": [
+    "कालानुसार आकडे कसे बदलले",
+    "गेल्या ९० दिवसांचा कल दाखवा"
+  ],
+  "admin_health": [
+    "सिस्टम व्यवस्थित चालू आहे का",
+    "सेवेची स्थिती तपासा"
+  ],
+  "admin_nudges": [
+    "अलीकडील स्मरणपत्रे दाखवा",
+    "कोणाला nudge पाठवले"
+  ],
+  "admin_assignments": [
+    "कोणत्या प्रशिक्षण योजना नेमल्या आहेत",
+    "नेमलेले कोर्स दाखवा"
+  ],
+  "admin_needs_training": [
+    "कोणाला प्रशिक्षणाची गरज आहे",
+    "कोणते अधिकारी अनुपालनात नाहीत"
+  ],
+  "admin_user_lookup": [
+    "या अधिकाऱ्याबद्दल सांगा",
+    "एका कर्मचाऱ्याचे तपशील दाखवा"
+  ],
+  "admin_capabilities": [
+    "तुम्ही इथे काय करू शकता",
+    "admin म्हणून तुम्ही कशी मदत कराल"
+  ],
+  "navigation_admin_dashboard": [
+    "admin डॅशबोर्ड उघडा"
+  ],
+  "navigation_admin_officials": [
+    "अधिकारी टॅब उघडा"
+  ],
+  "navigation_admin_competencies": [
+    "FRAC क्षमता टॅब उघडा"
+  ],
+  "navigation_admin_analytics": [
+    "analytics टॅब उघडा"
+  ],
+  "navigation_admin_emerging": [
+    "उदयोन्मुख कौशल्य टॅब उघडा"
+  ],
+  "navigation_admin_actions": [
+    "actions टॅब उघडा"
+  ],
+  "navigation_admin_insights": [
+    "workforce insights टॅब उघडा"
+  ],
+  "navigation_admin_reports": [
+    "reports टॅब उघडा"
+  ],
+  "navigation_learner_dashboard": [
+    "learner डॅशबोर्ड उघडा"
+  ],
+  "navigation_home": [
+    "मुख्यपृष्ठावर न्या"
+  ]
+}

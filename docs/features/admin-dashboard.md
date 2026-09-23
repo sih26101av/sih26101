@@ -74,6 +74,12 @@ aggregate at a time. It never downloads and aggregates the whole roster.
     selected officials, due date), the "behind on mandatory" table (selection,
     nudge selected / nudge all in view, custom message), the assigned plans
     with progress bars, and the recent nudges log.
+  - `AdminChatWidget.tsx`: Gyan on the console — the floating assistant, mounted
+    in `AdminDashboard.tsx`. It posts to `/api/v1/admin/console/chat` and answers
+    from the same aggregates these panels use, so the two can't disagree. The
+    filter bar is passed down as the default scope, and a `tab` action switches
+    `activeTab` while a `redirect` navigates. See
+    [chatbot-gyan.md](chatbot-gyan.md).
   - `adminReport.ts`: `printReport` (a print-styled HTML report in a new window
     → the browser's "Save as PDF") and `describeFilters`.
   - Chart colours come from a palette checked with the dataviz validator:
@@ -84,6 +90,10 @@ aggregate at a time. It never downloads and aggregates the whole roster.
   authenticated blob download with 401 refresh.
 
 ### Backend
+- `routers/admin_chat.py`: the assistant's admin tier — `POST /chat` and
+  `GET /chat/mode` under the same `/api/v1/admin/console` prefix and the same
+  `require_role("admin")`. It reads `admin_console._roster()` and
+  `services/admin_chat_data.py` rather than re-querying iGOT.
 - `routers/admin_console.py`:
   - Admin endpoints use `require_role("admin")` and sit under
     `/api/v1/admin/console`.
@@ -108,7 +118,7 @@ aggregate at a time. It never downloads and aggregates the whole roster.
   - `TrainingAssignment`;
   - `TrainingNudge`.
 - `main.py`:
-  - includes `admin_console.router` + `learner_router`;
+  - includes `admin_console.router` + `learner_router` + `admin_chat.router`;
   - `_startup` launches `daily_snapshot_loop()`;
   - the legacy `GET /api/v1/admin/users` and `/admin/frac/competencies` proxies
     are unchanged.
@@ -130,6 +140,8 @@ aggregate at a time. It never downloads and aggregates the whole roster.
 | GET | `/mandatory-behind?page=&pageSize=&search=` | officials with pending ACBP courses, with `lastNudgedAt`, plus `summary` |
 | GET/POST | `/nudges` | the nudge log / send nudges `{userIds?, department?, grade?, office?, message?, force?}` → `{sent, skipped[{userId, reason}]}` |
 | GET | `/emerging-skills` | see below |
+| POST | `/chat` | Gyan, answering from this console — see [chatbot-gyan.md](chatbot-gyan.md). Body `{message, history[], preferred_language, filters, full_name}` → `{reply, detected_language, engine, intent, navigate_action, navigate_actions}` |
+| GET | `/chat/mode` | which tier of the assistant is live |
 | GET | `/system-health?probeGemini=` | `{overall, checkedAt, health (= /health), components[{id, label, status, detail, latencyMs?}], lastDailySnapshot}` |
 | GET | `/export/{kind}.csv` | kind: `roster` (also takes `search`, `status`), `mandatory-behind`, `emerging-skills`, `trends` (`days`), `departments`, `shortages` |
 
@@ -220,6 +232,11 @@ Learner side (the learner or an admin only):
 
 ## TODOs / edge cases
 
+- The assistant answers about any single official — including karma and nudge
+  history — to anyone holding the admin role. Same data as the Officials tab and
+  the roster CSV, one sentence away instead of three clicks.
+- The assistant's scope is one filter set, like the panels: it has no "compare
+  these two departments" answer.
 - There is no learner UI yet for nudges and assignments. The endpoint exists
   (`/training-actions`); wiring it into the learner dashboard notifications is
   left for the learner-dashboard feature.

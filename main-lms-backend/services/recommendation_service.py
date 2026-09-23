@@ -66,6 +66,20 @@ _RRF_K         = 60          # RRF constant
 # RRF multiplier by TPAC provenance: a catalogue-confirmed TPAC course gets the
 # full boost; one inferred only from its NSSTA creator name gets a smaller one.
 _TPAC_BOOST    = {"verified": 1.25, "inferred": 1.10}
+# ── Relevance scale (Bug #9) ──────────────────────────────────────────────────
+# Relevance used to be the RRF score min-max normalised *inside the shortlist*,
+# so the weakest candidate of every pool scored exactly 0.000 however good it was,
+# and a 3-course pool and a 50-course pool were on different scales. It is now an
+# ABSOLUTE score in [0,1], so "62%" means the same thing for every gap:
+#   semantic  cosine to the official FRAC anchor, calibrated against the null
+#             distribution of the courses NOT tagged with that competency
+#             (0.5 = as close as a typical untagged course, → 1 = far closer)
+#   lexical   BM25, saturating at the corpus median of its positive scores
+#   fusion    this course's RRF rank fusion over the theoretical RRF maximum
+_REL_W_SEM, _REL_W_LEX, _REL_W_FUS = 0.45, 0.20, 0.35
+_RRF_MAX       = 2.0 / (_RRF_K + 1)   # 1st on both rankings → the largest RRF possible
+_SEM_MIN_SIGMA = 1e-3                 # guards the calibration on a degenerate corpus
+_POP_REF_PCT   = 95                   # enrolments at this percentile = full popularity
 _FALLBACK_DURS = 1.5         # hours if duration field missing/zero
 _MAX_LEVEL     = 5           # FRAC proficiency scale is Level 1..5
 _MIN_STEP_HRS  = 0.1         # floor on hours in gain-per-hour (avoids /0)
@@ -100,8 +114,8 @@ class RecommendationResult(BaseModel):
     provider:       str
     durationHours:  float
     finalScore:     float          # 0.6*relevance + 0.4*quality  ∈ [0,1]
-    relevanceScore: float          # RRF normalised to [0,1]
-    qualityScore:   float          # quality composite ∈ [0,1]
+    relevanceScore: float          # absolute semantic + lexical + fusion match ∈ [0,1]
+    qualityScore:   float          # absolute quality composite ∈ [0,1]
     isTpac:         bool
     competencyId:   str
     competencyName: str
@@ -202,6 +216,26 @@ def _shrunk_rating(rating: Optional[float], count: Optional[int]) -> Optional[fl
     return (_SHRINK_K * _PRIOR_MEAN + count * rating) / (_SHRINK_K + count)
 
 
+def _clamp01(x: float) -> float:
+    return 0.0 if x < 0.0 else (1.0 if x > 1.0 else float(x))
+
+
+def _logistic(z: float) -> float:
+    return 1.0 / (1.0 + math.exp(-min(max(z, -30.0), 30.0)))
+
+
+def _lex_ref(bm25: np.ndarray) -> float:
+    """
+    The BM25 score this query gives a *typical matching* course — the median of
+    its positive scores over the whole corpus. Used as the saturation point of
+    `b / (b + ref)`, which turns an unbounded BM25 score into an absolute [0,1)
+    lexical match (0.5 at the median) without min-maxing inside a shortlist.
+    """
+    pos = bm25[bm25 > 0]
+    ref = float(np.median(pos)) if pos.size else 0.0
+    return ref if ref > 0 else 1.0
+
+
 def _parse_level(raw: Any) -> Optional[int]:
     """'Level 3' / 3 / '3' → 3; anything outside 1..5 → None."""
     if raw is None:
@@ -281,8 +315,12 @@ class HybridRecommendationEngine:
         # The query for a competency is fixed (official FRAC text), so it is
         # encoded once instead of once per level / per request.
         self._query_cache: Dict[Tuple[str, str], Tuple[np.ndarray, np.ndarray]] = {}
-        # comp_id → median cosine of the courses NOT tagged with it (tag-support null)
-        self._untagged_median: Dict[str, float] = {}
+        # comp_id → (median, mean, std) cosine of the courses NOT tagged with it.
+        # The median is the tag-support null; the mean and std calibrate the
+        # absolute semantic relevance score.
+        self._untagged_stats: Dict[str, Tuple[float, float, float]] = {}
+        # Catalogue-wide normalisers for the quality composite (filled after parsing).
+        self._quality_norms: Dict[str, float] = {}
 
         try:
             if catalog is not None:
@@ -295,6 +333,10 @@ class HybridRecommendationEngine:
         except Exception as exc:
             logger.error("[RecEngine] Failed to load catalog: %s", exc)
             raise
+
+        # Catalogue-wide quality normalisers — absolute, so a course's quality no
+        # longer depends on which shortlist it happens to land in (Bug #10).
+        self._build_quality_norms()
 
         # ── 3. Build BM25 index ────────────────────────────────────────────────
         corpus_tokens = [doc.corpus_text.split() for doc in self._catalog]
@@ -451,6 +493,45 @@ class HybridRecommendationEngine:
             # Build reverse index: comp_id → doc indices
             for cid in comp_ids:
                 self._comp_index.setdefault(cid, []).append(idx)
+
+    # ── Catalogue-wide quality normalisers (Bug #10) ──────────────────────────
+
+    def _build_quality_norms(self) -> None:
+        """
+        Fix the quality scale to the catalogue instead of to the shortlist.
+
+        Quality used to be min-max normalised inside each gap's shortlist, so the
+        worst course of every pool scored 0 on every component, and one course
+        scored differently for two competencies. Every component is now an
+        absolute catalogue-wide ratio, and a course simply *missing* a field takes
+        the catalogue mean of that component (neutral) rather than the 0 it did
+        not earn — ~9% of the catalogue carries no rating/enrolment data at all.
+        """
+        enrol = [float(d.enrollment_count) for d in self._catalog if d.enrollment_count is not None]
+        pop_ref = math.log1p(float(np.percentile(enrol, _POP_REF_PCT))) if enrol else 0.0
+        self._quality_norms["pop_ref"] = pop_ref if pop_ref > 0 else 1.0
+        compl = [d.completion_rate for d in self._catalog if d.completion_rate is not None]
+        shrunk = [_shrunk_rating(d.rating, d.rating_count) for d in self._catalog]
+        rates = [(v - 1.0) / 4.0 for v in shrunk if v is not None]
+        pops  = [min(math.log1p(e) / self._quality_norms["pop_ref"], 1.0) for e in enrol]
+        self._quality_norms["completion_mean"] = float(np.mean(compl)) if compl else 0.5
+        self._quality_norms["rating_mean"]     = float(np.mean(rates)) if rates else 0.5
+        self._quality_norms["pop_mean"]        = float(np.mean(pops))  if pops  else 0.5
+        logger.info(
+            "[RecEngine] Quality scale: completion mean %.2f, rating mean %.2f, "
+            "popularity mean %.2f (p%d enrolments = %.0f).",
+            self._quality_norms["completion_mean"], self._quality_norms["rating_mean"],
+            self._quality_norms["pop_mean"], _POP_REF_PCT,
+            math.expm1(self._quality_norms["pop_ref"]),
+        )
+
+    def _neutral_quality(self) -> float:
+        """Quality of a course the catalogue knows nothing about (an ACBP course
+        that is not in the catalogue): the catalogue average, never 0."""
+        n = self._quality_norms
+        return round(0.35 * n.get("completion_mean", 0.5)
+                     + 0.35 * n.get("rating_mean", 0.5)
+                     + 0.20 * n.get("pop_mean", 0.5), 4)
 
     # ── Catalogue accessors ────────────────────────────────────────────────────
 
@@ -628,25 +709,72 @@ class HybridRecommendationEngine:
         return hit
 
     def _query_text(self, gap: GapEntry) -> str:
-        frac_meta = self._frac_map.get(gap.catalogue_key, {})
-        return f"{frac_meta.get('name', gap.competencyName)}. {frac_meta.get('description', '')}".strip()
+        return self._comp_query_text(gap.catalogue_key, gap.competencyName)
 
-    def _tag_support_threshold(self, comp_id: str, q_emb: np.ndarray) -> float:
+    def _comp_query_text(self, comp_id: str, fallback_name: str = "") -> str:
+        """The official FRAC name + description used as the retrieval anchor."""
+        frac_meta = self._frac_map.get(comp_id, {})
+        return f"{frac_meta.get('name', fallback_name)}. {frac_meta.get('description', '')}".strip()
+
+    def _untagged_null(self, comp_id: str, q_emb: np.ndarray) -> Tuple[float, float, float]:
         """
-        Median cosine between the competency query and the courses NOT tagged
-        with it — the null distribution for "an unrelated course". A tagged
-        course scoring at or below it is no more about this competency than a
-        typical untagged one, so its tag is flagged (SCIL v6 §6: author tags
-        are never checked against content). Data-derived, no tuned constant.
+        (median, mean, std) of the cosine between the competency query and the
+        courses NOT tagged with it — the null distribution for "an unrelated
+        course", derived from the data with no tuned constant.
+
+        The median is the tag-support threshold: a tagged course at or below it is
+        no more about this competency than a typical untagged one, so its author
+        tag is flagged (SCIL v6 §6 — author tags are never checked against
+        content). The mean and std calibrate the absolute semantic score.
         """
-        thr = self._untagged_median.get(comp_id)
-        if thr is None:
+        hit = self._untagged_stats.get(comp_id)
+        if hit is None:
             tagged = set(self._comp_index.get(comp_id, []))
             others = [i for i in range(len(self._catalog)) if i not in tagged]
             sims = self._embeddings[others] @ q_emb[0] if others else np.zeros(1)
-            thr = float(np.median(sims))
-            self._untagged_median[comp_id] = thr
-        return thr
+            hit = (float(np.median(sims)), float(np.mean(sims)),
+                   max(float(np.std(sims)), _SEM_MIN_SIGMA))
+            self._untagged_stats[comp_id] = hit
+        return hit
+
+    def _tag_support_threshold(self, comp_id: str, q_emb: np.ndarray) -> float:
+        """Median of the untagged null — see `_untagged_null`."""
+        return self._untagged_null(comp_id, q_emb)[0]
+
+    def _relevance(
+        self,
+        idx:     int,
+        comp_id: str,
+        q_emb:   np.ndarray,
+        bm25:    np.ndarray,
+        lex_ref: float,
+        rrf_raw: Optional[float] = None,
+    ) -> float:
+        """
+        Absolute relevance of one course to one competency, in [0,1] (Bug #9) —
+        `_REL_W_SEM`·semantic + `_REL_W_LEX`·lexical + `_REL_W_FUS`·fusion.
+
+        `rrf_raw` is the course's fused rank score inside this gap's candidate
+        pool. Without one — a semantic fallback (no tag-filtered pool to rank
+        against) or a mandatory course scored on its own — the two pool-free
+        signals are re-weighted to carry the whole score, so the number stays
+        comparable instead of losing a third of its range.
+        """
+        _, mu, sigma = self._untagged_null(comp_id, q_emb)
+        cos = float(self._embeddings[idx] @ q_emb[0])
+        return self._blend_relevance(_logistic((cos - mu) / sigma),
+                                     float(bm25[idx]), lex_ref, rrf_raw)
+
+    def _blend_relevance(self, sem: float, bm25_raw: float, lex_ref: float,
+                         rrf_raw: Optional[float]) -> float:
+        lex = bm25_raw / (bm25_raw + lex_ref) if bm25_raw > 0 else 0.0
+        if rrf_raw is None:
+            w = _REL_W_SEM + _REL_W_LEX
+            return round(_clamp01((_REL_W_SEM * sem + _REL_W_LEX * lex) / w), 4)
+        # The TPAC boost can push RRF past its unboosted ceiling — that is the
+        # boost doing its job, and the clamp keeps the scale honest at 1.0.
+        fus = _clamp01(rrf_raw / _RRF_MAX)
+        return round(_clamp01(_REL_W_SEM * sem + _REL_W_LEX * lex + _REL_W_FUS * fus), 4)
 
     def _retrieve_for_gap(
         self,
@@ -724,69 +852,38 @@ class HybridRecommendationEngine:
 
     # ── Internal: Stage 3 quality scoring ─────────────────────────────────────
 
-    @staticmethod
-    def _quality_score(doc: _CourseDoc, shortlist: List[_CourseDoc]) -> float:
+    def _quality_score(self, doc: _CourseDoc, shortlist: Optional[List[_CourseDoc]] = None) -> float:
         """
-        quality = 0.35*completion_n + 0.35*rating_n + 0.20*pop_n + 0.10*tpac_flag
+        quality = 0.35*completion + 0.35*rating + 0.20*log-popularity + 0.10*tpac,
+        on an ABSOLUTE catalogue-wide scale (Bug #10). `shortlist` is accepted for
+        call-site compatibility and ignored — that argument is exactly what used
+        to make the same course score 0.90 for one gap and 0.10 for another.
 
-        FIX (Bug #7): each component is normalized ONLY within the subset of
-        shortlist docs that HAVE that field. Courses missing a field are excluded
-        from the normalization pool for that component — not given a free default.
+        * completion — the published completion rate, already a ratio in [0,1]
+        * rating     — Bayesian-shrunk stars mapped from 1..5 onto 0..1 (Bug #5:
+                       shrinkage, not a Wilson bound, which is binomial-only)
+        * popularity — log1p(enrolments) / log1p(p95 enrolments), capped at 1
+        * tpac       — 1.0 verified, 0.5 inferred, 0 none (Bug #6)
 
-        FIX (Bug #5): rating uses Bayesian shrinkage (_shrunk_rating) instead of
-        Wilson lower bound, which is only valid for binomial proportions.
+        A missing field takes the catalogue mean of its component. Bug #7 scored
+        it 0 instead, which quietly punished the ~9% of courses that carry no
+        rating or enrolment data and dragged them to a fabricated 0% match.
         """
-        if not shortlist:
-            return 0.0
-
-        # ── completion_rate ────────────────────────────────────────────────────
-        docs_with_compl = [d for d in shortlist if d.completion_rate is not None]
-        if docs_with_compl and doc.completion_rate is not None:
-            completions  = [d.completion_rate for d in docs_with_compl]
-            c_min, c_max = min(completions), max(completions)
-            c_range      = c_max - c_min if c_max > c_min else 1.0
-            completion_n = (doc.completion_rate - c_min) / c_range
-        else:
-            completion_n = 0.0   # excluded from pool → contributes 0
-
-        # ── rating (Bayesian shrinkage — Bug #5) ──────────────────────────────
-        shrunk_vals = [
-            s for s in (
-                _shrunk_rating(d.rating, d.rating_count) for d in shortlist
-            )
-            if s is not None
-        ]
-        my_shrunk = _shrunk_rating(doc.rating, doc.rating_count)
-        if shrunk_vals and my_shrunk is not None:
-            w_min, w_max = min(shrunk_vals), max(shrunk_vals)
-            w_range      = w_max - w_min if w_max > w_min else 1.0
-            rating_n     = (my_shrunk - w_min) / w_range
-        else:
-            rating_n = 0.0
-
-        # ── enrollment (log-popularity) ────────────────────────────────────────
-        docs_with_enroll = [d for d in shortlist if d.enrollment_count is not None]
-        if docs_with_enroll and doc.enrollment_count is not None:
-            pop_raw      = [math.log1p(d.enrollment_count) for d in docs_with_enroll]
-            p_min, p_max = min(pop_raw), max(pop_raw)
-            p_range      = p_max - p_min if p_max > p_min else 1.0
-            my_pop       = math.log1p(doc.enrollment_count)
-            pop_n        = (my_pop - p_min) / p_range
-        else:
-            pop_n = 0.0
-
-        # ── TPAC flag (Bug #6: verified > inferred) ────────────────────────────
+        n = self._quality_norms
+        completion_n = (doc.completion_rate if doc.completion_rate is not None
+                        else n.get("completion_mean", 0.5))
+        shrunk   = _shrunk_rating(doc.rating, doc.rating_count)
+        rating_n = (shrunk - 1.0) / 4.0 if shrunk is not None else n.get("rating_mean", 0.5)
+        pop_n    = (min(math.log1p(doc.enrollment_count) / (n.get("pop_ref") or 1.0), 1.0)
+                    if doc.enrollment_count is not None else n.get("pop_mean", 0.5))
         tpac_flag = 1.0 if doc.tpac_source == "verified" else (0.5 if doc.tpac_source == "inferred" else 0.0)
-
         return round(
-            0.35 * completion_n
-            + 0.35 * rating_n
-            + 0.20 * pop_n
+            0.35 * _clamp01(completion_n)
+            + 0.35 * _clamp01(rating_n)
+            + 0.20 * _clamp01(pop_n)
             + 0.10 * tpac_flag,
             4,
         )
-
-
 
     # ── Internal: Stages 1-3 for one gap's candidate pool ─────────────────────
 
@@ -810,26 +907,30 @@ class HybridRecommendationEngine:
         if not retrieved:
             return []
 
-        # Normalise RRF → [0,1] and quality over the same pool
+        # Relevance and quality are both absolute now (Bugs #9/#10): nothing here
+        # is min-maxed against the shortlist, so the bottom course of a pool is no
+        # longer forced to 0.000 and two gaps' scores are directly comparable.
         shortlist_docs = [self._catalog[idx] for idx, _ in retrieved]
-        rrf_vals  = [score for _, score in retrieved]
-        rrf_min, rrf_max = min(rrf_vals), max(rrf_vals)
-        rrf_range = rrf_max - rrf_min if rrf_max > rrf_min else 1.0
         is_tagged  = bool(self._comp_index.get(gap.catalogue_key))
         match_type = "frac_tag" if is_tagged else "semantic_fallback"
         current, target = int(gap.currentLevel), int(math.ceil(gap.targetLevel))
-        if is_tagged:
-            q_emb, _ = self._query_signals(gap.catalogue_key, self._query_text(gap))
-            support_thr = self._tag_support_threshold(gap.catalogue_key, q_emb)
-        ce_norm = self._cross_encoder_norm(gap, retrieved)     # {idx: 0..1} for the top 20, or {}
+        q_emb, bm25 = self._query_signals(gap.catalogue_key, self._query_text(gap))
+        lex_ref     = _lex_ref(bm25)
+        support_thr = self._tag_support_threshold(gap.catalogue_key, q_emb) if is_tagged else 0.0
+        ce_norm = self._cross_encoder_norm(gap, retrieved)   # {idx: P(relevant)} over the top 20, or {}
 
         results: List[RecommendationResult] = []
         for (idx, rrf_raw), doc in zip(retrieved, shortlist_docs):
-            relevance_n = (rrf_raw - rrf_min) / rrf_range
-            if ce_norm:
-                # Stage 2b: blend with the cross-encoder; unseen (below top 20) count as 0.
-                relevance_n = 0.5 * relevance_n + 0.5 * ce_norm.get(idx, 0.0)
-            quality_n   = self._quality_score(doc, shortlist_docs)
+            # A semantic fallback has no tag-filtered pool, so `rrf_raw` there is a
+            # bare cosine and carries no fusion rank — see `_relevance`.
+            relevance_n = self._relevance(idx, gap.catalogue_key, q_emb, bm25, lex_ref,
+                                          rrf_raw=rrf_raw if is_tagged else None)
+            if idx in ce_norm:
+                # Stage 2b: blend with the cross-encoder over the re-ranked head only.
+                # A course the re-ranker never looked at keeps its own score instead
+                # of being zeroed for not having been looked at.
+                relevance_n = round(0.5 * relevance_n + 0.5 * ce_norm[idx], 4)
+            quality_n   = self._quality_score(doc)
             final       = round(0.6 * relevance_n + 0.4 * quality_n, 4)
             course_level = doc.comp_levels.get(gap.catalogue_key)
             tag_supported = (
@@ -854,11 +955,14 @@ class HybridRecommendationEngine:
                 reasons.append("NSSTA TPAC-vetted course (verified)")
             elif doc.tpac_source == "inferred":
                 reasons.append("NSSTA TPAC-vetted course (inferred)")
-            if relevance_n >= 0.8:
-                reasons.append("High semantic relevance to competency")
-            elif relevance_n >= 0.5:
-                reasons.append("Strong keyword match")
-            if quality_n >= 0.7:
+            # Thresholds read against the absolute scale (Bug #9): a tag-filtered,
+            # level-gated candidate normally lands in the 0.7-0.95 band, so the
+            # chip only appears for a course that stands out inside that band.
+            if relevance_n >= 0.90:
+                reasons.append("Very close match to the official FRAC description")
+            elif relevance_n >= 0.75:
+                reasons.append("Good match to the FRAC description")
+            if quality_n >= 0.70:
                 reasons.append("Top-rated in category")
 
             results.append(RecommendationResult(
@@ -893,7 +997,12 @@ class HybridRecommendationEngine:
         return results
 
     def _cross_encoder_norm(self, gap: GapEntry, retrieved: List[Tuple[int, float]]) -> Dict[int, float]:
-        """Cross-encoder scores of the top RERANK_TOP_N by RRF, min-max normalised; {} if disabled."""
+        """
+        P(relevant) from the cross-encoder for the top RERANK_TOP_N by RRF; {} if
+        disabled. The logits go through a sigmoid — their natural calibration —
+        rather than a min-max over the head, which used to hand the weakest of the
+        20 a 0.000 even when the re-ranker rated it highly in absolute terms.
+        """
         from ai.reranker import RERANK_TOP_N, rerank_scores
         top = sorted(retrieved, key=lambda x: x[1], reverse=True)[:RERANK_TOP_N]
         if len(top) < 2:
@@ -902,9 +1011,7 @@ class HybridRecommendationEngine:
         scores = rerank_scores(self._query_text(gap), passages)
         if scores is None:
             return {}
-        lo, hi = float(scores.min()), float(scores.max())
-        span = hi - lo if hi > lo else 1.0
-        return {i: (float(sc) - lo) / span for (i, _), sc in zip(top, scores)}
+        return {i: _logistic(float(sc)) for (i, _), sc in zip(top, scores)}
 
     def _why(self, gap: GapEntry, doc: _CourseDoc, course_level: Optional[int],
              uplift: Dict[str, Any], tag_supported: Optional[bool]) -> Dict[str, Any]:
@@ -981,10 +1088,13 @@ class HybridRecommendationEngine:
     ) -> List[RecommendationResult]:
         """
         ACBP mandatory courses (the departmental training plan) as recommendations,
-        always included whatever their score. `gaps` is keyed by catalogue
-        competency id, so a mandatory course that also closes a gap says so.
+        always included whatever their score and listed APAR-linked first, then
+        best match — the order the ACBP happens to list them in is not a ranking.
+        `gaps` is keyed by catalogue competency id, so a mandatory course that
+        also closes a gap says so.
         """
         out: List[RecommendationResult] = []
+        apar: Dict[str, bool] = {}
         for m in mandatory:
             cid = m.get("courseId")
             if not cid or cid in exclude_ids:
@@ -993,6 +1103,7 @@ class HybridRecommendationEngine:
             doc = self._catalog[idx] if idx is not None else None
             comp = m.get("competencyId") or ""
             gap = gaps.get(comp)
+            comp_key = gap.catalogue_key if gap else comp
             level = m.get("level") or (doc.comp_levels.get(comp) if doc else None)
             comp_name = ((gap.competencyName if gap else None) or (names or {}).get(comp)
                          or self._frac_map.get(comp, {}).get("name") or comp)
@@ -1003,21 +1114,54 @@ class HybridRecommendationEngine:
                        "badges": [], "summary": m.get("reason") or "Mandatory in your capacity-building plan."}
             why["badges"] = [{"key": "mandatory", "label": "Mandatory"
                               + (" · APAR-linked" if m.get("aparLinked") else "")}] + why["badges"]
+            apar[cid] = bool(m.get("aparLinked"))
             reasons = ["Mandatory in your Annual Capacity Building Plan"
                        + (" (APAR-linked)" if m.get("aparLinked") else "")]
             if m.get("reason"):
                 reasons.append(m["reason"])
+            # Bug #12: these used to be shipped as a flat finalScore 1.0 / quality
+            # 0.0, so every ACBP course claimed a 100% match it had not been scored
+            # for. They are scored like any other course — the Mandatory badge, not
+            # a fake score, is what pins them to the top of the list.
+            relevance, quality = self._score_one(doc, m.get("title") or "", comp_key, comp_name)
             out.append(RecommendationResult(
                 courseId=cid, title=(doc.name if doc else m.get("title") or cid),
                 provider=((doc.creator or doc.channel) if doc else "") or "iGOT Karmayogi",
                 durationHours=(doc.duration_hrs if doc else float(m.get("hours") or _FALLBACK_DURS)),
-                finalScore=1.0, relevanceScore=1.0, qualityScore=0.0,
+                finalScore=round(0.6 * relevance + 0.4 * quality, 4),
+                relevanceScore=relevance, qualityScore=quality,
                 isTpac=bool(doc and doc.is_tpac), competencyId=(gap.competencyId if gap else comp),
                 competencyName=comp_name, priorityRank=0, matchReasons=reasons, matchType="acbp_mandatory",
                 tpacSource=(doc.tpac_source if doc else "none"), courseLevel=level,
                 modality=(doc.modality if doc else None), mandatory=True, why=why,
             ))
+        out.sort(key=lambda r: (not apar.get(r.courseId, False), -(r.finalScore or 0.0)))
         return out
+
+    def _score_one(self, doc: Optional[_CourseDoc], title: str,
+                   comp_id: str, comp_name: str) -> Tuple[float, float]:
+        """
+        (relevance, quality) for a single course scored on its own, with no
+        candidate pool behind it — an ACBP mandatory course. A course the
+        catalogue does not have is embedded from its title so it still gets a
+        real semantic score, and takes the catalogue's average quality.
+        """
+        query = self._comp_query_text(comp_id, comp_name)
+        if not query.strip(" ."):
+            return (self._neutral_quality(), self._quality_score(doc) if doc else self._neutral_quality())
+        try:
+            q_emb, bm25 = self._query_signals(comp_id, query)
+            if doc is not None:
+                return (self._relevance(doc.idx, comp_id, q_emb, bm25, _lex_ref(bm25)),
+                        self._quality_score(doc))
+            vec = encode_cached("catalog", [title or comp_name], kind="passage")
+            _, mu, sigma = self._untagged_null(comp_id, q_emb)
+            sem = _logistic((float(vec[0] @ q_emb[0]) - mu) / sigma)
+            return (self._blend_relevance(sem, 0.0, 1.0, None), self._neutral_quality())
+        except Exception as exc:                       # never block an ACBP course
+            logger.debug("[RecEngine] mandatory course scoring failed (%s)", exc)
+            return (self._neutral_quality(),
+                    self._quality_score(doc) if doc else self._neutral_quality())
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -1033,8 +1177,16 @@ class HybridRecommendationEngine:
         Only courses tagged at a level the official still has to climb
         (current < level <= target) are eligible. If the catalogue has none in
         that band, the nearest level above target is offered as a flagged
-        stretch. Within a gap the picks are interleaved by level — best course
-        of the lowest level first — so each block reads "do this, then this".
+        stretch.
+
+        Within a gap, level interleaving and the modality spread choose *which*
+        courses to show (a ladder across levels and a mix of formats, never three
+        Level-5 courses), and the block is then shown best match first.
+
+        FIX (Bug #11): the block used to be returned in level order, so a weak
+        Level-2 course sat above a far better Level-4 one and the list disagreed
+        with the match score printed on every card. The order to *study* them in
+        is the pathway's job (`build_pathway`), not this list's.
 
         FIX (Bug #8): no global finalScore sort — per-gap blocks are
         concatenated in calculate_gaps() priority order, and priorityRank is
@@ -1059,7 +1211,7 @@ class HybridRecommendationEngine:
                 gap, levels, enrolled_ids | seen_course_ids,
                 pool_size=max(limit_per_gap * 5, 50),
             )
-            picked = _spread_modalities(_interleave_by_level(scored), limit_per_gap)
+            picked = _by_score(_spread_modalities(_interleave_by_level(scored), limit_per_gap))
             seen_course_ids.update(r.courseId for r in picked)
             all_results.extend(picked)
 
@@ -1646,6 +1798,18 @@ def _interleave_by_level(results: List[RecommendationResult]) -> List[Recommenda
                 out.append(by_level[lvl][depth])
         depth += 1
     return out
+
+
+def _by_score(picks: List[RecommendationResult]) -> List[RecommendationResult]:
+    """
+    Best match first (Bug #11). A course whose tag the content does not support,
+    or whose measured uplift is ~0, stays last however well it scores — it is a
+    last resort at its level, never hidden and never promoted. Equal scores are
+    broken by the lower FRAC level, which is the one to take first.
+    """
+    return sorted(picks, key=lambda r: (r.tagSupported is False or bool(r.upliftFlag),
+                                        -(r.finalScore or 0.0),
+                                        r.courseLevel or _MAX_LEVEL + 1))
 
 
 # A course of a format not yet picked for this gap may replace the next in line
