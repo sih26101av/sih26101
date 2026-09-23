@@ -23,6 +23,16 @@
 }
 
 @layer components {
+  /* GIGW: "Skip to main content" must be the first focusable thing on a page.
+     Off-screen until focused, then pinned to the top-left in full view. */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed left-3 top-3 z-[200] rounded-lg border-2 border-gov-saffron bg-white px-4 py-2.5
+      text-[13px] font-bold text-gov-navy shadow-gov-lg;
+  }
+
   /* Saffron · white · green strip used under every header */
   .tricolor-strip {
     height: 4px;
@@ -258,4 +268,170 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GIGW accessibility preferences
+   Driven by src/context/AccessibilityContext.tsx. These rules sit after the
+   Tailwind utility layer on purpose so the viewport-height overrides below
+   beat the utilities they correct.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Text size (A− / A / A+) ──────────────────────────────────────────────
+   Most type in this app is authored in px, so scaling the root font-size
+   would change almost nothing. Zoom scales the whole layout instead. */
+:root {
+  --gov-zoom: 1;
+}
+body {
+  zoom: var(--gov-zoom);
+}
+
+/* Viewport units ignore zoom, so a 100vh box overflows once the user scales
+   up. Divide the zoom back out of every full-height utility we rely on. */
+.min-h-screen {
+  min-height: calc(100vh / var(--gov-zoom));
+}
+/* Dashboard sidebar: full viewport height below the sticky topbar. */
+.shell-sidebar-h {
+  height: calc((100vh / var(--gov-zoom)) - 62px);
+}
+
+/* ── High contrast ────────────────────────────────────────────────────────
+   A black canvas with white text and yellow interactive elements — the
+   scheme low-vision users expect from a government portal. Applied as an
+   override layer so it works on top of either theme. */
+html.hc,
+html.hc body {
+  background: #000 !important;
+  color: #fff !important;
+}
+html.hc .gov-canvas,
+html.hc .gov-page-bg,
+html.hc .gov-card,
+html.hc .panel,
+html.hc header,
+html.hc footer,
+html.hc aside,
+html.hc section,
+html.hc dialog,
+html.hc [class*="bg-white"],
+html.hc [class*="bg-slate-"],
+html.hc [class*="bg-gov-"],
+html.hc [class*="bg-gradient"] {
+  background: #000 !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+html.hc [class*="text-"],
+html.hc h1,
+html.hc h2,
+html.hc h3,
+html.hc h4,
+html.hc p,
+html.hc li,
+html.hc span,
+html.hc td,
+html.hc th,
+html.hc label {
+  color: #fff !important;
+}
+html.hc a,
+html.hc button,
+html.hc summary,
+html.hc [role="menuitem"],
+html.hc [role="tab"] {
+  color: #ffd400 !important;
+}
+html.hc a:hover,
+html.hc button:hover {
+  color: #fff !important;
+}
+html.hc a {
+  text-decoration: underline !important;
+}
+html.hc svg {
+  color: #ffd400 !important;
+}
+/* Every edge has to be visible — hairline greys disappear on black. */
+html.hc [class*="border"],
+html.hc .panel,
+html.hc .gov-card,
+html.hc .gov-table thead th,
+html.hc .gov-table tbody td {
+  border-color: #ffd400 !important;
+}
+html.hc input,
+html.hc select,
+html.hc textarea {
+  background: #000 !important;
+  color: #fff !important;
+  border: 1px solid #ffd400 !important;
+}
+html.hc input::placeholder,
+html.hc textarea::placeholder {
+  color: #cfcfcf !important;
+}
+html.hc :focus-visible {
+  outline: 3px solid #ffd400 !important;
+  outline-offset: 2px;
+}
+/* The tricolour strip and chart marks stay as they are — they carry meaning. */
+html.hc .tricolor-strip,
+html.hc .recharts-surface,
+html.hc .recharts-surface * {
+  background-image: initial !important;
+}
+html.hc .tricolor-strip {
+  background: linear-gradient(90deg, #ff9933 0 33.33%, #ffffff 33.33% 66.66%, #138808 66.66% 100%) !important;
+}
+
+/* ── Print ────────────────────────────────────────────────────────────────
+   GIGW asks for printer-friendly pages: drop the chrome, drop the ink, and
+   spell out where a link actually goes. */
+@media print {
+  :root {
+    --gov-zoom: 1;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    zoom: 1;
+  }
+  header nav,
+  aside,
+  .skip-link,
+  .gov-utility-bar,
+  [data-print-hide] {
+    display: none !important;
+  }
+  .panel,
+  .gov-card {
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 10px;
+    word-break: break-all;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}
+
+/* ── Text contrast (WCAG 1.4.3) ───────────────────────────────────────────
+   `text-slate-400` is this app's muted-caption token and is used in ~360
+   places. On the light canvas it lands at about 2.6:1, well under the 4.5:1
+   AA threshold for body text, so on light backgrounds it is pulled to the
+   lightest slate that clears AA. Dark mode already passes and is left alone;
+   the selector is scoped so a `dark:` variant still wins where one is set. */
+html:not(.dark) .text-slate-400 {
+  color: #64748b;
+}
+html:not(.dark) .placeholder\:text-slate-400::placeholder {
+  color: #6b7a90;
 }

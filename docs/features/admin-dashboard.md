@@ -1,7 +1,10 @@
 # Admin Dashboard
 
 Ministry-side view at `/admin` (role `admin` only), built on the shared `AppShell`
-(see [learner-dashboard.md](learner-dashboard.md) for the shell components).
+(see [learner-dashboard.md](learner-dashboard.md) for the shell components, and
+[gigw-compliance.md](gigw-compliance.md) for the statutory chrome it carries —
+the utility strip, skip link, breadcrumbs and policy footer). Each section sets
+its own `document.title` via `usePageTitle(META[activeTab]…)`.
 Everything except the FRAC dictionary is computed on the server by the **admin
 console** (`routers/admin_console.py`). The browser gets one page or one
 aggregate at a time. It never downloads and aggregates the whole roster.

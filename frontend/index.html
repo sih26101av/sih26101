@@ -2,10 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b2a55" />
+
+    <!-- GIGW 3.0: a descriptive title, a description, and the owning ministry
+         stated in the metadata, not only in the page chrome. Per-route titles
+         are set by src/hooks/usePageTitle.ts. -->
     <title>KarmaSkill | MoSPI Skill Intelligence Platform</title>
+    <meta
+      name="description"
+      content="KarmaSkill — the Skill Intelligence Platform of the Ministry of Statistics and Programme Implementation, Government of India. Evidence-based competency baselines, skill-gap analysis and iGOT Karmayogi learning pathways for officials of the National Statistical System."
+    />
+    <meta name="author" content="Ministry of Statistics and Programme Implementation, Government of India" />
+    <meta name="publisher" content="Government of India" />
+    <meta name="keywords" content="MoSPI, NSO, iGOT Karmayogi, Mission Karmayogi, FRAC, competency, skill gap, capacity building, official statistics" />
+    <meta name="theme-color" content="#0b2a55" />
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="icon" type="image/svg+xml" href="/emblem.svg" />
+    <link rel="apple-touch-icon" href="/emblem.svg" />
+
     <!-- Poppins for UI, Noto Sans Devanagari for Hindi, Merriweather for formal headings -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,6 +31,24 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- GIGW: say what is wrong and who to contact rather than showing a blank page. -->
+    <noscript>
+      <div style="font-family: system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1rem; color: #0a1a33">
+        <div style="height: 4px; background: linear-gradient(90deg, #ff9933 0 33.33%, #fff 33.33% 66.66%, #138808 66.66%)"></div>
+        <h1 style="font-size: 1.4rem; margin: 1.5rem 0 0.75rem">JavaScript is required</h1>
+        <p style="line-height: 1.7">
+          KarmaSkill, the Skill Intelligence Platform of the Ministry of Statistics and Programme
+          Implementation, needs JavaScript to run. Please enable JavaScript in your browser and reload
+          this page.
+        </p>
+        <p style="line-height: 1.7">
+          If your browser or network policy does not permit JavaScript, contact the training nodal
+          officer of your division for assistance.
+        </p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
     <!-- UserWay Accessibility Widget -->
     <script src="https://cdn.userway.org/widget.js" data-account="CoZlnsABU1" data-position="2"></script>

@@ -31,6 +31,7 @@ import { fetchQuizAttempts, gradeQuiz } from "../services/api";
 import type { DocQuizQuestion, QuizAnswer, QuizAttemptRecord, QuizGradeResult, QuizQuestionType } from "../services/api";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
+import { usePageTitle } from "../hooks/usePageTitle";
 import PageHeader from "../components/shell/PageHeader";
 import { MediaAnalysisCard, MediaAnswerReview, YoutubeLinkInput } from "../components/assessment/MediaQuizExtras";
 import { MEDIA_ACCEPT, generateMediaQuiz, generateYoutubeQuiz, isMediaFile, isYoutubeUrl } from "../services/mediaQuizApi";
@@ -296,6 +297,9 @@ const AssessmentPage: React.FC = () => {
     history:  { title: "Assessment History", subtitle: "Every RAG assessment on your verified achievement record." },
     settings: { title: "Studio Settings", subtitle: "Preferences for assessment generation." },
   };
+
+  // GIGW: each section is its own "page" to the user, so give it its own title.
+  usePageTitle(META[activeTab].title, META[activeTab].subtitle);
 
   return (
     <AppShell

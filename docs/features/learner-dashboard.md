@@ -34,12 +34,23 @@ sections, all fed by the single `useLearnerDashboard` fetch.
   - Topbar search filters the competency set; the bell count is the mandatory-gap
     count and jumps to the Skill-Gap Centre.
 - `src/components/shell/` — shared with the admin dashboard and Assessment Studio:
-  - `AppShell.tsx` — tricolour strip + navy NSO topbar (search, notifications, theme,
-    account menu, sign-out) + sticky sidebar (mobile drawer under `lg`) + footer.
+  - `AppShell.tsx` — GIGW utility strip + tricolour strip + navy NSO topbar
+    (search, notifications, theme, account menu, sign-out) + sticky sidebar
+    (mobile drawer under `lg`) + statutory footer.
     See "Responsive layout" below for the phone/tablet behaviour.
     Takes `groups`/`activeId`/`onNavigate`; owns no data. Optional `sidebarArt`
     slot renders between nav and `sidebarFooter` (desktop only; admin doesn't use it).
-  - `PageHeader.tsx` — title, subtitle, breadcrumb, date chip, action slot.
+    The GIGW chrome — a skip link, `GovUtilityBar` (text size / contrast /
+    language), landmark roles, and `GovFooter variant="compact"` — is described in
+    [gigw-compliance.md](gigw-compliance.md). The utility strip sits *above* the
+    sticky header and scrolls away, so the sidebar's sticky offset stays 62px; the
+    sidebar uses `.shell-sidebar-h` so its height survives the A+ text zoom.
+  - `PageHeader.tsx` — breadcrumb trail (now above the title and visible at every
+    width, rendered as a semantic `nav > ol > li` by `components/gov/Breadcrumbs`;
+    still accepts the plain `string[]` callers pass, first entry links to `/`),
+    then the `<h1>` title, subtitle, date chip and action slot. Also the place
+    each section's `document.title` is *not* set — that is `usePageTitle`, called
+    from the page.
   - `SectionCard.tsx` (+ `SectionAction`) — titled panel; `padded={false}` for tables.
   - `StatCard.tsx` — KPI tile (`StatTone`, optional delta / caption / progress /
     `onClick`; renders as a `<button>` only when clickable).

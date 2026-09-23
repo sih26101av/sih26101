@@ -1,11 +1,22 @@
 /**
  * FILE: src/components/shell/AppShell.tsx
  *
- * Shared dashboard chrome for the learner and admin dashboards: the navy NSO
- * topbar, the left section navigation (drawer on mobile) and the content canvas.
+ * Shared dashboard chrome for the learner and admin dashboards: the GIGW
+ * utility strip, the navy NSO topbar, the left section navigation (drawer on
+ * mobile), the content canvas and the statutory footer.
  *
  * It owns *no* data — every consumer passes its own nav model and children, so
  * the learner and admin pages keep their existing state and fetch logic.
+ *
+ * GIGW 3.0 chrome, present on every signed-in page as it is on the public ones:
+ *  - "Skip to main content" as the first focusable element
+ *  - `GovUtilityBar` — भारत सरकार identity, text size, contrast, language
+ *  - landmark roles (banner / navigation / main / contentinfo) and one <h1>
+ *    per view, supplied by `PageHeader`
+ *  - `GovFooter variant="compact"` — policy links, content owner, last updated
+ *
+ * The utility strip scrolls away; only the navy topbar is sticky, so a working
+ * screen keeps its vertical room (the sidebar offset stays at 62px).
  */
 
 import React, { useEffect, useState } from 'react';
@@ -16,6 +27,8 @@ import {
 import { useTheme } from '../../hooks/useTheme';
 import { useAuth } from '../../context/AuthContext';
 import { GovEmblem } from '../gov/GovUI';
+import GovUtilityBar from '../gov/GovUtilityBar';
+import GovFooter from '../gov/GovFooter';
 
 export interface ShellNavItem {
   id: string;
@@ -143,8 +156,13 @@ const AppShell: React.FC<AppShellProps> = ({
 
   return (
     <div className="min-h-screen gov-canvas transition-colors duration-300">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+
+      {/* ── GoI utility strip (identity + accessibility controls) ────────── */}
+      <GovUtilityBar mainId="main-content" showTheme={false} />
+
       {/* ── Topbar ───────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 shadow-gov">
+      <header role="banner" className="sticky top-0 z-40 shadow-gov">
         <div className="tricolor-strip" />
         <div className="flex items-center gap-2 bg-gradient-to-r from-gov-ink via-gov-navy to-gov-blue px-2 py-2 sm:gap-3 sm:px-3 sm:py-2.5 md:px-5">
           <button
@@ -327,7 +345,10 @@ const AppShell: React.FC<AppShellProps> = ({
 
       <div className="flex">
         {/* ── Sidebar (desktop) ──────────────────────────────────────────── */}
-        <aside className="sticky top-[62px] hidden h-[calc(100vh-62px)] w-[246px] flex-shrink-0 flex-col border-r border-gov-line bg-white dark:border-slate-800 dark:bg-slate-900/60 lg:flex">
+        <aside
+          aria-label="Section navigation"
+          className="shell-sidebar-h sticky top-[62px] hidden w-[246px] flex-shrink-0 flex-col border-r border-gov-line bg-white dark:border-slate-800 dark:bg-slate-900/60 lg:flex print:hidden"
+        >
           {navList}
           {sidebarArt}
           {sidebarFooter && <div className="px-3 pb-4">{sidebarFooter}</div>}
@@ -383,21 +404,11 @@ const AppShell: React.FC<AppShellProps> = ({
 
         {/* ── Content ────────────────────────────────────────────────────── */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <main className="shell-main flex-1 px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-7">
+          <main id="main-content" tabIndex={-1} className="shell-main flex-1 px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-7">
             <div className="mx-auto w-full max-w-[1340px]">{children}</div>
           </main>
 
-          <footer className="mt-auto bg-gov-ink text-white/60">
-            <div className="tricolor-strip" />
-            <div className="mx-auto flex max-w-[1340px] flex-col items-center justify-between gap-2 px-4 py-4 text-[11.5px] sm:flex-row md:px-6">
-              <span>© {new Date().getFullYear()} Ministry of Statistics &amp; Programme Implementation · Government of India</span>
-              <span className="flex items-center gap-2">
-                MoSPI Skill Intelligence Platform
-                <span className="h-1 w-1 rounded-full bg-gov-saffron" />
-                Powered by iGOT Karmayogi
-              </span>
-            </div>
-          </footer>
+          <GovFooter variant="compact" />
         </div>
       </div>
     </div>

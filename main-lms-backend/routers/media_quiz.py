@@ -15,11 +15,13 @@ document quiz, so the existing POST /api/v1/rag/grade grades it unchanged
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import logging
 import os
 import shutil
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -31,7 +33,7 @@ from pydantic import BaseModel, Field
 
 from routers.rag import QUIZ_STORE, QuizQuestion
 from services.practice_assessment import media_question_difficulty
-from services.media_quiz import extractors, media_io
+from services.media_quiz import extractors, media_io, ytrelay
 from services.media_quiz.llm import LLMUnavailable
 from services.media_quiz.pipeline import NotLearnable, run, warm_up
 
@@ -49,6 +51,38 @@ async def _warm_media_models() -> None:
 MAX_MEDIA_BYTES = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "1024")) * 1024 * 1024
 MEDIA_EXTS = media_io.MEDIA_VIDEO_EXTS | media_io.MEDIA_AUDIO_EXTS
 DIFFICULTIES = {"Easy", "Medium", "Hard"}
+
+# A YouTube quiz costs minutes of CPU, and the same link is asked for again all the
+# time — a learner retaking it, a second learner on the same course, a demo replaying
+# one video. The finished pipeline result is kept per (video, difficulty, language)
+# so the repeat is instant. It is the *same* result object, so nothing about the
+# questions changes; only the quiz_id is minted fresh, because grading is per attempt.
+YOUTUBE_RESULT_TTL_S = int(os.getenv("MEDIA_YOUTUBE_RESULT_TTL_S", "86400"))
+YOUTUBE_RESULT_MAX = int(os.getenv("MEDIA_YOUTUBE_RESULT_MAX", "32"))
+_result_cache: "dict[tuple, tuple[float, object]]" = {}
+_result_lock = threading.Lock()
+
+
+def _cached_result(key: tuple):
+    if YOUTUBE_RESULT_TTL_S <= 0:
+        return None
+    with _result_lock:
+        hit = _result_cache.get(key)
+        if not hit:
+            return None
+        if time.time() - hit[0] > YOUTUBE_RESULT_TTL_S:
+            _result_cache.pop(key, None)
+            return None
+        return hit[1]
+
+
+def _store_result(key: tuple, result) -> None:
+    if YOUTUBE_RESULT_TTL_S <= 0:
+        return
+    with _result_lock:
+        _result_cache[key] = (time.time(), result)
+        while len(_result_cache) > YOUTUBE_RESULT_MAX:
+            _result_cache.pop(next(iter(_result_cache)))          # oldest insertion first
 
 
 @lru_cache(maxsize=None)
@@ -116,7 +150,8 @@ class YoutubeRequest(BaseModel):
 
 
 async def _process(media: media_io.MediaSource, filename: str, ext: str, size: int, difficulty: str,
-                   target_lang: Optional[str], source: str) -> MediaQuizResponse:
+                   target_lang: Optional[str], source: str, cache_key: Optional[tuple] = None
+                   ) -> MediaQuizResponse:
     difficulty = difficulty if difficulty in DIFFICULTIES else "Medium"
     try:
         result = await run(media, difficulty=difficulty, target_lang=(target_lang or None))
@@ -137,6 +172,14 @@ async def _process(media: media_io.MediaSource, filename: str, ext: str, size: i
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Could not process this file: {type(exc).__name__}: {exc}")
 
+    if cache_key:
+        _store_result(cache_key, (result, filename, size))
+    return _respond(result, filename, ext, size, difficulty, source)
+
+
+def _respond(result, filename: str, ext: str, size: int, difficulty: str, source: str) -> MediaQuizResponse:
+    """Pipeline result → API response. Separate from _process because a cached result
+    takes this path too, and every attempt needs its own quiz_id for grading."""
     skill_name = result.competency_name or "General Learning"
     questions = [MediaQuizQuestion(**q.to_dict(), difficulty=media_question_difficulty(difficulty, q.kind))
                  for q in result.questions]
@@ -211,7 +254,18 @@ async def upload_media(
 @router.post("/youtube", response_model=MediaQuizResponse,
              summary="Generate an evidence-cited quiz from a YouTube link")
 async def youtube_media(payload: YoutubeRequest) -> MediaQuizResponse:
-    import asyncio
+    difficulty = payload.difficulty if payload.difficulty in DIFFICULTIES else "Medium"
+    video_id = media_io.youtube_video_id(payload.url) if media_io.is_youtube_url(payload.url) else None
+    key = (video_id, difficulty, payload.target_lang or None) if video_id else None
+
+    if key:
+        hit = _cached_result(key)
+        if hit is not None:
+            # Same video, same difficulty, same language: the questions would be
+            # regenerated identically, so skip the minutes of CPU and re-issue them.
+            result, title, size = hit
+            logger.info("[media] serving %s from the result cache", video_id)
+            return _respond(result, title, ".youtube", size, difficulty, "youtube")
 
     workdir = media_io.temp_dir()
     try:
@@ -222,8 +276,8 @@ async def youtube_media(payload: YoutubeRequest) -> MediaQuizResponse:
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc))
         size = sum(os.path.getsize(p) for p in {media.video_path, media.audio_path} if p)
-        return await _process(media, media.title, ".youtube", size, payload.difficulty,
-                              payload.target_lang, "youtube")
+        return await _process(media, media.title, ".youtube", size, difficulty,
+                              payload.target_lang, "youtube", cache_key=key)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 
@@ -233,9 +287,8 @@ async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSv
                            clients: Optional[str] = None) -> JSONResponse:
     """YouTube blocks by IP reputation, so the same link works from a laptop and fails
     from the server. This reports what this host can reach — yt-dlp version, JS runtimes,
-    per-player-client outcome, watch-page reachability — without downloading anything."""
-    import asyncio
-
+    per-player-client outcome, relay-tier reach, watch-page reachability — without
+    downloading anything."""
     if not media_io.is_youtube_url(url):
         raise HTTPException(status_code=400, detail="Only YouTube links can be diagnosed.")
     try:
@@ -260,7 +313,14 @@ def capabilities() -> JSONResponse:          # sync: _importable() really import
                     "player_clients": media_io._yt_clients(),
                     "cookies": media_io.has_cookies(),
                     "proxy": bool(media_io.YOUTUBE_PROXY),
-                    "pot_provider": bool(media_io.YOUTUBE_POT_URL)},
+                    "pot_provider": bool(media_io.YOUTUBE_POT_URL),
+                    # The relay tier needs no credentials: it reaches YouTube through a
+                    # public Invidious / Piped instance, from that instance's IP.
+                    "relays": {"enabled": ytrelay.enabled(), "mode": ytrelay.RELAYS,
+                               "frames": ytrelay.RELAY_FRAMES},
+                    "cache": {"fetch_ttl_s": media_io.YOUTUBE_CACHE_TTL_S,
+                              "result_ttl_s": YOUTUBE_RESULT_TTL_S,
+                              "results_held": len(_result_cache)}},
         "accepted_extensions": sorted(MEDIA_EXTS),
         "max_upload_mb": MAX_MEDIA_BYTES // (1024 * 1024),
     })

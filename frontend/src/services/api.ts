@@ -275,7 +275,7 @@ export async function fetchEnrollments(userId: string): Promise<Enrollment[]> {
     enrollments: {
       enrollmentId: string; courseId: string; courseTitle: string; provider: string;
       durationHours: number; progressPercentage: number; remainingHours: number;
-      lastAccessed: string; status: string;
+      lastAccessed: string; status: string; courseUrl?: string | null;
     }[];
   }>(`/api/v1/learner/${userId}/enrollments`, 'enrollments');
 
@@ -286,6 +286,7 @@ export async function fetchEnrollments(userId: string): Promise<Enrollment[]> {
       title:        e.courseTitle,
       source:       e.provider,
       durationHours: e.durationHours,
+      courseUrl:    e.courseUrl ?? null,
     },
     progressPercentage: e.progressPercentage,
     remainingHours:     e.remainingHours,
@@ -305,6 +306,7 @@ export async function fetchRecommendations(
       title:          string;
       provider:       string;
       durationHours:  number;
+      courseUrl?:     string | null;
       finalScore:     number;
       relevanceScore: number;
       qualityScore:   number;
@@ -331,6 +333,7 @@ export async function fetchRecommendations(
       title:         r.title,
       source:        r.provider,
       durationHours: r.durationHours,
+      courseUrl:     r.courseUrl ?? null,
     },
     // finalScore from backend — no more fabricated client-side value
     matchScore:     r.finalScore ?? 0,

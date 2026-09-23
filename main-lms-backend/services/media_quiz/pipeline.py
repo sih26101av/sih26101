@@ -111,7 +111,17 @@ def warm_up() -> None:
         from ai.embedder import get_embedder
         get_embedder("chat")
 
-    steps.append(("e5", e5))
+    def frac():
+        # The FRAC descriptions are embedded once and memoised (encode_cached), but the
+        # first media quiz pays for it. It is the same model as e5 above, so warming it
+        # here costs a few hundred ms and takes a step off the request path.
+        from ai.embedder import encode_cached
+        from services.media_quiz.relevance import frac_competencies
+        comps = frac_competencies()
+        if comps:
+            encode_cached("chat", [f"{c['name']}. {c['description']}" for c in comps], kind="passage")
+
+    steps += [("e5", e5), ("frac", frac)]
     for name, fn in steps:
         try:
             fn()

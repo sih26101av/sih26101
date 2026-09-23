@@ -50,6 +50,10 @@ class Recommendation(BaseModel):
     title:          str
     provider:       str
     durationHours:  float
+    # The course's page on the real iGOT portal. None in mock mode, and None for
+    # any course the live catalogue did not serve — the UI then renders a plain
+    # button rather than a link that would 404.
+    courseUrl:      Optional[str] = None
     matchReason:    str
     tags:           List[str]
     # Extended fields for scored recommendations
@@ -81,6 +85,8 @@ class Enrollment(BaseModel):
     courseTitle:        str
     provider:           str
     durationHours:      float
+    # As on Recommendation: set only for a course the live catalogue served.
+    courseUrl:          Optional[str] = None
     progressPercentage: int
     remainingHours:     float
     lastAccessed:       str

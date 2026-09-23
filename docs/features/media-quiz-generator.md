@@ -16,8 +16,9 @@ Backend, `main-lms-backend/`:
 
 | File | Role |
 |---|---|
-| `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards). Stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`, the quiz `difficulty`, and a `difficulty` on each question (`practice_assessment.media_question_difficulty`: the target level, one step harder for `synthesis` questions). `/grade` uses these for the difficulty-aware skill update. Generation is unchanged. |
-| `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource`, built from `_probe_clients`' per-client `_Attempt`s (see *YouTube* below); `youtube_diagnosis` answers what this host can reach. |
+| `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards). Stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`, the quiz `difficulty`, and a `difficulty` on each question (`practice_assessment.media_question_difficulty`: the target level, one step harder for `synthesis` questions). `/grade` uses these for the difficulty-aware skill update. Generation is unchanged. Holds the **quiz result cache** for `/youtube` (`MEDIA_YOUTUBE_RESULT_TTL_S`, keyed by video id + difficulty + target_lang); a hit re-issues the same questions under a fresh `quiz_id`. |
+| `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource`, built from `_probe_clients`' per-client `_Attempt`s (see *YouTube* below); `_relay_fill` asks `ytrelay` for whatever YouTube withheld; `cache_load` / `cache_store` keep the fetched captions and media per video id; `youtube_diagnosis` answers what this host can reach. |
+| `services/media_quiz/ytrelay.py` | The **relay tier**: YouTube through a public Invidious / Piped / cobalt instance instead of directly, so the fetch leaves from *that* server's IP. Instance discovery, a parallel race behind a deadline, a penalty box for failures, VTT / TTML / json3 caption parsing, and `classify()` / `diagnosis()` for the report. See *The relay tier* below. |
 | `services/media_quiz/probe.py` | Computes `speech_ratio` (Silero VAD bundled with faster-whisper), `text_density` (RapidOCR **detector only**, one frame every ~10 s) and `screen_activity`, then `route()`. |
 | `services/media_quiz/extractors.py` | ASR (faster-whisper, per-window language, `task="transcribe"`, Whisper cut-offs), OCR on keyframes (RapidOCR, which runs the PaddleOCR models on ONNX) and the VLM (Gemini for demos, or Ollama Qwen2.5-VL offline). |
 | `services/media_quiz/evidence.py` | `Timeline` holds the shared evidence records and prunes them by confidence; `build_chunks` does slide/speech alignment. |
@@ -25,7 +26,7 @@ Backend, `main-lms-backend/`:
 | `services/media_quiz/question_gen.py` | Per-chunk generation, a synthesis pass and the validator. `generate_naive` is the eval baseline. |
 | `services/media_quiz/fact_check.py` | Checks answers against `reference_facts.json` (flags, never rejects), plus translation with ⟦T1⟧-protected terms. The per-answer check (`review_answer`) and the string translator (`translate_texts`) are shared with the document quiz (`services/doc_quiz`); `fact_check` / `translate_questions` wrap them and behave as before. |
 | `services/media_quiz/llm.py` | `gemini_json` for text and images, shared with the document quiz. Text prompts go to Groq first (`providers.py`: the `GROQ_API_KEYS` rotate on 429 and the `GROQ_MODELS` fail over), then Gemini. Images use Gemini only. See rag-quiz-generator.md § LLM providers. Also holds `ollama_vision_json`. `DEFAULT_GEMINI_MODEL` (`gemini-3.5-flash-lite`) is the one model id for both quiz paths; `.env.example` matches it. |
-| `services/media_quiz/pipeline.py` | `run()` orchestrates the steps; one job at a time (semaphore). Independent stages run concurrently (see *Performance*). `warm_up()` preloads the CPU models; the router starts it in a background thread at startup (`MEDIA_WARMUP=0` turns it off). `run_naive()` is the old behaviour. |
+| `services/media_quiz/pipeline.py` | `run()` orchestrates the steps; one job at a time (semaphore). Independent stages run concurrently (see *Performance*). `warm_up()` preloads the CPU models and the FRAC competency vectors; the router starts it in a background thread at startup (`MEDIA_WARMUP=0` turns it off). `run_naive()` is the old behaviour. |
 | `scripts/eval_media_quiz.py` | Runs a test folder through the old and new pipelines and writes `results.csv` and `summary.md`. |
 | `requirements-media.txt` | Optional dependencies. Without them the endpoints return 503; the document quiz is unaffected. |
 
@@ -137,8 +138,17 @@ out **identical** to the sequential version.
   silently skips the tuning here and crashes the text-density probe. `MEDIA_OCR_WORKERS` frames are then recognised in
   parallel, and the probe's text detector uses the same pool. Timeline writes stay
   sequential, in keyframe order.
-- **YouTube:** when there are no captions, the video-only and audio-only streams
-  download in parallel.
+- **YouTube fetch:** the first player client is asked alone — on a host YouTube trusts
+  it returns captions *and* formats and there is nothing left to ask. Only if it
+  doesn't are the remaining clients asked **all at once**, stopping at the first that
+  has both, so the healthy path is unchanged while a fully walled host pays the slowest
+  client instead of the sum of six. Probe retries are 1, not 3: there is a whole chain
+  and then the relay tier behind each attempt. When there are no captions, the
+  video-only and audio-only streams download in parallel.
+- **Repeat links:** the fetch is cached per video id and the finished quiz per
+  (video, difficulty, target_lang), so asking for the same link again costs neither
+  the download nor the pipeline. The cached result is the same object, so the questions
+  are identical — only the `quiz_id` is new, because grading is per attempt.
 - **Cold start:** Whisper, RapidOCR, Silero VAD and e5 are loaded by the startup
   warm-up instead of by the first request.
 
@@ -155,6 +165,15 @@ Gemini generation isn't included; it was already concurrent.
 | **Probe + extract, wall time** | **122–154 s** | **≈74 s** |
 | First request after a restart | also loads the models | models loaded by the warm-up (≈20 s, in the background) |
 
+YouTube fetch stage, measured 2026-09-23 (6-client chain):
+
+| Case | Before | After |
+|---|---|---|
+| Healthy host, first client answers fully | 1 probe | 1 probe (unchanged — wave 2 never runs) |
+| Healthy host, 2nd client answers (`android_vr`) | 5.9 s | 7.1 s, **same client chosen** |
+| Every client walled (the VM) | 12.1 s | **4.0 s** |
+| Same link again, any path | full download + pipeline | **0.03 s** (fetch cache) / instant (result cache) |
+
 Tuning notes:
 - Whisper sweep (workers × threads → seconds): 1×4 69, 1×8 52, 2×4 42, 2×6 34,
   3×4 30.5, 4×3 32. The default is 3 workers when there are ≥12 cores.
@@ -167,6 +186,10 @@ Tuning notes:
 YouTube serves almost no combined audio+video files any more, and merging
 separate streams needs an ffmpeg binary. So `download_youtube` fetches parts:
 
+0. **Cache.** The whole fetch is keyed by video id under `temp_uploads/yt_cache/<id>/`
+   (`MEDIA_YOUTUBE_CACHE_TTL_S`=86400, 0 disables). Streams download straight into it,
+   so they outlive the request's workdir and a second quiz from the same link starts
+   with the captions and the 360p file already on disk.
 1. **Metadata** through yt-dlp, with `js_runtimes` deno/node, which are needed
    for YouTube's signature challenges. Playlists and live streams are rejected.
    The length limit is `MEDIA_YOUTUBE_MAX_DURATION_S`=4 h. Every player client in
@@ -178,6 +201,8 @@ separate streams needs an ffmpeg binary. So `download_youtube` fetches parts:
 3. **Video-only stream** at ≤360p H.264 for frames (about 0.4 MB per minute).
 4. **Audio-only stream** (smallest m4a), only when there are no captions.
    Transcription then uses the ASR budget.
+5. **The relay tier**, for whatever is still missing — see below. It is only reached
+   for gaps: a link yt-dlp served completely never pays for it.
 
 When captions are available, the probe computes the speech ratio from the
 caption spans instead of running VAD.
@@ -221,6 +246,77 @@ a client that can't deliver is not evidence about the video itself. Then:
   `YOUTUBE_NO_SPEECH_MESSAGE`; when nothing came back at all, with
   `YOUTUBE_BLOCKED_MESSAGE`.
 
+### The relay tier
+
+`ytrelay.py`. Every option above asks YouTube **from this machine**, which is the
+thing that fails. The relay tier asks somebody else to ask: a public
+[Invidious](https://docs.invidious.io/api/), [Piped](https://docs.piped.video/docs/api-documentation/)
+or [cobalt](https://github.com/imputnet/cobalt) instance fetches the video from *its*
+address and re-serves it over a plain JSON API. All three are AGPL and need no account
+and no API key, so unlike cookies and proxies this costs nothing and needs no setup —
+it is on by default (`MEDIA_YOUTUBE_RELAYS=auto`, `off` disables).
+
+| Software | Endpoint | Gives |
+|---|---|---|
+| Invidious | `GET /api/v1/videos/<id>?local=true` | caption tracks (VTT) + formats proxied through the instance |
+| Piped | `GET /streams/<id>` | `subtitles[]` (TTML, refetched as json3) + `pipedproxy-*` streams |
+| cobalt | `POST /` | no captions — one **muxed** 360p file, so speech comes from Whisper instead |
+
+Details that matter:
+
+- **Instances are raced, not chained.** They die, rate-limit and get IP-blocked
+  constantly, so all candidates are asked at once behind `MEDIA_YOUTUBE_RELAY_DEADLINE_S`=15;
+  the first with captions wins. A failure benches that instance for
+  `MEDIA_YOUTUBE_RELAY_PENALTY_S`=900, so the next request doesn't re-pay for the graveyard.
+- **The list is discovered live** (Invidious' `instances.json`, Piped's registry, both
+  fetched in parallel and memoised for an hour); the hardcoded list only fills in behind
+  it. It has to be: of the six Piped hosts in that fallback, four had already stopped
+  resolving. Instances whose API the operator disabled are dropped, as are Yggdrasil
+  mirrors the registry lists as ordinary HTTPS.
+- **A media URL is used only if the instance serves it.** A format URL still pointing at
+  `googlevideo.com` is discarded — fetching it would leave from this host's IP, the
+  address YouTube already refused.
+- **Caption policy matches the direct path**: manual tracks first, preferring the video's
+  own language, then the original-language auto captions, never a machine translation.
+- **Frames are opt-in** (`MEDIA_YOUTUBE_RELAY_FRAMES=0` by default) because no public
+  instance currently serves media bytes; a cobalt muxed file is the exception and is
+  used for frames anyway, since the bytes are already there.
+
+#### How well it actually works
+
+Measured 2026-09-23 from a residential connection, 45 instances across the three pools,
+and it is worth being precise because the answer is "sometimes", not "yes":
+
+| Video | Result |
+|---|---|
+| 5-min explainer (`dMRDzicSvXk`) | **344 caption cues** from `api.piped.private.coffee` in ~8 s; a cobalt instance also served a muxed file |
+| 77-min Python tutorial (`rfscVS0vtbw`) | nothing — Piped got `SignInConfirmNotBotException`, cobalt `error.api.content.too_long` |
+| 11-min lecture (`8DvywoWv6fI`) | nothing |
+
+The failure modes are reported per instance by `classify()` and summarised in the
+diagnosis, because they need different answers:
+
+| `why` | Meaning |
+|---|---|
+| `youtube_walls_the_instance` | The instance is up and answering, but YouTube refuses **it** — the public pools live in the same datacenter address space the VM does. This is the wall again, one hop out. |
+| `instance_refuses_api_clients` | The operator turned the JSON API off or put the host behind a scraper block (`Endpoint disabled`, openresty 403, cobalt `auth.jwt.missing`). |
+| `instance_unreachable` | Dead DNS or timeouts — the majority. |
+
+So the tier **does** rescue a walled host, for free and with no configuration, but per
+video it is luck. The dependable version is the same code pointed at an instance you
+run somewhere that is not a flagged datacenter:
+`youtube-access.sh --relay piped:https://my-piped.example` (which also turns frames back
+on). That is the only free option that needs no Google account at all.
+
+End-to-end check with every player client forced to fail — i.e. the Oracle VM's state:
+
+```
+INFO [relay] piped https://api.piped.private.coffee answered in 10.5s: 344 caption cues (auto/en)
+RELAY-ONLY 18.6s  caps=344 kind=auto lang=en
+  notes: ['speech from YouTube auto captions (en) relayed by piped (api.piped.private.coffee)',
+          'video frames unavailable from this server — speech only']
+```
+
 #### When the wall is the IP itself
 
 The Oracle VM is in the harder case, and measuring it settled the question
@@ -240,7 +336,9 @@ the wall: identity is served, content is not.
 
 Every InnerTube client **and** the plain watch page are refused, so there is no
 surface left for code to read: the captions work above cannot help a host in this
-state, and no chain of player clients will.
+state, and no chain of player clients will. What *can* help is not reading a different
+surface but not being the one to ask — the relay tier above, which rescues this exact
+state when an instance is healthy.
 
 The watch page is not a way around this even when it *is* served. Measured from a
 residential IP on 2026-09-20: the page returns 200 with `captionTracks` present,
@@ -257,6 +355,10 @@ and then re-runs the diagnosis:
 | `--pot` | Docker bgutil PO-token provider on :4416 + the yt-dlp plugin, sets `MEDIA_YOUTUBE_POT_URL`. Also appends `web_safari,web` to the client chain, since a PO token means nothing to the other clients. | Free, but it attests the *client*, not the IP — it may not beat a LOGIN_REQUIRED wall |
 | `--cookies <file>` | base64s a Netscape `cookies.txt` into `MEDIA_YOUTUBE_COOKIES_B64` | Yes, until the cookies expire |
 | `--proxy <url>` | sets `MEDIA_YOUTUBE_PROXY` | Yes, with a residential/mobile proxy |
+| `--relay <kind>:<url>` | pins `MEDIA_YOUTUBE_RELAYS` to your own Invidious/Piped/cobalt instance and turns `MEDIA_YOUTUBE_RELAY_FRAMES` on | Yes, if the instance isn't in a flagged datacenter — and it needs no Google account |
+
+The relay tier needs none of these to be tried first: it runs by default and is what
+makes a link work on the VM today, when an instance happens to be healthy.
 
 Cookies arrive as base64 in `.env` because that is the only writable, persistent,
 gitignored thing on the VM — `update.sh` runs `git reset --hard`. `cookies_path()`
@@ -269,7 +371,7 @@ than being sent to set up cookies they already set up.
 
 `MEDIA_YOUTUBE_COOKIES_FROM_BROWSER` still exists for dev machines.
 `GET /capabilities` reports `youtube.player_clients`, `youtube.cookies`,
-`youtube.proxy` and `youtube.pot_provider`.
+`youtube.proxy`, `youtube.pot_provider`, `youtube.relays` and `youtube.cache`.
 
 `GET /youtube/diagnose?url=…` answers what this host can actually do — yt-dlp
 version, JS runtimes, per-client captions **and format counts**, watch-page
@@ -278,8 +380,14 @@ those instead of the configured chain, which is how a candidate client gets test
 against the real IP without a redeploy (nothing else can settle it):
 
 ```json
-"verdict": {"can_generate_quiz": true, "can_use_video_frames": false, "speech_from": "captions"}
+"verdict": {"can_generate_quiz": true, "can_use_video_frames": false,
+            "speech_from": "relay:piped captions", "relay_rescues_this_host": true}
 ```
+
+It also carries a `relays` block: the candidates tried, which served the video, and a
+`failures` histogram over the `why` values above. `pools_are_walled_too` is the one
+that settles whether a public instance is worth waiting for on this host or whether
+only your own instance / cookies will do.
 
 Failures reach the learner as one sentence, not yt-dlp's multi-line dump
 (`_yt_message` strips the `ERROR: [youtube] <id>:` prefix and the wiki links).
@@ -392,16 +500,25 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
-- **Not yet tested:** the real test set above, the Ollama VLM backend, and the
-  bgutil PO-token provider on the VM.
+- **Not yet tested:** the real test set above, the Ollama VLM backend, the bgutil
+  PO-token provider on the VM, and the relay tier *from the Oracle VM itself* — it was
+  verified from a dev machine with the player clients forced to fail, which reproduces
+  the VM's refusal but not its IP. Run `GET /youtube/diagnose` there; if `relays.failures`
+  is dominated by `youtube_walls_the_instance`, the public pools share the VM's problem
+  and only `--relay <your own>` / `--cookies` will do.
+- **Relay instances are luck.** One of three test videos was served (see *The relay
+  tier*). cobalt refuses long videos outright (`error.api.content.too_long`), and it has
+  no captions, so a cobalt rescue costs a Whisper pass. Self-hosting is the fix.
 - **YouTube from a datacenter IP** has two failure levels and they need different
   answers (see *Getting past the bot check*):
   - *Formats gated, metadata and captions fine* — handled in code now, verified by
     forcing the client chain onto clients that answer this way. The quiz is built
     from captions, loses only OCR evidence, and is much faster.
   - *Everything refused (LOGIN_REQUIRED)* — what the Oracle VM actually returns as
-    of 2026-09-20. Code cannot fix this; run `deploy/oracle/youtube-access.sh`.
-    Until it is run, uploads are the demo path.
+    of 2026-09-20. Nothing that asks YouTube directly can fix this, but the **relay
+    tier** does rescue it when a public instance is healthy (verified end-to-end), and
+    always when `youtube-access.sh --relay` points it at your own instance. Cookies and
+    a residential proxy remain the other dependable answers.
   Run `GET /youtube/diagnose` on the server to see which case you are in rather
   than guessing — its `verdict` answers it in one line.
 - **Dev server:** `uvicorn --reload` on Windows hangs on reload in this app. The

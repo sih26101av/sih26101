@@ -17,6 +17,9 @@ import { useAuth } from '../context/AuthContext';
 import { changePassword } from '../services/authApi';
 import { DashboardFactory } from '../patterns/DashboardFactory';
 import { AshokaChakra, GovEmblem } from '../components/gov/GovUI';
+import GovUtilityBar from '../components/gov/GovUtilityBar';
+import GovFooter from '../components/gov/GovFooter';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -70,8 +73,14 @@ const ChangePasswordPage: React.FC = () => {
     }
   };
 
+  usePageTitle('Change Password', 'Set a new password for your KarmaSkill account.');
+
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10">
+    <div className="flex min-h-screen flex-col">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <GovUtilityBar mainId="main-content" />
+      <div className="tricolor-strip" />
+      <main id="main-content" tabIndex={-1} className="flex flex-1 items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10">
       {/* Government header band */}
       <div className="absolute inset-x-0 top-0 h-[42vh] bg-gradient-to-br from-gov-ink via-gov-navy to-gov-blue" />
       <div className="absolute inset-x-0 top-[42vh] tricolor-strip" />
@@ -125,12 +134,17 @@ const ChangePasswordPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               {/* Current password */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                <label htmlFor="cp-current" className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                   Current Password
                 </label>
                 <div className="relative">
                   <input
+                    id="cp-current"
+                    name="cp-current"
                     type={showCurrent ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'cp-error' : undefined}
                     value={currentPassword}
                     onChange={e => setCurrentPassword(e.target.value)}
                     required
@@ -141,21 +155,27 @@ const ChangePasswordPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowCurrent(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                    tabIndex={-1}
+                    aria-pressed={showCurrent}
+                    aria-label={showCurrent ? 'Hide the current password' : 'Show the current password'}
                   >
-                    {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showCurrent ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
               </div>
 
               {/* New password */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                <label htmlFor="cp-new" className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                   New Password
                 </label>
                 <div className="relative">
                   <input
+                    id="cp-new"
+                    name="cp-new"
                     type={showNew ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'cp-error' : undefined}
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     required
@@ -167,21 +187,27 @@ const ChangePasswordPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowNew(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                    tabIndex={-1}
+                    aria-pressed={showNew}
+                    aria-label={showNew ? 'Hide the new password' : 'Show the new password'}
                   >
-                    {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showNew ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
               </div>
 
               {/* Confirm new password */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                <label htmlFor="cp-confirm" className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                   Confirm New Password
                 </label>
                 <div className="relative">
                   <input
+                    id="cp-confirm"
+                    name="cp-confirm"
                     type={showConfirm ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'cp-error' : undefined}
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
@@ -192,16 +218,17 @@ const ChangePasswordPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowConfirm(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                    tabIndex={-1}
+                    aria-pressed={showConfirm}
+                    aria-label={showConfirm ? 'Hide the confirmation' : 'Show the confirmation'}
                   >
-                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirm ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
               </div>
 
               {/* Error */}
               {error && (
-                <p className="text-[12px] text-red-500 font-medium bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-lg px-3 py-2">
+                <p id="cp-error" role="alert" className="text-[12px] text-red-500 font-medium bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -226,6 +253,8 @@ const ChangePasswordPage: React.FC = () => {
           </div>
         </div>
       </div>
+      </main>
+      <GovFooter variant="compact" />
     </div>
   );
 };

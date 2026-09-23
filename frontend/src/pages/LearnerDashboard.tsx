@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 
 import AppShell, { type ShellNavGroup } from "../components/shell/AppShell";
 import PageHeader from "../components/shell/PageHeader";
+import { usePageTitle } from "../hooks/usePageTitle";
 import SectionCard, { SectionAction } from "../components/shell/SectionCard";
 import StatCard from "../components/shell/StatCard";
 
@@ -236,6 +237,8 @@ const LearnerDashboard: React.FC<{ officialId?: string }> = ({ officialId }) => 
   ];
 
   const meta = SECTION_META[activeTab];
+  // GIGW: each section is its own "page" to the user, so give it its own title.
+  usePageTitle(meta.title, meta.subtitle);
 
   // ── Error ───────────────────────────────────────────────────────────────────
   if (error) {

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  User, Users, BookOpen, Activity, Award, Route, Moon, Sun, BrainCircuit, BookOpenCheck,
-  FileQuestion, RefreshCw, Shield, LayoutDashboard, ArrowRight, Megaphone, MapPin, Mail, Phone,
-  ExternalLink, ChevronRight, BarChart3, Menu, X, Accessibility, Square,
+  User, Users, BookOpen, Activity, Award, Route, BrainCircuit, BookOpenCheck,
+  FileQuestion, RefreshCw, Shield, LayoutDashboard, ArrowRight, Megaphone,
+  ChevronRight, BarChart3, Menu, X, Pause, Play,
 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
 import { useScreenReader } from '../hooks/useScreenReader';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useAccessibility } from '../context/AccessibilityContext';
+import GovUtilityBar from '../components/gov/GovUtilityBar';
+import GovFooter from '../components/gov/GovFooter';
 import LoginPage from './LoginPage';
 import HomeChatWidget from '../components/home/HomeChatWidget';
 import { AshokaChakra, GovEmblem, Reveal, CountUp } from '../components/gov/GovUI';
@@ -101,12 +104,18 @@ const NEWS_ITEMS = [
 
 const LandingPage: React.FC = () => {
 
-  const { theme, toggleTheme } = useTheme();
-  const [lang, setLang] = useState<'en' | 'hi'>('en');
+  // Text size, contrast and language are portal-wide preferences — they live in
+  // AccessibilityContext so the choice follows the user into the dashboards.
+  const { lang, setLang } = useAccessibility();
   const screenReader = useScreenReader(lang);
+  usePageTitle(
+    undefined,
+    'KarmaSkill — the MoSPI Skill Intelligence Platform: evidence-based competency baselines, skill-gap analysis and iGOT Karmayogi learning pathways for officials of the National Statistical System.'
+  );
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [tickerPaused, setTickerPaused] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 120);
@@ -205,56 +214,15 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="font-sans relative bg-gov-paper dark:bg-[#07111f] text-slate-700 dark:text-slate-200 overflow-x-hidden transition-colors duration-300">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-gov-navy focus:px-3 focus:py-2 focus:rounded-md focus:shadow-gov">
-        {t('Skip', 'Skip to main content')}
-      </a>
+      <a href="#main" className="skip-link">{t('Skip', 'Skip to main content')}</a>
 
-      {/* ── GoI utility bar ─────────────────────────────────────────────── */}
-      <div className="relative z-30 bg-gov-ink text-white/80 text-[11.5px]">
-        <div className="max-w-[1320px] mx-auto px-4 md:px-8 h-9 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 font-semibold">
-            <span className="font-[600]" lang="hi">भारत सरकार</span>
-            <span className="w-px h-3.5 bg-white/25" />
-            <span className="tracking-wide">GOVERNMENT OF INDIA</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="#main" className="hidden sm:inline hover:text-white transition-colors">{t('Skip', 'Skip to main content')}</a>
-            <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
-            {screenReader.supported && (
-              <>
-                <button
-                  onClick={() => screenReader.toggle('#main')}
-                  aria-pressed={screenReader.speaking}
-                  title={screenReader.speaking
-                    ? t('SR_Stop', 'Stop reading the page') as string
-                    : t('SR_Start', 'Read this page aloud') as string}
-                  className={`hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-semibold transition-colors ${
-                    screenReader.speaking
-                      ? 'bg-gov-saffron text-gov-ink'
-                      : 'hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {screenReader.speaking
-                    ? <><Square size={11} className="fill-current" /> {t('SR_On', 'Stop Reading')}</>
-                    : <><Accessibility size={13} /> {t('SR_Label', 'Screen Reader')}</>}
-                </button>
-                <span className="hidden sm:inline w-px h-3.5 bg-white/25" />
-              </>
-            )}
-            <div className="flex items-center rounded-full bg-white/10 p-0.5">
-              <button onClick={() => { screenReader.stop(); setLang('en'); }} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'en' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>EN</button>
-              <button onClick={() => { screenReader.stop(); setLang('hi'); }} className={`px-2.5 py-0.5 rounded-full font-bold transition-all ${lang === 'hi' ? 'bg-white text-gov-ink' : 'hover:text-white'}`}>हिंदी</button>
-            </div>
-            <button aria-label="Toggle Theme" onClick={toggleTheme} className="p-1 rounded-full hover:bg-white/10 hover:text-white transition-colors">
-              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* ── GoI utility strip: identity + the statutory accessibility controls,
+             shared with the policy pages and the dashboards. ─────────────── */}
+      <GovUtilityBar mainId="main" screenReader={screenReader} />
       <div className="tricolor-strip" />
 
       {/* ── Ministry header ─────────────────────────────────────────────── */}
-      <header className="relative z-20 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
+      <header role="banner" className="relative z-20 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
         <div className="max-w-[1320px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-6">
           <a href="#" onClick={(e) => scrollToSection(e, 'home')} className="flex items-center gap-4 group">
             <GovEmblem size={58} className="transition-transform duration-500 group-hover:scale-105" />
@@ -289,16 +257,22 @@ const LandingPage: React.FC = () => {
             </button>
           </div>
 
-          <button className="lg:hidden p-2 rounded-lg text-gov-navy dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setMobileNavOpen(v => !v)} aria-label="Menu">
+          <button
+            className="lg:hidden p-2 rounded-lg text-gov-navy dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            onClick={() => setMobileNavOpen(v => !v)}
+            aria-expanded={mobileNavOpen}
+            aria-controls="primary-nav"
+            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+          >
             {mobileNavOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </header>
 
       {/* ── Primary navigation (sticky) ─────────────────────────────────── */}
-      <nav className={`sticky top-0 z-40 bg-gov-navy text-white transition-shadow duration-300 ${scrolled ? 'shadow-gov-lg' : ''}`}>
+      <nav aria-label="Primary" className={`sticky top-0 z-40 bg-gov-navy text-white transition-shadow duration-300 ${scrolled ? 'shadow-gov-lg' : ''}`}>
         <div className="max-w-[1320px] mx-auto px-4 md:px-8 flex items-center justify-between">
-          <ul className={`${mobileNavOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row w-full lg:w-auto py-2 lg:py-0`}>
+          <ul id="primary-nav" className={`${mobileNavOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row w-full lg:w-auto py-2 lg:py-0`}>
             {navItems.map(item => (
               <li key={item.id}>
                 <a
@@ -323,26 +297,48 @@ const LandingPage: React.FC = () => {
         </div>
       </nav>
 
-      {/* ── What's New ticker ───────────────────────────────────────────── */}
-      <div className="relative z-10 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
+      {/* ── What's New ticker ─────────────────────────────────────────────
+             WCAG 2.2.2: content that moves for more than five seconds needs a
+             way to stop it, so the strip carries a pause control as well as
+             pausing on hover and on keyboard focus. The marquee duplicates the
+             items to loop seamlessly — the second copy is hidden from assistive
+             technology so the headlines are announced once. */}
+      <section aria-label={t('Whats_New', "What's New") as string} className="relative z-10 bg-white dark:bg-[#0b1628] border-b border-gov-line dark:border-slate-800 transition-colors duration-300">
         <div className="max-w-[1320px] mx-auto flex items-stretch">
-          <div className="flex items-center gap-2 bg-gov-saffron text-gov-ink px-4 md:px-5 text-[12px] font-bold uppercase tracking-wider shrink-0 [clip-path:polygon(0_0,100%_0,calc(100%-10px)_100%,0_100%)] pr-6">
-            <Megaphone size={14} /> {t('Whats_New', "What's New")}
-          </div>
+          <h2 className="flex items-center gap-2 bg-gov-saffron text-gov-ink px-4 md:px-5 text-[12px] font-bold uppercase tracking-wider shrink-0 [clip-path:polygon(0_0,100%_0,calc(100%-10px)_100%,0_100%)] pr-6">
+            <Megaphone size={14} aria-hidden="true" /> {t('Whats_New', "What's New")}
+          </h2>
           <div className="relative flex-1 overflow-hidden py-2.5 group [mask-image:linear-gradient(90deg,transparent,black_4%,black_96%,transparent)]">
-            <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused]">
+            <ul
+              className="flex w-max animate-marquee group-hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]"
+              style={tickerPaused ? { animationPlayState: 'paused' } : undefined}
+            >
               {[...NEWS_ITEMS, ...NEWS_ITEMS].map((n, i) => (
-                <span key={i} className="flex items-center gap-2 px-8 text-[12.5px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gov-green" /> {n}
-                  {i % NEWS_ITEMS.length === 0 && <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-red-600 text-white animate-pulse">NEW</span>}
-                </span>
+                <li
+                  key={i}
+                  aria-hidden={i >= NEWS_ITEMS.length ? 'true' : undefined}
+                  className="flex items-center gap-2 px-8 text-[12.5px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-gov-green" aria-hidden="true" /> {n}
+                  {i % NEWS_ITEMS.length === 0 && <span className="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-red-600 text-white">NEW</span>}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
+          <button
+            type="button"
+            onClick={() => setTickerPaused(p => !p)}
+            aria-pressed={tickerPaused}
+            className="shrink-0 px-3 text-slate-500 hover:text-gov-navy dark:text-slate-400 dark:hover:text-white transition-colors"
+            title={tickerPaused ? 'Resume the headlines' : 'Pause the headlines'}
+            aria-label={tickerPaused ? 'Resume the scrolling headlines' : 'Pause the scrolling headlines'}
+          >
+            {tickerPaused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
+          </button>
         </div>
-      </div>
+      </section>
 
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section id="home" className="relative overflow-hidden bg-gov-navy text-white">
           {/* Hero artwork (chakra, growth bars, orbit arc) — gradient stays behind it
@@ -576,11 +572,13 @@ const LandingPage: React.FC = () => {
         </section>
       </main>
 
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <footer id="contact" className="relative bg-gov-ink text-white/75 scroll-mt-12">
-        <div className="tricolor-strip" />
-        <div className="absolute right-0 bottom-0 text-white/[0.03] pointer-events-none overflow-hidden"><AshokaChakra size={380} /></div>
-        <div className="relative max-w-[1320px] mx-auto px-4 md:px-8 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] gap-10">
+      {/* ── Footer ───────────────────────────────────────────────────────────
+             The columns after the brand block (Website Policies, Related
+             Portals, Web Information Manager) and the statutory lines beneath
+             them come from GovFooter, shared with the policy pages. ─────── */}
+      <GovFooter
+        id="contact"
+        brand={
           <div>
             <div className="flex items-center gap-3 mb-4">
               <GovEmblem size={46} />
@@ -591,65 +589,30 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <p className="text-[13px] leading-[1.7] text-white/60 max-w-sm">
-              KarmaSkill, the {t('SIP', 'Skill Intelligence Platform')} — evidence-based competency baselines, skill-gap analysis and iGOT learning pathways for officials of the National Statistical System.
+            <p className="text-[13px] leading-[1.7] text-white/60 mb-5">
+              KarmaSkill, the {t('SIP', 'Skill Intelligence Platform')} — evidence-based competency baselines,
+              skill-gap analysis and iGOT learning pathways for officials of the National Statistical System.
             </p>
-          </div>
-
-          <div>
-            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Quick_Links', 'Quick Links')}</h5>
-            <ul className="space-y-2.5 text-[13px]">
+            <h2 className="text-white text-[12px] font-bold uppercase tracking-[0.16em] mb-3">
+              {t('Quick_Links', 'Quick Links')}
+            </h2>
+            <ul className="space-y-2 text-[13px]">
               {navItems.slice(0, 3).map(item => (
                 <li key={item.id}>
-                  <a href={`#${item.id}`} onClick={(e) => scrollToSection(e, item.id)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:translate-x-1 transition-all">
-                    <ChevronRight size={13} /> {t(item.key, item.label)}
+                  <a href={`#${item.id}`} onClick={(e) => scrollToSection(e, item.id)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:underline">
+                    <ChevronRight size={13} aria-hidden="true" /> {t(item.key, item.label)}
                   </a>
                 </li>
               ))}
-              <li><button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:translate-x-1 transition-all"><ChevronRight size={13} /> {t('OFFICIAL_LOGIN', 'Official Login')}</button></li>
+              <li>
+                <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-1.5 hover:text-gov-saffron hover:underline">
+                  <ChevronRight size={13} aria-hidden="true" /> {t('OFFICIAL_LOGIN', 'Official Login')}
+                </button>
+              </li>
             </ul>
           </div>
-
-          <div>
-            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Related_Portals', 'Related Portals')}</h5>
-            <ul className="space-y-2.5 text-[13px]">
-              {[
-                ['iGOT Karmayogi', 'https://igotkarmayogi.gov.in'],
-                ['MoSPI', 'https://www.mospi.gov.in'],
-                ['National Portal of India', 'https://www.india.gov.in'],
-                ['DARPG', 'https://darpg.gov.in'],
-              ].map(([label, href]) => (
-                <li key={label}>
-                  <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-gov-saffron transition-colors">
-                    {label} <ExternalLink size={11} className="opacity-60" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="text-white text-[12px] font-bold uppercase tracking-[0.18em] mb-4">{t('Contact_Us', 'Contact Us')}</h5>
-            <ul className="space-y-3 text-[13px]">
-              <li className="flex gap-2.5"><MapPin size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Ministry of Statistics &amp; PI, New Delhi</li>
-              <li className="flex gap-2.5"><Mail size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Reach your division&apos;s training nodal officer</li>
-              <li className="flex gap-2.5"><Phone size={15} className="mt-0.5 shrink-0 text-gov-saffron" /> Ask Gyan, the in-portal assistant, any time</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="relative border-t border-white/10">
-          <div className="max-w-[1320px] mx-auto px-4 md:px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-white/55">
-            <div>© {new Date().getFullYear()} {t('Footer_1', 'Ministry of Statistics and Programme Implementation (MoSPI) | Government of India')}</div>
-            <div className="flex items-center gap-5">
-              <a href="#" className="hover:text-white transition-colors">{t('Privacy', 'Privacy Policy')}</a>
-              <a href="#" className="hover:text-white transition-colors">{t('Terms', 'Terms')}</a>
-              <a href="#" className="hover:text-white transition-colors">{t('Help', 'Help & FAQ')}</a>
-              <span className="hidden md:inline text-white/35">Prototype · Smart India Hackathon 2026</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+        }
+      />
 
       {/* Login Modal Overlay */}
       {isLoginModalOpen && (

@@ -63,6 +63,13 @@ export interface Course {
   durationHours: number;
   embeddingModelVersion?: string;
   thumbnailUrl?: string;
+  /**
+   * The course's page on the real iGOT Karmayogi portal. Present only when the
+   * backend is serving the live catalogue AND this course came from it — the
+   * synthetic catalogue mints ids in the same shape, so a missing value means
+   * "we cannot vouch for this link", and the UI shows a plain button instead.
+   */
+  courseUrl?: string | null;
 }
 
 export type EvidenceConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNASSESSED';

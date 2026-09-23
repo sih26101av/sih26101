@@ -118,7 +118,8 @@ _assembler: BaselineAssembler | None = None
 
 # ── SCIL v6 reference data (GSBPM map, office workload, …) ────────────────────
 from services.reference_data import ReferenceData
-from services import app_state, gsbpm_service, prerequisite_service, proficiency_service
+from services import (app_state, catalogue_source, gsbpm_service, prerequisite_service,
+                      proficiency_service)
 _ref: ReferenceData = ReferenceData()
 
 
@@ -179,9 +180,15 @@ async def _warm_up(server_loop: asyncio.AbstractEventLoop):
         # is down, fall back to the same generated files on disk (and say so).
         # Fetched concurrently with the chat warm-up and the reference data.
         async def _catalogue():
+            # The catalogue itself may come from the real iGOT portal
+            # (IGOT_CATALOGUE_SOURCE=live); the FRAC dictionary and its crosswalk
+            # are this platform's own and always come from the mock server.
             try:
-                return await asyncio.gather(adapter.fetch_catalog(), adapter.fetch_frac_competencies(),
-                                            adapter.fetch_frac_crosswalk())
+                (catalog, _), frac, crosswalk = await asyncio.gather(
+                    catalogue_source.fetch(adapter),
+                    adapter.fetch_frac_competencies(),
+                    adapter.fetch_frac_crosswalk())
+                return catalog, frac, crosswalk
             except Exception as exc:
                 log.warning("[startup] iGOT mock server unreachable (%s) — loading the catalogue from "
                             "mock-igot-server/data/*.json on disk instead.", exc)
@@ -191,8 +198,8 @@ async def _warm_up(server_loop: asyncio.AbstractEventLoop):
         _, (catalog, frac, crosswalk), _ref = await asyncio.gather(
             chat_warm, _catalogue(), ReferenceData.load(adapter))
         if catalog is not None:
-            log.info("[startup] Catalogue loaded from iGOT adapter: %d courses, %d FRAC competencies.",
-                     len(catalog), len(frac))
+            log.info("[startup] Catalogue loaded from %s: %d courses, %d FRAC competencies.",
+                     catalogue_source.describe(), len(catalog), len(frac))
 
         try:
             _rec_engine, _assembler = await asyncio.to_thread(_build_engine, catalog, frac, crosswalk, _ref)
@@ -277,8 +284,10 @@ async def _refresh_catalogue_loop() -> None:
     while True:
         await asyncio.sleep(_CATALOGUE_REFRESH_S)
         try:
-            catalog, frac, crosswalk = await asyncio.gather(
-                adapter.fetch_catalog(), adapter.fetch_frac_competencies(), adapter.fetch_frac_crosswalk())
+            (catalog, _), frac, crosswalk = await asyncio.gather(
+                catalogue_source.fetch(adapter),
+                adapter.fetch_frac_competencies(),
+                adapter.fetch_frac_crosswalk())
             fp = catalogue_fingerprint(catalog, frac)
             if fp == app_state.catalogue_fingerprint:
                 continue
@@ -289,8 +298,8 @@ async def _refresh_catalogue_loop() -> None:
             app_state.engine, app_state.assembler = engine_, assembler_
             app_state.catalogue_fingerprint = fp
             app_state.user_state_cache.clear()          # levels depend on course tags
-            log.info("[catalogue] refreshed: %d courses (embeddings %s).",
-                     len(catalog), engine_.embedding_stats)
+            log.info("[catalogue] refreshed from %s: %d courses (embeddings %s).",
+                     catalogue_source.describe(), len(catalog), engine_.embedding_stats)
         except Exception as exc:
             log.warning("[catalogue] refresh skipped: %s", exc)
 
@@ -759,6 +768,7 @@ async def get_enrollments_by_user_id(
             "courseId":           e.get("courseId", ""),
             "courseTitle":        e.get("courseName", ""),
             "provider":           e.get("channel", "iGOT Karmayogi"),
+            "courseUrl":          catalogue_source.live_course_url(e.get("courseId")),
             "durationHours":      total_hrs,
             "progressPercentage": progress_pct,
             "remainingHours":     remaining_hrs,
@@ -869,6 +879,7 @@ async def get_recommendations_by_user_id(
             "title":          r.title,
             "provider":       r.provider,
             "durationHours":  r.durationHours,
+            "courseUrl":      catalogue_source.live_course_url(r.courseId),
             "matchReason":    r.matchReasons[0] if r.matchReasons else "",
             "tags":           r.matchReasons,
             "finalScore":     r.finalScore,

@@ -13,6 +13,11 @@
  * ─────────────────── ─────────────── ──────────────────────────────────
  * /                   none            Landing page (public)
  * /login              none            Login page (public)
+ * /policy/:slug       none            Statutory GIGW pages (terms, privacy,
+ *                                     copyright, hyperlinking, disclaimer,
+ *                                     accessibility, screen reader, help,
+ *                                     feedback, sitemap) — content/policies.tsx
+ * /not-found, *       none            GIGW-compliant 404 page
  * /change-password    authenticated   Forced first-login + accessible anytime
  * /dashboard/:id      authenticated   Learner / Official role
  * /admin              authenticated   admin role only
@@ -23,6 +28,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme';
+import { AccessibilityProvider } from './context/AccessibilityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { setApiToken, registerLogoutCallback } from './services/api';
 import { DashboardFactory } from './patterns/DashboardFactory';
@@ -30,6 +36,8 @@ import LandingPage from './pages/LandingPage';
 import LoginPage   from './pages/LoginPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PolicyPage from './pages/PolicyPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // ─── Lazy-loaded dashboards ────────────────────────────────────────────────────
 const LearnerDashboard = React.lazy(() => import('./pages/LearnerDashboard'));
@@ -86,7 +94,8 @@ const DashboardRedirect: React.FC = () => {
 // ─── App ───────────────────────────────────────────────────────────────────────
 const App: React.FC = () => (
   <ThemeProvider>
-    <AuthProvider>
+    <AccessibilityProvider>
+      <AuthProvider>
       <BrowserRouter>
         <TokenBridge />
         <Suspense fallback={<PageLoader />}>
@@ -94,6 +103,11 @@ const App: React.FC = () => (
             {/* ── Public ──────────────────────────────────────────────────── */}
             <Route path="/"      element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+
+            {/* ── Statutory pages required on every GoI site ──────────────── */}
+            <Route path="/policy/:slug" element={<PolicyPage />} />
+            <Route path="/sitemap" element={<Navigate to="/policy/sitemap" replace />} />
+            <Route path="/accessibility" element={<Navigate to="/policy/accessibility-statement" replace />} />
 
             {/* ── Post-login role redirect ────────────────────────────────── */}
             <Route
@@ -155,12 +169,13 @@ const App: React.FC = () => (
               }
             />
 
-            {/* ── Catch-all ────────────────────────────────────────────────── */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* ── Catch-all: a helpful error page, not a silent redirect ──── */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </AccessibilityProvider>
   </ThemeProvider>
 );
 

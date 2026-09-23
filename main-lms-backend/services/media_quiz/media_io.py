@@ -22,10 +22,13 @@ Low-level media access for the media-quiz pipeline.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 import tempfile
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -316,6 +319,16 @@ YOUTUBE_COOKIES_FILE = os.getenv("MEDIA_YOUTUBE_COOKIES_FILE", "").strip()
 YOUTUBE_COOKIES_B64 = os.getenv("MEDIA_YOUTUBE_COOKIES_B64", "").strip()
 YOUTUBE_COOKIES_BROWSER = os.getenv("MEDIA_YOUTUBE_COOKIES_FROM_BROWSER", "").strip()
 YOUTUBE_PROXY = os.getenv("MEDIA_YOUTUBE_PROXY", "").strip()
+# Metadata probes are cheap, and behind each one there is a whole chain of clients and
+# then the relay tier, so a client that stumbles is not worth three retries — those
+# triple the wall time of a link this host was never going to be served.
+PROBE_RETRIES = int(os.getenv("MEDIA_YOUTUBE_PROBE_RETRIES", "1"))
+PROBE_WORKERS = int(os.getenv("MEDIA_YOUTUBE_PROBE_WORKERS", "5"))
+PROBE_DEADLINE_S = float(os.getenv("MEDIA_YOUTUBE_PROBE_DEADLINE_S", "45"))
+# Fetching the same link twice (a learner retrying at another difficulty, a demo
+# replaying one video) should not re-download anything: the captions and the 360p
+# stream are cached on disk per video id and reused until the TTL expires.
+YOUTUBE_CACHE_TTL_S = int(os.getenv("MEDIA_YOUTUBE_CACHE_TTL_S", "86400"))
 # Optional bgutil PO-token provider (`docker run -p 4416:4416 brainicism/bgutil-ytdlp-pot-provider`
 # plus `pip install bgutil-ytdlp-pot-provider`). With it the web clients get their
 # formats back on a datacenter IP, which restores video frames / OCR.
@@ -584,6 +597,39 @@ def _count_formats(info: dict) -> tuple[int, int]:
     return video, audio
 
 
+def _probe_one(yt_dlp, url: str, client: str) -> tuple[Optional[_Attempt], Optional[BaseException]]:
+    """One client's answer: (attempt, error). Never raises except for MediaInputError,
+    which is a problem with the *link* and so applies to every client."""
+    said = _Collect()
+    try:
+        with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True, retries=PROBE_RETRIES,
+                                       logger=said, no_warnings=False)) as ydl:
+            info = ydl.extract_info(url, download=False)
+        if not info:
+            return None, RuntimeError(said.text or "yt-dlp returned no metadata")
+        if info.get("_type") == "playlist" or info.get("entries"):
+            raise MediaInputError("Please paste a link to a single video, not a playlist.")
+        cap_url, kind, lang = _pick_captions(info)
+        vf, af = _count_formats(info)
+        if not (info.get("duration") or cap_url or vf or af):
+            # ignore_no_formats_error also swallows the refusal: yt-dlp then hands
+            # back a placeholder ("youtube video #<id>", no duration, no channel).
+            # What it swallowed decides the message, so carry its own words — a bot
+            # wall and a deleted video look identical from the info dict alone.
+            logger.warning("[youtube] player_client=%s returned an empty placeholder: %s",
+                           client, _yt_message(RuntimeError(said.text))[:160])
+            return None, RuntimeError(said.text or
+                                      "the video is unavailable (private, removed, or the link is wrong).")
+        logger.info("[youtube] player_client=%s ok: captions=%s formats=%d video / %d audio",
+                    client, kind or "none", vf, af)
+        return _Attempt(client, info, cap_url, kind, lang, vf, af), None
+    except MediaInputError:
+        raise
+    except Exception as exc:                          # noqa: BLE001 — every client is retried
+        logger.warning("[youtube] player_client=%s failed: %s", client, _yt_message(exc))
+        return None, exc
+
+
 def _probe_clients(yt_dlp, url: str) -> tuple[List[_Attempt], Optional[BaseException]]:
     """Ask every player client in the chain what it can give us, and keep them all.
 
@@ -591,46 +637,69 @@ def _probe_clients(yt_dlp, url: str) -> tuple[List[_Attempt], Optional[BaseExcep
     perfectly willing to hand over the title and the caption tracks still raises
     "No video formats found" on an untrusted IP, and the whole link fails even though
     everything the quiz needs was already in the response.
+
+    Scheduling: the first client is asked alone, because on a host YouTube trusts it
+    comes back with captions *and* formats and there is nothing left to ask. Only when
+    it doesn't are the remaining clients asked **all at once** — six sequential probes
+    against a wall cost six round trips plus their retries, and that is most of the
+    wall time of a link that was never going to work. The answers are re-sorted into
+    the configured chain order afterwards, so which client gets used never depends on
+    which one happened to reply first.
     """
+    clients = _yt_clients()
     attempts: List[_Attempt] = []
     last: Optional[BaseException] = None
-    for client in _yt_clients():
-        said = _Collect()
-        try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True,
-                                           logger=said, no_warnings=False)) as ydl:
-                info = ydl.extract_info(url, download=False)
-            if not info:
-                last = RuntimeError(said.text or "yt-dlp returned no metadata")
-                continue
-            if info.get("_type") == "playlist" or info.get("entries"):
-                raise MediaInputError("Please paste a link to a single video, not a playlist.")
-            cap_url, kind, lang = _pick_captions(info)
-            vf, af = _count_formats(info)
-            if not (info.get("duration") or cap_url or vf or af):
-                # ignore_no_formats_error also swallows the refusal: yt-dlp then hands
-                # back a placeholder ("youtube video #<id>", no duration, no channel).
-                # What it swallowed decides the message, so carry its own words — a bot
-                # wall and a deleted video look identical from the info dict alone.
-                logger.warning("[youtube] player_client=%s returned an empty placeholder: %s",
-                               client, _yt_message(RuntimeError(said.text))[:160])
-                last = RuntimeError(said.text or
-                                    "the video is unavailable (private, removed, or the link is wrong).")
-                if _is_fatal(last) and not _is_blocked(last):
-                    break                         # the video is gone; five more clients won't find it
-                continue
-            attempts.append(_Attempt(client, info, cap_url, kind, lang, vf, af))
-            logger.info("[youtube] player_client=%s ok: captions=%s formats=%d video / %d audio",
-                        client, kind or "none", vf, af)
-            if cap_url and vf:
-                break                                 # nothing better to find
-        except MediaInputError:
-            raise
-        except Exception as exc:                      # noqa: BLE001 — every client is retried
-            last = exc
-            logger.warning("[youtube] player_client=%s failed: %s", client, _yt_message(exc))
-            if _is_fatal(exc):
-                break                                 # private / removed: other clients won't help
+
+    def enough(att: Optional[_Attempt]) -> bool:
+        return bool(att and att.has_captions and att.video_formats)
+
+    def gone(err: Optional[BaseException]) -> bool:
+        # A fatal marker is about the video, not the client: nothing else will find it.
+        return err is not None and _is_fatal(err) and not _is_blocked(err)
+
+    att, last = _probe_one(yt_dlp, url, clients[0])
+    if att:
+        attempts.append(att)
+    rest = clients[1:]
+    if enough(att) or gone(last) or not rest:
+        return attempts, last
+
+    if PROBE_WORKERS <= 1 or cookies_path():
+        # yt-dlp writes refreshed cookies back to the jar as it closes, so clients
+        # sharing one cookies.txt would race on that file. Cookies are the path that
+        # works anyway — keep it sequential there, and keep the early exits.
+        for client in rest:
+            att, err = _probe_one(yt_dlp, url, client)
+            if att:
+                attempts.append(att)
+            last = err or last
+            if enough(att) or gone(err):
+                break
+        return attempts, last
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    # Start them all, but stop at the first client that has captions *and* formats, the
+    # same condition the sequential version stops on. Waiting for the stragglers would
+    # make a healthy host slower than asking in order, which is the opposite of the
+    # point: the sum only has to become a maximum when every client is going to fail.
+    pool = ThreadPoolExecutor(max_workers=min(PROBE_WORKERS, len(rest)), thread_name_prefix="ytprobe")
+    try:
+        futures = {pool.submit(_probe_one, yt_dlp, url, c): c for c in rest}
+        for fut in as_completed(futures, timeout=PROBE_DEADLINE_S):
+            att, err = fut.result()               # MediaInputError (a bad link) propagates
+            if att:
+                attempts.append(att)
+            last = err or last
+            if enough(att):
+                break
+    except TimeoutError:
+        logger.warning("[youtube] the client probe hit its %ss deadline", PROBE_DEADLINE_S)
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    # Arrival order is a network accident; the configured chain is the intended
+    # preference, so selection is made to depend only on it.
+    attempts.sort(key=lambda a: clients.index(a.client) if a.client in clients else len(clients))
     return attempts, last
 
 
@@ -697,12 +766,23 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
                                       "gated": _is_gated(exc), "error": _yt_message(exc)}
 
     out["watch_page"] = _safe(_watch_page_probe, out["video_id"])
+    from services.media_quiz import ytrelay
+
+    out["relays"] = _safe(ytrelay.diagnosis, out["video_id"])
     ok = [c for c in out["clients"].values() if c.get("ok")]
+    relay = out["relays"] if isinstance(out["relays"], dict) else {}
+    rbest = relay.get("best") or {}
     out["verdict"] = {
-        "can_generate_quiz": any(c.get("captions") or c.get("audio_formats") for c in ok),
-        "can_use_video_frames": any(c.get("video_formats") for c in ok),
+        "can_generate_quiz": bool(any(c.get("captions") or c.get("audio_formats") for c in ok)
+                                  or rbest.get("cues") or rbest.get("audio_stream")),
+        "can_use_video_frames": bool(any(c.get("video_formats") for c in ok) or rbest.get("video_stream")),
         "speech_from": ("captions" if any(c.get("captions") for c in ok)
-                        else "audio+asr" if any(c.get("audio_formats") for c in ok) else None),
+                        else "audio+asr" if any(c.get("audio_formats") for c in ok)
+                        else f"relay:{rbest.get('kind')} captions" if rbest.get("cues")
+                        else f"relay:{rbest.get('kind')} audio+asr" if rbest.get("audio_stream") else None),
+        # Direct access is refused but a relay answers: the IP wall is no longer the
+        # end of the road, which is the one thing this endpoint exists to settle.
+        "relay_rescues_this_host": bool(not ok and (rbest.get("cues") or rbest.get("audio_stream"))),
     }
     return out
 
@@ -795,6 +875,182 @@ def _watch_page_probe(video_id: Optional[str]) -> dict:
     }
 
 
+def _cache_root() -> str:
+    base = os.path.join(os.path.dirname(__file__), "..", "..", "temp_uploads", "yt_cache")
+    base = os.path.normpath(base)
+    os.makedirs(base, exist_ok=True)
+    return base
+
+
+def _cache_dir(video_id: str) -> str:
+    return os.path.join(_cache_root(), re.sub(r"[^A-Za-z0-9_-]", "", video_id)[:24])
+
+
+def _cache_sweep() -> None:
+    """Drop expired entries. The cache holds whole video files, so it cannot just grow."""
+    import shutil
+
+    now = time.time()
+    try:
+        entries = os.listdir(_cache_root())
+    except OSError:
+        return
+    for name in entries:
+        meta = os.path.join(_cache_root(), name, "meta.json")
+        try:
+            if now - os.path.getmtime(meta) > YOUTUBE_CACHE_TTL_S:
+                shutil.rmtree(os.path.join(_cache_root(), name), ignore_errors=True)
+        except OSError:
+            continue
+
+
+def cache_load(video_id: Optional[str]) -> Optional[MediaSource]:
+    """The MediaSource from an earlier fetch of this video, or None. Only the *fetch*
+    is cached, not the quiz: the pipeline still runs, so a different difficulty or
+    target language still gets its own questions."""
+    if not (video_id and YOUTUBE_CACHE_TTL_S > 0):
+        return None
+    meta = os.path.join(_cache_dir(video_id), "meta.json")
+    try:
+        if time.time() - os.path.getmtime(meta) > YOUTUBE_CACHE_TTL_S:
+            return None
+        with open(meta, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    # A half-written entry (the process died mid-download) must not be served.
+    for key in ("video_path", "audio_path"):
+        if data.get(key) and not os.path.exists(data[key]):
+            return None
+    src = MediaSource(title=data.get("title") or "YouTube video", video_path=data.get("video_path"),
+                      audio_path=data.get("audio_path"), duration=data.get("duration"),
+                      caption_kind=data.get("caption_kind"), caption_lang=data.get("caption_lang"),
+                      notes=list(data.get("notes") or []))
+    caps = data.get("captions")
+    if caps:
+        src.captions = [Caption(c[0], c[1], c[2]) for c in caps]
+    if not (src.captions or src.audio_path or src.video_path):
+        return None
+    logger.info("[youtube] reusing the cached fetch of %s (%s)", video_id, src.title)
+    return src
+
+
+def cache_store(video_id: Optional[str], src: MediaSource) -> None:
+    if not (video_id and YOUTUBE_CACHE_TTL_S > 0):
+        return
+    try:
+        os.makedirs(_cache_dir(video_id), exist_ok=True)
+        with open(os.path.join(_cache_dir(video_id), "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"title": src.title, "duration": src.duration, "video_path": src.video_path,
+                       "audio_path": src.audio_path, "caption_kind": src.caption_kind,
+                       "caption_lang": src.caption_lang, "notes": src.notes,
+                       "captions": [[c.start, c.end, c.text] for c in src.captions or []]}, f)
+    except (OSError, TypeError, ValueError) as exc:
+        logger.info("[youtube] could not cache the fetch of %s: %s", video_id, exc)
+
+
+def _download_dir(video_id: Optional[str], workdir: str) -> str:
+    """Where the media files land. With the cache on that is the per-video cache
+    directory, so the files outlive the request (the router deletes the workdir) and
+    the next quiz from the same link starts with them already on disk."""
+    if not (video_id and YOUTUBE_CACHE_TTL_S > 0):
+        return workdir
+    try:
+        os.makedirs(_cache_dir(video_id), exist_ok=True)
+        return _cache_dir(video_id)
+    except OSError:
+        return workdir
+
+
+# One fetch per video at a time: two learners pasting the same link would otherwise
+# write the same cache files from two threads.
+_fetch_locks: dict = {}
+_fetch_locks_guard = threading.Lock()
+
+
+def _fetch_lock(video_id: Optional[str]):
+    with _fetch_locks_guard:
+        return _fetch_locks.setdefault(video_id or "-", threading.Lock())
+
+
+def _relay_fill(src: MediaSource, video_id: Optional[str], workdir: str) -> MediaSource:
+    """Ask the open-source front-ends (Invidious / Piped) for whatever this host was
+    refused. They talk to YouTube from their own address, so the bot wall on *this*
+    IP — the state the Oracle VM is in, where every player client and the watch page
+    answer LOGIN_REQUIRED — does not apply to them.
+
+    Only the gaps are filled. yt-dlp's own captions and a direct googlevideo download
+    are both better when they are available, so a relay is never asked for something
+    already in hand."""
+    from services.media_quiz import ytrelay
+
+    if not (video_id and ytrelay.enabled()):
+        return src
+    need_speech = not (src.captions or src.audio_path)
+    need_video = not src.video_path and ytrelay.RELAY_FRAMES
+    if not (need_speech or need_video):
+        return src
+    try:
+        res = ytrelay.fetch(video_id)
+    except Exception as exc:                          # noqa: BLE001 — a fallback must not raise
+        logger.warning("[youtube] relay tier failed: %s: %s", type(exc).__name__, exc)
+        return src
+    if not res:
+        return src
+
+    from urllib.parse import urlparse
+
+    where = f"{res.kind} ({urlparse(res.instance).hostname})"
+    if _too_long(res.duration) and not src.duration:
+        # The length gate hasn't run yet on the relay-only path. Check it before
+        # spending a public instance's bandwidth on a video we are going to refuse.
+        src.duration = res.duration
+        return src
+    if need_speech and res.captions:
+        src.captions = [Caption(c.start, c.end, c.text) for c in res.captions]
+        src.caption_kind, src.caption_lang = res.caption_kind, res.caption_lang
+        src.notes.append(f"speech from YouTube {res.caption_kind} captions "
+                         f"({res.caption_lang}) relayed by {where}")
+    still_mute = not (src.captions or src.audio_path)
+    if res.muxed and res.video_url:
+        # cobalt serves one file with both tracks. Fetch it once if either half is
+        # wanted, then use it for both — the frames are free once the bytes are here,
+        # so they come back even with MEDIA_YOUTUBE_RELAY_FRAMES off.
+        if still_mute or need_video:
+            got = ytrelay.download(res.video_url, os.path.join(workdir, f"relay_{video_id}.mp4"))
+            if got:
+                src.video_path = src.video_path or got
+                if still_mute:
+                    src.audio_path = got
+                src.notes.append(f"video and audio relayed by {where} — no caption track there, "
+                                 "so the speech is transcribed")
+    else:
+        if need_video and res.video_url:
+            got = ytrelay.download(res.video_url, os.path.join(workdir, f"relay_v_{video_id}.mp4"))
+            if got:
+                src.video_path = got
+                src.notes.append(f"video frames relayed by {where}")
+        if still_mute and res.audio_url:
+            got = ytrelay.download(res.audio_url, os.path.join(workdir, f"relay_a_{video_id}.m4a"))
+            if got:
+                src.audio_path = got
+                src.notes.append(f"audio relayed by {where} (no captions)")
+    if res.title and src.title in (None, "", "YouTube video"):
+        src.title = res.title
+    src.duration = src.duration or res.duration
+    return src
+
+
+def _too_long(seconds: Optional[float]) -> bool:
+    return bool(seconds and seconds > YOUTUBE_MAX_DURATION_S)
+
+
+def _check_duration(seconds: Optional[float]) -> None:
+    if _too_long(seconds):
+        raise MediaInputError(f"Video is {seconds / 60:.0f} min long; the limit is "
+                              f"{YOUTUBE_MAX_DURATION_S // 60} min.")
+
+
 def download_youtube(url: str, workdir: str) -> MediaSource:
     try:
         import yt_dlp
@@ -805,6 +1061,18 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
         raise MediaInputError("Only YouTube links (youtube.com / youtu.be) are supported.")
 
     url = url.strip()
+    video_id = youtube_video_id(url)
+    with _fetch_lock(video_id):
+        return _fetch_youtube(yt_dlp, url, video_id, workdir)
+
+
+def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> MediaSource:
+    _cache_sweep()
+    cached = cache_load(video_id)
+    if cached:
+        return cached
+    dldir = _download_dir(video_id, workdir)
+
     try:
         attempts, last_error = _probe_clients(yt_dlp, url)
     except MediaInputError:
@@ -814,6 +1082,20 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
 
     if not attempts:
         exc = last_error or RuntimeError("yt-dlp returned no metadata")
+        # Everything this host could ask YouTube directly has been refused. The relay
+        # tier asks somebody else's server instead, which is the only thing left that
+        # can work from a walled IP without credentials — so it is tried before the
+        # link is declared dead.
+        if not _is_fatal(exc) or _is_blocked(exc):
+            relayed = _relay_fill(MediaSource(title="YouTube video"), video_id, dldir)
+            # An over-long video is a plain refusal, not "YouTube blocked this server":
+            # the relay knew its length, so say so rather than falling through.
+            _check_duration(relayed.duration)
+            if relayed.captions or relayed.audio_path:
+                if not relayed.video_path:
+                    relayed.notes.append("video frames unavailable from this server — speech only")
+                _finish_youtube(relayed, video_id)
+                return relayed
         # Order matters. A refused request often *also* reports "No video formats
         # found", and a removed video reports it too, so the unambiguous wording has
         # to be tested first or every dead link is blamed on the anti-bot check.
@@ -832,9 +1114,7 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
         raise MediaInputError("Live streams are not supported.")
     src = MediaSource(title=str(info.get("title") or "YouTube video"),
                       duration=float(info.get("duration") or 0) or None)
-    if (src.duration or 0) > YOUTUBE_MAX_DURATION_S:
-        raise MediaInputError(f"Video is {src.duration / 60:.0f} min long; the limit is "
-                              f"{YOUTUBE_MAX_DURATION_S // 60} min.")
+    _check_duration(src.duration)                     # before any download
 
     # Captions, from any client that has them — a client can be denied the media URLs
     # and still serve the caption tracks, which is the common case on a datacenter IP.
@@ -856,7 +1136,7 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
         for client in clients:
             try:
                 with yt_dlp.YoutubeDL(_yt_opts(client=client, format=fmt,
-                                               outtmpl=os.path.join(workdir, prefix + "_%(id)s.%(ext)s"))) as y:
+                                               outtmpl=os.path.join(dldir, prefix + "_%(id)s.%(ext)s"))) as y:
                     got = y.extract_info(url, download=True)
                     path = y.prepare_filename(got)
                 if os.path.exists(path) and os.path.getsize(path) > 0:
@@ -880,14 +1160,18 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
                      if audio_clients and not src.captions else None)
         src.video_path = video_job.result() if video_job else None
         audio_path = audio_job.result() if audio_job else None
-    if not src.video_path:
-        # Frames are optional: the quiz is built from speech, and on-screen text only
-        # adds OCR evidence. Losing them is a note, not a failure.
-        src.notes.append("video frames unavailable from this server — speech only")
     if not src.captions:
         src.audio_path = audio_path
         if src.audio_path:
             src.notes.append("speech transcribed from the audio track (no captions)")
+    # Whatever YouTube withheld from this host, ask the relay tier for. On a datacenter
+    # IP that is usually the media URLs (captions come through), so this is what brings
+    # the video frames — and with them the OCR evidence — back.
+    src = _relay_fill(src, video_id, dldir)
+    if not src.video_path:
+        # Frames are optional: the quiz is built from speech, and on-screen text only
+        # adds OCR evidence. Losing them is a note, not a failure.
+        src.notes.append("video frames unavailable from this server — speech only")
     if not src.captions and not src.audio_path:
         # Nothing to read and nothing to listen to.
         if src.video_path:
@@ -899,7 +1183,14 @@ def download_youtube(url: str, workdir: str) -> MediaSource:
                                   "Upload the video or audio file instead.")
         else:
             raise MediaInputError(_no_speech_message())
+    _finish_youtube(src, video_id)
     return src
+
+
+def _finish_youtube(src: MediaSource, video_id: Optional[str]) -> None:
+    """Last gate before the pipeline sees it, on every path into it (relay-only too)."""
+    _check_duration(src.duration)
+    cache_store(video_id, src)
 
 
 def temp_dir() -> str:

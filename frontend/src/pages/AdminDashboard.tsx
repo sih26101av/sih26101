@@ -36,6 +36,7 @@ import {
 
 import AppShell, { type ShellNavGroup } from '../components/shell/AppShell';
 import PageHeader from '../components/shell/PageHeader';
+import { usePageTitle } from '../hooks/usePageTitle';
 import SectionCard, { SectionAction } from '../components/shell/SectionCard';
 import StatCard from '../components/shell/StatCard';
 import { AshokaChakra } from '../components/gov/GovUI';
@@ -340,6 +341,9 @@ const AdminDashboard: React.FC = () => {
     insights:     { title: 'Workforce Insights', subtitle: 'SCIL v6 views: GSBPM scope, training effectiveness and capability risk (synthetic data).' },
     reports:      { title: 'Reports',          subtitle: 'Export any view as CSV or PDF — every export respects the filters above.' },
   };
+
+  // GIGW: each section is its own "page" to the user, so give it its own title.
+  usePageTitle(META[activeTab].title, META[activeTab].subtitle);
 
   // ── Charts ─────────────────────────────────────────────────────────────────
   const shortageChart = (height = 300) => (

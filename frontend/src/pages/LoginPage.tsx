@@ -3,6 +3,11 @@
  *
  * Gateway page — calls MoSPI LMS Backend /auth/login (real JWT auth).
  * Uses DashboardFactory to resolve the post-login route.
+ *
+ * Two shapes: `isModal` renders only the card, over the landing page, which
+ * already carries the portal chrome. As its own route at /login it wraps the
+ * card in the GIGW chrome — skip link, utility strip, <main> landmark and the
+ * statutory footer — so a user who lands here directly gets the same portal.
  */
 
 import React, { useState } from 'react';
@@ -10,6 +15,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { AshokaChakra, GovEmblem } from '../components/gov/GovUI';
+import GovUtilityBar from '../components/gov/GovUtilityBar';
+import GovFooter from '../components/gov/GovFooter';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface LoginPageProps {
   isModal?: boolean;
@@ -38,6 +46,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
   const [showPass, setShowPass] = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+
+  usePageTitle(
+    isModal ? undefined : 'Official Login',
+    'Sign in to KarmaSkill with your iGOT Karmayogi user identity.'
+  );
 
   // Where to go after login if redirected from a protected route
   const from = (location.state as any)?.from?.pathname ?? null;
@@ -86,8 +99,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
     }
   };
 
-  return (
-    <div className={isModal ? "fixed inset-0 z-[60] flex items-center justify-center bg-gov-ink/60 backdrop-blur-md font-sans animate-fade-in overflow-y-auto py-10" : "min-h-screen flex items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10"}>
+  const signInPanel = (
+    <div className={isModal ? "fixed inset-0 z-[60] flex items-center justify-center bg-gov-ink/60 backdrop-blur-md font-sans animate-fade-in overflow-y-auto py-10" : "flex flex-1 items-center justify-center relative overflow-hidden gov-page-bg font-sans transition-colors duration-300 py-10"}>
       {/* Background */}
       {!isModal && (
         <>
@@ -151,15 +164,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Username */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+              <label htmlFor="login-username" className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                 Username
               </label>
               <input
+                id="login-username"
+                name="username"
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
                 autoFocus={isModal}
+                autoComplete="username"
+                aria-invalid={!!error}
+                aria-describedby={error ? 'login-error' : undefined}
                 placeholder="Enter your iGOT User ID or admin"
                 className="gov-input"
               />
@@ -167,15 +185,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
 
             {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+              <label htmlFor="login-password" className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                 Password
               </label>
               <div className="relative">
                 <input
+                  id="login-password"
+                  name="password"
                   type={showPass ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? 'login-error' : undefined}
                   placeholder="••••••••"
                   className="gov-input pr-10"
                 />
@@ -183,16 +206,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
                   type="button"
                   onClick={() => setShowPass(v => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                  tabIndex={-1}
+                  aria-pressed={showPass}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
                 >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPass ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                 </button>
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <p className="text-[12px] text-red-600 font-medium bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-md px-3 py-2 animate-fade-in">
+              <p id="login-error" role="alert" className="text-[12px] text-red-600 font-medium bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-md px-3 py-2 animate-fade-in">
                 {error}
               </p>
             )}
@@ -225,6 +249,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ isModal = false, onClose }) => {
           © {new Date().getFullYear()} Ministry of Statistics and Programme Implementation
         </p>
       </div>
+    </div>
+  );
+
+  // As a modal the landing page supplies the chrome around it.
+  if (isModal) return signInPanel;
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <GovUtilityBar mainId="main-content" />
+      <div className="tricolor-strip" />
+      <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
+        {signInPanel}
+      </main>
+      <GovFooter variant="compact" />
     </div>
   );
 };

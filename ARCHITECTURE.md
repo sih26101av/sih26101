@@ -77,11 +77,13 @@ unused reference exports.
 ### `frontend/src/`
 | Path | Responsibility |
 |------|----------------|
-| `App.tsx` | Routes + guards (`/`, `/login`, `/change-password`, `/dashboard/:officialId`, `/admin`, `/trainer`, `/assessment`) |
+| `App.tsx` | Routes + guards (`/`, `/login`, `/change-password`, `/dashboard/:officialId`, `/admin`, `/trainer`, `/assessment`, `/policy/:slug`), `ThemeProvider` › `AccessibilityProvider` › `AuthProvider`; the catch-all renders `NotFoundPage` |
+| `context/AccessibilityContext.tsx` | Portal-wide text size / high contrast / language, persisted and applied to `<html>` — see [gigw-compliance.md](docs/features/gigw-compliance.md) |
 | `context/AuthContext.tsx` | Token state, silent refresh on mount, role mapping (`learner` → `official`) |
 | `services/` | `api.ts` (`lmsFetch` with JWT + 401-retry interceptor), `authApi.ts`, `chatApi.ts` (with offline client-side reply fallback) |
-| `hooks/` | `useLearnerDashboard`, `useAdminData`, `useSkillsData`, `useChatEngine`, `useTheme` |
-| `pages/` | `LandingPage`, `LoginPage`, `ChangePasswordPage`, `LearnerDashboard`, `AdminDashboard`, `AssessmentPage` |
+| `hooks/` | `useLearnerDashboard`, `useAdminData`, `useSkillsData`, `useChatEngine`, `useTheme`, `useScreenReader`, `usePageTitle`, `useVisitorCount` |
+| `pages/` | `LandingPage`, `LoginPage`, `ChangePasswordPage`, `LearnerDashboard`, `AdminDashboard`, `AssessmentPage`, `PolicyPage` (the ten statutory GIGW pages from `content/policies.tsx`), `NotFoundPage` |
+| `components/gov/` | Statutory chrome shared by every page: `GovUtilityBar` (भारत सरकार identity + A−/A/A+ + contrast + language), `GovFooter` (policy links, Web Information Manager, last updated, visit count), `GovPublicShell`, `Breadcrumbs`, `GovUI` (emblem, chakra, reveal, count-up) |
 | `components/dashboard/` | `SkillGapCard` (+ `LearningPathway`), `CourseCard`, `MyCoursesView`, `ProgressView`, `ProfileHeader`, `RightSidebar` (legacy karma card, unmounted); `components/karma/` (`KarmaRewardsView`, `karmaMeta`), `AssessmentUploadZone`, `ChatWidget` |
 | `patterns/DashboardFactory.ts` | Role → dashboard/route resolution |
 
@@ -152,7 +154,12 @@ ASR / OCR / VLM onto one confidence-scored evidence timeline → multilingual-e5
 relevance vs FRAC (also picks the quiz's `competency_id`) → Gemini MCQs that cite
 evidence ids → validator + fact-check. Writes into the same `QUIZ_STORE`, so the
 document path's `/grade` → `EvidenceLog` flow applies unchanged
-(`docs/features/media-quiz-generator.md`).
+(`docs/features/media-quiz-generator.md`). The `/youtube` path is the one place the
+backend reaches a third party other than Gemini/Groq: yt-dlp to YouTube, and — when
+YouTube refuses this host's IP, which is the deployed VM's normal state — public
+Invidious / Piped / cobalt instances via `services/media_quiz/ytrelay.py`, which fetch
+on the server's behalf. Both are fallback-only and cached per video id, and neither
+touches the mock iGOT layer.
 
 **SCIL v6 layers** (see `docs/features/workforce-insights.md`). Every input is
 synthetic mock data.

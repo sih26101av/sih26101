@@ -244,10 +244,27 @@ const CourseCard: React.FC<CourseCardProps> = ({ recommendation, vote, onFeedbac
 
       {/* ── CTA ── */}
       <div className="px-4 pb-4 flex items-center gap-2">
-        <button className="gov-btn-primary flex-1" onClick={() => onFeedback?.(recommendation, 'enrol')}>
-          <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
-          {course.source === 'iGOT Karmayogi' ? 'Enroll on iGOT' : 'Enroll Now'}
-        </button>
+        {/* A real link only when the backend vouched for the course with a
+            courseUrl (live catalogue). Otherwise the catalogue is synthetic and
+            there is no page to open, so it stays a button that just logs intent. */}
+        {course.courseUrl ? (
+          <a
+            href={course.courseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="gov-btn-primary flex-1"
+            onClick={() => onFeedback?.(recommendation, 'enrol')}
+          >
+            <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
+            Enroll on iGOT
+            <span className="sr-only"> (opens the iGOT Karmayogi portal in a new tab)</span>
+          </a>
+        ) : (
+          <button className="gov-btn-primary flex-1" onClick={() => onFeedback?.(recommendation, 'enrol')}>
+            <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
+            {course.source === 'iGOT Karmayogi' ? 'Enroll on iGOT' : 'Enroll Now'}
+          </button>
+        )}
         {onFeedback && (
           <>
             <button

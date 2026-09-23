@@ -5,12 +5,21 @@
 #   bash deploy/oracle/youtube-access.sh --pot               # free: PO-token provider
 #   bash deploy/oracle/youtube-access.sh --cookies ~/yt.txt  # dependable: cookies.txt
 #   bash deploy/oracle/youtube-access.sh --proxy http://user:pass@host:port
+#   bash deploy/oracle/youtube-access.sh --relay piped:https://my-piped.example
 #
 # Why this exists: YouTube decides by IP reputation, and Oracle's ranges are flagged.
 # From this VM every InnerTube player client AND a plain browser-UA watch-page GET come
 # back LOGIN_REQUIRED / "Sign in to confirm you're not a bot", so no amount of code
-# gets a video — the request has to carry credentials or leave from another address.
-# Nothing here affects file uploads, which never touch YouTube.
+# asking YouTube *directly* gets a video — the request has to carry credentials, leave
+# from another address, or be made by somebody else.
+#
+# "Somebody else" is the relay tier, and it is on by default with no setup: the backend
+# asks public Invidious / Piped / cobalt instances, which fetch from their own IPs. It
+# needs no account and no key, and it does work — but the public pools are themselves
+# half-walled and half-dead, so it is luck-of-the-draw per video. --relay points it at
+# an instance YOU run (anywhere that is not a flagged datacenter: a college network, a
+# home box behind a tunnel), which makes it dependable and still costs no Google
+# account. Nothing here affects file uploads, which never touch YouTube.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -24,6 +33,7 @@ while [ $# -gt 0 ]; do
     --pot)     MODE="pot" ;;
     --cookies) MODE="cookies"; ARG="${2:-}"; shift ;;
     --proxy)   MODE="proxy";   ARG="${2:-}"; shift ;;
+    --relay)   MODE="relay";   ARG="${2:-}"; shift ;;
     --check)   MODE="check" ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -90,6 +100,21 @@ proxy)
   set_env MEDIA_YOUTUBE_PROXY "$ARG"
   ;;
 
+relay)
+  # Pin the relay tier to specific instances instead of the discovered public pools.
+  # "auto" restores discovery, "off" disables the tier. An entry is <kind>:<base url>
+  # where kind is invidious | piped | cobalt, comma-separated for several.
+  [ -n "$ARG" ] || { echo "!! --relay needs auto, off, or <kind>:<url>" >&2; exit 2; }
+  case "$ARG" in
+    auto|off) ;;
+    invidious:*|piped:*|cobalt:*) ;;
+    *) echo "!! --relay entries look like piped:https://host (kind = invidious|piped|cobalt)" >&2; exit 2 ;;
+  esac
+  set_env MEDIA_YOUTUBE_RELAYS "$ARG"
+  # Your own instance can serve the media too, which brings the OCR frames back.
+  [ "$ARG" = "off" ] || set_env MEDIA_YOUTUBE_RELAY_FRAMES 1
+  ;;
+
 esac
 
 if [ "$MODE" != "check" ]; then
@@ -124,12 +149,29 @@ for name, c in (d.get("clients") or {}).items():
         print("  %-13s: %s %s" % (name, why, (c.get("error") or "")[:70]))
 w = d.get("watch_page") or {}
 print("  watch page    :", w.get("playability"), "| caption tracks:", len(w.get("caption_tracks") or []))
+r = d.get("relays") if isinstance(d.get("relays"), dict) else {}
+if r.get("enabled"):
+    best = r.get("best") or {}
+    print("  relays        : %d tried, %d served this video%s"
+          % (len(r.get("tried") or []), len(r.get("working") or []),
+             " -> %s %s (%s cues)" % (best.get("kind"), best.get("instance"), best.get("cues"))
+             if best.get("cues") else ""))
+    if r.get("failures"):
+        print("                  " + ", ".join("%s=%d" % kv for kv in sorted(r["failures"].items())))
+    if r.get("pools_are_walled_too"):
+        # The pools live in the same datacenter space this VM does, so they get the
+        # same refusal. Saying so stops the next person re-testing the same idea.
+        print("                  the public instances are refused by YouTube too "
+              "-> use --relay with your own, or --cookies")
+else:
+    print("  relays        : disabled (MEDIA_YOUTUBE_RELAYS=off)")
 print()
 if v.get("can_generate_quiz"):
     frames = "yes" if v.get("can_use_video_frames") else "no (captions-only quiz, which is fine)"
     print("  YOUTUBE LINKS WORK. speech from:", v.get("speech_from"), "| video frames:", frames)
 else:
-    print("  YOUTUBE LINKS STILL BLOCKED from this IP.")
-    print("  Next: --pot (free, may not be enough) -> --cookies (dependable) -> --proxy.")
+    print("  YOUTUBE LINKS STILL BLOCKED from this IP, and no relay could serve this video.")
+    print("  Next: --relay <your own instance> or --cookies (both dependable) -> --proxy.")
+    print("  --pot is free but attests the client, not the IP, so it rarely beats LOGIN_REQUIRED.")
     print("  Uploads are unaffected and are the reliable demo path.")
 PY

@@ -419,6 +419,26 @@ class HybridRecommendationEngine:
                 except Exception:
                     pass
 
+            # Live iGOT tags courses with competencies_v6 (the Karmayogi
+            # Competency Model) instead: 99.9% of the live catalogue carries it,
+            # while the CID-based v3 tags above survive on a small minority. Read
+            # v6 only when v3 gave nothing, so mock data behaves exactly as before.
+            #
+            # `fracId` is stamped by services.kcm_crosswalk when a KCM theme maps
+            # onto a catalogue competency; without it the theme's own refId is
+            # used, which simply will not match a FRAC-keyed gap. KCM tags carry
+            # no proficiency level, so the level is None — the ranker already
+            # treats that as "no band stated" rather than level 0.
+            if not comp_ids:
+                for tag in item.get("competencies_v6") or []:
+                    if not isinstance(tag, dict):
+                        continue
+                    cid = tag.get("fracId") or tag.get("competencyThemeRefId") or ""
+                    if cid and cid not in comp_levels:
+                        comp_ids.append(cid)
+                        comp_names.append(tag.get("competencyThemeName", ""))
+                        comp_levels[cid] = None
+
             # Duration in hours
             dur_sec = item.get("duration", "0")
             try:

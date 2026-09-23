@@ -48,9 +48,23 @@ const EnrolledCourseCard: React.FC<{ enrollment: Enrollment }> = ({ enrollment }
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Last accessed: {lastAccessed ? new Date(lastAccessed).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'N/A'}
           </span>
-          <button className="gov-btn-primary !px-4 !py-2 whitespace-nowrap">
-            <PlayCircle size={16} />Continue
-          </button>
+          {/* Only a real link when the backend served a courseUrl, i.e. the live
+              catalogue holds this course. Synthetic enrolments keep the button. */}
+          {course.courseUrl ? (
+            <a
+              href={course.courseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="gov-btn-primary !px-4 !py-2 whitespace-nowrap"
+            >
+              <PlayCircle size={16} />Continue
+              <span className="sr-only"> on the iGOT Karmayogi portal (opens in a new tab)</span>
+            </a>
+          ) : (
+            <button className="gov-btn-primary !px-4 !py-2 whitespace-nowrap">
+              <PlayCircle size={16} />Continue
+            </button>
+          )}
         </div>
       </div>
     </div>

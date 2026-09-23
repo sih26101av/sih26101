@@ -28,6 +28,7 @@ System design, folder map, data flow and the mermaid-vs-code mismatches:
 | Karma points / gamification | [docs/features/karma-points.md](docs/features/karma-points.md) |
 | Certificate → FRAC evidence extraction | [docs/features/certificate-evidence-extraction.md](docs/features/certificate-evidence-extraction.md) |
 | Mock iGOT server + adapter | [docs/features/mock-igot-integration.md](docs/features/mock-igot-integration.md) |
+| GIGW 3.0 chrome, accessibility & policy pages | [docs/features/gigw-compliance.md](docs/features/gigw-compliance.md) |
 | Learner dashboard (frontend shell) | [docs/features/learner-dashboard.md](docs/features/learner-dashboard.md) |
 | Admin dashboard | [docs/features/admin-dashboard.md](docs/features/admin-dashboard.md) |
 | SCIL v6 workforce insights (GSBPM scope, opportunity, admin foresight) | [docs/features/workforce-insights.md](docs/features/workforce-insights.md) |
@@ -55,7 +56,13 @@ cd main-lms-backend
 python -m auth.seed              # seed users_auth from the mock server (idempotent)
 python scripts/download_model.py # ONNX embedders + embedding cache into ai/.cache/ (also the deploy build step)
 python -m ai.seed_knowledge      # optional: seed ChromaDB (needs local Ollama)
+python -m scripts.fetch_live_catalog  # harvest the REAL iGOT catalogue into data/live/
 ```
+
+The real iGOT course catalogue is publicly readable — no API key. Set
+`IGOT_CATALOGUE_SOURCE=live` to rank over it instead of the synthetic one
+(users, enrolments, ACBP and evidence stay on the mock; those endpoints are
+gated). See [docs/features/mock-igot-integration.md](docs/features/mock-igot-integration.md) § Live iGOT.
 
 ## Conventions
 

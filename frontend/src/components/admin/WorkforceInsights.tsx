@@ -110,10 +110,10 @@ const GsbpmScopePanel: React.FC<{ office?: string }> = ({ office }) => {
             <table className="w-full text-left text-[12px]">
               <thead>
                 <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
-                  <th className="py-2 pr-3 font-semibold">Competency</th>
-                  <th className="py-2 pr-3 font-semibold">Scope</th>
-                  <th className="py-2 pr-3 font-semibold">Hours share</th>
-                  <th className="py-2 font-semibold">Why</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Competency</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Scope</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Hours share</th>
+                  <th scope="col" className="py-2 font-semibold">Why</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,11 +205,11 @@ const PrerequisitePanel: React.FC = () => {
               <table className="w-full min-w-[520px] text-left text-[12px]">
                 <thead>
                   <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
-                    <th className="py-2 pr-3 font-semibold">Before</th>
-                    <th className="py-2 pr-3 font-semibold">Then</th>
-                    <th className="py-2 pr-3 font-semibold">Extra gain (95% CI)</th>
-                    <th className="py-2 pr-3 font-semibold">n with / without</th>
-                    <th className="py-2 font-semibold">Status</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold">Before</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold">Then</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold">Extra gain (95% CI)</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold">n with / without</th>
+                    <th scope="col" className="py-2 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -305,12 +305,12 @@ const TrainingEffectivenessPanel: React.FC = () => {
             <table className="w-full text-left text-[12px]">
               <thead>
                 <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
-                  <th className="py-2 pr-3 font-semibold">Course</th>
-                  <th className="py-2 pr-3 font-semibold">n</th>
-                  <th className="py-2 pr-3 font-semibold">Naive / IPW</th>
-                  <th className="py-2 pr-3 font-semibold">Measured uplift (95% CI)</th>
-                  <th className="py-2 pr-3 font-semibold">Rating · enrolments</th>
-                  <th className="py-2 font-semibold">Flag</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Course</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">n</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Naive / IPW</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Measured uplift (95% CI)</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Rating · enrolments</th>
+                  <th scope="col" className="py-2 font-semibold">Flag</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,12 +389,12 @@ const CapabilityRiskPanel: React.FC = () => {
             <table className="w-full text-left text-[12px]">
               <thead>
                 <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
-                  <th className="py-2 pr-3 font-semibold">Product</th>
-                  <th className="py-2 pr-3 font-semibold">Critical competency</th>
-                  <th className="py-2 pr-3 font-semibold">Team</th>
-                  <th className="py-2 pr-3 font-semibold">Capable (L{data.capableLevel}+)</th>
-                  <th className="py-2 pr-3 font-semibold">Retire ≤ {data.horizonMonths} mo</th>
-                  <th className="py-2 font-semibold">Risk</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Product</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Critical competency</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Team</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Capable (L{data.capableLevel}+)</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Retire ≤ {data.horizonMonths} mo</th>
+                  <th scope="col" className="py-2 font-semibold">Risk</th>
                 </tr>
               </thead>
               <tbody>
@@ -446,9 +446,9 @@ const ForesightPanel: React.FC = () => {
             <table className="w-full text-left text-[12px]">
               <thead>
                 <tr className="border-b border-gov-line text-[11px] uppercase tracking-wide text-slate-400 dark:border-slate-700">
-                  <th className="py-2 pr-3 font-semibold">Product · competency</th>
-                  <th className="py-2 pr-3 font-semibold">Series</th>
-                  {data.months.map((m) => <th key={m} className="py-2 pr-2 text-right font-semibold">{m} mo</th>)}
+                  <th scope="col" className="py-2 pr-3 font-semibold">Product · competency</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Series</th>
+                  {data.months.map((m) => <th scope="col" key={m} className="py-2 pr-2 text-right font-semibold">{m} mo</th>)}
                 </tr>
               </thead>
               <tbody>
