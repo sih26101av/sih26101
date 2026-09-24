@@ -158,8 +158,11 @@ document path's `/grade` → `EvidenceLog` flow applies unchanged
 backend reaches a third party other than Gemini/Groq: yt-dlp to YouTube, and — when
 YouTube refuses this host's IP, which is the deployed VM's normal state — public
 Invidious / Piped / cobalt instances via `services/media_quiz/ytrelay.py`, which fetch
-on the server's behalf. Both are fallback-only and cached per video id, and neither
-touches the mock iGOT layer.
+on the server's behalf. Alongside them runs `services/media_quiz/ytgemini.py`: the
+Gemini API is handed the public YouTube URL and Google fetches the video itself, so
+this is the tier that works from the walled VM (transcript + on-screen text, no
+yt-dlp bytes). All are fallback-only and cached per video id, and none touches the
+mock iGOT layer.
 
 **SCIL v6 layers** (see `docs/features/workforce-insights.md`). Every input is
 synthetic mock data.

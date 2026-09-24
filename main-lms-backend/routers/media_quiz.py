@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 
 from routers.rag import QUIZ_STORE, QuizQuestion
 from services.practice_assessment import media_question_difficulty
-from services.media_quiz import extractors, media_io, ytrelay
+from services.media_quiz import extractors, media_io, ytgemini, ytrelay
 from services.media_quiz.llm import LLMUnavailable
 from services.media_quiz.pipeline import NotLearnable, run, warm_up
 
@@ -287,8 +287,8 @@ async def youtube_diagnose(url: str = "https://www.youtube.com/watch?v=dMRDzicSv
                            clients: Optional[str] = None) -> JSONResponse:
     """YouTube blocks by IP reputation, so the same link works from a laptop and fails
     from the server. This reports what this host can reach — yt-dlp version, JS runtimes,
-    per-player-client outcome, relay-tier reach, watch-page reachability — without
-    downloading anything."""
+    per-player-client outcome, relay-tier reach, Gemini-tier reach (one 60 s window),
+    watch-page reachability — without downloading anything."""
     if not media_io.is_youtube_url(url):
         raise HTTPException(status_code=400, detail="Only YouTube links can be diagnosed.")
     try:
@@ -318,6 +318,11 @@ def capabilities() -> JSONResponse:          # sync: _importable() really import
                     # public Invidious / Piped instance, from that instance's IP.
                     "relays": {"enabled": ytrelay.enabled(), "mode": ytrelay.RELAYS,
                                "frames": ytrelay.RELAY_FRAMES},
+                    # Gemini reads a public link on Google's side: the tier that works
+                    # from a walled datacenter IP with no setup beyond GEMINI_API_KEY.
+                    "gemini": {"enabled": ytgemini.enabled(), "mode": ytgemini.MODE,
+                               "window_s": ytgemini.WINDOW_S, "parallel": ytgemini.PARALLEL,
+                               "screen_text": ytgemini.SCREEN_WHEN_NO_FRAMES},
                     "cache": {"fetch_ttl_s": media_io.YOUTUBE_CACHE_TTL_S,
                               "result_ttl_s": YOUTUBE_RESULT_TTL_S,
                               "results_held": len(_result_cache)}},

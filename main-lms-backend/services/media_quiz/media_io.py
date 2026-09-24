@@ -276,10 +276,13 @@ class MediaSource:
     video_path: Optional[str] = None
     audio_path: Optional[str] = None
     captions: Optional[List[Caption]] = None
-    caption_kind: Optional[str] = None      # "manual" | "auto"
+    caption_kind: Optional[str] = None      # "manual" | "auto" | "gemini"
     caption_lang: Optional[str] = None
     duration: Optional[float] = None
     notes: List[str] = field(default_factory=list)
+    # On-screen text (slides, code, formulas) read by Gemini when this host got no
+    # video frames to OCR — see ytgemini.py. Used by the pipeline in place of OCR.
+    screen_text: Optional[List[Caption]] = None
 
     @classmethod
     def from_file(cls, path: str, title: str) -> "MediaSource":
@@ -339,8 +342,17 @@ WATCH_PAGE_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 YOUTUBE_BLOCKED_MESSAGE = (
     "YouTube is blocking this server (its anti-bot check) and would not return the "
     "video's captions or audio. Upload the video or audio file instead — that path is "
-    "unaffected. (Server admin: set MEDIA_YOUTUBE_COOKIES_B64 to a cookies.txt export, "
-    "or MEDIA_YOUTUBE_PROXY, to restore YouTube links.)"
+    "unaffected."
+)
+# Ordered by what actually fixes a datacenter host, cheapest first. Run the diagnosis
+# before any of them: it says which of the three states this host is in, and two of
+# these are answers to only one of those states.
+ADMIN_NEXT_STEPS = (
+    " (Server admin: run GET /api/v1/rag/media/youtube/diagnose to see which wall this is, "
+    "then set GEMINI_API_KEY (Gemini reads public videos on Google's side — works from any IP), "
+    "deploy/oracle/youtube-access.sh --pot (free, fixes gated formats), "
+    "--relay <kind>:<url of an instance you run> (free, fixes a refused IP), "
+    "or --cookies / --proxy.)"
 )
 YOUTUBE_STALE_COOKIES_MESSAGE = (
     "YouTube rejected this server's saved sign-in — the cookies have expired. Upload the "
@@ -349,23 +361,51 @@ YOUTUBE_STALE_COOKIES_MESSAGE = (
 )
 
 
-def _no_speech_message() -> str:
-    return YOUTUBE_STALE_COOKIES_MESSAGE if has_cookies() else YOUTUBE_NO_SPEECH_MESSAGE
+def _relay_trace(relay: Optional[dict]) -> str:
+    """One clause describing the relay tier's attempt. Without it the learner (and the
+    admin reading the same sentence) cannot tell the tier from a tier that never ran,
+    which is the first thing anyone asks when a deploy does not change the error."""
+    if not relay or not relay.get("tried"):
+        return (" The open relay instances are switched off on this server."
+                if relay is not None and not relay.get("enabled") else "")
+    n = relay["tried"]
+    if relay.get("walled"):
+        return (f" {n} public relay instances were tried too, and YouTube refused those "
+                "servers for the same reason — they are in the same datacenter address space.")
+    return f" {n} public relay instances were tried too, and none could serve it."
 
 
-def _blocked_message() -> str:
+def _gemini_trace(relay: Optional[dict]) -> str:
+    gem = (relay or {}).get("gemini")
+    if not gem:
+        return ""
+    if not gem.get("enabled"):
+        return " Gemini's YouTube reader is not configured on this server (GEMINI_API_KEY)."
+    if gem.get("errors"):
+        return f" Gemini could not read it either ({gem['errors'][0][:160]}) — it reads public videos only."
+    return " Gemini could not read it either — it reads public videos only."
+
+
+def _no_speech_message(relay: Optional[dict] = None) -> str:
+    if has_cookies():
+        return YOUTUBE_STALE_COOKIES_MESSAGE
+    return YOUTUBE_NO_SPEECH_MESSAGE + _relay_trace(relay) + _gemini_trace(relay) + ADMIN_NEXT_STEPS
+
+
+def _blocked_message(relay: Optional[dict] = None) -> str:
     # Configured-but-refused is a different job from never-configured: one needs a fresh
     # export, the other needs a first one. Saying "set cookies" to an admin who already
     # did sends them looking in the wrong place.
-    return YOUTUBE_STALE_COOKIES_MESSAGE if has_cookies() else YOUTUBE_BLOCKED_MESSAGE
+    if has_cookies():
+        return YOUTUBE_STALE_COOKIES_MESSAGE
+    return YOUTUBE_BLOCKED_MESSAGE + _relay_trace(relay) + _gemini_trace(relay) + ADMIN_NEXT_STEPS
 # Not "this video has no captions": on a walled host YouTube returns the title and
 # withholds the caption tracks, so blaming the video sends the learner to look for a
 # different one when every video will do the same thing from this server.
 YOUTUBE_NO_SPEECH_MESSAGE = (
     "YouTube gave this server the video's details but refused its captions, audio and "
     "video (its anti-bot check), so there is nothing to build questions from. Upload the "
-    "video or audio file instead — that path is unaffected. (Server admin: "
-    "MEDIA_YOUTUBE_COOKIES_B64, MEDIA_YOUTUBE_POT_URL or MEDIA_YOUTUBE_PROXY restores it.)"
+    "video or audio file instead — that path is unaffected."
 )
 _BLOCKED_MARKERS = ("not a bot", "sign in to confirm", "confirm your age", "use --cookies",
                     "cookies-from-browser", "too many requests", "http error 429",
@@ -473,12 +513,18 @@ class _Collect:
         return " ".join(self.lines)
 
 
+# The clients a PO token actually buys full formats for. `web_embedded` is in the
+# default chain and starts with "web", which used to satisfy a `startswith("web")`
+# guard here and so silently stopped these two from ever being appended — meaning
+# configuring MEDIA_YOUTUBE_POT_URL bought nothing on the default chain, which is the
+# one state (metadata served, formats gated) a PO token is supposed to fix.
+_POT_CLIENTS = ("web_safari", "web")
+
+
 def _yt_clients() -> List[str]:
     clients = [c.strip() for c in YOUTUBE_PLAYER_CLIENTS.split(",") if c.strip()] or ["default"]
-    if YOUTUBE_POT_URL and not any(c.startswith("web") for c in clients):
-        # A PO token only means anything to the web-family clients, so configuring a
-        # provider without one of them in the chain would buy nothing.
-        clients += ["web_safari", "web"]
+    if YOUTUBE_POT_URL:
+        clients += [c for c in _POT_CLIENTS if c not in clients]
     return clients
 
 
@@ -507,19 +553,36 @@ def _yt_opts(client: Optional[str] = None, **extra) -> dict:
     return opts
 
 
-def _pick_captions(info: dict) -> tuple[Optional[str], Optional[str], Optional[str]]:
-    """(url of a json3 track, kind, lang) — manual subtitles first, then original-language auto captions."""
-    video_lang = (info.get("language") or "").split("-")[0].lower()
+# Formats we can read, best first. json3 carries exact per-cue durations; the rest are
+# parsed by the same sniffing parser the relay tier uses. Insisting on json3 — which
+# this did until it was found to be why a walled host reported "no captions" — throws
+# the track away whenever a player client happens to list only vtt or srv3.
+_CAPTION_EXTS = ("json3", "srv3", "vtt", "ttml", "srv2", "srv1")
 
-    def json3(tracks):
-        return next((t["url"] for t in tracks or [] if t.get("ext") == "json3" and t.get("url")), None)
+
+def _track(tracks) -> tuple[Optional[str], Optional[str]]:
+    """(url, ext) of the most readable variant of one caption track."""
+    best = None
+    for t in tracks or []:
+        if not t.get("url"):
+            continue
+        ext = str(t.get("ext") or "").lower()
+        rank = _CAPTION_EXTS.index(ext) if ext in _CAPTION_EXTS else len(_CAPTION_EXTS)
+        if best is None or rank < best[0]:
+            best = (rank, t["url"], ext or "vtt")
+    return (best[1], best[2]) if best else (None, None)
+
+
+def _pick_captions(info: dict) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """(url, kind, lang, ext) — manual subtitles first, then original-language auto captions."""
+    video_lang = (info.get("language") or "").split("-")[0].lower()
 
     manual = {k: v for k, v in (info.get("subtitles") or {}).items() if k != "live_chat"}
     order = sorted(manual, key=lambda k: (k.split("-")[0].lower() != video_lang, not k.startswith("en"), k))
     for lang in order:
-        url = json3(manual[lang])
+        url, ext = _track(manual[lang])
         if url:
-            return url, "manual", lang
+            return url, "manual", lang, ext
     auto = info.get("automatic_captions") or {}
     # "<lang>-orig" is the ASR of the spoken language; plain "<lang>" tracks are machine translations.
     # YouTube now lists several "-orig" tracks on some videos, in no fixed order, so the
@@ -527,11 +590,26 @@ def _pick_captions(info: dict) -> tuple[Optional[str], Optional[str], Optional[s
     orig = sorted((k for k in auto if k.endswith("-orig")),
                   key=lambda k: (k.split("-")[0].lower() != video_lang, k))
     candidates = orig + ([video_lang] if video_lang in auto else [])
+    # Last resort: any auto track at all. A walled client often returns the caption list
+    # without the video's `language`, which leaves video_lang empty and the two lists
+    # above empty with it — so the quiz failed outright while a usable track was sitting
+    # right there. A possibly-translated track is worth far more than no speech at all.
+    candidates += sorted(k for k in auto if k not in candidates)
     for lang in candidates:
-        url = json3(auto[lang])
+        url, ext = _track(auto[lang])
         if url:
-            return url, "auto", lang.replace("-orig", "")
-    return None, None, None
+            return url, "auto", lang.replace("-orig", ""), ext
+    return None, None, None, None
+
+
+def parse_caption_bytes(raw: bytes, ext: Optional[str] = None) -> List[Caption]:
+    """Any of the formats YouTube serves a track in. The sniffing parser lives in
+    ytrelay (it had to handle Invidious VTT and Piped TTML already); this reuses it so
+    both paths read a caption track the same way."""
+    from services.media_quiz.ytrelay import parse_captions
+
+    text = raw.decode("utf-8", errors="replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
+    return [Caption(c.start, c.end, c.text) for c in parse_captions(text)]
 
 
 def _parse_json3(raw: bytes) -> List[Caption]:
@@ -563,6 +641,7 @@ class _Attempt:
     caption_url: Optional[str] = None
     caption_kind: Optional[str] = None
     caption_lang: Optional[str] = None
+    caption_ext: Optional[str] = None
     video_formats: int = 0
     audio_formats: int = 0
 
@@ -609,7 +688,7 @@ def _probe_one(yt_dlp, url: str, client: str) -> tuple[Optional[_Attempt], Optio
             return None, RuntimeError(said.text or "yt-dlp returned no metadata")
         if info.get("_type") == "playlist" or info.get("entries"):
             raise MediaInputError("Please paste a link to a single video, not a playlist.")
-        cap_url, kind, lang = _pick_captions(info)
+        cap_url, kind, lang, ext = _pick_captions(info)
         vf, af = _count_formats(info)
         if not (info.get("duration") or cap_url or vf or af):
             # ignore_no_formats_error also swallows the refusal: yt-dlp then hands
@@ -620,9 +699,9 @@ def _probe_one(yt_dlp, url: str, client: str) -> tuple[Optional[_Attempt], Optio
                            client, _yt_message(RuntimeError(said.text))[:160])
             return None, RuntimeError(said.text or
                                       "the video is unavailable (private, removed, or the link is wrong).")
-        logger.info("[youtube] player_client=%s ok: captions=%s formats=%d video / %d audio",
-                    client, kind or "none", vf, af)
-        return _Attempt(client, info, cap_url, kind, lang, vf, af), None
+        logger.info("[youtube] player_client=%s ok: captions=%s/%s formats=%d video / %d audio",
+                    client, kind or "none", ext or "-", vf, af)
+        return _Attempt(client, info, cap_url, kind, lang, ext, vf, af), None
     except MediaInputError:
         raise
     except Exception as exc:                          # noqa: BLE001 — every client is retried
@@ -747,7 +826,7 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
             with yt_dlp.YoutubeDL(_yt_opts(client=client, ignore_no_formats_error=True,
                                            logger=said, no_warnings=False)) as ydl:
                 info = ydl.extract_info(url.strip(), download=False)
-            cap, kind, lang = _pick_captions(info or {})
+            cap, kind, lang, cap_ext = _pick_captions(info or {})
             vf, af = _count_formats(info or {})
             if not ((info or {}).get("duration") or cap or vf or af):
                 # An empty placeholder is a refusal yt-dlp was told not to raise.
@@ -758,6 +837,7 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
                 continue
             out["clients"][client] = {"ok": True, "title": (info or {}).get("title"),
                                       "captions": bool(cap), "caption_kind": kind, "caption_lang": lang,
+                                      "caption_ext": cap_ext,
                                       # 0 formats with captions present is the normal datacenter
                                       # answer, and still enough for a captions-only quiz.
                                       "video_formats": vf, "audio_formats": af}
@@ -768,21 +848,30 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
     out["watch_page"] = _safe(_watch_page_probe, out["video_id"])
     from services.media_quiz import ytrelay
 
+    from services.media_quiz import ytgemini
+
     out["relays"] = _safe(ytrelay.diagnosis, out["video_id"])
+    out["gemini"] = _safe(ytgemini.diagnosis, out["video_id"])
     ok = [c for c in out["clients"].values() if c.get("ok")]
     relay = out["relays"] if isinstance(out["relays"], dict) else {}
     rbest = relay.get("best") or {}
+    gem_ok = bool(isinstance(out["gemini"], dict) and out["gemini"].get("ok")
+                  and out["gemini"].get("speech_rows"))
     out["verdict"] = {
         "can_generate_quiz": bool(any(c.get("captions") or c.get("audio_formats") for c in ok)
-                                  or rbest.get("cues") or rbest.get("audio_stream")),
+                                  or rbest.get("cues") or rbest.get("audio_stream") or gem_ok),
         "can_use_video_frames": bool(any(c.get("video_formats") for c in ok) or rbest.get("video_stream")),
         "speech_from": ("captions" if any(c.get("captions") for c in ok)
                         else "audio+asr" if any(c.get("audio_formats") for c in ok)
                         else f"relay:{rbest.get('kind')} captions" if rbest.get("cues")
-                        else f"relay:{rbest.get('kind')} audio+asr" if rbest.get("audio_stream") else None),
+                        else f"relay:{rbest.get('kind')} audio+asr" if rbest.get("audio_stream")
+                        else "gemini transcript" if gem_ok else None),
         # Direct access is refused but a relay answers: the IP wall is no longer the
         # end of the road, which is the one thing this endpoint exists to settle.
         "relay_rescues_this_host": bool(not ok and (rbest.get("cues") or rbest.get("audio_stream"))),
+        # Gemini reads the public link on Google's side, so it answers even where every
+        # other tier is walled — the dependable answer for the Oracle VM.
+        "gemini_rescues_this_host": bool(not ok and gem_ok),
     }
     return out
 
@@ -929,7 +1018,9 @@ def cache_load(video_id: Optional[str]) -> Optional[MediaSource]:
     caps = data.get("captions")
     if caps:
         src.captions = [Caption(c[0], c[1], c[2]) for c in caps]
-    if not (src.captions or src.audio_path or src.video_path):
+    if data.get("screen_text"):
+        src.screen_text = [Caption(c[0], c[1], c[2]) for c in data["screen_text"]]
+    if not (src.captions or src.audio_path or src.video_path or src.screen_text):
         return None
     logger.info("[youtube] reusing the cached fetch of %s (%s)", video_id, src.title)
     return src
@@ -944,7 +1035,8 @@ def cache_store(video_id: Optional[str], src: MediaSource) -> None:
             json.dump({"title": src.title, "duration": src.duration, "video_path": src.video_path,
                        "audio_path": src.audio_path, "caption_kind": src.caption_kind,
                        "caption_lang": src.caption_lang, "notes": src.notes,
-                       "captions": [[c.start, c.end, c.text] for c in src.captions or []]}, f)
+                       "captions": [[c.start, c.end, c.text] for c in src.captions or []],
+                       "screen_text": [[c.start, c.end, c.text] for c in src.screen_text or []]}, f)
     except (OSError, TypeError, ValueError) as exc:
         logger.info("[youtube] could not cache the fetch of %s: %s", video_id, exc)
 
@@ -973,7 +1065,8 @@ def _fetch_lock(video_id: Optional[str]):
         return _fetch_locks.setdefault(video_id or "-", threading.Lock())
 
 
-def _relay_fill(src: MediaSource, video_id: Optional[str], workdir: str) -> MediaSource:
+def _relay_fill(src: MediaSource, video_id: Optional[str], workdir: str,
+                trace: Optional[dict] = None) -> MediaSource:
     """Ask the open-source front-ends (Invidious / Piped) for whatever this host was
     refused. They talk to YouTube from their own address, so the bot wall on *this*
     IP — the state the Oracle VM is in, where every player client and the watch page
@@ -984,17 +1077,24 @@ def _relay_fill(src: MediaSource, video_id: Optional[str], workdir: str) -> Medi
     already in hand."""
     from services.media_quiz import ytrelay
 
+    if trace is not None:
+        trace["enabled"] = ytrelay.enabled()
     if not (video_id and ytrelay.enabled()):
         return src
     need_speech = not (src.captions or src.audio_path)
     need_video = not src.video_path and ytrelay.RELAY_FRAMES
     if not (need_speech or need_video):
         return src
+    tried: List[dict] = []
     try:
-        res = ytrelay.fetch(video_id)
+        res = ytrelay.fetch(video_id, attempts=tried)
     except Exception as exc:                          # noqa: BLE001 — a fallback must not raise
         logger.warning("[youtube] relay tier failed: %s: %s", type(exc).__name__, exc)
         return src
+    finally:
+        if trace is not None:
+            trace["tried"] = len(tried)
+            trace["walled"] = sum(1 for a in tried if a.get("why") == "youtube_walls_the_instance")
     if not res:
         return src
 
@@ -1041,6 +1141,46 @@ def _relay_fill(src: MediaSource, video_id: Optional[str], workdir: str) -> Medi
     return src
 
 
+def _gap_fill(src: MediaSource, video_id: Optional[str], workdir: str,
+              trace: Optional[dict] = None) -> MediaSource:
+    """Fill what YouTube withheld from this host, from the two tiers that do not ask
+    YouTube from this IP: the relay pool (`_relay_fill`) and Gemini, which reads a
+    public link on Google's side (`ytgemini`). They run **side by side** — the relay
+    race has a 15 s deadline and Gemini takes ~10–25 s, so running them one after the
+    other would add the first's wait to every walled request.
+
+    Precedence is by evidence quality, not by who answers first: real caption tracks
+    (direct or relayed) beat a model transcript, and real frames (OCR) beat model-read
+    screen text. Gemini's output is used only for what is still missing."""
+    from services.media_quiz import ytgemini
+
+    trace = trace if trace is not None else {}
+    gem_trace = trace.setdefault("gemini", {"enabled": ytgemini.enabled()})
+    need_speech = not (src.captions or src.audio_path)
+    need_screen = not src.video_path and ytgemini.SCREEN_WHEN_NO_FRAMES
+    if not (video_id and ytgemini.enabled() and (need_speech or need_screen)):
+        return _relay_fill(src, video_id, workdir, trace)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="yt-gemini") as pool:
+        job = pool.submit(ytgemini.fetch, video_id, src.duration, gem_trace)
+        src = _relay_fill(src, video_id, workdir, trace)      # meanwhile, on this thread
+        gem = job.result()
+    if not gem:
+        return src
+    src.duration = src.duration or gem.duration
+    if not (src.captions or src.audio_path) and gem.speech:
+        src.captions = [Caption(c.start, c.end, c.text) for c in gem.speech]
+        src.caption_kind, src.caption_lang = "gemini", gem.lang or "en"
+        src.notes.append(f"speech transcribed from the public video by Gemini ({gem.model}, "
+                         f"{gem.windows_ok} parallel windows) — YouTube refused this server directly")
+    if not src.video_path and gem.screen:
+        src.screen_text = [Caption(c.start, c.end, c.text) for c in gem.screen]
+        src.notes.append(f"on-screen text read by Gemini ({len(gem.screen)} screens) in place of OCR")
+    return src
+
+
 def _too_long(seconds: Optional[float]) -> bool:
     return bool(seconds and seconds > YOUTUBE_MAX_DURATION_S)
 
@@ -1073,6 +1213,19 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
         return cached
     dldir = _download_dir(video_id, workdir)
 
+    from services.media_quiz import ytgemini
+
+    # Set once the relay / Gemini tiers have run for this request, so they are not asked twice.
+    tiers: Optional[dict] = None
+    if ytgemini.first():
+        # A host known to be walled (the Oracle VM): the direct probe can only fail, and
+        # skipping it saves its round trips. Anything the tiers cannot give falls back
+        # to the normal path below.
+        tiers = {}
+        done = _tiers_only(_gap_fill(MediaSource(title="YouTube video"), video_id, dldir, tiers), video_id)
+        if done:
+            return done
+
     try:
         attempts, last_error = _probe_clients(yt_dlp, url)
     except MediaInputError:
@@ -1086,26 +1239,23 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
         # tier asks somebody else's server instead, which is the only thing left that
         # can work from a walled IP without credentials — so it is tried before the
         # link is declared dead.
-        if not _is_fatal(exc) or _is_blocked(exc):
-            relayed = _relay_fill(MediaSource(title="YouTube video"), video_id, dldir)
+        relay: dict = tiers if tiers is not None else {}
+        if tiers is None and (not _is_fatal(exc) or _is_blocked(exc)):
             # An over-long video is a plain refusal, not "YouTube blocked this server":
-            # the relay knew its length, so say so rather than falling through.
-            _check_duration(relayed.duration)
-            if relayed.captions or relayed.audio_path:
-                if not relayed.video_path:
-                    relayed.notes.append("video frames unavailable from this server — speech only")
-                _finish_youtube(relayed, video_id)
-                return relayed
+            # _tiers_only checks the length the tiers learnt before anything else.
+            done = _tiers_only(_gap_fill(MediaSource(title="YouTube video"), video_id, dldir, relay), video_id)
+            if done:
+                return done
         # Order matters. A refused request often *also* reports "No video formats
         # found", and a removed video reports it too, so the unambiguous wording has
         # to be tested first or every dead link is blamed on the anti-bot check.
         if _is_blocked(exc):
-            raise MediaInputError(_blocked_message()) from exc
+            raise MediaInputError(_blocked_message(relay)) from exc
         if _is_fatal(exc):
             raise MediaInputError("That video is unavailable — it may be private, removed, "
                                   "age-restricted or region-locked.") from exc
         if _is_gated(exc):
-            raise MediaInputError(_blocked_message()) from exc
+            raise MediaInputError(_blocked_message(relay)) from exc
         raise MediaInputError(f"Could not read that YouTube link: {_yt_message(exc)}") from exc
 
     best = max(attempts, key=lambda a: a.score)
@@ -1116,20 +1266,21 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
                       duration=float(info.get("duration") or 0) or None)
     _check_duration(src.duration)                     # before any download
 
-    # Captions, from any client that has them — a client can be denied the media URLs
-    # and still serve the caption tracks, which is the common case on a datacenter IP.
-    for att in sorted((a for a in attempts if a.has_captions), key=lambda a: a.score, reverse=True):
-        try:
-            with yt_dlp.YoutubeDL(_yt_opts(client=att.client)) as ydl:
-                caps = _parse_json3(ydl.urlopen(att.caption_url).read())
-        except Exception as exc:                      # noqa: BLE001 — try the next client
-            logger.warning("[youtube] captions via %s failed: %s", att.client, _yt_message(exc))
-            continue
-        if caps:
-            src.captions, src.caption_kind, src.caption_lang = caps, att.caption_kind, att.caption_lang
-            src.notes.append(f"speech from YouTube {att.caption_kind} captions ({att.caption_lang})")
-            break
-        logger.warning("[youtube] captions via %s were empty", att.client)
+    def fetch_captions() -> None:
+        """Captions, from any client that has them — a client can be denied the media URLs
+        and still serve the caption tracks, which is the common case on a datacenter IP."""
+        for att in sorted((a for a in attempts if a.has_captions), key=lambda a: a.score, reverse=True):
+            try:
+                with yt_dlp.YoutubeDL(_yt_opts(client=att.client)) as ydl:
+                    caps = parse_caption_bytes(ydl.urlopen(att.caption_url).read(), att.caption_ext)
+            except Exception as exc:                  # noqa: BLE001 — try the next client
+                logger.warning("[youtube] captions via %s failed: %s", att.client, _yt_message(exc))
+                continue
+            if caps:
+                src.captions, src.caption_kind, src.caption_lang = caps, att.caption_kind, att.caption_lang
+                src.notes.append(f"speech from YouTube {att.caption_kind} captions ({att.caption_lang})")
+                return
+            logger.warning("[youtube] captions via %s were empty", att.client)
 
     def fetch(fmt: str, prefix: str, clients: List[str]) -> Optional[str]:
         """Download one stream, trying each client that advertised a usable format."""
@@ -1150,12 +1301,15 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
         return [a.client for a in sorted(attempts, key=lambda a: a.score, reverse=True)
                 if getattr(a, kind) > 0]
 
-    # Video and audio are separate streams: download them in parallel.
+    # The video stream downloads while the captions are fetched: it is always wanted
+    # (frames for OCR), and it used to wait for the caption round trips. The audio
+    # stream is only wanted when there are no captions, so it starts once that is known.
     from concurrent.futures import ThreadPoolExecutor
 
     video_clients, audio_clients = order("video_formats"), order("audio_formats")
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="yt") as pool:
         video_job = pool.submit(fetch, _YT_VIDEO_FORMAT, "v", video_clients) if video_clients else None
+        fetch_captions()
         audio_job = (pool.submit(fetch, _YT_AUDIO_FORMAT, "a", audio_clients)
                      if audio_clients and not src.captions else None)
         src.video_path = video_job.result() if video_job else None
@@ -1167,14 +1321,16 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
     # Whatever YouTube withheld from this host, ask the relay tier for. On a datacenter
     # IP that is usually the media URLs (captions come through), so this is what brings
     # the video frames — and with them the OCR evidence — back.
-    src = _relay_fill(src, video_id, dldir)
-    if not src.video_path:
+    relay: dict = tiers if tiers is not None else {}
+    if tiers is None:
+        src = _gap_fill(src, video_id, dldir, relay)
+    if not src.video_path and not src.screen_text:
         # Frames are optional: the quiz is built from speech, and on-screen text only
         # adds OCR evidence. Losing them is a note, not a failure.
         src.notes.append("video frames unavailable from this server — speech only")
     if not src.captions and not src.audio_path:
         # Nothing to read and nothing to listen to.
-        if src.video_path:
+        if src.video_path or src.screen_text:
             src.notes.append("no captions and no audio track — questions come from on-screen text only")
         elif audio_clients:
             # A stream was offered and the download still failed: a transfer problem,
@@ -1182,7 +1338,37 @@ def _fetch_youtube(yt_dlp, url: str, video_id: Optional[str], workdir: str) -> M
             raise MediaInputError("Could not download this video's audio from YouTube. "
                                   "Upload the video or audio file instead.")
         else:
-            raise MediaInputError(_no_speech_message())
+            raise MediaInputError(_no_speech_message(relay))
+    _finish_youtube(src, video_id)
+    return src
+
+
+def _oembed_title(video_id: Optional[str]) -> Optional[str]:
+    """The title from YouTube's oEmbed endpoint — plain metadata, not the player, so it
+    is answered even where the player refuses this host. Used only to name a quiz that
+    was built without yt-dlp's metadata."""
+    if not video_id:
+        return None
+    try:
+        import httpx
+
+        r = httpx.get("https://www.youtube.com/oembed", timeout=5, params={
+            "url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"})
+        return (r.json().get("title") or None) if r.status_code == 200 else None
+    except Exception:                                 # noqa: BLE001 — cosmetic only
+        return None
+
+
+def _tiers_only(src: MediaSource, video_id: Optional[str]) -> Optional[MediaSource]:
+    """Finish a source built only by the relay / Gemini tiers (YouTube refused this host
+    directly), or None when they found nothing to learn from."""
+    _check_duration(src.duration)
+    if not (src.captions or src.audio_path or src.screen_text):
+        return None
+    # oEmbed is authoritative; a relay's title can be a download filename ("… (360p, h264)").
+    src.title = _oembed_title(video_id) or src.title or "YouTube video"
+    if not src.video_path and not src.screen_text:
+        src.notes.append("video frames unavailable from this server — speech only")
     _finish_youtube(src, video_id)
     return src
 

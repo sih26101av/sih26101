@@ -66,7 +66,9 @@ WINDOW_MAX_S = 28.0
 # evenly spread SAMPLE of speech windows up to this many seconds (coverage of the
 # whole video beats a perfect transcript of its first minutes).
 ASR_BUDGET_S = float(os.getenv("MEDIA_ASR_BUDGET_S", "150"))
-CAPTION_CONFIDENCE = {"manual": 0.92, "auto": 0.72}
+# "gemini": a transcript Gemini made from the public video (ytgemini) — a model's ASR,
+# so it is trusted like YouTube's own auto captions.
+CAPTION_CONFIDENCE = {"manual": 0.92, "auto": 0.72, "gemini": 0.72}
 CAPTION_PIECE_S = 20.0
 
 OCR_LINE_MIN_SCORE = 0.5

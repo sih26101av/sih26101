@@ -6,6 +6,7 @@
 #   bash deploy/oracle/youtube-access.sh --cookies ~/yt.txt  # dependable: cookies.txt
 #   bash deploy/oracle/youtube-access.sh --proxy http://user:pass@host:port
 #   bash deploy/oracle/youtube-access.sh --relay piped:https://my-piped.example
+#   bash deploy/oracle/youtube-access.sh --gemini first      # free, dependable: Gemini reads the link
 #
 # Why this exists: YouTube decides by IP reputation, and Oracle's ranges are flagged.
 # From this VM every InnerTube player client AND a plain browser-UA watch-page GET come
@@ -20,6 +21,11 @@
 # an instance YOU run (anywhere that is not a flagged datacenter: a college network, a
 # home box behind a tunnel), which makes it dependable and still costs no Google
 # account. Nothing here affects file uploads, which never touch YouTube.
+#
+# The tier that does not depend on luck is Gemini (on by default when GEMINI_API_KEY is
+# set): the Gemini API accepts a public YouTube URL and fetches the video on Google's
+# side, so this VM only talks to generativelanguage.googleapis.com. --gemini first
+# makes it skip the direct probe, which can only fail from this IP anyway.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -34,6 +40,7 @@ while [ $# -gt 0 ]; do
     --cookies) MODE="cookies"; ARG="${2:-}"; shift ;;
     --proxy)   MODE="proxy";   ARG="${2:-}"; shift ;;
     --relay)   MODE="relay";   ARG="${2:-}"; shift ;;
+    --gemini)  MODE="gemini";  ARG="${2:-first}"; [ $# -gt 1 ] && shift ;;
     --check)   MODE="check" ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -115,6 +122,14 @@ relay)
   [ "$ARG" = "off" ] || set_env MEDIA_YOUTUBE_RELAY_FRAMES 1
   ;;
 
+gemini)
+  # first = skip the direct yt-dlp probe (walled hosts), auto = use it only when YouTube
+  # refuses this host, off = never. Needs the same GEMINI_API_KEY the quizzes use.
+  case "$ARG" in first|auto|off) ;; *) echo "!! --gemini takes first | auto | off" >&2; exit 2 ;; esac
+  grep -Eq '^GEMINI_API_KEY=.{20,}' "$ENVF" || echo "!! warning: GEMINI_API_KEY is not set in $ENVF — the tier stays off"
+  set_env MEDIA_YOUTUBE_GEMINI "$ARG"
+  ;;
+
 esac
 
 if [ "$MODE" != "check" ]; then
@@ -165,13 +180,20 @@ if r.get("enabled"):
               "-> use --relay with your own, or --cookies")
 else:
     print("  relays        : disabled (MEDIA_YOUTUBE_RELAYS=off)")
+g = d.get("gemini") if isinstance(d.get("gemini"), dict) else {}
+if g.get("enabled"):
+    print("  gemini (%-5s): %s" % (g.get("mode"), "ok via %s, %s speech + %s screen rows from a 60 s window in %ss"
+          % (g.get("model"), g.get("speech_rows"), g.get("screen_rows"), g.get("elapsed_s"))
+          if g.get("ok") else "FAILED " + (g.get("error") or "")[:90]))
+else:
+    print("  gemini        : off (%s)" % g.get("reason"))
 print()
 if v.get("can_generate_quiz"):
     frames = "yes" if v.get("can_use_video_frames") else "no (captions-only quiz, which is fine)"
     print("  YOUTUBE LINKS WORK. speech from:", v.get("speech_from"), "| video frames:", frames)
 else:
-    print("  YOUTUBE LINKS STILL BLOCKED from this IP, and no relay could serve this video.")
-    print("  Next: --relay <your own instance> or --cookies (both dependable) -> --proxy.")
+    print("  YOUTUBE LINKS STILL BLOCKED from this IP, and neither a relay nor Gemini could serve this video.")
+    print("  Next: set GEMINI_API_KEY (+ --gemini first), or --relay <your own instance> / --cookies -> --proxy.")
     print("  --pot is free but attests the client, not the IP, so it rarely beats LOGIN_REQUIRED.")
     print("  Uploads are unaffected and are the reliable demo path.")
 PY

@@ -145,6 +145,35 @@ def _inspect(src: media_io.MediaSource):
     return duration, has_video, has_audio
 
 
+def _coverage(spans, duration: float) -> float:
+    """Share of the video covered by the union of the spans."""
+    total, end = 0.0, 0.0
+    for c in sorted(spans, key=lambda c: c.start):
+        s, e = max(c.start, end), max(c.end, c.start)
+        if e > s:
+            total += e - s
+            end = e
+    return min(1.0, total / duration) if duration else 0.0
+
+
+def _screen_evidence(screen, timeline: Timeline):
+    """Gemini's screen rows → the same (windows, ocr_ids, vlm_ids) shape visual_branch
+    returns for real keyframes, so chunking treats a screen like a slide. The source is
+    "ocr" because to the question writer that is what it is: text shown on screen."""
+    from types import SimpleNamespace
+
+    from services.media_quiz.ytgemini import SCREEN_CONFIDENCE
+
+    wins, ids = [], {}
+    for c in screen:
+        ev = timeline.add(c.start, c.end, "ocr", c.text, SCREEN_CONFIDENCE,
+                          lang=extractors.lang_of(c.text), via="gemini_youtube")
+        if ev:
+            ids[len(wins)] = [ev.id]
+            wins.append(SimpleNamespace(t_start=c.start, t_end=max(c.end, c.start + 1.0)))
+    return wins, ids, {}
+
+
 async def _run(src: media_io.MediaSource, difficulty: str, target_lang: Optional[str]) -> MediaQuizResult:
     timings: Dict[str, float] = {}
     t0 = time.perf_counter()
@@ -174,6 +203,15 @@ async def _run(src: media_io.MediaSource, difficulty: str, target_lang: Optional
 
     (audio, vad), (scan, dens) = await _gather_all(audio_branch(), video_branch())
     pr = await asyncio.to_thread(probe_mod.probe, duration, has_audio, has_video, audio, scan, regions, vad, dens)
+    screen = src.screen_text if scan is None else None
+    if screen:
+        # No frames reached this host, but Gemini read the screens (ytgemini). Route on
+        # that instead: the share of the video with text on screen stands in for the
+        # text detector's density, exactly as caption spans stand in for VAD.
+        pr.text_density = _coverage(screen, duration or pr.duration)
+        pr.content_type = probe_mod.route(pr.speech_ratio, pr.text_density, 0.0, True)
+        pr.tools = [t.replace("ocr", "ocr(gemini screen text)") for t in probe_mod.ROUTE_TOOLS[pr.content_type]
+                    if not t.startswith("vlm")]
     timings["probe_s"] = round(time.perf_counter() - t0, 2)
     report: Dict = {"probe": pr.to_dict(), "content_type": pr.content_type, "vlm_backend": extractors.vlm_label(),
                     "source_notes": src.notes}
@@ -201,7 +239,8 @@ async def _run(src: media_io.MediaSource, difficulty: str, target_lang: Optional
             if src.captions:
                 n = extractors.add_captions(src.captions, src.caption_kind or "auto", src.caption_lang or "en",
                                             timeline)
-                report["speech"] = {"source": f"youtube_{src.caption_kind}_captions", "lang": src.caption_lang,
+                report["speech"] = {"source": ("gemini_youtube_transcript" if src.caption_kind == "gemini"
+                                               else f"youtube_{src.caption_kind}_captions"), "lang": src.caption_lang,
                                     "pieces": n, "speech_coverage": 1.0}
             elif audio is not None:
                 report["speech"] = {"source": "whisper", **await asyncio.to_thread(
@@ -209,6 +248,8 @@ async def _run(src: media_io.MediaSource, difficulty: str, target_lang: Optional
         timings["asr_s"] = round(time.perf_counter() - t, 2)
 
     async def visual_branch():
+        if screen and ctype != probe_mod.TALKING_HEAD:
+            return _screen_evidence(screen, visual_tl)
         if scan is None or ctype == probe_mod.TALKING_HEAD:
             return [], {}, {}
         t2 = time.perf_counter()
@@ -247,8 +288,10 @@ async def _run(src: media_io.MediaSource, difficulty: str, target_lang: Optional
                            "confidence checks.", report)
 
     # ── 4-5. chunk + relevance ──────────────────────────────────────────────
+    t5 = time.perf_counter()
     chunks = build_chunks(timeline, slide_windows)
     chunks, rel = await asyncio.to_thread(score_chunks, chunks)
+    timings["relevance_s"] = round(time.perf_counter() - t5, 2)
     report["relevance"] = rel
     if not chunks:
         raise NotLearnable(REJECT_MESSAGE, report)

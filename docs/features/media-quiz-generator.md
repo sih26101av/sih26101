@@ -19,6 +19,7 @@ Backend, `main-lms-backend/`:
 | `routers/media_quiz.py` | Mounted at `/api/v1/rag/media`, in `main.py`. Handles `POST /upload` (multipart `file`, `difficulty`, `target_lang`), `POST /youtube` (JSON `{url, difficulty, target_lang}`) and `GET /capabilities`. Streams uploads to `temp_uploads/media_*` (deleted afterwards). Stores the quiz in `QUIZ_STORE` with a real FRAC `competency_id`, the quiz `difficulty`, and a `difficulty` on each question (`practice_assessment.media_question_difficulty`: the target level, one step harder for `synthesis` questions). `/grade` uses these for the difficulty-aware skill update. Generation is unchanged. Holds the **quiz result cache** for `/youtube` (`MEDIA_YOUTUBE_RESULT_TTL_S`, keyed by video id + difficulty + target_lang); a hit re-issues the same questions under a fresh `quiz_id`. |
 | `services/media_quiz/media_io.py` | PyAV stream info and audio decode; a single-pass OpenCV `scan_video` that takes change metrics, keyframes and text-probe frames from the whole video; `download_youtube` → `MediaSource`, built from `_probe_clients`' per-client `_Attempt`s (see *YouTube* below); `_relay_fill` asks `ytrelay` for whatever YouTube withheld; `cache_load` / `cache_store` keep the fetched captions and media per video id; `youtube_diagnosis` answers what this host can reach. |
 | `services/media_quiz/ytrelay.py` | The **relay tier**: YouTube through a public Invidious / Piped / cobalt instance instead of directly, so the fetch leaves from *that* server's IP. Instance discovery, a parallel race behind a deadline, a penalty box for failures, VTT / TTML / json3 caption parsing, and `classify()` / `diagnosis()` for the report. See *The relay tier* below. |
+| `services/media_quiz/ytgemini.py` | The **Gemini tier**: the Gemini API reads a *public* YouTube link on Google's side (`fileData.fileUri`), so a walled host only talks to `generativelanguage.googleapis.com`. Verbatim transcript + on-screen text, in parallel `videoMetadata` windows; video-token guard, loop guard, speculative windows when the length is unknown. The tier that works from the Oracle VM. See *The Gemini tier* below. |
 | `services/media_quiz/probe.py` | Computes `speech_ratio` (Silero VAD bundled with faster-whisper), `text_density` (RapidOCR **detector only**, one frame every ~10 s) and `screen_activity`, then `route()`. |
 | `services/media_quiz/extractors.py` | ASR (faster-whisper, per-window language, `task="transcribe"`, Whisper cut-offs), OCR on keyframes (RapidOCR, which runs the PaddleOCR models on ONNX) and the VLM (Gemini for demos, or Ollama Qwen2.5-VL offline). |
 | `services/media_quiz/evidence.py` | `Timeline` holds the shared evidence records and prunes them by confidence; `build_chunks` does slide/speech alignment. |
@@ -73,6 +74,12 @@ Frontend, `frontend/src/`:
      transcribed instead (the coverage is reported in `media.speech.speech_coverage`).
    - **YouTube captions replace ASR** when they exist (see below): manual captions
      get confidence 0.92, auto-generated 0.72. They're merged into pieces of ≤20 s.
+     A Gemini transcript (*The Gemini tier*) is treated the same way as auto captions
+     (0.72, `media.speech.source = gemini_youtube_transcript`).
+   - **Gemini screen text replaces OCR** when the host got no frames: each screen row
+     becomes `ocr` evidence (`via=gemini_youtube`, confidence 0.78) and its own slide
+     window. Routing uses the share of the video with text on screen as the text
+     density, just as caption spans stand in for VAD.
    - **OCR:** confidence is the length-weighted mean of the line scores. Narrated
      videos OCR at most `MEDIA_OCR_MAX_FRAMES_NARRATED`=20 evenly spread keyframes
      (text-heavy code screens cost 2–3 s each on CPU); silent videos OCR all ≤40.
@@ -151,6 +158,10 @@ out **identical** to the sequential version.
   are identical — only the `quiz_id` is new, because grading is per attempt.
 - **Cold start:** Whisper, RapidOCR, Silero VAD and e5 are loaded by the startup
   warm-up instead of by the first request.
+- **Walled hosts:** the Gemini tier replaces the two slowest CPU stages (Whisper,
+  OCR) with windows transcribed in parallel on Google's side, and runs next to the
+  relay race rather than after it. `media.timings.relevance_s` now reports the e5
+  scoring, the one stage `total_s` did not account for.
 
 Measured on the dev laptop (20 logical cores, warm models, VLM off). The input was a
 77-min 360p screen recording plus a 3-min narration, routed as `narrated_slides`.
@@ -171,7 +182,10 @@ YouTube fetch stage, measured 2026-09-23 (6-client chain):
 |---|---|---|
 | Healthy host, first client answers fully | 1 probe | 1 probe (unchanged — wave 2 never runs) |
 | Healthy host, 2nd client answers (`android_vr`) | 5.9 s | 7.1 s, **same client chosen** |
-| Every client walled (the VM) | 12.1 s | **4.0 s** |
+| Every client walled (the VM) | 12.1 s | **4.0 s** (then the tiers below) |
+| Walled host, quiz still built (21-min lecture, Gemini tier ∥ relay race) | failed | **≈20 s** fetch, ≈25 s pipeline, no Whisper / OCR |
+| Same, `MEDIA_YOUTUBE_GEMINI=first` (direct probe skipped) | — | ≈20–25 s fetch |
+| Healthy host, captions + video | captions, *then* the video stream | both at once (the caption round trips no longer delay the download) |
 | Same link again, any path | full download + pipeline | **0.03 s** (fetch cache) / instant (result cache) |
 
 Tuning notes:
@@ -195,9 +209,12 @@ separate streams needs an ffmpeg binary. So `download_youtube` fetches parts:
    The length limit is `MEDIA_YOUTUBE_MAX_DURATION_S`=4 h. Every player client in
    the chain is asked (see *Getting past the bot check*) and the best answer wins.
 2. **Captions:** manual subtitles first (preferring the video's language), then
-   the *original-language* auto captions (`<lang>-orig`). Machine-translated
-   tracks are never used. Captions are read as json3, `[Music]` cues are dropped,
-   and rolling cues are clipped.
+   the *original-language* auto captions (`<lang>-orig`), then — only if neither
+   exists — any auto track at all. `[Music]` cues are dropped and rolling cues are
+   clipped. A track is taken in whatever format the client listed it in
+   (`_CAPTION_EXTS`: json3 → srv3 → vtt → ttml → srv2 → srv1) and read by
+   `parse_caption_bytes`, which is `ytrelay`'s sniffing parser — the same one both
+   paths now use.
 3. **Video-only stream** at ≤360p H.264 for frames (about 0.4 MB per minute).
 4. **Audio-only stream** (smallest m4a), only when there are no captions.
    Transcription then uses the ASR budget.
@@ -317,6 +334,33 @@ RELAY-ONLY 18.6s  caps=344 kind=auto lang=en
           'video frames unavailable from this server — speech only']
 ```
 
+#### Two bugs that made a walled host look worse than it was
+
+Both were found on 2026-09-24, after the VM reported *"gave this server the video's
+details but refused its captions, audio and video"* — a state the wall alone does not
+explain, because details arriving means the client was answered.
+
+1. **Captions were only taken when a `json3` variant was listed.** `_pick_captions`
+   filtered on `ext == "json3"` and returned nothing otherwise, so a client that listed
+   the track only as `vtt` or `srv3` was reported as having no captions at all. A second
+   case had the same effect: the auto-caption search only considered `<lang>-orig` keys
+   and the video's own `language`, so a client that returned the caption list *without*
+   `language` (normal on a partly-walled client) left both candidate lists empty and
+   threw away a usable track. Any listed format is now accepted, and a plain auto track
+   is the last resort — a possibly-translated track beats no speech.
+2. **`MEDIA_YOUTUBE_POT_URL` bought nothing on the default chain.** `_yt_clients` only
+   appended the PO-token clients `web_safari` / `web` when no client already started
+   with `"web"` — and the default chain contains `web_embedded`, so the guard was always
+   true and they were **never added**. Configuring a PO-token provider therefore changed
+   nothing, in exactly the state (metadata served, formats gated) a PO token exists to
+   fix. `_POT_CLIENTS` is now appended whenever a provider is configured.
+
+The failure messages also carry what was attempted now (`_relay_trace`): how many relay
+instances were tried, whether YouTube refused those too, or whether the tier is switched
+off. Without it a deploy that changes nothing is indistinguishable from a deploy that
+did not happen. `ADMIN_NEXT_STEPS` puts the diagnosis first and then orders the fixes by
+cost, rather than each message naming a different subset of env vars.
+
 #### When the wall is the IP itself
 
 The Oracle VM is in the harder case, and measuring it settled the question
@@ -356,6 +400,7 @@ and then re-runs the diagnosis:
 | `--cookies <file>` | base64s a Netscape `cookies.txt` into `MEDIA_YOUTUBE_COOKIES_B64` | Yes, until the cookies expire |
 | `--proxy <url>` | sets `MEDIA_YOUTUBE_PROXY` | Yes, with a residential/mobile proxy |
 | `--relay <kind>:<url>` | pins `MEDIA_YOUTUBE_RELAYS` to your own Invidious/Piped/cobalt instance and turns `MEDIA_YOUTUBE_RELAY_FRAMES` on | Yes, if the instance isn't in a flagged datacenter — and it needs no Google account |
+| `--gemini [first\|auto\|off]` | sets `MEDIA_YOUTUBE_GEMINI` (default `first`) and warns if `GEMINI_API_KEY` is missing | **Yes**, for public videos — see *The Gemini tier*. The recommended setting for the VM. |
 
 The relay tier needs none of these to be tried first: it runs by default and is what
 makes a link work on the VM today, when an instance happens to be healthy.
@@ -394,6 +439,76 @@ Failures reach the learner as one sentence, not yt-dlp's multi-line dump
 Keep `yt-dlp` recent — only new releases keep up with the checks; `setup.sh` and
 `update.sh` both `pip install --upgrade yt-dlp`, because the floor pinned in
 `requirements-media.txt` counts as satisfied forever.
+
+### The Gemini tier
+
+`ytgemini.py`. Everything above asks YouTube for bytes — from this host, from a public
+relay, or through credentials the admin supplies — and from the Oracle VM all of those
+are walled or luck. The Gemini API is different in kind: it accepts a **public
+YouTube URL** as `fileData.fileUri` and Google fetches the video itself. The VM only
+makes an HTTPS call to `generativelanguage.googleapis.com`, which no IP wall touches, and
+it needs nothing beyond the `GEMINI_API_KEY` the quizzes already use. It is on by
+default whenever that key is set.
+
+What it returns is shaped like the other tiers' output:
+
+| Gemini gives | Becomes | Replaces |
+|---|---|---|
+| `speech` rows — verbatim, in the spoken language, never translated | `MediaSource.captions`, `caption_kind="gemini"` | captions / Whisper |
+| `screen` rows — slide text, code, formulas, chart labels | `MediaSource.screen_text` → `ocr` evidence + slide windows | OCR on frames |
+
+**When it runs** (`MEDIA_YOUTUBE_GEMINI`):
+- `auto` (default): whenever the direct path left a gap — no speech, or (with
+  `MEDIA_YOUTUBE_GEMINI_SCREEN=1`) captions but no frames. It runs **side by side
+  with the relay race** in `media_io._gap_fill`. Precedence is by evidence quality,
+  not arrival: real captions (direct or relayed) beat the model transcript, and real
+  frames beat model-read screens; Gemini fills only what is still missing.
+- `first`: skip the direct yt-dlp probe (it can only fail on the VM) and go straight to
+  the tiers; if they give nothing, the normal path still runs, without asking the tiers twice.
+- `off`.
+
+**Speed.** The video is cut into `MEDIA_YOUTUBE_GEMINI_WINDOW_S`=300 s windows
+(`videoMetadata.startOffset/endOffset`) transcribed `MEDIA_YOUTUBE_GEMINI_PARALLEL`=6 at
+a time, at `MEDIA_RESOLUTION_LOW` (measured ≈ 91 tokens per second of video). Videos
+longer than `MEDIA_YOUTUBE_GEMINI_MAX_S`=3600 get windows spread evenly across their
+whole length, like the Whisper budget. On a walled host the length is usually unknown
+(YouTube refused the metadata too), so windows go out in **speculative waves**: a
+window entirely past the end fails fast (measured: HTTP 500 in ~3 s, no video tokens),
+the wave after the one where the speech stops is never sent, and the last cue gives the
+duration (1287 s estimated vs 1288 s real). The title comes from YouTube's oEmbed
+endpoint, which is plain metadata and answered where the player is not.
+
+**Quality guards** — each one found necessary by measurement, not assumed:
+
+| Guard | Why |
+|---|---|
+| `usageMetadata.promptTokensDetails` must show `VIDEO`/`AUDIO` tokens | A model that answers without having received the video spends only `TEXT` tokens; its transcript is invented. Refused, not trusted. |
+| Rows outside the requested window are dropped; clip-relative times are shifted | The prompt asks for full-video time; this catches the model that didn't comply. |
+| `_unloop` drops rows repeating one of the last 4, and `maxOutputTokens` is sized to the window (≈28 tokens/s, min 8192) | One window fell into a repetition loop and wrote **905 rows / 32k tokens in ~110 s**; with the cap and the dedupe it costs one normal window. |
+| Truncated JSON is salvaged row by row | A window that hits the cap still yields the rows before the cut. |
+| `[Music]`-style rows dropped | Same as the caption parser. |
+| A 400 is not retried on other models; 404 models are skipped for the process | A 400 is about the video (private, unlisted); a 404 is a model this key isn't served. |
+
+Measured 2026-09-24, `dMRDzicSvXk` (21-min lecture), every yt-dlp client forced to
+fail, cache off:
+
+```
+[yt-gemini] dMRDzicSvXk: 113 speech + 17 screen rows from 5/6 windows via gemini-3.5-flash-lite in 19.9s
+FETCH 20.7s  caps=113 kind=gemini screen=17
+PIPELINE     content=narrated_slides (screen density 0.59)  evidence asr 80 + ocr 17, none dropped
+             7 questions (2 synthesis), 10 rejected as "about the video"
+```
+
+The questions cite both kinds (e.g. *"What was the initial P Pitch & Roll gain value
+displayed on the ESP32 webserver?"* comes from a screen row). From the laptop's own IP the
+direct path is untouched: 344 auto captions + the 360p stream in 12.4 s, Gemini not called.
+Offline tests: `tests/test_ytgemini.py`.
+
+**Limits.** Public videos only (not unlisted or private). The Gemini free tier allows
+8 hours of YouTube video per day, counted per window sent. Model-read screen text is
+less exact than OCR on the frames, so it is the fallback, never the first choice.
+`GET /youtube/diagnose` now includes a `gemini` block (one 60 s window) and
+`verdict.gemini_rescues_this_host`; `/capabilities` reports `youtube.gemini`.
 
 ## In / out
 
@@ -500,6 +615,10 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
+- **Run on the VM:** `bash deploy/oracle/youtube-access.sh --gemini first`. The Gemini
+  tier was verified end-to-end from the dev machine with every yt-dlp client forced to
+  fail; it does not depend on the host's IP (only on reaching the Gemini API, which the
+  quizzes already do), but confirm with the script's `gemini` line.
 - **Not yet tested:** the real test set above, the Ollama VLM backend, the bgutil
   PO-token provider on the VM, and the relay tier *from the Oracle VM itself* — it was
   verified from a dev machine with the player clients forced to fail, which reproduces
@@ -517,10 +636,16 @@ stages; the startup warm-up also removes the cold-start penalty.
   - *Everything refused (LOGIN_REQUIRED)* — what the Oracle VM actually returns as
     of 2026-09-20. Nothing that asks YouTube directly can fix this, but the **relay
     tier** does rescue it when a public instance is healthy (verified end-to-end), and
-    always when `youtube-access.sh --relay` points it at your own instance. Cookies and
-    a residential proxy remain the other dependable answers.
+    always when `youtube-access.sh --relay` points it at your own instance. The
+    **Gemini tier** rescues it for every public video with no setup beyond the key.
+    Cookies and a residential proxy remain the answers for unlisted videos.
   Run `GET /youtube/diagnose` on the server to see which case you are in rather
-  than guessing — its `verdict` answers it in one line.
+  than guessing — its `verdict` answers it in one line. A third state showed up on
+  2026-09-24 (details served, no captions and no formats); two code bugs were part of
+  it — see *Two bugs that made a walled host look worse than it was*.
+- **Checking a deploy took:** `GET /capabilities` reports `youtube.relays` and
+  `youtube.cache` only on the current code. If those keys are missing, the VM is
+  running an older build and no amount of re-testing the link will change anything.
 - **Dev server:** `uvicorn --reload` on Windows hangs on reload in this app. The
   old worker never exits, so new routes 404 until the server is restarted by
   hand. This isn't specific to this feature; after pulling changes, restart the

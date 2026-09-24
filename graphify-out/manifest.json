@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "ARCHITECTURE.md": {
-    "mtime": 1790177140.7408555,
-    "seen": 1790177280.3836896,
-    "ast_hash": "09d37908144e72adec6c668b6fce159c",
+    "mtime": 1790219016.9875,
+    "seen": 1790219084.8217058,
+    "ast_hash": "e83389c57b0ee6b113a44a53bda10621",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -763,25 +763,25 @@
   },
   "main-lms-backend/pyproject.toml": {
     "mtime": 1789673603.6622515,
-    "seen": 1790169862.0149658,
+    "seen": 1790193492.1323261,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "mock-igot-server/courses.json": {
     "mtime": 1787910107.6273973,
-    "seen": 1790169862.01563,
+    "seen": 1790193492.1337554,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "mock-igot-server/courses_1.json": {
     "mtime": 1788437604.4831629,
-    "seen": 1790169862.0156348,
+    "seen": 1790193492.1337607,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "mock-igot-server/pyproject.toml": {
     "mtime": 1787893948.1103475,
-    "seen": 1790169862.0156698,
+    "seen": 1790193492.1337957,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -1266,9 +1266,9 @@
     "semantic_hash": ""
   },
   "main-lms-backend/routers/media_quiz.py": {
-    "mtime": 1790175779.514536,
-    "seen": 1790176273.845312,
-    "ast_hash": "2b8761cc9f5c804955c01ba41f374b09",
+    "mtime": 1790218772.0953987,
+    "seen": 1790219084.7494574,
+    "ast_hash": "5a0343a1ec26777d38085ecf352d01b8",
     "semantic_hash": ""
   },
   "main-lms-backend/scripts/eval_media_quiz.py": {
@@ -1290,9 +1290,9 @@
     "semantic_hash": ""
   },
   "main-lms-backend/services/media_quiz/extractors.py": {
-    "mtime": 1789788828.986038,
-    "seen": 1789788835.877332,
-    "ast_hash": "ff09d645bee3dce9c310089803413896",
+    "mtime": 1790218434.623547,
+    "seen": 1790219084.767421,
+    "ast_hash": "e921e8009da3b4be8c8efea9e80b3c3d",
     "semantic_hash": ""
   },
   "main-lms-backend/services/media_quiz/fact_check.py": {
@@ -1308,15 +1308,15 @@
     "semantic_hash": ""
   },
   "main-lms-backend/services/media_quiz/media_io.py": {
-    "mtime": 1790176796.1898086,
-    "seen": 1790177280.3406658,
-    "ast_hash": "d6d1be02ef1a32c078c26ed76717f54b",
+    "mtime": 1790218900.1532998,
+    "seen": 1790219084.767899,
+    "ast_hash": "d1839549c3668270a6447c9732f2004b",
     "semantic_hash": ""
   },
   "main-lms-backend/services/media_quiz/pipeline.py": {
-    "mtime": 1790175779.5165417,
-    "seen": 1790176273.863438,
-    "ast_hash": "15512dc05217ac5d24372dd24f9e70e1",
+    "mtime": 1790218714.5536397,
+    "seen": 1790219084.7679021,
+    "ast_hash": "a953028a978f67c2ec9fc3ff3b9c1dfb",
     "semantic_hash": ""
   },
   "main-lms-backend/services/media_quiz/probe.py": {
@@ -1344,9 +1344,9 @@
     "semantic_hash": ""
   },
   "docs/features/media-quiz-generator.md": {
-    "mtime": 1790177110.3243186,
-    "seen": 1790177280.3929822,
-    "ast_hash": "b3580526b65fab2545c9ad3c4753a7b2",
+    "mtime": 1790219004.843818,
+    "seen": 1790219084.8295867,
+    "ast_hash": "e8bd2956b16b02b1cbf93f4a483b2a22",
     "semantic_hash": ""
   },
   "main-lms-backend/requirements-media.txt": {
@@ -1632,9 +1632,9 @@
     "semantic_hash": ""
   },
   "deploy/oracle/youtube-access.sh": {
-    "mtime": 1790176893.5088375,
-    "seen": 1790177280.2259822,
-    "ast_hash": "473713de0d0c8151d3a183968fbe6b69",
+    "mtime": 1790218792.5686722,
+    "seen": 1790219084.6807935,
+    "ast_hash": "b557831bf7415c26d82b795c1aa6d00b",
     "semantic_hash": ""
   },
   "frontend/src/config.ts": {
@@ -1875,6 +1875,18 @@
     "mtime": 1790176559.9663372,
     "seen": 1790177280.343777,
     "ast_hash": "a74537aba9bd1a3b2ca9995e5d61b394",
+    "semantic_hash": ""
+  },
+  "main-lms-backend/services/media_quiz/ytgemini.py": {
+    "mtime": 1790218617.747086,
+    "seen": 1790219084.7708547,
+    "ast_hash": "93d2e8e973497a9776bab4aeefa4a8c3",
+    "semantic_hash": ""
+  },
+  "main-lms-backend/tests/test_ytgemini.py": {
+    "mtime": 1790218858.3185394,
+    "seen": 1790219084.8076882,
+    "ast_hash": "f246b8f2f7030ccf0ea764df7f4da4e9",
     "semantic_hash": ""
   }
 }
