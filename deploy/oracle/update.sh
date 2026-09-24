@@ -8,6 +8,11 @@ cd "$REPO"
 
 git fetch --quiet origin main
 git reset --quiet --hard origin/main
+# The reset above just rewrote this file while bash is still reading it by byte offset,
+# so the rest of a deploy that changes update.sh would run a splice of the old and new
+# script (it is how the first WARP deploy silently skipped WARP). Start over on the
+# synced copy. Lines 1-10 must stay byte-identical so the old copy lands on this line.
+[ "${UPDATE_SYNCED:-}" = 1 ] || { export UPDATE_SYNCED=1; exec bash "$REPO/deploy/oracle/update.sh"; }
 echo "==> Now at $(git log -1 --format='%h %an: %s')"
 
 PIP="$REPO/venv/bin/pip"

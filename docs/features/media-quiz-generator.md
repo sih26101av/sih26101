@@ -455,11 +455,23 @@ leave yt-dlp pointed at a dead port, and it never overwrites an admin-set proxy.
 
 Verified from the dev machine through WARP (egress `warp=on`, colo BOM), 2026-09-24:
 the `default` client answered fully (344 auto captions, 36 video formats) and the full
-fetch took ~15 s. **Not yet run on the VM** — the auto-mode classifier treats standing
-up a tunnel as a containment question for the user to approve. Installing it:
-`bash deploy/oracle/youtube-access.sh --warp` on the VM, or the `update.sh` hook on
-the next deploy (`touch ~/.warp/disabled` opts out). `GET /youtube/diagnose` then
-shows `proxy_egress` (`warp: "on"`), the proof that YouTube is judging WARP's address.
+fetch took ~15 s.
+
+**Live on the VM since 2026-09-24 (`be1641a`/`2e02a2c`)**, installed by the `update.sh`
+hook on deploy (`touch ~/.warp/disabled` opts out; `youtube-access.sh --warp` re-runs
+it by hand). Measured on the deployed server:
+
+| Check | Before WARP | Through WARP |
+|---|---|---|
+| `proxy_egress` | — | `warp: on`, colo BOM, a Cloudflare IPv6 |
+| `default` client, `dMRDzicSvXk` | BLOCKED ("not a bot") | captions `en`, 36 video / 65 audio formats |
+| `default` client, `kqtD5dpn9C8` (1-h tutorial) | BLOCKED | captions `en`, 26 video / 100 audio formats |
+| `POST /youtube`, 21-min lecture | 400 | **200 in 93 s**: 7 questions (2 synthesis) from real captions + OCR on 16 screens |
+
+That run's timings on the ARM VM: probe 50 s (the scan of the 360p stream dominates),
+OCR 16 s, relevance 6 s, generation 6 s. `GET /youtube/diagnose` shows `proxy_egress`
+(the proof YouTube is judging WARP's address) and `warp_setup` (the last `warp.sh` run
+and the `warp-socks` service state), since the deploy log itself is behind a GitHub login.
 If YouTube ever walls WARP's ranges too, the relay and Gemini tiers still run behind it.
 
 ### The Gemini tier
@@ -637,15 +649,15 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
-- **Deployed 2026-09-24 (`d2abeb0`), but the Gemini tier is OFF on the VM:** its `.env`
-  has no `GEMINI_API_KEY` (`/capabilities` → `youtube.gemini.enabled: false`, diagnose →
-  `"reason": "GEMINI_API_KEY not set"`). Live test right after the deploy: all direct
-  clients BLOCKED, the relays served the *diagnosis* but not the real request a minute
-  later, so `POST /youtube` returned 400. Add the key to the VM's `.env`, then
-  **run on the VM:** `bash deploy/oracle/youtube-access.sh --gemini first`. The Gemini
-  tier was verified end-to-end from the dev machine with every yt-dlp client forced to
-  fail; it does not depend on the host's IP (only on reaching the Gemini API, which the
-  quizzes already do), but confirm with the script's `gemini` line.
+- **YouTube links work on the deployed VM through WARP** (see *WARP egress*). The Gemini
+  tier is still OFF there — the VM's `.env` has no `GEMINI_API_KEY` — so it is not yet a
+  backstop if YouTube ever walls WARP's ranges too. Adding the key (then
+  `youtube-access.sh --gemini auto`) makes it one; keep `auto`, not `first`, while WARP
+  works, since real captions + frames beat a model transcript.
+- **`update.sh` rewrote itself mid-run.** Its `git reset --hard` replaces the file bash
+  is reading by byte offset, so any deploy that changed `update.sh` ran a splice of the
+  old and new script — the first WARP deploy silently skipped WARP that way. It now
+  re-execs the synced copy right after the reset; keep its first 10 lines unchanged.
 - **Not yet tested:** the real test set above, the Ollama VLM backend, the bgutil
   PO-token provider on the VM, and the relay tier *from the Oracle VM itself* — it was
   verified from a dev machine with the player clients forced to fail, which reproduces
