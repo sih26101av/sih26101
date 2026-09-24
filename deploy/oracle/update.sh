@@ -84,6 +84,14 @@ if [ "$MEDIA" = "1" ] && ! command -v deno >/dev/null 2>&1; then
   command -v deno >/dev/null 2>&1 && echo "==> deno $(deno --version | head -1)"     || echo "!! no Deno — yt-dlp stays in js-less mode (YouTube links only)"
 fi
 
+# YouTube refuses this VM's IP. Cloudflare WARP, as a userspace SOCKS5 proxy that only
+# yt-dlp uses, gives it another way out (see warp.sh). Idempotent, runs before the
+# restart below so the backend picks up MEDIA_YOUTUBE_PROXY, and can never fail the
+# deploy. `touch ~/.warp/disabled` opts out.
+if [ "$MEDIA" = "1" ] && [ ! -f "$HOME/.warp/disabled" ]; then
+  bash "$REPO/deploy/oracle/warp.sh" || echo "!! WARP setup failed — YouTube links fall back to the relay / Gemini tiers"
+fi
+
 # Pick up edits to the unit files too.
 sudo cp deploy/oracle/mock-igot.service deploy/oracle/lms-backend.service /etc/systemd/system/
 sudo sed -i "s|/home/ubuntu/sih26101|$REPO|g; s|^User=ubuntu|User=$USER|" \

@@ -7,6 +7,7 @@
 #   bash deploy/oracle/youtube-access.sh --proxy http://user:pass@host:port
 #   bash deploy/oracle/youtube-access.sh --relay piped:https://my-piped.example
 #   bash deploy/oracle/youtube-access.sh --gemini first      # free, dependable: Gemini reads the link
+#   bash deploy/oracle/youtube-access.sh --warp              # free, no key: yt-dlp leaves via Cloudflare WARP
 #
 # Why this exists: YouTube decides by IP reputation, and Oracle's ranges are flagged.
 # From this VM every InnerTube player client AND a plain browser-UA watch-page GET come
@@ -40,6 +41,7 @@ while [ $# -gt 0 ]; do
     --cookies) MODE="cookies"; ARG="${2:-}"; shift ;;
     --proxy)   MODE="proxy";   ARG="${2:-}"; shift ;;
     --relay)   MODE="relay";   ARG="${2:-}"; shift ;;
+    --warp)    MODE="warp" ;;
     --gemini)  MODE="gemini";  ARG="${2:-first}"; [ $# -gt 1 ] && shift ;;
     --check)   MODE="check" ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
@@ -122,6 +124,12 @@ relay)
   [ "$ARG" = "off" ] || set_env MEDIA_YOUTUBE_RELAY_FRAMES 1
   ;;
 
+warp)
+  # Cloudflare WARP as a userspace SOCKS5 proxy used only by yt-dlp (see warp.sh for
+  # why it is safe on a server). Sets MEDIA_YOUTUBE_PROXY when the tunnel is up.
+  bash "$REPO/deploy/oracle/warp.sh"
+  ;;
+
 gemini)
   # first = skip the direct yt-dlp probe (walled hosts), auto = use it only when YouTube
   # refuses this host, off = never. Needs the same GEMINI_API_KEY the quizzes use.
@@ -154,6 +162,8 @@ d = json.load(open(sys.argv[1], encoding="utf-8"))
 v = d.get("verdict") or {}
 print("  yt-dlp        :", d.get("yt_dlp"), "|", d.get("arch"))
 print("  cookies/proxy :", d.get("cookies"), "/", d.get("proxy"), "| pot:", d.get("pot_provider"))
+if d.get("proxy_egress"):
+    print("  proxy egress  :", d["proxy_egress"])
 for name, c in (d.get("clients") or {}).items():
     if c.get("ok"):
         caps = c.get("caption_lang") or "-"

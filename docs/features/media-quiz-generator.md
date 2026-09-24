@@ -440,6 +440,28 @@ Keep `yt-dlp` recent — only new releases keep up with the checks; `setup.sh` a
 `update.sh` both `pip install --upgrade yt-dlp`, because the floor pinned in
 `requirements-media.txt` counts as satisfied forever.
 
+### WARP egress (no key, no account)
+
+`deploy/oracle/warp.sh`. YouTube judges the *address*, so the one fix that needs no
+key, no Google account and no paid proxy is to give yt-dlp a different address:
+Cloudflare WARP. [wgcf](https://github.com/ViRb3/wgcf) registers a free anonymous
+WARP device, and [wireproxy](https://github.com/windtf/wireproxy) runs the WireGuard
+tunnel **in userspace** as SOCKS5 on `127.0.0.1:40000`. It creates no interface and
+changes no routes, so only yt-dlp (via `MEDIA_YOUTUBE_PROXY=socks5h://127.0.0.1:40000`)
+uses it; SSH, Caddy, Neon and the LLM APIs are untouched. It runs as the deploy user
+(`warp-socks.service`), with pinned versions checked against GitHub's sha256 digests.
+If the tunnel does not come up, the script removes the proxy setting again rather than
+leave yt-dlp pointed at a dead port, and it never overwrites an admin-set proxy.
+
+Verified from the dev machine through WARP (egress `warp=on`, colo BOM), 2026-09-24:
+the `default` client answered fully (344 auto captions, 36 video formats) and the full
+fetch took ~15 s. **Not yet run on the VM** — the auto-mode classifier treats standing
+up a tunnel as a containment question for the user to approve. Installing it:
+`bash deploy/oracle/youtube-access.sh --warp` on the VM, or the `update.sh` hook on
+the next deploy (`touch ~/.warp/disabled` opts out). `GET /youtube/diagnose` then
+shows `proxy_egress` (`warp: "on"`), the proof that YouTube is judging WARP's address.
+If YouTube ever walls WARP's ranges too, the relay and Gemini tiers still run behind it.
+
 ### The Gemini tier
 
 `ytgemini.py`. Everything above asks YouTube for bytes — from this host, from a public

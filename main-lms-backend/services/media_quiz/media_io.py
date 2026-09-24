@@ -818,6 +818,8 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
     out["js_runtimes"] = {name: shutil.which(name) for name in ("deno", "node", "bun")}
     out["cookies"] = has_cookies()
     out["proxy"] = bool(YOUTUBE_PROXY)
+    if YOUTUBE_PROXY:
+        out["proxy_egress"] = _safe(_proxy_egress)
     out["pot_provider"] = _safe(_pot_provider_installed)
 
     for client in (clients or _yt_clients()):
@@ -874,6 +876,19 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
         "gemini_rescues_this_host": bool(not ok and gem_ok),
     }
     return out
+
+
+def _proxy_egress() -> dict:
+    """Where yt-dlp's traffic actually leaves from, through the configured proxy — the
+    proof that the proxy (e.g. the WARP tunnel from deploy/oracle/warp.sh) is up, and
+    that YouTube is judging *its* address rather than this host's."""
+    import yt_dlp
+
+    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "proxy": YOUTUBE_PROXY,
+                           "socket_timeout": 10}) as ydl:
+        raw = ydl.urlopen("https://www.cloudflare.com/cdn-cgi/trace").read().decode("utf-8", "replace")
+    kv = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+    return {k: kv.get(k) for k in ("ip", "colo", "loc", "warp")}
 
 
 def _safe(fn, *args):
