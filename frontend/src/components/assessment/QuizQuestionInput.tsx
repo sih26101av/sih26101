@@ -117,8 +117,14 @@ const QuizQuestionInput: React.FC<Props> = ({ q, index, answer, onChange, lang =
   );
 
   return (
-    <fieldset className={compact ? "rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60" : "panel p-6 md:p-7"}>
-      <legend className={`${compact ? "mb-3 text-[14.5px]" : "mb-5 text-[16.5px]"} font-semibold text-gov-ink dark:text-slate-100`}>
+    // min-w-0: a fieldset defaults to min-width: min-content, so one long word would
+    // widen the card past its column.
+    <fieldset className={`min-w-0 ${compact ? "rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60" : "panel p-6 md:p-7"}`}>
+      {/* A <legend> is drawn straddling the fieldset's top border, so a question that
+          wraps to two lines (common for video-generated ones) had its first line
+          above the card. Floating it lays it out inside the card like any block,
+          and keeps the fieldset/legend grouping for screen readers. */}
+      <legend className={`float-left w-full ${compact ? "mb-3 text-[14.5px]" : "mb-5 text-[16.5px]"} font-semibold text-gov-ink dark:text-slate-100`}>
         <span className="mr-3 text-slate-400">{index + 1}.</span>
         {t === "fill_blank" ? <Stem text={stem} blank={textInput} /> : stem}
         <span className="ml-2 inline-flex flex-wrap gap-1.5 align-middle">
@@ -127,6 +133,7 @@ const QuizQuestionInput: React.FC<Props> = ({ q, index, answer, onChange, lang =
         </span>
         {stemHi && <span className="mt-1 block text-[14px] font-normal text-slate-500 dark:text-slate-400">{stemHi}</span>}
       </legend>
+      <div className="clear-both" aria-hidden="true" />
 
       {(t === "mcq" || t === "true_false") && (
         <div className={t === "true_false" ? "grid grid-cols-2 gap-3" : "space-y-3"} role="radiogroup">
