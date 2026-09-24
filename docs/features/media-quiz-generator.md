@@ -308,7 +308,7 @@ and it is worth being precise because the answer is "sometimes", not "yes":
 |---|---|
 | 5-min explainer (`dMRDzicSvXk`) | **344 caption cues** from `api.piped.private.coffee` in ~8 s; a cobalt instance also served a muxed file |
 | 77-min Python tutorial (`rfscVS0vtbw`) | nothing — Piped got `SignInConfirmNotBotException`, cobalt `error.api.content.too_long` |
-| 11-min lecture (`8DvywoWv6fI`) | nothing |
+| 13.7-hour course (`8DvywoWv6fI`) | nothing — and over the 4 h limit anyway (the deployed server now rejects it as "820 min long") |
 
 The failure modes are reported per instance by `classify()` and summarised in the
 diagnosis, because they need different answers:
@@ -615,7 +615,12 @@ stages; the startup warm-up also removes the cold-start penalty.
 
 ## TODOs / edge cases
 
-- **Run on the VM:** `bash deploy/oracle/youtube-access.sh --gemini first`. The Gemini
+- **Deployed 2026-09-24 (`d2abeb0`), but the Gemini tier is OFF on the VM:** its `.env`
+  has no `GEMINI_API_KEY` (`/capabilities` → `youtube.gemini.enabled: false`, diagnose →
+  `"reason": "GEMINI_API_KEY not set"`). Live test right after the deploy: all direct
+  clients BLOCKED, the relays served the *diagnosis* but not the real request a minute
+  later, so `POST /youtube` returned 400. Add the key to the VM's `.env`, then
+  **run on the VM:** `bash deploy/oracle/youtube-access.sh --gemini first`. The Gemini
   tier was verified end-to-end from the dev machine with every yt-dlp client forced to
   fail; it does not depend on the host's IP (only on reaching the Gemini API, which the
   quizzes already do), but confirm with the script's `gemini` line.
