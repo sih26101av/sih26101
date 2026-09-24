@@ -24,6 +24,9 @@
 #   • If the tunnel does not come up, MEDIA_YOUTUBE_PROXY is removed again, so yt-dlp
 #     is never left pointing at a dead proxy. An admin-set proxy is never overwritten.
 set -euo pipefail
+# The deploy log is behind a GitHub login; update.sh copies this script's output to
+# ~/.warp-setup.log, which /youtube/diagnose shows. Say exactly where it stopped.
+trap 'echo "!! WARP: failed at line $LINENO: $BASH_COMMAND"' ERR
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 ENVF="$REPO/main-lms-backend/.env"
@@ -89,10 +92,16 @@ fi
 cd "$STATE"
 if [ ! -f wgcf-account.toml ]; then
   echo "==> registering a free WARP device"
-  for _ in 1 2 3; do wgcf register --accept-tos >/dev/null 2>&1 && break; sleep 5; done
+  said=""
+  for _ in 1 2 3; do
+    said="$(wgcf register --accept-tos 2>&1)" && break
+    sleep 5
+  done
+  # Only the error lines: the success output names the device, which nobody needs.
+  [ -f wgcf-account.toml ] || echo "$said" | grep -iE "error|fail|denied|429|403" | tail -3 || true
 fi
 [ -f wgcf-account.toml ] || { echo "!! WARP: registration failed"; exit 1; }
-[ -f wgcf-profile.conf ] || wgcf generate >/dev/null 2>&1
+[ -f wgcf-profile.conf ] || { said="$(wgcf generate 2>&1)" || { echo "$said" | grep -iE "error|fail" | tail -3 || true; }; }
 [ -f wgcf-profile.conf ] || { echo "!! WARP: could not generate the WireGuard profile"; exit 1; }
 chmod 600 wgcf-account.toml wgcf-profile.conf
 printf 'WGConfig = %s/wgcf-profile.conf\n\n[Socks5]\nBindAddress = 127.0.0.1:%s\n' "$STATE" "$PORT" > wireproxy.conf
@@ -135,7 +144,8 @@ if [ -n "$trace" ]; then
     echo "==> WARP up ($where), but MEDIA_YOUTUBE_PROXY is already set to another proxy — left alone"
   fi
 else
-  echo "!! WARP tunnel did not come up (journalctl -u warp-socks)"
+  echo "!! WARP tunnel did not come up; wireproxy says:"
+  journalctl -u warp-socks -n 8 --no-pager 2>/dev/null | sed 's/^/   /' || true
   if [ "$current" = "$PROXY" ]; then
     env_set MEDIA_YOUTUBE_PROXY      # never leave yt-dlp pointed at a dead proxy
     echo "   removed MEDIA_YOUTUBE_PROXY again"

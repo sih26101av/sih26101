@@ -820,6 +820,7 @@ def youtube_diagnosis(url: str, clients: Optional[List[str]] = None) -> dict:
     out["proxy"] = bool(YOUTUBE_PROXY)
     if YOUTUBE_PROXY:
         out["proxy_egress"] = _safe(_proxy_egress)
+    out["warp_setup"] = _warp_setup()
     out["pot_provider"] = _safe(_pot_provider_installed)
 
     for client in (clients or _yt_clients()):
@@ -889,6 +890,28 @@ def _proxy_egress() -> dict:
         raw = ydl.urlopen("https://www.cloudflare.com/cdn-cgi/trace").read().decode("utf-8", "replace")
     kv = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
     return {k: kv.get(k) for k in ("ip", "colo", "loc", "warp")}
+
+
+def _warp_setup() -> Optional[dict]:
+    """The last run of deploy/oracle/warp.sh on this host (update.sh keeps its output in
+    ~/.warp-setup.log) and whether its service is up — the deploy log itself is behind a
+    GitHub login, so this is how a failed WARP install is seen from outside."""
+    import subprocess
+
+    path = os.path.expanduser("~/.warp-setup.log")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            tail = [l.rstrip() for l in f.readlines()[-25:]]
+    except OSError as exc:
+        tail = [f"unreadable: {exc}"]
+    try:
+        active = subprocess.run(["systemctl", "is-active", "warp-socks"], capture_output=True,
+                                text=True, timeout=5).stdout.strip()
+    except Exception as exc:                      # noqa: BLE001 — diagnosis only
+        active = f"unknown ({type(exc).__name__})"
+    return {"service": active, "log": tail}
 
 
 def _safe(fn, *args):

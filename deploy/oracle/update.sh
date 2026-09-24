@@ -89,7 +89,10 @@ fi
 # restart below so the backend picks up MEDIA_YOUTUBE_PROXY, and can never fail the
 # deploy. `touch ~/.warp/disabled` opts out.
 if [ "$MEDIA" = "1" ] && [ ! -f "$HOME/.warp/disabled" ]; then
-  bash "$REPO/deploy/oracle/warp.sh" || echo "!! WARP setup failed — YouTube links fall back to the relay / Gemini tiers"
+  # Kept in ~/.warp-setup.log because this deploy's log is behind a GitHub login;
+  # GET /api/v1/rag/media/youtube/diagnose shows it as warp_setup.
+  bash "$REPO/deploy/oracle/warp.sh" > "$HOME/.warp-setup.log" 2>&1     || echo "!! WARP setup failed — YouTube links fall back to the relay / Gemini tiers" >> "$HOME/.warp-setup.log"
+  cat "$HOME/.warp-setup.log"
 fi
 
 # Pick up edits to the unit files too.
